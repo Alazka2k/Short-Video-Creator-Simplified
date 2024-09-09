@@ -1,0 +1,19 @@
+{
+  "name": "short-video-creator-simplified",
+  "version": "1.0.0",
+  "description": "1. [Introduction](#introduction)\r 2. [Project Overview](#project-overview)\r 3. [Features](#features)\r 4. [Prerequisites](#prerequisites)\r 5. [Installation](#installation)\r 6. [Configuration](#configuration)\r 7. [Usage](#usage)\r 8. [Project Structure](#project-structure)\r 9. [Architecture](#architecture)\r 10. [API Integrations](#api-integrations)\r 11. [Output Format](#output-format)\r 12. [Troubleshooting](#troubleshooting)\r 13. [Contributing](#contributing)\r 14. [License](#license)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "csv-parse": "^5.5.6",
+    "openai": "^4.58.1",
+    "winston": "^3.14.2",
+    "zod": "^3.23.8"
+  }
+}
