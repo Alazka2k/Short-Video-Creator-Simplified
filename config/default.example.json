@@ -1,0 +1,31 @@
+{
+    "llm": {
+      "model": "gpt-4o-2024-08-06",
+      "apiKey": "YOUR_OPENAI_API_KEY"
+    },
+    "voiceGen": {
+      "provider": "elevenlabs",
+      "apiKey": "YOUR_ELEVENLABS_API_KEY",
+      "voiceId": "YOUR_CHOSEN_VOICE_ID"
+    },
+    "imageGen": {
+      "provider": "midjourney",
+      "apiKey": "YOUR_MIDJOURNEY_API_KEY"
+    },
+    "audioGen": {
+      "provider": "suno",
+      "apiKey": "YOUR_SUNO_API_KEY"
+    },
+    "input": {
+      "csvPath": "./data/input/input.csv"
+    },
+    "parameters": {
+      "jsonPath": "./data/input/parameters.json"
+    },
+    "initialPrompt": {
+      "txtPath": "./data/input/initial_prompt.txt"
+    },
+    "output": {
+      "directory": "./data/output"
+    }
+  }
