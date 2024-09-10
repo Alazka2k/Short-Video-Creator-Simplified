@@ -12,9 +12,10 @@
 9. [Architecture](#architecture)
 10. [API Integrations](#api-integrations)
 11. [Output Format](#output-format)
-12. [Troubleshooting](#troubleshooting)
-13. [Contributing](#contributing)
-14. [License](#license)
+12. [Testing](#testing)
+13. [Troubleshooting](#troubleshooting)
+14. [Contributing](#contributing)
+15. [License](#license)
 
 ## Introduction
 
@@ -25,8 +26,8 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to rev
 This project aims to streamline the content creation pipeline by integrating several cutting-edge AI services:
 - Language Model (LLM) for dynamic script generation
 - Voice Generation (Elevenlabs) for natural-sounding narration
-- Image Creation (Midjourney) for visually stunning scenes
-- Music Generation (Suno) for custom background tracks
+- Image Creation (Midjourney) for visually stunning scenes (planned)
+- Music Generation (Suno) for custom background tracks (planned)
 
 The system processes input from a CSV file, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
 
@@ -35,11 +36,10 @@ The system processes input from a CSV file, leverages these AI services, and out
 - Efficient CSV input processing for batch content creation
 - AI-powered script generation using advanced GPT models
 - Realistic voice narration synthesis
-- AI-driven image creation for each scene
-- Custom background music generation
 - Structured output optimized for video editing workflows
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
+- Separate test environment for LLM and voice generation services
 
 ## Prerequisites
 
@@ -48,8 +48,6 @@ The system processes input from a CSV file, leverages these AI services, and out
 - API keys for the following services:
   - OpenAI (GPT) for script generation
   - Elevenlabs for voice synthesis
-  - Midjourney for image creation
-  - Suno for music generation
 
 ## Installation
 
@@ -75,16 +73,9 @@ The system processes input from a CSV file, leverages these AI services, and out
        "apiKey": "YOUR_OPENAI_API_KEY"
      },
      "voiceGen": {
-       "provider": "elevenlabs",
-       "apiKey": "YOUR_ELEVENLABS_API_KEY"
-     },
-     "imageGen": {
-       "provider": "midjourney",
-       "apiKey": "YOUR_MIDJOURNEY_API_KEY"
-     },
-     "audioGen": {
-       "provider": "suno",
-       "apiKey": "YOUR_SUNO_API_KEY"
+       "apiKey": "YOUR_ELEVENLABS_API_KEY",
+       "modelId": "eleven_multilingual_v2",
+       "defaultVoiceId": "YOUR_CHOSEN_VOICE_ID"
      },
      "input": {
        "csvPath": "./data/input/input.csv"
@@ -102,7 +93,7 @@ The system processes input from a CSV file, leverages these AI services, and out
 3. Customize the initial prompt in `data/input/initial_prompt.txt`
 4. Run the application:
    ```
-   node src/index.js
+   npm start
    ```
 5. Find the generated content in the `data/output` directory
 
@@ -123,20 +114,22 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 ├── src/
 │   ├── services/
 │   │   ├── llm-service.js
-│   │   └── voice-gen.js
+│   │   └── voice-gen-service.js
 │   ├── utils/
 │   │   ├── config.js
-│   │   ├── input-loader.js
 │   │   ├── logger.js
 │   │   └── prompt-utils.js
-│   ├── workflows/
-│   │   └── content-pipeline.js
-│   ├── index.js
-│   └── models.js
+│   ├── models.js
+│   └── index.js
+├── tests/
+│   ├── llm-test.js
+│   ├── voice-gen-test.js
+│   └── test_output/
+│       ├── llm/
+│       └── voice/
 ├── .gitignore
-├── app.log
-├── package-lock.json
-└── package.json
+├── package.json
+└── README.md
 ```
 
 ## Architecture
@@ -146,19 +139,13 @@ The application follows a modular architecture designed for flexibility and main
 1. Input Processing: Parses CSV input and loads configuration parameters
 2. LLM Service: Generates dynamic script content based on input and parameters
 3. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
-4. Image Generation Service: Creates visual representations for each scene
-5. Audio Generation Service: Composes custom background music to enhance the video mood
-6. Content Pipeline: Orchestrates the flow between services and manages the overall process
-7. Output Formatting: Structures and saves the generated content in an editor-friendly format
-
-The main workflow, defined in `content-pipeline.js`, seamlessly integrates these components.
+4. Content Pipeline: Orchestrates the flow between services and manages the overall process
+5. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
 ## API Integrations
 
 - LLM: Leverages OpenAI's GPT models for advanced script generation
 - Voice Generation: Integrates with Elevenlabs for high-quality voice synthesis
-- Image Creation: Utilizes Midjourney's API for AI-powered image generation
-- Music Generation: Employs Suno's API for creating custom background tracks
 
 Detailed documentation for each service integration can be found in the respective files within the `src/services/` directory.
 
@@ -168,21 +155,37 @@ The generated content is structured as follows for each video:
 
 ```
 output/
-└── video1/
-    ├── scene1_image.png
-    ├── scene1_narration.mp3
-    ├── scene2_image.png
-    ├── scene2_narration.mp3
-    ├── ...
-    ├── background_music.mp3
-    └── metadata.json
+└── YYYY-MM-DD/
+    └── 1_video_prompt/
+        ├── scene_1.mp3
+        ├── scene_2.mp3
+        └── ...
 ```
 
 This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization.
 
+## Testing
+
+The project includes separate test files for the LLM and voice generation services:
+
+- To run all tests:
+  ```
+  npm test
+  ```
+- To run only the LLM test:
+  ```
+  npm run test:llm
+  ```
+- To run only the voice generation test:
+  ```
+  npm run test:voice
+  ```
+
+Test outputs are stored in the `tests/test_output/` directory.
+
 ## Troubleshooting
 
-- Review the `app.log` file in the project root for detailed error messages and execution logs
+- Review the `logs/app.log` file for detailed error messages and execution logs
 - Ensure all API keys are correctly set in the `config/default.json` file
 - Verify that the input CSV, parameters JSON, and initial prompt TXT files are correctly formatted and located in the `data/input/` directory
 - Check that all required npm packages are installed by running `npm install`
