@@ -1,5 +1,7 @@
 const OpenAI = require("openai");
 const { zodResponseFormat } = require("openai/helpers/zod");
+const fs = require('fs').promises;
+const path = require('path');
 const config = require('../utils/config');
 const logger = require('../utils/logger');
 const PromptUtils = require('../utils/prompt-utils');
@@ -14,12 +16,10 @@ logger.info('OpenAI Model:', config.llm.model);
 
 async function generateContent(initialPromptPath, parametersPath, inputPrompt) {
   try {
-    //logger.info('Generating content with input prompt:', { inputPrompt });
     const parameters = await PromptUtils.loadParameters(parametersPath);
     const dynamicPrompt = await PromptUtils.generateDynamicPrompt(initialPromptPath, parameters);
     const combined_prompt = `${dynamicPrompt}\n\n${inputPrompt}`;
 
-    //logger.info('Combined prompt:', { combined_prompt });
     logger.info('Sending request to OpenAI API...');
     
     const completion = await openai.beta.chat.completions.parse({
@@ -32,9 +32,12 @@ async function generateContent(initialPromptPath, parametersPath, inputPrompt) {
     });
 
     logger.info('Received response from OpenAI API');
-    //logger.info('Raw response:', { response: JSON.stringify(completion, null, 2) });
 
     const video_script = completion.choices[0].message.parsed;
+    
+    // Add the input prompt to the video_script object
+    video_script.prompt = inputPrompt;
+
     logger.info('Generated content structure:', { video_script });
 
     return video_script;
@@ -44,4 +47,10 @@ async function generateContent(initialPromptPath, parametersPath, inputPrompt) {
   }
 }
 
-module.exports = { generateContent };
+async function saveOutputToJson(output, fileName) {
+  const outputPath = path.join(__dirname, '..', '..', 'data', 'output', fileName);
+  await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
+  logger.info(`Output saved to ${outputPath}`);
+}
+
+module.exports = { generateContent, saveOutputToJson };

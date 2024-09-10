@@ -7,13 +7,13 @@
 - Use Clickbait techniques to call attention. 
 - Use tl;dr techniques in addition to clickbait techniques. 
 - Create the video script essay to be used as a voice over.
-- Add a hook to increase retention in the opening scene and use the closing scene as outro.
+- Add a hook to increase retention
 - Speak to the target audience without using their direct name. 
 - The presentation needs to look natural. 
 - Use the best language for a target audience of ages 18-50.  
 - Finish by indicating 5 hashtags with the best chance of reach and engagement related to the subject of the video. 
 - Add everything in a table format.
-- A line in the table starts with the "Title" and ends with the description of a "Closing Scene Visual Prompt".
+- A line in the table starts with the "Title" and ends with the description of the last visual prompt scene.
 - Don't use any input words in the script.
 - Add a visual prompt for each scene and a title picture for an AI image creation tool (e.g., for Dall-E).
 - Describe the images in detail, including the style to be used.
@@ -66,7 +66,7 @@ Time of Day | Morning, Noon, Evening, Night
 Natural Light |	Sunny, Overcast, Golden hour, Blue hour
 
 The header of the table should look as follows:
-Title | Description | Hashtags | Opening Scene | Scene Z | Closing Scene | Title Visual Prompt | Opening Scene Visual Prompt | Scene Z Visual Prompt | Closing Scene Visual Prompt |
+Title | Description | Hashtags | Scene Z | Title Visual Prompt | Scene Z Visual Prompt |
 
 Note: Z is a variable for a new column for a scene and a scene visual prompt, and will be exchanged with the number set as scene amount.
 
@@ -74,28 +74,28 @@ Note: Z is a variable for a new column for a scene and a scene visual prompt, an
 Title: The Last Breath: Earth's Oxygen Apocalypse
 Description: A gripping tale of humanity's struggle as Earth's oxygen rapidly depletes, forcing us to confront our mortality and the consequences of environmental negligence.
 Hashtags: #OxygenCrisis #ClimateApocalypse #LastBreath #EnvironmentalDoom #SurvivalStory #EarthDying
-Opening Scene: Gasp. The air feels thin. You check your phone - oxygen levels are plummeting worldwide. This is how it begins...
-Scene 1: Scientists frantically analyze data, their faces pale with shock. Oxygen levels have dropped 5% overnight.
-Scene 2: News broadcasts worldwide, panic spreading. People rush to stores, fighting over oxygen tanks and masks.
-Scene 3: A family seals their home, rationing their breaths. The youngest child asks, "Mommy, are we going to die?"
-Scene 4: Governments deploy emergency measures. Military distributes oxygen supplies, but chaos erupts in the streets.
-Scene 5: Hospitals overflow. Doctors make impossible choices as patients gasp for air. Who gets the last oxygen mask?
-Scene 6: Massive wildfires rage unchecked, further depleting oxygen. Firefighters watch helplessly, their equipment useless.
-Scene 7: Underground bunkers for the elite are revealed. Riots break out as the poor demand equal access to survival.
-Scene 8: A brave team of scientists works tirelessly on a solution. Can they reverse the oxygen depletion before it's too late?
-Scene 9: Animals and plants wither and die. Oceans turn stagnant. The planet seems to be holding its last breath.
-Scene 10: A glimmer of hope - the scientists' plan shows promise. But will it be enough to save what's left of humanity?
-Closing Scene: As dawn breaks, humanity faces its ultimate test. Will we succumb to our fate, or find a way to breathe new life into our dying world?
+Scene 1: Gasp. The air feels thin. You check your phone - oxygen levels are plummeting worldwide. This is how it begins...
+Scene 2: Scientists frantically analyze data, their faces pale with shock. Oxygen levels have dropped 5% overnight.
+Scene 3: News broadcasts worldwide, panic spreading. People rush to stores, fighting over oxygen tanks and masks.
+Scene 4: A family seals their home, rationing their breaths. The youngest child asks, "Mommy, are we going to die?"
+Scene 5: Governments deploy emergency measures. Military distributes oxygen supplies, but chaos erupts in the streets.
+Scene 6: Hospitals overflow. Doctors make impossible choices as patients gasp for air. Who gets the last oxygen mask?
+Scene 7: Massive wildfires rage unchecked, further depleting oxygen. Firefighters watch helplessly, their equipment useless.
+Scene 8: Underground bunkers for the elite are revealed. Riots break out as the poor demand equal access to survival.
+Scene 9: A brave team of scientists works tirelessly on a solution. Can they reverse the oxygen depletion before it's too late?
+Scene 10: Animals and plants wither and die. Oceans turn stagnant. The planet seems to be holding its last breath.
+Scene 11: A glimmer of hope - the scientists' plan shows promise. But will it be enough to save what's left of humanity?
+Scene 12: As dawn breaks, humanity faces its ultimate test. Will we succumb to our fate, or find a way to breathe new life into our dying world?
 Title Visual Prompt: A cracked, parched Earth with visible atmosphere labeled "O2" rapidly depleting, surrounded by gasping silhouettes. The title "The Last Breath" is etched onto a oxygen meter showing critical levels. {{ imageStyle }} {{ imageDetails }}
-Opening Scene Visual Prompt: Close-up shot of a smartphone displaying a global oxygen level alert, with a blurred background of a person gasping for air. The lighting is harsh and clinical, emphasizing the sudden onset of the crisis. Standard lens, early morning light. {{ imageStyle }} {{ imageDetails }}
-Scene 1 Visual Prompt: Wide-angle shot of a high-tech laboratory, scientists huddled around holographic displays showing rapidly declining oxygen graphs. The room is bathed in an eerie blue glow from the screens, creating long shadows. Early morning, tension-filled atmosphere. {{ imageStyle }} {{ imageDetails }}
-Scene 2 Visual Prompt: Split-screen view of multiple news broadcasts, showing anchors mid-sentence with panic in their eyes. Lower third of the screen displays oxygen level warnings. Contrasted with scenes of mob rushing stores. Afternoon light, chaotic energy. {{ imageStyle }} {{ imageDetails }}
-Scene 3 Visual Prompt: Intimate shot inside a sealed home, family huddled together. Focus on the child's worried face, parents in the background sealing windows. Soft, warm indoor lighting contrasting with the harsh reality outside. Standard lens, capturing emotional tension. {{ imageStyle }} {{ imageDetails }}
-Scene 4 Visual Prompt: Bird's-eye view of a city square, military vehicles distributing oxygen tanks amidst a sea of desperate people. Smoke rises from several points, indicating unrest. Harsh midday sun casting short, sharp shadows. {{ imageStyle }} {{ imageDetails }}
-Scene 5 Visual Prompt: Inside a crowded hospital corridor, doctors in protective gear rushing past. Focus on a doctor's anguished eyes as they decide between two critical patients. Fluorescent lighting, creating a stark, unforgiving atmosphere. Standard lens, capturing the moral dilemma. {{ imageStyle }} {{ imageDetails }}
-Scene 6 Visual Prompt: Panoramic shot of a vast forest fire, flames reaching impossibly high. In the foreground, silhouettes of firefighters standing idle, their truck abandoned. Orange glow of dusk, smoke-filled sky. Wide-angle lens to capture the scale of destruction. {{ imageStyle }} {{ imageDetails }}
-Scene 7 Visual Prompt: Low-angle shot of a sleek, futuristic bunker entrance being besieged by an angry mob. Contrast between the high-tech door and the desperate masses. Night scene, illuminated by harsh floodlights and molotov cocktails. {{ imageStyle }} {{ imageDetails }}
-Scene 8 Visual Prompt: Close-up of determined scientists working on a complex machine, sweat on their brows. Background shows a countdown timer. Claustrophobic lab setting, lit by the glow of equipment. Macro lens focusing on intricate tech details. {{ imageStyle }} {{ imageDetails }}
-Scene 9 Visual Prompt: Montage of three images: a withered tree in a barren field, a beached whale gasping on a littered shore, and a stagnant, algae-covered lake. Muted colors, emphasizing the dying world. Each shot uses a different lens to capture the diverse impacts. {{ imageStyle }} {{ imageDetails }}
-Scene 10 Visual Prompt: Split screen: on one side, the scientists' machine whirring to life with a bright, hopeful glow; on the other, crowds watching giant public screens with bated breath. Contrasting dark and light, symbolizing the balance between hope and despair. Wide-angle to capture both scenes. {{ imageStyle }} {{ imageDetails }}
-Closing Scene Visual Prompt: Sunrise over a misty, damaged cityscape. A lone figure stands on a rooftop, taking a deep breath. The sky shows hints of clearing, but the devastation below is clear. Telephoto lens, focusing on the human element against the vast backdrop. {{ imageStyle }} {{ imageDetails }}
+Scene 1 Visual Prompt: Close-up shot of a smartphone displaying a global oxygen level alert, with a blurred background of a person gasping for air. The lighting is harsh and clinical, emphasizing the sudden onset of the crisis. Standard lens, early morning light. {{ imageStyle }} {{ imageDetails }}
+Scene 2 Visual Prompt: Wide-angle shot of a high-tech laboratory, scientists huddled around holographic displays showing rapidly declining oxygen graphs. The room is bathed in an eerie blue glow from the screens, creating long shadows. Early morning, tension-filled atmosphere. {{ imageStyle }} {{ imageDetails }}
+Scene 3 Visual Prompt: Split-screen view of multiple news broadcasts, showing anchors mid-sentence with panic in their eyes. Lower third of the screen displays oxygen level warnings. Contrasted with scenes of mob rushing stores. Afternoon light, chaotic energy. {{ imageStyle }} {{ imageDetails }}
+Scene 4 Visual Prompt: Intimate shot inside a sealed home, family huddled together. Focus on the child's worried face, parents in the background sealing windows. Soft, warm indoor lighting contrasting with the harsh reality outside. Standard lens, capturing emotional tension. {{ imageStyle }} {{ imageDetails }}
+Scene 5 Visual Prompt: Bird's-eye view of a city square, military vehicles distributing oxygen tanks amidst a sea of desperate people. Smoke rises from several points, indicating unrest. Harsh midday sun casting short, sharp shadows. {{ imageStyle }} {{ imageDetails }}
+Scene 6 Visual Prompt: Inside a crowded hospital corridor, doctors in protective gear rushing past. Focus on a doctor's anguished eyes as they decide between two critical patients. Fluorescent lighting, creating a stark, unforgiving atmosphere. Standard lens, capturing the moral dilemma. {{ imageStyle }} {{ imageDetails }}
+Scene 7 Visual Prompt: Panoramic shot of a vast forest fire, flames reaching impossibly high. In the foreground, silhouettes of firefighters standing idle, their truck abandoned. Orange glow of dusk, smoke-filled sky. Wide-angle lens to capture the scale of destruction. {{ imageStyle }} {{ imageDetails }}
+Scene 8 Visual Prompt: Low-angle shot of a sleek, futuristic bunker entrance being besieged by an angry mob. Contrast between the high-tech door and the desperate masses. Night scene, illuminated by harsh floodlights and molotov cocktails. {{ imageStyle }} {{ imageDetails }}
+Scene 9 Visual Prompt: Close-up of determined scientists working on a complex machine, sweat on their brows. Background shows a countdown timer. Claustrophobic lab setting, lit by the glow of equipment. Macro lens focusing on intricate tech details. {{ imageStyle }} {{ imageDetails }}
+Scene 10 Visual Prompt: Montage of three images: a withered tree in a barren field, a beached whale gasping on a littered shore, and a stagnant, algae-covered lake. Muted colors, emphasizing the dying world. Each shot uses a different lens to capture the diverse impacts. {{ imageStyle }} {{ imageDetails }}
+Scene 11 Visual Prompt: Split screen: on one side, the scientists' machine whirring to life with a bright, hopeful glow; on the other, crowds watching giant public screens with bated breath. Contrasting dark and light, symbolizing the balance between hope and despair. Wide-angle to capture both scenes. {{ imageStyle }} {{ imageDetails }}
+Scene 12 Visual Prompt: Sunrise over a misty, damaged cityscape. A lone figure stands on a rooftop, taking a deep breath. The sky shows hints of clearing, but the devastation below is clear. Telephoto lens, focusing on the human element against the vast backdrop. {{ imageStyle }} {{ imageDetails }}

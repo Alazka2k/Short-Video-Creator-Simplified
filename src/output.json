@@ -1,16 +1,13 @@
-{
+{   
+    "prompt": "Nuclear War and Nuclear Winter",
+    "title": "The Day the Sky Turned Black",
     "video_script": {
-        "closing_scene": {
-            "description": "The first vibrant sunrise breaks the icy shroud, painting hope in the sky. Life hesitantly stirs as a new chapter begins.",
-            "visual_prompt": "Telephoto lens focusing on a spectacular sunrise over a shattered cityscape, with a human silhouette reaching towards a brighter future. by Jakub Rozalski. Photorealistic, cinematic --ar 9:16 --style raw --s 500 --v 6"
-        },
         "description": "Experience an intense journey through the aftermath of nuclear war, where survival hinges on hope amid a dark and frozen world.",
         "hashtags": "#NuclearWinter #EndOfWorld #SurvivalChallenge #GlobalCrisis #ApocalypticStory",
-        "opening_scene": {
-            "description": "Boom! The sky dims as explosions echo worldwide. This is not just another alert – it's the start of the nuclear winter.",
-            "visual_prompt": "Title Picture: A dramatic illustration of a frozen world under darkened skies. The phrase \"The Day the Sky Turned Black\" etched onto a crumbling sign amidst snowfall. by Jakub Rozalski. Photorealistic, cinematic --ar 9:16 --style raw --s 500 --v 6"
-        },
         "scenes": [
+            {   "description": "Boom! The sky dims as explosions echo worldwide. This is not just another alert – it's the start of the nuclear winter.",
+                "visual_prompt": "Title Picture: A dramatic illustration of a frozen world under darkened skies. The phrase \"The Day the Sky Turned Black\" etched onto a crumbling sign amidst snowfall. by Jakub Rozalski. Photorealistic, cinematic --ar 9:16 --style raw --s 500 --v 6"
+            },
             {
                 "description": "Scientists calculate devastating fallout projections on glowing monitors, faces etched with dread. Fallout could last decades.",
                 "visual_prompt": "Wide-angle shot of a dimly lit control room, screens aglow with nuclear fallout maps. Scientists appear small, overwhelmed by their task. Blue hour lighting creates a somber mood. by Jakub Rozalski. Photorealistic --ar 9:16 --style raw --s 500 --v 6"
@@ -50,8 +47,12 @@
             {
                 "description": "In distant labs, a breakthrough emerges, hinting at renewal. Will humanity's tenacity shine against the darkness?",
                 "visual_prompt": "Split-screen: Scientists rejoicing with newfound hope. On the other side, survivors watching a rising sun on a makeshift screen. Bright contrasts reflect rebirth. Wide-angle lens to depict hope and uncertainty. by Jakub Rozalski. Photorealistic --ar 9:16 --style raw --s 500 --v 6"
+            },
+            {
+                "description": "The first vibrant sunrise breaks the icy shroud, painting hope in the sky. Life hesitantly stirs as a new chapter begins.",
+                "visual_prompt": "Telephoto lens focusing on a spectacular sunrise over a shattered cityscape, with a human silhouette reaching towards a brighter future. by Jakub Rozalski. Photorealistic, cinematic --ar 9:16 --style raw --s 500 --v 6"
             }
-        ],
-        "title": "The Day the Sky Turned Black"
+        ]
+
     }
 }

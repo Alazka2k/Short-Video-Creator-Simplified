@@ -6,12 +6,11 @@ const SceneSchema = z.object({
 });
 
 const VideoScriptSchema = z.object({
+  prompt: z.string(),
   title: z.string(),
   description: z.string(),
   hashtags: z.string(),
-  opening_scene: SceneSchema,
   scenes: z.array(SceneSchema),
-  closing_scene: SceneSchema,
 });
 
 module.exports = { SceneSchema, VideoScriptSchema };

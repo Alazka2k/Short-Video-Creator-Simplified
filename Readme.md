@@ -1,4 +1,4 @@
-# Content Creation Automation
+# SHORT-VIDEO-CREATOR-SIMPLIFIED
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -18,45 +18,45 @@
 
 ## Introduction
 
-Content Creation Automation is a powerful Node.js application designed to streamline the process of creating multimedia content. By leveraging various AI services, this tool automates the generation of text, voice narration, images, and background music, producing ready-to-edit content for video production.
+SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to revolutionize the content creation process for short-form videos. By harnessing the capabilities of various AI services, this tool automates the generation of engaging scripts, lifelike voice narrations, compelling images, and mood-setting background music, producing a comprehensive package of content ready for video editing.
 
 ## Project Overview
 
-This project aims to automate the content creation pipeline by integrating several AI services:
-- Language Model (LLM) for text generation
-- Voice Generation (Elevenlabs)
-- Image Creation (Midjourney)
-- Music Generation (Suno)
+This project aims to streamline the content creation pipeline by integrating several cutting-edge AI services:
+- Language Model (LLM) for dynamic script generation
+- Voice Generation (Elevenlabs) for natural-sounding narration
+- Image Creation (Midjourney) for visually stunning scenes
+- Music Generation (Suno) for custom background tracks
 
-The system takes input from a CSV file, processes it through these services, and outputs a structured set of files ready for import into video editing software like Capcut.
+The system processes input from a CSV file, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
 
 ## Features
 
-- CSV input processing
-- AI-powered text generation using GPT models
-- Voice narration generation
-- AI image creation
-- Background music generation
-- Structured output for easy video editing
-- Configurable pipeline
-- Error handling and logging
+- Efficient CSV input processing for batch content creation
+- AI-powered script generation using advanced GPT models
+- Realistic voice narration synthesis
+- AI-driven image creation for each scene
+- Custom background music generation
+- Structured output optimized for video editing workflows
+- Highly configurable pipeline to suit various content needs
+- Robust error handling and comprehensive logging
 
 ## Prerequisites
 
 - Node.js (v14.0.0 or later)
 - npm (v6.0.0 or later)
-- API keys for:
-  - OpenAI (GPT)
-  - Elevenlabs
-  - Midjourney
-  - Suno
+- API keys for the following services:
+  - OpenAI (GPT) for script generation
+  - Elevenlabs for voice synthesis
+  - Midjourney for image creation
+  - Suno for music generation
 
 ## Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/content-creation-automation.git
-   cd content-creation-automation
+   git clone https://github.com/yourusername/SHORT-VIDEO-CREATOR-SIMPLIFIED.git
+   cd SHORT-VIDEO-CREATOR-SIMPLIFIED
    ```
 
 2. Install dependencies:
@@ -66,8 +66,8 @@ The system takes input from a CSV file, processes it through these services, and
 
 ## Configuration
 
-1. Copy `config/default.json` to `config/custom.json`
-2. Edit `config/custom.json` and add your API keys and other settings:
+1. Copy `config/default.example.json` to `config/default.json`
+2. Edit `config/default.json` and add your API keys and other settings:
    ```json
    {
      "llm": {
@@ -87,7 +87,7 @@ The system takes input from a CSV file, processes it through these services, and
        "apiKey": "YOUR_SUNO_API_KEY"
      },
      "input": {
-       "csvPath": "./data/input/content.csv"
+       "csvPath": "./data/input/input.csv"
      },
      "output": {
        "directory": "./data/output"
@@ -97,88 +97,108 @@ The system takes input from a CSV file, processes it through these services, and
 
 ## Usage
 
-1. Prepare your input CSV file in `data/input/content.csv`
-2. Run the application:
+1. Prepare your input CSV file in `data/input/input.csv`
+2. Set up your parameters in `data/input/parameters.json`
+3. Customize the initial prompt in `data/input/initial_prompt.txt`
+4. Run the application:
    ```
-   npm start
+   node src/index.js
    ```
-3. Check the output in the `data/output` directory
+5. Find the generated content in the `data/output` directory
 
 ## Project Structure
 
 ```
-content-creation-automation/
-│
+SHORT-VIDEO-CREATOR-SIMPLIFIED/
 ├── config/
-│   ├── default.json
-│   └── custom.json
-│
-├── src/
-│   ├── index.js
-│   ├── utils/
-│   ├── services/
-│   ├── workflows/
-│   └── output-formatter.js
-│
+│   ├── default.example.json
+│   └── default.json
 ├── data/
 │   ├── input/
+│   │   ├── initial_prompt.txt
+│   │   ├── input.csv
+│   │   └── parameters.json
 │   └── output/
-│
-├── scripts/
-└── README.md
+├── logs/
+├── src/
+│   ├── services/
+│   │   ├── llm-service.js
+│   │   └── voice-gen.js
+│   ├── utils/
+│   │   ├── config.js
+│   │   ├── input-loader.js
+│   │   ├── logger.js
+│   │   └── prompt-utils.js
+│   ├── workflows/
+│   │   └── content-pipeline.js
+│   ├── index.js
+│   └── models.js
+├── .gitignore
+├── app.log
+├── package-lock.json
+└── package.json
 ```
 
 ## Architecture
 
-The application follows a modular architecture:
+The application follows a modular architecture designed for flexibility and maintainability:
 
-1. CSV Parser: Reads input data
-2. LLM Service: Generates text content
-3. Voice Generation Service: Creates voice narration
-4. Image Generation Service: Produces images for scenes
-5. Audio Generation Service: Creates background music
-6. Output Formatter: Structures and saves the generated content
+1. Input Processing: Parses CSV input and loads configuration parameters
+2. LLM Service: Generates dynamic script content based on input and parameters
+3. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
+4. Image Generation Service: Creates visual representations for each scene
+5. Audio Generation Service: Composes custom background music to enhance the video mood
+6. Content Pipeline: Orchestrates the flow between services and manages the overall process
+7. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
-The main workflow orchestrates these services in the `content-pipeline.js` file.
+The main workflow, defined in `content-pipeline.js`, seamlessly integrates these components.
 
 ## API Integrations
 
-- LLM: Uses OpenAI's GPT models for text generation
-- Voice Generation: Integrates with Elevenlabs for voice synthesis
-- Image Creation: Utilizes Midjourney's API for image generation
-- Music Generation: Employs Suno's API for creating background music
+- LLM: Leverages OpenAI's GPT models for advanced script generation
+- Voice Generation: Integrates with Elevenlabs for high-quality voice synthesis
+- Image Creation: Utilizes Midjourney's API for AI-powered image generation
+- Music Generation: Employs Suno's API for creating custom background tracks
 
-Refer to each service's documentation in the `src/services/` directory for detailed API usage.
+Detailed documentation for each service integration can be found in the respective files within the `src/services/` directory.
 
 ## Output Format
 
-The output is structured as follows for each video:
+The generated content is structured as follows for each video:
 
 ```
 output/
 └── video1/
-    ├── images/
-    │   ├── scene1.png
-    │   ├── scene2.png
-    │   └── ...
-    ├── audio/
-    │   ├── narration.mp3
-    │   └── background_music.mp3
+    ├── scene1_image.png
+    ├── scene1_narration.mp3
+    ├── scene2_image.png
+    ├── scene2_narration.mp3
+    ├── ...
+    ├── background_music.mp3
     └── metadata.json
 ```
 
-This structure is designed for easy import into video editing software like Capcut.
+This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization.
 
 ## Troubleshooting
 
-- Check the logs in `content-creation-automation.log` for error messages
-- Ensure all API keys are correctly set in the configuration file
-- Verify that the input CSV file is correctly formatted and located in the specified path
+- Review the `app.log` file in the project root for detailed error messages and execution logs
+- Ensure all API keys are correctly set in the `config/default.json` file
+- Verify that the input CSV, parameters JSON, and initial prompt TXT files are correctly formatted and located in the `data/input/` directory
+- Check that all required npm packages are installed by running `npm install`
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions to SHORT-VIDEO-CREATOR-SIMPLIFIED are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a new branch for your feature or bug fix
+3. Commit your changes with clear, descriptive messages
+4. Push the branch to your fork
+5. Submit a pull request with a comprehensive description of your changes
+
+For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
