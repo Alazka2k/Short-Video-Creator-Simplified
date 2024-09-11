@@ -20,7 +20,7 @@ async function runLLMTest() {
 
     // Load and modify parameters
     const parameters = JSON.parse(await fs.readFile(parametersJsonPath, 'utf8'));
-    parameters.sceneAmount = "3"; // Override scene amount for test
+    parameters.sceneAmount = "2"; // Override scene amount for test
     await fs.writeFile(parametersJsonPath, JSON.stringify(parameters, null, 2));
 
     const prompts = await PromptUtils.readCsvFile(inputCsvPath);

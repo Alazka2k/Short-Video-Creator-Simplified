@@ -9,7 +9,7 @@ class ImageGenService {
       ServerId: config.imageGen.serverId,
       ChannelId: config.imageGen.channelId,
       SalaiToken: config.imageGen.salaiToken,
-      Debug: false, // Set to false to reduce logging
+      Debug: false,
       Ws: config.imageGen.ws
     });
     this.initialized = false;
@@ -18,6 +18,7 @@ class ImageGenService {
   async init() {
     try {
       logger.info('Initializing Midjourney client...');
+      // Change this line:
       await this.client.init();
       this.initialized = true;
       logger.info('Midjourney client initialized successfully');
@@ -47,9 +48,13 @@ class ImageGenService {
     } catch (error) {
       logger.error('Error generating image:', error);
       throw error;
-    } finally {
-      // Close the Midjourney connection
+    }
+  }
+
+  async close() {
+    if (this.initialized) {
       await this.client.Close();
+      this.initialized = false;
       logger.info('Midjourney connection closed');
     }
   }

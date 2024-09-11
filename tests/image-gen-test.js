@@ -33,18 +33,24 @@ async function downloadImageWithPuppeteer(url, outputPath) {
   const browser = await puppeteer.launch({ headless: false }); // Run in headful mode to see what's happening
   const page = await browser.newPage();
   
-  await page.goto(url, { waitUntil: 'networkidle2' });
+  try {
+    await page.goto(url, { waitUntil: 'networkidle2' });
 
-  // Wait for the challenge to be solved
-  await page.waitForSelector('img'); // Adjust this selector based on the actual content
+    // Wait for the challenge to be solved
+    await page.waitForSelector('img'); // Adjust this selector based on the actual content
 
-  // Extract the image content
-  const viewSource = await page.goto(url);
-  const buffer = await viewSource.buffer();
-  fsSync.writeFileSync(outputPath, buffer);
+    // Extract the image content
+    const viewSource = await page.goto(url);
+    const buffer = await viewSource.buffer();
+    fsSync.writeFileSync(outputPath, buffer);
 
-  await browser.close();
-  console.log(`Image downloaded successfully to ${outputPath}`);
+    logger.info(`Image downloaded successfully to ${outputPath}`);
+  } catch (error) {
+    logger.error('Error downloading image:', error);
+    throw error;
+  } finally {
+    await browser.close();
+  }
 }
 
 async function runImageGenTest() {
@@ -67,25 +73,22 @@ async function runImageGenTest() {
     const imageOutputDir = path.join(__dirname, 'test_output', 'image');
     await fs.mkdir(imageOutputDir, { recursive: true });
 
-    for (const [index, scene] of testData.scenes.entries()) {
-      const imageFileName = `scene_${index + 1}_image.png`;
-      const imageFilePath = path.join(imageOutputDir, imageFileName);
+    // Only test the first scene
+    const scene = testData.scenes[0];
+    const imageFileName = `scene_1_image.png`;
+    const imageFilePath = path.join(imageOutputDir, imageFileName);
 
-      logger.info(`Generating image for scene ${index + 1}`);
-      const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
-      
-      logger.info(`Original image URL: ${originalImageUrl}`);
-      
-      const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
-      logger.info(`Selected variation URL: ${selectedVariationUrl}`);
+    logger.info(`Generating image for scene 1`);
+    const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
+    
+    logger.info(`Original image URL: ${originalImageUrl}`);
+    
+    const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
+    logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      logger.info(`Downloading image from ${selectedVariationUrl}`);
-      await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-      logger.info(`Image saved to ${imageFilePath}`);
-
-      // Break after the first successful image generation for testing purposes
-      break;
-    }
+    logger.info(`Downloading image from ${selectedVariationUrl}`);
+    await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
+    logger.info(`Image saved to ${imageFilePath}`);
 
     logger.info('Image generation test completed successfully');
   } catch (error) {
@@ -93,6 +96,8 @@ async function runImageGenTest() {
     if (error.stack) {
       logger.error('Stack trace:', error.stack);
     }
+  } finally {
+    await imageGenService.close();
   }
 }
 

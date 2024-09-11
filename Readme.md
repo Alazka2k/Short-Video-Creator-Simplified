@@ -26,7 +26,7 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to rev
 This project aims to streamline the content creation pipeline by integrating several cutting-edge AI services:
 - Language Model (LLM) for dynamic script generation
 - Voice Generation (Elevenlabs) for natural-sounding narration
-- Image Creation (Midjourney) for visually stunning scenes (planned)
+- Image Creation (Midjourney) for visually stunning scenes
 - Music Generation (Suno) for custom background tracks (planned)
 
 The system processes input from a CSV file, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
@@ -35,11 +35,12 @@ The system processes input from a CSV file, leverages these AI services, and out
 
 - Efficient CSV input processing for batch content creation
 - AI-powered script generation using advanced GPT models
-- Realistic voice narration synthesis
+- Realistic voice narration synthesis using Elevenlabs
+- AI-generated images using Midjourney
 - Structured output optimized for video editing workflows
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
-- Separate test environment for LLM and voice generation services
+- Separate test environment for LLM, voice generation, and image generation services
 
 ## Prerequisites
 
@@ -48,6 +49,7 @@ The system processes input from a CSV file, leverages these AI services, and out
 - API keys for the following services:
   - OpenAI (GPT) for script generation
   - Elevenlabs for voice synthesis
+  - Midjourney for image generation
 
 ## Installation
 
@@ -76,6 +78,14 @@ The system processes input from a CSV file, leverages these AI services, and out
        "apiKey": "YOUR_ELEVENLABS_API_KEY",
        "modelId": "eleven_multilingual_v2",
        "defaultVoiceId": "YOUR_CHOSEN_VOICE_ID"
+     },
+     "imageGen": {
+       "provider": "midjourney",
+       "serverId": "YOUR_DISCORD_SERVER_ID", // The unique identifier for the Discord server (guild) where the bot will operate
+       "channelId": "YOUR_DISCORD_CHANNEL_ID", // The specific channel ID within the server where the bot will post or listen for commands.
+       "salaiToken": "YOUR_DISCORD_TOKEN", // The personal authentication token for your Discord. More information here:https://www.androidauthority.com/get-discord-token-3149920/
+       "debug": true,
+       "ws": true
      },
      "input": {
        "csvPath": "./data/input/input.csv"
@@ -114,7 +124,8 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 ├── src/
 │   ├── services/
 │   │   ├── llm-service.js
-│   │   └── voice-gen-service.js
+│   │   ├── voice-gen-service.js
+│   │   └── image-gen-service.js
 │   ├── utils/
 │   │   ├── config.js
 │   │   ├── logger.js
@@ -124,9 +135,11 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 ├── tests/
 │   ├── llm-test.js
 │   ├── voice-gen-test.js
+│   ├── image-gen-test.js
 │   └── test_output/
 │       ├── llm/
-│       └── voice/
+│       ├── voice/
+│       └── image/
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -139,13 +152,15 @@ The application follows a modular architecture designed for flexibility and main
 1. Input Processing: Parses CSV input and loads configuration parameters
 2. LLM Service: Generates dynamic script content based on input and parameters
 3. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
-4. Content Pipeline: Orchestrates the flow between services and manages the overall process
-5. Output Formatting: Structures and saves the generated content in an editor-friendly format
+4. Image Generation Service: Creates visual content based on scene descriptions
+5. Content Pipeline: Orchestrates the flow between services and manages the overall process
+6. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
 ## API Integrations
 
 - LLM: Leverages OpenAI's GPT models for advanced script generation
 - Voice Generation: Integrates with Elevenlabs for high-quality voice synthesis
+- Image Generation: Utilizes Midjourney's API for creating visual content
 
 Detailed documentation for each service integration can be found in the respective files within the `src/services/` directory.
 
@@ -158,7 +173,9 @@ output/
 └── YYYY-MM-DD/
     └── 1_video_prompt/
         ├── scene_1.mp3
+        ├── scene_1_image.png
         ├── scene_2.mp3
+        ├── scene_2_image.png
         └── ...
 ```
 
@@ -166,7 +183,7 @@ This structure is optimized for seamless import into video editing software, all
 
 ## Testing
 
-The project includes separate test files for the LLM and voice generation services:
+The project includes separate test files for the LLM, voice generation, and image generation services:
 
 - To run all tests:
   ```
@@ -180,6 +197,10 @@ The project includes separate test files for the LLM and voice generation servic
   ```
   npm run test:voice
   ```
+- To run only the image generation test:
+  ```
+  npm run test:image
+  ```
 
 Test outputs are stored in the `tests/test_output/` directory.
 
@@ -189,6 +210,7 @@ Test outputs are stored in the `tests/test_output/` directory.
 - Ensure all API keys are correctly set in the `config/default.json` file
 - Verify that the input CSV, parameters JSON, and initial prompt TXT files are correctly formatted and located in the `data/input/` directory
 - Check that all required npm packages are installed by running `npm install`
+- For Midjourney-specific issues, ensure your Discord bot has the necessary permissions and that the server and channel IDs are correct
 
 ## Contributing
 

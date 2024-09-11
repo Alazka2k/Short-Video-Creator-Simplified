@@ -11,7 +11,8 @@
     "test:discord": "node tests/discord-websocket-test.js",
     "test:image-download": "node tests/image-download-puppetteer-test.js",
     "test:voice": "node tests/voice-gen-test.js",
-    "test:image": "node tests/image-gen-test.js"
+    "test:image": "node tests/image-gen-test.js",
+    "test:integration": "node tests/integration-test.js"
   },
   "keywords": [
     "AI",
