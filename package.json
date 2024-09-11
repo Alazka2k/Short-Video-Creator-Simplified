@@ -5,19 +5,48 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node tests/llm-test.js && node tests/voice-gen-test.js",
+    "test": "node tests/llm-test.js && node tests/voice-gen-test.js && node tests/image-gen-test.js",
     "test:llm": "node tests/llm-test.js",
-    "test:voice": "node tests/voice-gen-test.js"
+    "test:midjourney": "node tests/midjourney-test.js",
+    "test:discord": "node tests/discord-websocket-test.js",
+    "test:image-download": "node tests/image-download-puppetteer-test.js",
+    "test:voice": "node tests/voice-gen-test.js",
+    "test:image": "node tests/image-gen-test.js"
   },
-  "keywords": ["AI", "video", "content creation"],
+  "keywords": [
+    "AI",
+    "video",
+    "content creation"
+  ],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
+    "@huggingface/inference": "^2.5.0",
+    "async": "^3.2.4",
     "axios": "^1.7.7",
+    "axios-cookiejar-support": "^5.0.2",
     "csv-parse": "^5.5.6",
+    "dotenv": "^16.0.3",
     "elevenlabs": "^0.15.0",
+    "isomorphic-ws": "^5.0.0",
+    "midjourney": "^4.3.17",
     "openai": "^4.58.1",
+    "puppeteer": "^23.3.0",
+    "semiver": "^1.1.0",
+    "snowyflake": "^2.0.0",
+    "tough-cookie": "^4.1.4",
     "winston": "^3.14.2",
+    "ws": "^8.13.0",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/async": "^3.2.20",
+    "@types/node": "^18.16.0",
+    "@types/ws": "^8.5.4",
+    "tsx": "^3.12.6",
+    "typescript": "^5.0.4"
   }
 }

@@ -5,11 +5,37 @@ function loadConfig() {
   const configPath = path.join(__dirname, '..', '..', 'config', 'default.json');
   const parametersPath = path.join(__dirname, '..', '..', 'data', 'input', 'parameters.json');
   
-  const rawConfig = fs.readFileSync(configPath, 'utf8');
-  const rawParameters = fs.readFileSync(parametersPath, 'utf8');
-  
-  const config = JSON.parse(rawConfig);
-  const parameters = JSON.parse(rawParameters);
+  let rawConfig, rawParameters;
+
+  try {
+    rawConfig = fs.readFileSync(configPath, 'utf8');
+  } catch (error) {
+    console.error(`Error reading config file: ${error.message}`);
+    process.exit(1);
+  }
+
+  try {
+    rawParameters = fs.readFileSync(parametersPath, 'utf8');
+  } catch (error) {
+    console.error(`Error reading parameters file: ${error.message}`);
+    process.exit(1);
+  }
+
+  let config, parameters;
+
+  try {
+    config = JSON.parse(rawConfig);
+  } catch (error) {
+    console.error(`Error parsing config JSON: ${error.message}`);
+    process.exit(1);
+  }
+
+  try {
+    parameters = JSON.parse(rawParameters);
+  } catch (error) {
+    console.error(`Error parsing parameters JSON: ${error.message}`);
+    process.exit(1);
+  }
 
   // Merge parameters into config
   config.parameters = parameters;
@@ -29,9 +55,9 @@ const requiredConfigs = [
   'llm.apiKey',
   'llm.model',
   'voiceGen.apiKey',
-  'parameters.voiceGen.modelId',
-  'parameters.voiceGen.defaultVoiceId',
-  'imageGen.apiKey',
+  'imageGen.serverId',
+  'imageGen.channelId',
+  'imageGen.salaiToken',
   'input.csvPath',
   'initialPrompt.txtPath',
   'output.directory',
@@ -43,7 +69,8 @@ requiredConfigs.forEach(configPath => {
   let current = config;
   for (const key of keys) {
     if (current[key] === undefined) {
-      throw new Error(`Missing required configuration: ${configPath}`);
+      console.error(`Missing required configuration: ${configPath}`);
+      process.exit(1);
     }
     current = current[key];
   }

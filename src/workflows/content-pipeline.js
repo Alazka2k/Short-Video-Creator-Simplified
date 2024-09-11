@@ -4,7 +4,9 @@ const { parseCSV } = require('../services/csv-parser');
 const { loadParameters, loadInitialPrompt } = require('../utils/input-loader');
 const { generateContent } = require('../services/llm-service');
 const voiceGenService = require('../services/voice-gen-service');
-// We'll add image generation import here later
+const imageGenService = require('../services/image-gen-service');
+const path = require('path');
+const fs = require('fs').promises;
 
 async function runContentPipeline() {
   try {
@@ -21,11 +23,10 @@ async function runContentPipeline() {
       const content = await generateContent(initialPrompt, parameters, row.Prompt);
       logger.info(`Generated content for prompt: ${row.Prompt}`);
       
-      // Generate voice for each scene
-      await generateVoiceForScenes(content, index, parameters.voiceGen);
-
-      // TODO: Generate images for each scene
-      // await generateImagesForScenes(content, index, parameters.imageGen);
+      const outputDir = await createOutputDirectory(row.Prompt);
+      
+      // Generate voice and image for each scene
+      await generateAssetsForScenes(content, outputDir, parameters.voiceGen);
 
       // Log the generated content for verification
       logger.info(`Generated content for ${row.Prompt}:`, JSON.stringify(content, null, 2));
@@ -37,21 +38,44 @@ async function runContentPipeline() {
   }
 }
 
-async function generateVoiceForScenes(content, videoIndex, voiceGenParams) {
-  const scenes = [content.opening_scene, ...content.scenes, content.closing_scene];
-  for (const [sceneIndex, scene] of scenes.entries()) {
-    const fileName = `video${videoIndex + 1}_scene${sceneIndex + 1}.mp3`;
+async function createOutputDirectory(prompt) {
+  const date = new Date().toISOString().split('T')[0];
+  const time = new Date().toISOString().split('T')[1].split(':').join('-').split('.')[0];
+  const promptSlug = prompt.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30);
+  const outputDir = path.join(config.output.directory, `${date}_${time}`, promptSlug);
+  await fs.mkdir(outputDir, { recursive: true });
+  return outputDir;
+}
+
+async function generateAssetsForScenes(content, outputDir, voiceGenParams) {
+  for (const [sceneIndex, scene] of content.scenes.entries()) {
+    const sceneNumber = sceneIndex + 1;
+    
+    // Generate and save audio
+    const audioFileName = `${sceneNumber}_audio.mp3`;
+    const audioFilePath = path.join(outputDir, audioFileName);
     await voiceGenService.generateVoice(
-      scene.description, 
-      fileName, 
+      scene.description,
+      audioFilePath,
       voiceGenParams.defaultVoiceId
     );
+    scene.audio_file = audioFileName;
+
+    // Generate and save image
+    const imageFileName = `${sceneNumber}_image.png`;
+    const imageFilePath = path.join(outputDir, imageFileName);
+    const imageResult = await imageGenService.generateImage(scene.visual_prompt);
+    const upscaledResult = await imageGenService.upscaleImage(imageResult, 1); // Upscale the first version
+    await downloadImage(upscaledResult.uri, imageFilePath);
+    scene.image_file = imageFileName;
   }
 }
 
-// We'll implement this function later
-// async function generateImagesForScenes(content, videoIndex, imageGenParams) {
-//   // Implementation for image generation
-// }
+async function downloadImage(url, filePath) {
+  const response = await fetch(url);
+  const buffer = await response.buffer();
+  await fs.writeFile(filePath, buffer);
+  logger.info(`Image downloaded and saved to ${filePath}`);
+}
 
 module.exports = { runContentPipeline };
