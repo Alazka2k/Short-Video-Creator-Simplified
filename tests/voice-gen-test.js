@@ -8,51 +8,63 @@ async function runVoiceGenTest() {
   try {
     logger.info('Starting voice generation test with LLM output');
 
-    const llmOutputPath = path.join(__dirname, 'test_output', 'llm', 'output_test.json');
+    const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
     const voiceOutputDir = path.join(__dirname, 'test_output', 'voice');
-
-    // Read LLM output
-    const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
 
     // Ensure voice output directory exists
     await fs.mkdir(voiceOutputDir, { recursive: true });
 
-    for (const [index, scene] of llmOutput.scenes.entries()) {
-      const fileName = `scene_${index + 1}.mp3`;
-      const outputPath = path.join(voiceOutputDir, fileName);
+    // Get all LLM output files
+    const llmOutputFiles = await fs.readdir(llmOutputDir);
 
-      try {
-        await voiceGenService.generateVoice(
-          scene.description,
-          outputPath,
-          llmOutput.prompt,
-          index + 1,
-          config.parameters.voiceGen.defaultVoiceId,
-          true // isTest flag
-        );
+    for (const llmOutputFile of llmOutputFiles) {
+      if (llmOutputFile.startsWith('output_test_') && llmOutputFile.endsWith('.json')) {
+        const llmOutputPath = path.join(llmOutputDir, llmOutputFile);
+        const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
 
-        // Check if the file exists and has content
-        const stats = await fs.stat(outputPath);
-        if (stats.size > 0) {
-          logger.info(`Voice file generated successfully: ${outputPath}`);
-          logger.info(`File size: ${stats.size} bytes`);
+        logger.info(`Processing LLM output: ${llmOutputFile}`);
 
-          // Read the first few bytes of the file to verify it's a valid MP3
-          const fileHandle = await fs.open(outputPath, 'r');
-          const buffer = Buffer.alloc(4);
-          await fileHandle.read(buffer, 0, 4, 0);
-          await fileHandle.close();
+        const promptOutputDir = path.join(voiceOutputDir, path.basename(llmOutputFile, '.json'));
+        await fs.mkdir(promptOutputDir, { recursive: true });
 
-          if (buffer.toString('hex').startsWith('fff3') || buffer.toString('hex').startsWith('fff2')) {
-            logger.info('File appears to be a valid MP3');
-          } else {
-            logger.warn('File does not start with a valid MP3 header');
+        for (const [index, scene] of llmOutput.scenes.entries()) {
+          const fileName = `scene_${index + 1}.mp3`;
+          const outputPath = path.join(promptOutputDir, fileName);
+
+          try {
+            await voiceGenService.generateVoice(
+              scene.description,
+              outputPath,
+              llmOutput.prompt,
+              index + 1,
+              config.parameters.voiceGen.defaultVoiceId,
+              true // isTest flag
+            );
+
+            // Check if the file exists and has content
+            const stats = await fs.stat(outputPath);
+            if (stats.size > 0) {
+              logger.info(`Voice file generated successfully: ${outputPath}`);
+              logger.info(`File size: ${stats.size} bytes`);
+
+              // Read the first few bytes of the file to verify it's a valid MP3
+              const fileHandle = await fs.open(outputPath, 'r');
+              const buffer = Buffer.alloc(4);
+              await fileHandle.read(buffer, 0, 4, 0);
+              await fileHandle.close();
+
+              if (buffer.toString('hex').startsWith('fff3') || buffer.toString('hex').startsWith('fff2')) {
+                logger.info('File appears to be a valid MP3');
+              } else {
+                logger.warn('File does not start with a valid MP3 header');
+              }
+            } else {
+              logger.warn(`Generated voice file is empty: ${outputPath}`);
+            }
+          } catch (error) {
+            logger.error(`Error generating voice for scene ${index + 1}:`, error);
           }
-        } else {
-          logger.warn(`Generated voice file is empty: ${outputPath}`);
         }
-      } catch (error) {
-        logger.error(`Error generating voice for scene ${index + 1}:`, error);
       }
     }
 

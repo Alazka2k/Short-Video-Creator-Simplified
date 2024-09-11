@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const { parse } = require('csv-parse/sync');
 const logger = require('./logger');
 
 class PromptUtils {
@@ -7,7 +8,7 @@ class PromptUtils {
     try {
       const rawData = await fs.readFile(filePath, 'utf8');
       const params = JSON.parse(rawData);
-      //logger.info(`Parameters loaded from ${filePath}:`, JSON.stringify(params, null, 2));
+      logger.info(`Parameters loaded from ${filePath}`);
       return params;
     } catch (error) {
       logger.error(`Error loading parameters from ${filePath}:`, error);
@@ -16,14 +17,14 @@ class PromptUtils {
   }
 
   static replacePlaceholders(prompt, params) {
-    //logger.info('Replacing placeholders in prompt');
+    logger.info('Replacing placeholders in prompt');
     for (const [key, value] of Object.entries(params)) {
       const placeholder = `{{ ${key} }}`;
       if (prompt.includes(placeholder)) {
         prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
-        //logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+        logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
       } else {
-        //logger.warn(`Placeholder ${placeholder} not found in the prompt.`);
+        logger.warn(`Placeholder ${placeholder} not found in the prompt.`);
       }
     }
     return prompt;
@@ -31,14 +32,14 @@ class PromptUtils {
 
   static async generateDynamicPrompt(promptFilePath, params) {
     try {
-      //logger.info(`Generating dynamic prompt from ${promptFilePath}`);
+      logger.info(`Generating dynamic prompt from ${promptFilePath}`);
       const initialPrompt = await fs.readFile(promptFilePath, 'utf8');
-      //logger.info('Initial prompt:', { initialPrompt });
+      logger.info('Initial prompt loaded');
       const dynamicPrompt = this.replacePlaceholders(initialPrompt, params);
-      //logger.info('Generated dynamic prompt:', { dynamicPrompt });
+      logger.info('Dynamic prompt generated');
       return dynamicPrompt;
     } catch (error) {
-      logger.error(`Error generating dynamic prompt from ${promptFilePath}:`, { error: error.toString(), stack: error.stack });
+      logger.error(`Error generating dynamic prompt from ${promptFilePath}:`, error);
       throw error;
     }
   }
@@ -46,15 +47,26 @@ class PromptUtils {
   static async readCsvFile(filePath) {
     try {
       const content = await fs.readFile(filePath, 'utf8');
-      const [header, ...lines] = content.trim().split('\n');
-      const prompts = lines.map(line => {
-        const [prompt] = line.split(',');
-        return prompt.trim();
+      const records = parse(content, {
+        columns: true,
+        skip_empty_lines: true
       });
-      //logger.info(`Read ${prompts.length} prompts from ${filePath}:`, prompts);
+      const prompts = records.map(record => record.Prompt.trim());
+      logger.info(`Read ${prompts.length} prompts from ${filePath}`);
       return prompts;
     } catch (error) {
       logger.error(`Error reading CSV file ${filePath}:`, error);
+      throw error;
+    }
+  }
+
+  static async saveOutputToJson(output, outputDir, fileName) {
+    try {
+      const outputPath = path.join(outputDir, fileName);
+      await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
+      logger.info(`Output saved to ${outputPath}`);
+    } catch (error) {
+      logger.error(`Error saving output to ${fileName}:`, error);
       throw error;
     }
   }

@@ -42,6 +42,66 @@ async function downloadImageWithPuppeteer(url, outputPath) {
   }
 }
 
+async function processPrompt(prompt, outputDir, initialPromptPath, parametersJsonPath) {
+  logger.info(`Processing prompt: ${prompt}`);
+
+  const content = await generateContent(initialPromptPath, parametersJsonPath, prompt);
+  logger.info('Generated content structure:', JSON.stringify(content, null, 2));
+
+  const llmOutputPath = path.join(outputDir, 'llm_output.json');
+  await fs.writeFile(llmOutputPath, JSON.stringify(content, null, 2));
+  logger.info(`LLM output saved to ${llmOutputPath}`);
+
+  // Process only the first scene
+  if (content.scenes.length > 0) {
+    const scene = content.scenes[0];
+    const sceneDir = path.join(outputDir, 'scene_1');
+    await fs.mkdir(sceneDir, { recursive: true });
+
+    // Generate voice
+    const voiceFileName = 'voice.mp3';
+    const voiceFilePath = path.join(sceneDir, voiceFileName);
+
+    await voiceGenService.generateVoice(
+      scene.description,
+      voiceFilePath,
+      content.prompt,
+      1,
+      config.parameters.voiceGen.defaultVoiceId
+    );
+
+    logger.info(`Voice generated for scene 1: ${voiceFilePath}`);
+
+    // Generate image
+    const imageFileName = 'image.png';
+    const imageFilePath = path.join(sceneDir, imageFileName);
+
+    const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
+    logger.info(`Original image URL for scene 1: ${originalImageUrl}`);
+
+    const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
+    logger.info(`Selected variation URL for scene 1: ${selectedVariationUrl}`);
+
+    await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
+    logger.info(`Image downloaded for scene 1: ${imageFilePath}`);
+
+    // Save scene metadata
+    const sceneMetadata = {
+      description: scene.description,
+      visual_prompt: scene.visual_prompt,
+      voice_file: voiceFileName,
+      image_file: imageFileName,
+      original_image_url: originalImageUrl,
+      selected_variation_url: selectedVariationUrl
+    };
+    const metadataPath = path.join(sceneDir, 'metadata.json');
+    await fs.writeFile(metadataPath, JSON.stringify(sceneMetadata, null, 2));
+    logger.info(`Metadata saved for scene 1: ${metadataPath}`);
+  } else {
+    logger.warn('No scenes generated for this prompt');
+  }
+}
+
 async function runIntegrationTest() {
   try {
     logger.info('Starting integration test');
@@ -49,78 +109,20 @@ async function runIntegrationTest() {
     const inputCsvPath = path.join(__dirname, '..', 'data', 'input', 'input.csv');
     const parametersJsonPath = path.join(__dirname, '..', 'data', 'input', 'parameters.json');
     const initialPromptPath = path.join(__dirname, '..', 'data', 'input', 'initial_prompt.txt');
-    const outputDir = path.join(__dirname, 'test_output', 'integration');
+    const baseOutputDir = path.join(__dirname, 'test_output', 'integration');
 
-    await fs.mkdir(outputDir, { recursive: true });
+    await fs.mkdir(baseOutputDir, { recursive: true });
 
     const prompts = await PromptUtils.readCsvFile(inputCsvPath);
     const parameters = await PromptUtils.loadParameters(parametersJsonPath);
 
-    // Overwrite scene amount to 2 for the integration test
-    parameters.sceneAmount = "2";
-    await fs.writeFile(parametersJsonPath, JSON.stringify(parameters, null, 2));
-
     await imageGenService.init();
 
-    const testPrompt = prompts[0];
-    logger.info('Testing with prompt:', testPrompt);
+    for (const [index, prompt] of prompts.entries()) {
+      const promptOutputDir = path.join(baseOutputDir, `prompt_${index + 1}`);
+      await fs.mkdir(promptOutputDir, { recursive: true });
 
-    // Step 1: Generate content using LLM
-    const content = await generateContent(initialPromptPath, parametersJsonPath, testPrompt);
-    logger.info('Generated content structure:', JSON.stringify(content, null, 2));
-
-    const llmOutputPath = path.join(outputDir, 'llm_output.json');
-    await fs.writeFile(llmOutputPath, JSON.stringify(content, null, 2));
-    logger.info(`LLM output saved to ${llmOutputPath}`);
-
-    // Log the number of scenes
-    const sceneAmount = content.scenes.length;
-    logger.info(`Number of scenes generated: ${sceneAmount}`);
-
-    // Step 2: Generate voice and image for each scene
-    for (const [index, scene] of content.scenes.entries()) {
-      const sceneDir = path.join(outputDir, `scene_${index + 1}`);
-      await fs.mkdir(sceneDir, { recursive: true });
-
-      // Generate voice
-      const voiceFileName = `voice.mp3`;
-      const voiceFilePath = path.join(sceneDir, voiceFileName);
-
-      await voiceGenService.generateVoice(
-        scene.description,
-        voiceFilePath,
-        content.prompt,
-        index + 1,
-        config.parameters.voiceGen.defaultVoiceId
-      );
-
-      logger.info(`Voice generated for scene ${index + 1}: ${voiceFilePath}`);
-
-      // Generate image
-      const imageFileName = `image.png`;
-      const imageFilePath = path.join(sceneDir, imageFileName);
-
-      const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
-      logger.info(`Original image URL for scene ${index + 1}: ${originalImageUrl}`);
-
-      const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
-      logger.info(`Selected variation URL for scene ${index + 1}: ${selectedVariationUrl}`);
-
-      await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-      logger.info(`Image downloaded for scene ${index + 1}: ${imageFilePath}`);
-
-      // Save scene metadata
-      const sceneMetadata = {
-        description: scene.description,
-        visual_prompt: scene.visual_prompt,
-        voice_file: voiceFileName,
-        image_file: imageFileName,
-        original_image_url: originalImageUrl,
-        selected_variation_url: selectedVariationUrl
-      };
-      const metadataPath = path.join(sceneDir, 'metadata.json');
-      await fs.writeFile(metadataPath, JSON.stringify(sceneMetadata, null, 2));
-      logger.info(`Metadata saved for scene ${index + 1}: ${metadataPath}`);
+      await processPrompt(prompt, promptOutputDir, initialPromptPath, parametersJsonPath);
     }
 
     logger.info('Integration test completed successfully');

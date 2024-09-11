@@ -54,51 +54,64 @@ async function downloadImageWithPuppeteer(url, outputPath) {
 }
 
 async function runImageGenTest() {
-  try {
-    logger.info('Starting image generation test');
-    logger.info('Image Gen Config:', JSON.stringify(config.imageGen, null, 2));
-
-    const isConnected = await checkInternetConnectivity();
-    if (!isConnected) {
-      logger.error('No internet connectivity. Please check your network connection.');
-      return;
+    try {
+      logger.info('Starting image generation test');
+      logger.info('Image Gen Config:', JSON.stringify(config.imageGen, null, 2));
+  
+      const isConnected = await checkInternetConnectivity();
+      if (!isConnected) {
+        logger.error('No internet connectivity. Please check your network connection.');
+        return;
+      }
+  
+      logger.info('Internet connectivity confirmed. Initializing Midjourney client...');
+      await imageGenService.init();
+  
+      const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
+      const imageOutputDir = path.join(__dirname, 'test_output', 'image');
+      await fs.mkdir(imageOutputDir, { recursive: true });
+  
+      // Get all LLM output files
+      const llmOutputFiles = await fs.readdir(llmOutputDir);
+  
+      for (const llmOutputFile of llmOutputFiles) {
+        if (llmOutputFile.startsWith('output_test_') && llmOutputFile.endsWith('.json')) {
+          const llmOutputPath = path.join(llmOutputDir, llmOutputFile);
+          const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
+  
+          logger.info(`Processing LLM output: ${llmOutputFile}`);
+  
+          const promptOutputDir = path.join(imageOutputDir, path.basename(llmOutputFile, '.json'));
+          await fs.mkdir(promptOutputDir, { recursive: true });
+  
+          for (const [index, scene] of llmOutput.scenes.entries()) {
+            const imageFileName = `scene_${index + 1}_image.png`;
+            const imageFilePath = path.join(promptOutputDir, imageFileName);
+  
+            logger.info(`Generating image for scene ${index + 1}`);
+            const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
+            
+            logger.info(`Original image URL: ${originalImageUrl}`);
+            
+            const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
+            logger.info(`Selected variation URL: ${selectedVariationUrl}`);
+  
+            logger.info(`Downloading image from ${selectedVariationUrl}`);
+            await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
+            logger.info(`Image saved to ${imageFilePath}`);
+          }
+        }
+      }
+  
+      logger.info('Image generation test completed successfully');
+    } catch (error) {
+      logger.error('Error in image generation test:', error.message);
+      if (error.stack) {
+        logger.error('Stack trace:', error.stack);
+      }
+    } finally {
+      await imageGenService.close();
     }
-
-    logger.info('Internet connectivity confirmed. Initializing Midjourney client...');
-    await imageGenService.init();
-
-    const testOutputPath = path.join(__dirname, 'test_output', 'llm', 'output_test.json');
-    const testData = JSON.parse(await fs.readFile(testOutputPath, 'utf8'));
-
-    const imageOutputDir = path.join(__dirname, 'test_output', 'image');
-    await fs.mkdir(imageOutputDir, { recursive: true });
-
-    // Only test the first scene
-    const scene = testData.scenes[0];
-    const imageFileName = `scene_1_image.png`;
-    const imageFilePath = path.join(imageOutputDir, imageFileName);
-
-    logger.info(`Generating image for scene 1`);
-    const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
-    
-    logger.info(`Original image URL: ${originalImageUrl}`);
-    
-    const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
-    logger.info(`Selected variation URL: ${selectedVariationUrl}`);
-
-    logger.info(`Downloading image from ${selectedVariationUrl}`);
-    await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-    logger.info(`Image saved to ${imageFilePath}`);
-
-    logger.info('Image generation test completed successfully');
-  } catch (error) {
-    logger.error('Error in image generation test:', error.message);
-    if (error.stack) {
-      logger.error('Stack trace:', error.stack);
-    }
-  } finally {
-    await imageGenService.close();
   }
-}
-
+  
 runImageGenTest();

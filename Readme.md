@@ -19,7 +19,7 @@
 
 ## Introduction
 
-SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to revolutionize the content creation process for short-form videos. By harnessing the capabilities of various AI services, this tool automates the generation of engaging scripts, lifelike voice narrations, compelling images, and mood-setting background music, producing a comprehensive package of content ready for video editing.
+SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to revolutionize the content creation process for short-form videos. By harnessing the capabilities of various AI services, this tool automates the generation of engaging scripts, lifelike voice narrations, and compelling images, producing a comprehensive package of content ready for video editing.
 
 ## Project Overview
 
@@ -27,13 +27,12 @@ This project aims to streamline the content creation pipeline by integrating sev
 - Language Model (LLM) for dynamic script generation
 - Voice Generation (Elevenlabs) for natural-sounding narration
 - Image Creation (Midjourney) for visually stunning scenes
-- Music Generation (Suno) for custom background tracks (planned)
 
-The system processes input from a CSV file, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
+The system processes input from a CSV file containing multiple prompts, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
 
 ## Features
 
-- Efficient CSV input processing for batch content creation
+- Efficient CSV input processing for batch content creation with multiple prompts
 - AI-powered script generation using advanced GPT models
 - Realistic voice narration synthesis using Elevenlabs
 - AI-generated images using Midjourney
@@ -41,6 +40,7 @@ The system processes input from a CSV file, leverages these AI services, and out
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
 - Separate test environment for LLM, voice generation, and image generation services
+- Integration test for end-to-end workflow verification
 
 ## Prerequisites
 
@@ -81,9 +81,9 @@ The system processes input from a CSV file, leverages these AI services, and out
      },
      "imageGen": {
        "provider": "midjourney",
-       "serverId": "YOUR_DISCORD_SERVER_ID", // The unique identifier for the Discord server (guild) where the bot will operate
-       "channelId": "YOUR_DISCORD_CHANNEL_ID", // The specific channel ID within the server where the bot will post or listen for commands.
-       "salaiToken": "YOUR_DISCORD_TOKEN", // The personal authentication token for your Discord. More information here:https://www.androidauthority.com/get-discord-token-3149920/
+       "serverId": "YOUR_DISCORD_SERVER_ID",
+       "channelId": "YOUR_DISCORD_CHANNEL_ID",
+       "salaiToken": "YOUR_DISCORD_TOKEN",
        "debug": true,
        "ws": true
      },
@@ -98,7 +98,7 @@ The system processes input from a CSV file, leverages these AI services, and out
 
 ## Usage
 
-1. Prepare your input CSV file in `data/input/input.csv`
+1. Prepare your input CSV file in `data/input/input.csv` with multiple prompts, one per line
 2. Set up your parameters in `data/input/parameters.json`
 3. Customize the initial prompt in `data/input/initial_prompt.txt`
 4. Run the application:
@@ -136,10 +136,12 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   ├── llm-test.js
 │   ├── voice-gen-test.js
 │   ├── image-gen-test.js
+│   ├── integration-test.js
 │   └── test_output/
 │       ├── llm/
 │       ├── voice/
-│       └── image/
+│       ├── image/
+│       └── integration/
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -149,7 +151,7 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 
 The application follows a modular architecture designed for flexibility and maintainability:
 
-1. Input Processing: Parses CSV input and loads configuration parameters
+1. Input Processing: Parses CSV input with multiple prompts and loads configuration parameters
 2. LLM Service: Generates dynamic script content based on input and parameters
 3. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
 4. Image Generation Service: Creates visual content based on scene descriptions
@@ -170,20 +172,27 @@ The generated content is structured as follows for each video:
 
 ```
 output/
-└── YYYY-MM-DD/
-    └── 1_video_prompt/
-        ├── scene_1.mp3
-        ├── scene_1_image.png
-        ├── scene_2.mp3
-        ├── scene_2_image.png
-        └── ...
+└── YYYY-MM-DD_HH-MM-SS/
+    ├── prompt_1/
+    │   ├── llm_output.json
+    │   └── scene_1/
+    │       ├── voice.mp3
+    │       ├── image.png
+    │       └── metadata.json
+    ├── prompt_2/
+    │   ├── llm_output.json
+    │   └── scene_1/
+    │       ├── voice.mp3
+    │       ├── image.png
+    │       └── metadata.json
+    └── ...
 ```
 
 This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization.
 
 ## Testing
 
-The project includes separate test files for the LLM, voice generation, and image generation services:
+The project includes separate test files for the LLM, voice generation, image generation services, and an integration test:
 
 - To run all tests:
   ```
@@ -201,8 +210,12 @@ The project includes separate test files for the LLM, voice generation, and imag
   ```
   npm run test:image
   ```
+- To run the integration test:
+  ```
+  npm run test:integration
+  ```
 
-Test outputs are stored in the `tests/test_output/` directory.
+Test outputs are stored in the `tests/test_output/` directory. The integration test processes one scene for each prompt in the input CSV, exercising all components of the pipeline.
 
 ## Troubleshooting
 
@@ -211,6 +224,7 @@ Test outputs are stored in the `tests/test_output/` directory.
 - Verify that the input CSV, parameters JSON, and initial prompt TXT files are correctly formatted and located in the `data/input/` directory
 - Check that all required npm packages are installed by running `npm install`
 - For Midjourney-specific issues, ensure your Discord bot has the necessary permissions and that the server and channel IDs are correct
+- If the integration test fails, check individual component tests to isolate the issue
 
 ## Contributing
 

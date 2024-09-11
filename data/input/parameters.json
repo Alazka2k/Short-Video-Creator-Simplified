@@ -16,7 +16,7 @@
     "num_inference_steps": 50,
     "guidance_scale": 7.5
   },
-  "sceneAmount": "4",
+  "sceneAmount": "2",
   "pictureDescription": "An image which describes the corresponding scene. Add information about the scene and details about the time period",
   "shotDetails": "Describe also the lighting effects, the time of the day, and the camera angles",
   "imageStyle": "by Jakub Rozalski. Photorealistic, cinematic",
