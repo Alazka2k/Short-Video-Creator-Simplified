@@ -191,6 +191,7 @@ output/
     ├── prompt_1/
     │   ├── llm_output.json
     │   ├── background_music.mp3
+    │   ├── project_metadata.json
     │   └── scene_1/
     │       ├── voice.mp3
     │       ├── image.png
@@ -198,6 +199,7 @@ output/
     ├── prompt_2/
     │   ├── llm_output.json
     │   ├── background_music.mp3
+    │   ├── project_metadata.json
     │   └── scene_1/
     │       ├── voice.mp3
     │       ├── image.png
@@ -236,7 +238,7 @@ The project includes separate test files for the LLM, voice generation, image ge
   npm run test:integration
   ```
 
-Test outputs are stored in the `tests/test_output/` directory. The integration test processes one scene for each prompt in the input CSV, exercising all components of the pipeline.
+Test outputs are stored in the `tests/test_output/` directory. The integration test processes all scenes for each prompt in the input CSV, exercising all components of the pipeline.
 
 ## Troubleshooting
 

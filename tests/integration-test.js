@@ -5,9 +5,11 @@ const puppeteer = require('puppeteer');
 const { generateContent } = require('../src/services/llm-service');
 const voiceGenService = require('../src/services/voice-gen-service');
 const imageGenService = require('../src/services/image-gen-service');
+const musicGenService = require('../src/services/music-gen-service');
 const logger = require('../src/utils/logger');
 const PromptUtils = require('../src/utils/prompt-utils');
 const config = require('../src/utils/config');
+const { getTotalAudioDuration } = require('../src/utils/audio-utils');
 
 function getRandomVariationUrl(originalUrl) {
   const urlParts = originalUrl.split('/');
@@ -17,7 +19,7 @@ function getRandomVariationUrl(originalUrl) {
     throw new Error('Unable to extract identifier from URL');
   }
   const identifier = match[1];
-  const randomVariation = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+  const randomVariation = Math.floor(Math.random() * 4);
   return `https://cdn.midjourney.com/${identifier}/0_${randomVariation}.png`;
 }
 
@@ -52,10 +54,9 @@ async function processPrompt(prompt, outputDir, initialPromptPath, parametersJso
   await fs.writeFile(llmOutputPath, JSON.stringify(content, null, 2));
   logger.info(`LLM output saved to ${llmOutputPath}`);
 
-  // Process only the first scene
-  if (content.scenes.length > 0) {
-    const scene = content.scenes[0];
-    const sceneDir = path.join(outputDir, 'scene_1');
+  // Process all scenes
+  for (const [index, scene] of content.scenes.entries()) {
+    const sceneDir = path.join(outputDir, `scene_${index + 1}`);
     await fs.mkdir(sceneDir, { recursive: true });
 
     // Generate voice
@@ -66,24 +67,24 @@ async function processPrompt(prompt, outputDir, initialPromptPath, parametersJso
       scene.description,
       voiceFilePath,
       content.prompt,
-      1,
+      index + 1,
       config.parameters.voiceGen.defaultVoiceId
     );
 
-    logger.info(`Voice generated for scene 1: ${voiceFilePath}`);
+    logger.info(`Voice generated for scene ${index + 1}: ${voiceFilePath}`);
 
     // Generate image
     const imageFileName = 'image.png';
     const imageFilePath = path.join(sceneDir, imageFileName);
 
     const originalImageUrl = await imageGenService.generateImage(scene.visual_prompt);
-    logger.info(`Original image URL for scene 1: ${originalImageUrl}`);
+    logger.info(`Original image URL for scene ${index + 1}: ${originalImageUrl}`);
 
     const selectedVariationUrl = getRandomVariationUrl(originalImageUrl);
-    logger.info(`Selected variation URL for scene 1: ${selectedVariationUrl}`);
+    logger.info(`Selected variation URL for scene ${index + 1}: ${selectedVariationUrl}`);
 
     await downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-    logger.info(`Image downloaded for scene 1: ${imageFilePath}`);
+    logger.info(`Image downloaded for scene ${index + 1}: ${imageFilePath}`);
 
     // Save scene metadata
     const sceneMetadata = {
@@ -96,10 +97,45 @@ async function processPrompt(prompt, outputDir, initialPromptPath, parametersJso
     };
     const metadataPath = path.join(sceneDir, 'metadata.json');
     await fs.writeFile(metadataPath, JSON.stringify(sceneMetadata, null, 2));
-    logger.info(`Metadata saved for scene 1: ${metadataPath}`);
-  } else {
-    logger.warn('No scenes generated for this prompt');
+    logger.info(`Metadata saved for scene ${index + 1}: ${metadataPath}`);
   }
+
+  // Generate background music
+  const musicFileName = 'background_music.mp3';
+  const musicFilePath = path.join(outputDir, musicFileName);
+
+  const musicGenerationResult = await musicGenService.generateMusic(content.music, {
+    makeInstrumental: config.parameters.musicGen.make_instrumental
+  });
+
+  logger.info('Music generation task initiated:', JSON.stringify(musicGenerationResult, null, 2));
+
+  const musicInfo = await musicGenService.waitForMusicGeneration(musicGenerationResult.id);
+  await musicGenService.downloadMusic(musicInfo.audio_url, musicFilePath);
+  logger.info(`Background music generated and saved to ${musicFilePath}`);
+
+  // Calculate total duration of voice audio files
+  const totalVoiceDuration = await getTotalAudioDuration(outputDir);
+  logger.info(`Total duration of voice audio: ${totalVoiceDuration} seconds`);
+
+  // Save project metadata
+  const projectMetadata = {
+    prompt: content.prompt,
+    title: content.title,
+    description: content.description,
+    hashtags: content.hashtags,
+    total_voice_duration: totalVoiceDuration,
+    background_music_file: musicFileName,
+    scenes: content.scenes.map((scene, index) => ({
+      number: index + 1,
+      description: scene.description,
+      voice_file: `scene_${index + 1}/voice.mp3`,
+      image_file: `scene_${index + 1}/image.png`
+    }))
+  };
+  const projectMetadataPath = path.join(outputDir, 'project_metadata.json');
+  await fs.writeFile(projectMetadataPath, JSON.stringify(projectMetadata, null, 2));
+  logger.info(`Project metadata saved to ${projectMetadataPath}`);
 }
 
 async function runIntegrationTest() {
