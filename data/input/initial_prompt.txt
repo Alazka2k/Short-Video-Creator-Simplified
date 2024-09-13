@@ -17,6 +17,7 @@
 - Don't use any input words in the script.
 - Add a visual prompt for each scene and a title picture for an AI image creation tool (e.g., for Dall-E).
 - Describe the images in detail, including the style to be used.
+- Add a music description to the video, which you think would fit very well as underlying music.
 
 # Scenario and Structure:
 - {{ generalDescription }}
@@ -99,3 +100,6 @@ Scene 9 Visual Prompt: Close-up of determined scientists working on a complex ma
 Scene 10 Visual Prompt: Montage of three images: a withered tree in a barren field, a beached whale gasping on a littered shore, and a stagnant, algae-covered lake. Muted colors, emphasizing the dying world. Each shot uses a different lens to capture the diverse impacts. {{ imageStyle }} {{ imageDetails }}
 Scene 11 Visual Prompt: Split screen: on one side, the scientists' machine whirring to life with a bright, hopeful glow; on the other, crowds watching giant public screens with bated breath. Contrasting dark and light, symbolizing the balance between hope and despair. Wide-angle to capture both scenes. {{ imageStyle }} {{ imageDetails }}
 Scene 12 Visual Prompt: Sunrise over a misty, damaged cityscape. A lone figure stands on a rooftop, taking a deep breath. The sky shows hints of clearing, but the devastation below is clear. Telephoto lens, focusing on the human element against the vast backdrop. {{ imageStyle }} {{ imageDetails }}
+Title: Silent Battlefield
+Lyrics: A melancholic metal track reflecting on war's emotional toll, blending heavy riffs with deep lyrical sentiment.
+Music Style: pop metal, male, melancholic

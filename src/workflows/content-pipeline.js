@@ -5,6 +5,8 @@ const { loadParameters, loadInitialPrompt } = require('../utils/input-loader');
 const { generateContent } = require('../services/llm-service');
 const voiceGenService = require('../services/voice-gen-service');
 const imageGenService = require('../services/image-gen-service');
+const musicGenService = require('../services/music-gen-service');
+const { getTotalAudioDuration } = require('../utils/audio-utils');
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -27,6 +29,13 @@ async function runContentPipeline() {
       
       // Generate voice and image for each scene
       await generateAssetsForScenes(content, outputDir, parameters.voiceGen);
+
+      // Calculate total duration of voice audio files
+      const totalVoiceDuration = await getTotalAudioDuration(outputDir);
+      logger.info(`Total duration of voice audio: ${totalVoiceDuration} seconds`);
+
+      // Generate background music for the entire video
+      await generateBackgroundMusic(content, outputDir, totalVoiceDuration);
 
       // Log the generated content for verification
       logger.info(`Generated content for ${row.Prompt}:`, JSON.stringify(content, null, 2));
@@ -76,6 +85,15 @@ async function downloadImage(url, filePath) {
   const buffer = await response.buffer();
   await fs.writeFile(filePath, buffer);
   logger.info(`Image downloaded and saved to ${filePath}`);
+}
+
+async function generateBackgroundMusic(content, outputDir) {
+  const musicPrompt = `Create background music for a video about: ${content.title}. Style: ${content.description}`;
+  const audioUrl = await audioGenService.generateMusic(musicPrompt);
+  const musicFileName = 'background_music.mp3';
+  const musicFilePath = path.join(outputDir, musicFileName);
+  await audioGenService.downloadMusic(audioUrl, musicFilePath);
+  logger.info(`Background music generated and saved to ${musicFilePath}`);
 }
 
 module.exports = { runContentPipeline };

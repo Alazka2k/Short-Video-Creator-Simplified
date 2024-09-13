@@ -12,6 +12,7 @@
     "test:image-download": "node tests/image-download-puppetteer-test.js",
     "test:voice": "node tests/voice-gen-test.js",
     "test:image": "node tests/image-gen-test.js",
+    "test:music": "node tests/music-gen-test.js",
     "test:integration": "node tests/integration-test.js"
   },
   "keywords": [
@@ -32,6 +33,7 @@
     "csv-parse": "^5.5.6",
     "dotenv": "^16.0.3",
     "elevenlabs": "^0.15.0",
+    "ffprobe-static": "^3.1.0",
     "isomorphic-ws": "^5.0.0",
     "midjourney": "^4.3.17",
     "openai": "^4.58.1",

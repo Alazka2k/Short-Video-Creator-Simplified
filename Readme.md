@@ -19,7 +19,7 @@
 
 ## Introduction
 
-SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to revolutionize the content creation process for short-form videos. By harnessing the capabilities of various AI services, this tool automates the generation of engaging scripts, lifelike voice narrations, and compelling images, producing a comprehensive package of content ready for video editing.
+SHORT-VIDEO-CREATOR-SIMPLIFIED is a powerful Node.js application designed to revolutionize the content creation process for short-form videos. By harnessing the capabilities of various AI services, this tool automates the generation of engaging scripts, lifelike voice narrations, compelling images, and background music, producing a comprehensive package of content ready for video editing.
 
 ## Project Overview
 
@@ -27,6 +27,7 @@ This project aims to streamline the content creation pipeline by integrating sev
 - Language Model (LLM) for dynamic script generation
 - Voice Generation (Elevenlabs) for natural-sounding narration
 - Image Creation (Midjourney) for visually stunning scenes
+- Music Generation (Suno) for custom background tracks
 
 The system processes input from a CSV file containing multiple prompts, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
 
@@ -36,20 +37,22 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - AI-powered script generation using advanced GPT models
 - Realistic voice narration synthesis using Elevenlabs
 - AI-generated images using Midjourney
+- Custom background music generation using Suno AI
 - Structured output optimized for video editing workflows
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
-- Separate test environment for LLM, voice generation, and image generation services
+- Separate test environment for LLM, voice generation, image generation, and music generation services
 - Integration test for end-to-end workflow verification
 
 ## Prerequisites
 
 - Node.js (v14.0.0 or later)
 - npm (v6.0.0 or later)
-- API keys for the following services:
+- API keys and authentication for the following services:
   - OpenAI (GPT) for script generation
   - Elevenlabs for voice synthesis
   - Midjourney for image generation
+  - Suno for music generation
 
 ## Installation
 
@@ -86,6 +89,11 @@ The system processes input from a CSV file containing multiple prompts, leverage
        "salaiToken": "YOUR_DISCORD_TOKEN",
        "debug": true,
        "ws": true
+     },
+     "audioGen": {
+       "provider": "suno",
+       "sunoCookie": "YOUR_SUNO_COOKIE_HERE",
+       "sessionId": "YOUR_SUNO_SESSION_ID_HERE"
      },
      "input": {
        "csvPath": "./data/input/input.csv"
@@ -125,22 +133,27 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   ├── services/
 │   │   ├── llm-service.js
 │   │   ├── voice-gen-service.js
-│   │   └── image-gen-service.js
+│   │   ├── image-gen-service.js
+│   │   ├── music-gen-service.js
+│   │   └── suno_auth.js
 │   ├── utils/
 │   │   ├── config.js
 │   │   ├── logger.js
-│   │   └── prompt-utils.js
+│   │   ├── prompt-utils.js
+│   │   └── audio-utils.js
 │   ├── models.js
 │   └── index.js
 ├── tests/
 │   ├── llm-test.js
 │   ├── voice-gen-test.js
 │   ├── image-gen-test.js
+│   ├── music-gen-test.js
 │   ├── integration-test.js
 │   └── test_output/
 │       ├── llm/
 │       ├── voice/
 │       ├── image/
+│       ├── music/
 │       └── integration/
 ├── .gitignore
 ├── package.json
@@ -155,14 +168,16 @@ The application follows a modular architecture designed for flexibility and main
 2. LLM Service: Generates dynamic script content based on input and parameters
 3. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
 4. Image Generation Service: Creates visual content based on scene descriptions
-5. Content Pipeline: Orchestrates the flow between services and manages the overall process
-6. Output Formatting: Structures and saves the generated content in an editor-friendly format
+5. Music Generation Service: Produces custom background music tracks
+6. Content Pipeline: Orchestrates the flow between services and manages the overall process
+7. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
 ## API Integrations
 
 - LLM: Leverages OpenAI's GPT models for advanced script generation
 - Voice Generation: Integrates with Elevenlabs for high-quality voice synthesis
 - Image Generation: Utilizes Midjourney's API for creating visual content
+- Music Generation: Uses Suno AI for custom background music creation
 
 Detailed documentation for each service integration can be found in the respective files within the `src/services/` directory.
 
@@ -175,12 +190,14 @@ output/
 └── YYYY-MM-DD_HH-MM-SS/
     ├── prompt_1/
     │   ├── llm_output.json
+    │   ├── background_music.mp3
     │   └── scene_1/
     │       ├── voice.mp3
     │       ├── image.png
     │       └── metadata.json
     ├── prompt_2/
     │   ├── llm_output.json
+    │   ├── background_music.mp3
     │   └── scene_1/
     │       ├── voice.mp3
     │       ├── image.png
@@ -192,7 +209,7 @@ This structure is optimized for seamless import into video editing software, all
 
 ## Testing
 
-The project includes separate test files for the LLM, voice generation, image generation services, and an integration test:
+The project includes separate test files for the LLM, voice generation, image generation, music generation services, and an integration test:
 
 - To run all tests:
   ```
@@ -210,6 +227,10 @@ The project includes separate test files for the LLM, voice generation, image ge
   ```
   npm run test:image
   ```
+- To run only the music generation test:
+  ```
+  npm run test:music
+  ```
 - To run the integration test:
   ```
   npm run test:integration
@@ -220,10 +241,11 @@ Test outputs are stored in the `tests/test_output/` directory. The integration t
 ## Troubleshooting
 
 - Review the `logs/app.log` file for detailed error messages and execution logs
-- Ensure all API keys are correctly set in the `config/default.json` file
+- Ensure all API keys and authentication details are correctly set in the `config/default.json` file
 - Verify that the input CSV, parameters JSON, and initial prompt TXT files are correctly formatted and located in the `data/input/` directory
 - Check that all required npm packages are installed by running `npm install`
 - For Midjourney-specific issues, ensure your Discord bot has the necessary permissions and that the server and channel IDs are correct
+- For Suno-specific issues, ensure your cookie and session ID are up-to-date and valid
 - If the integration test fails, check individual component tests to isolate the issue
 
 ## Contributing
