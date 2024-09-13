@@ -104,8 +104,9 @@ async function processPrompt(prompt, outputDir, initialPromptPath, parametersJso
   const musicFileName = 'background_music.mp3';
   const musicFilePath = path.join(outputDir, musicFileName);
 
+  const makeInstrumental = config.parameters.musicGen.make_instrumental === "true";
   const musicGenerationResult = await musicGenService.generateMusic(content.music, {
-    makeInstrumental: config.parameters.musicGen.make_instrumental
+    makeInstrumental: makeInstrumental
   });
 
   logger.info('Music generation task initiated:', JSON.stringify(musicGenerationResult, null, 2));

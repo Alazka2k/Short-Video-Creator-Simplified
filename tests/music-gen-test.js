@@ -88,8 +88,9 @@ async function runMusicGenTest() {
       
       let generationResult;
       try {
+        const makeInstrumental = config.parameters.musicGen.make_instrumental === "true";
         generationResult = await musicGenService.generateMusic(musicData, {
-          makeInstrumental: config.parameters.musicGen.make_instrumental,
+          makeInstrumental: makeInstrumental,
           waitAudio: false
         });
         logger.info('Music generation task initiated:', JSON.stringify(generationResult, null, 2));

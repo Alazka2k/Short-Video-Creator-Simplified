@@ -89,13 +89,15 @@ async function downloadImage(url, filePath) {
 
 async function generateBackgroundMusic(content, outputDir) {
   const musicData = content.music; // Using the music object from LLM output
-  const taskId = await musicGenService.generateMusic(musicData, {
-    makeInstrumental: config.parameters.musicGen.make_instrumental
+  const makeInstrumental = config.parameters.musicGen.make_instrumental === "true";
+  
+  const generationResult = await musicGenService.generateMusic(musicData, {
+    makeInstrumental: makeInstrumental
   });
   
-  logger.info(`Music generation task initiated with ID: ${taskId}`);
+  logger.info(`Music generation task initiated with ID: ${generationResult.id}`);
   
-  const musicInfo = await musicGenService.waitForMusicGeneration(taskId);
+  const musicInfo = await musicGenService.waitForMusicGeneration(generationResult.id);
   
   const musicFileName = 'background_music.mp3';
   const musicFilePath = path.join(outputDir, musicFileName);

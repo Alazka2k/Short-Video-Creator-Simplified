@@ -20,27 +20,27 @@
 - Add a music description to the video, which you think would fit very well as underlying music.
 
 # Scenario and Structure:
-- {{ generalDescription }}
-- {{ lengthDescription }}
-- Number of scenes: {{ sceneAmount }}
+- {{ llmGen.generalDescription }}
+- {{ llmGen.lengthDescription }}
+- Number of scenes: {{ llmGen.sceneAmount }}
 
 # Script Tone and Style:
-- {{ scriptTone }}
-- {{ vocabulary }}
-- {{ pacingStructure }}
+- {{ llmGen.scriptTone }}
+- {{ llmGen.vocabulary }}
+- {{ llmGen.pacingStructure }}
 
 # Content Guidelines:
-- {{ providedInformation }}
-- {{ task }}
-- {{ additionalTask }}
-- {{ sensoryThematicElements }}
-- {{ characterPerspective }}
+- {{ llmGen.providedInformation }}
+- {{ llmGen.task }}
+- {{ llmGen.additionalTask }}
+- {{ llmGen.sensoryThematicElements }}
+- {{ llmGen.characterPerspective }}
 
 # Visual Prompt Specifications:
-- Picture description: {{ pictureDescription }}
-- Shot details: {{ shotDetails }}
-- Image style: {{ imageStyle }}
-- Image details: {{ imageDetails }}
+- Picture description: {{ llmGen.pictureDescription }}
+- Shot details: {{ llmGen.shotDetails }}
+- Image style: {{ llmGen.imageStyle }}
+- Image details: {{ llmGen.imageDetails }}
 
 The picture description, shot details, image style and image details should be added to every Visual Prompt
 Keep every visual prompt with the same image style and image details, but vary the picture description and the shot details (like camera options) and connect the whole specifications to one image prompt.

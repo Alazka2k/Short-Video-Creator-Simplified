@@ -18,16 +18,29 @@ class PromptUtils {
 
   static replacePlaceholders(prompt, params) {
     logger.info('Replacing placeholders in prompt');
-    for (const [key, value] of Object.entries(params)) {
+    const flattenedParams = this.flattenObject(params);
+    for (const [key, value] of Object.entries(flattenedParams)) {
       const placeholder = `{{ ${key} }}`;
       if (prompt.includes(placeholder)) {
         prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
         logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
       } else {
-        logger.warn(`Placeholder ${placeholder} not found in the prompt.`);
+        logger.debug(`Placeholder ${placeholder} not found in the prompt.`);
       }
     }
     return prompt;
+  }
+
+  static flattenObject(obj, prefix = '') {
+    return Object.keys(obj).reduce((acc, k) => {
+      const pre = prefix.length ? `${prefix}.` : '';
+      if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+        Object.assign(acc, this.flattenObject(obj[k], `${pre}${k}`));
+      } else {
+        acc[`${pre}${k}`] = obj[k];
+      }
+      return acc;
+    }, {});
   }
 
   static async generateDynamicPrompt(promptFilePath, params) {

@@ -2,31 +2,34 @@ const axios = require('axios');
 const fs = require('fs').promises;
 const logger = require('../utils/logger');
 const sunoAuth = require('./suno_auth');
-const parameters = require('../../data/input/parameters.json'); // Assuming the path to parameters.json is correct
-
+const config = require('../utils/config');
 
 class MusicGenService {
   constructor() {
     this.baseUrl = 'https://suno-api-one-zeta.vercel.app';
-    this.musicGenOptions = parameters.musicGen;
+    this.musicGenOptions = config.parameters.musicGen;
   }
 
   async generateMusic(musicData, options = {}) {
     try {
       logger.info(`Generating music for title: "${musicData.title}"`);
       
+      const makeInstrumental = this.musicGenOptions.make_instrumental === "true" || options.makeInstrumental === true;
+      
       const payload = {
-        prompt: musicData.lyrics,
+        prompt: makeInstrumental ? "" : musicData.lyrics,
         tags: musicData.style,
         title: musicData.title,
-        make_instrumental: this.musicGenOptions.make_instrumental || options.makeInstrumental || false,
+        make_instrumental: makeInstrumental,
         wait_audio: options.waitAudio || false,
         mv: "chirp-v3-0"
       };
 
+      logger.info(`Make instrumental: ${makeInstrumental}`);
+      logger.info(`Payload for music generation:`, JSON.stringify(payload, null, 2));
+
       const endpoint = `${this.baseUrl}/api/custom_generate`;
       logger.info(`Calling endpoint: ${endpoint}`);
-      logger.info(`Payload: ${JSON.stringify(payload, null, 2)}`);
   
       const response = await axios.post(endpoint, payload, {
         headers: this.getHeaders()
@@ -59,7 +62,6 @@ class MusicGenService {
         headers: this.getHeaders()
       });
   
-      // Log the full response payload for debugging
       logger.debug('Full API response payload:', response.data);
   
       if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
@@ -67,7 +69,6 @@ class MusicGenService {
         throw new Error('Invalid response from get music info API');
       }
   
-      // Assuming the response data is an array of objects and we are interested in the first one
       const musicInfo = response.data[0];
       if (!musicInfo) {
         logger.error('Music info not found in API response:', JSON.stringify(response.data, null, 2));
@@ -92,7 +93,6 @@ class MusicGenService {
         } else if (musicInfo.status === 'failed') {
           throw new Error('Music generation failed');
         } else if (musicInfo.status === 'streaming' && musicInfo.audio_url) {
-          // If status is streaming but audio_url is available, we can proceed
           return musicInfo;
         }
       } catch (error) {
