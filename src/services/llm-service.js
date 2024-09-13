@@ -25,13 +25,14 @@ async function generateContent(initialPromptPath, parametersPath, inputPrompt) {
     const completion = await openai.beta.chat.completions.parse({
       model: config.llm.model,
       messages: [
-        { role: "system", content: "Extract the video script information according to the provided schema." },
+        { role: "system", content: "Extract the video script information according to the provided schema, including a music section with title, lyrics, and style." },
         { role: "user", content: combined_prompt },
       ],
       response_format: zodResponseFormat(VideoScriptSchema, "video_script"),
     });
 
     logger.info('Received response from OpenAI API');
+    logger.debug('Raw API Response:', JSON.stringify(completion, null, 2));
 
     const video_script = completion.choices[0].message.parsed;
     
@@ -42,7 +43,11 @@ async function generateContent(initialPromptPath, parametersPath, inputPrompt) {
 
     return video_script;
   } catch (error) {
-    logger.error('Error generating content with LLM:', { error: error.toString(), stack: error.stack });
+    logger.error('Error generating content with LLM:', { 
+      error: error.toString(), 
+      stack: error.stack,
+      details: error.cause ? error.cause.toString() : 'No additional details'
+    });
     throw error;
   }
 }

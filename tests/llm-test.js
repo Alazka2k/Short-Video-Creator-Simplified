@@ -35,10 +35,11 @@ async function runLLMTest() {
       logger.info(`Generated content structure for prompt ${index + 1}:`, JSON.stringify(content, null, 2));
 
       // Basic validation of the generated content
-      if (content && content.scenes) {
+      if (content && content.scenes && content.music) {
         logger.info(`Content generated successfully for prompt ${index + 1}`);
         logger.info('Title:', content.title);
         logger.info('Number of scenes:', content.scenes.length);
+        logger.info('Music title:', content.music.title);
       } else {
         logger.warn(`Generated content for prompt ${index + 1} does not match expected structure`);
       }

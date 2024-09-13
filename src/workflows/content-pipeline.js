@@ -35,7 +35,7 @@ async function runContentPipeline() {
       logger.info(`Total duration of voice audio: ${totalVoiceDuration} seconds`);
 
       // Generate background music for the entire video
-      await generateBackgroundMusic(content, outputDir, totalVoiceDuration);
+      await generateBackgroundMusic(content, outputDir);
 
       // Log the generated content for verification
       logger.info(`Generated content for ${row.Prompt}:`, JSON.stringify(content, null, 2));
@@ -88,11 +88,18 @@ async function downloadImage(url, filePath) {
 }
 
 async function generateBackgroundMusic(content, outputDir) {
-  const musicPrompt = `Create background music for a video about: ${content.title}. Style: ${content.description}`;
-  const audioUrl = await audioGenService.generateMusic(musicPrompt);
+  const musicData = content.music; // Using the music object from LLM output
+  const taskId = await musicGenService.generateMusic(musicData, {
+    makeInstrumental: config.parameters.musicGen.make_instrumental
+  });
+  
+  logger.info(`Music generation task initiated with ID: ${taskId}`);
+  
+  const musicInfo = await musicGenService.waitForMusicGeneration(taskId);
+  
   const musicFileName = 'background_music.mp3';
   const musicFilePath = path.join(outputDir, musicFileName);
-  await audioGenService.downloadMusic(audioUrl, musicFilePath);
+  await musicGenService.downloadMusic(musicInfo.audio_url, musicFilePath);
   logger.info(`Background music generated and saved to ${musicFilePath}`);
 }
 

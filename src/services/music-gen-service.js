@@ -2,49 +2,113 @@ const axios = require('axios');
 const fs = require('fs').promises;
 const logger = require('../utils/logger');
 const sunoAuth = require('./suno_auth');
+const parameters = require('../../data/input/parameters.json'); // Assuming the path to parameters.json is correct
+
 
 class MusicGenService {
   constructor() {
-    this.baseUrl = 'https://suno-api-one-zeta.vercel.app/';
+    this.baseUrl = 'https://suno-api-one-zeta.vercel.app';
+    this.musicGenOptions = parameters.musicGen;
   }
 
-  async generateMusic(lyrics, style, title, durationSeconds, options = {}) {
+  async generateMusic(musicData, options = {}) {
     try {
-      logger.info(`Generating music for title: "${title}" with duration: ${durationSeconds} seconds`);
+      logger.info(`Generating music for title: "${musicData.title}"`);
       
       const payload = {
-        prompt: lyrics,
-        tags: style,
-        title: title,
-        make_instrumental: options.makeInstrumental || false,
-        wait_audio: true,
+        prompt: musicData.lyrics,
+        tags: musicData.style,
+        title: musicData.title,
+        make_instrumental: this.musicGenOptions.make_instrumental || options.makeInstrumental || false,
+        wait_audio: options.waitAudio || false,
         mv: "chirp-v3-0"
       };
+
+      const endpoint = `${this.baseUrl}/api/custom_generate`;
+      logger.info(`Calling endpoint: ${endpoint}`);
+      logger.info(`Payload: ${JSON.stringify(payload, null, 2)}`);
   
-      const response = await axios.post(`${this.baseUrl}/api/generate/`, payload, {
+      const response = await axios.post(endpoint, payload, {
         headers: this.getHeaders()
       });
   
-      // Log the full response for debugging
-      logger.debug('API response:', response.data);
+      logger.debug('API response:', JSON.stringify(response.data, null, 2));
   
-      // Adjust to the actual response structure
-      const audioData = response.data.find(item => item.audio_url);
-      if (!audioData) {
-        logger.error('No audio data in the response:', response.data);
-        throw new Error('No audio data in the response');
+      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+        logger.error('Invalid response from music generation API:', JSON.stringify(response.data, null, 2));
+        throw new Error('Invalid response from music generation API');
       }
   
       logger.info('Music generation task initiated successfully');
-      return audioData.audio_url; // Return the audio URL
+      return response.data[0];
     } catch (error) {
       logger.error('Error generating music:', this.formatError(error));
       throw error;
     }
   }
 
+  async getMusicInfo(id) {
+    try {
+      const endpoint = `${this.baseUrl}/api/get`;
+      const params = { ids: id };
+      logger.info(`Calling endpoint: ${endpoint}`);
+      logger.info(`Params: ${JSON.stringify(params, null, 2)}`);
+  
+      const response = await axios.get(endpoint, {
+        params: params,
+        headers: this.getHeaders()
+      });
+  
+      // Log the full response payload for debugging
+      logger.debug('Full API response payload:', response.data);
+  
+      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+        logger.error('Invalid response from get music info API:', JSON.stringify(response.data, null, 2));
+        throw new Error('Invalid response from get music info API');
+      }
+  
+      // Assuming the response data is an array of objects and we are interested in the first one
+      const musicInfo = response.data[0];
+      if (!musicInfo) {
+        logger.error('Music info not found in API response:', JSON.stringify(response.data, null, 2));
+        throw new Error('Music info not found in API response');
+      }
+  
+      logger.info(`Received music info: ${JSON.stringify(musicInfo, null, 2)}`);
+      return musicInfo;
+    } catch (error) {
+      logger.error('Error getting music info:', this.formatError(error));
+      throw error;
+    }
+  }
+
+  async waitForMusicGeneration(id, maxAttempts = 30, interval = 10000) {
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const musicInfo = await this.getMusicInfo(id);
+        logger.info(`Music generation status: ${musicInfo.status}`);
+        if (musicInfo.status === 'complete' && musicInfo.audio_url) {
+          return musicInfo;
+        } else if (musicInfo.status === 'failed') {
+          throw new Error('Music generation failed');
+        } else if (musicInfo.status === 'streaming' && musicInfo.audio_url) {
+          // If status is streaming but audio_url is available, we can proceed
+          return musicInfo;
+        }
+      } catch (error) {
+        logger.warn(`Error fetching music info (attempt ${i + 1}/${maxAttempts}):`, error.message);
+      }
+      logger.info(`Waiting for music generation... Attempt ${i + 1}/${maxAttempts}`);
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    throw new Error('Music generation timed out');
+  }
+
   async downloadMusic(audioUrl, outputPath) {
     try {
+      logger.info(`Downloading music from URL: ${audioUrl}`);
+      logger.info(`Saving to path: ${outputPath}`);
+
       const response = await axios({
         method: 'get',
         url: audioUrl,
@@ -62,9 +126,13 @@ class MusicGenService {
 
   async getQuotaInfo() {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/get_limit`, {
+      const endpoint = `${this.baseUrl}/api/get_limit`;
+      logger.info(`Calling endpoint: ${endpoint}`);
+
+      const response = await axios.get(endpoint, {
         headers: this.getHeaders()
       });
+      logger.debug('API response:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error) {
       logger.error('Error getting quota info:', this.formatError(error));
@@ -74,9 +142,13 @@ class MusicGenService {
 
   async checkCookieValidity() {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/get`, {
+      const endpoint = `${this.baseUrl}/api/get`;
+      logger.info(`Calling endpoint: ${endpoint}`);
+
+      const response = await axios.get(endpoint, {
         headers: this.getHeaders()
       });
+      logger.debug('API response:', JSON.stringify(response.data, null, 2));
       return true;
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -107,8 +179,8 @@ class MusicGenService {
       stack: error.stack,
       ...(error.response ? {
         status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
+        data: JSON.stringify(error.response.data, null, 2),
+        headers: JSON.stringify(error.response.headers, null, 2)
       } : {})
     };
   }
