@@ -1,6 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
+function deepMerge(target, source) {
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      if (source[key] && typeof source[key] === 'object') {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        deepMerge(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+  return target;
+}
+
 function loadConfig() {
   const configPath = path.join(__dirname, '..', '..', 'config', 'default.json');
   const parametersPath = path.join(__dirname, '..', '..', 'data', 'input', 'parameters.json');
@@ -37,8 +51,8 @@ function loadConfig() {
     process.exit(1);
   }
 
-  // Merge parameters into config
-  config.parameters = parameters;
+  // Deep merge parameters into config
+  config = deepMerge(config, parameters);
 
   // Add test output directory
   config.test = {
@@ -52,13 +66,24 @@ const config = loadConfig();
 
 // Ensure all required configurations are present
 const requiredConfigs = [
-  'llm.apiKey',
+  'llm.provider',
   'llm.model',
+  'llm.apiKey',
+  'voiceGen.provider',
   'voiceGen.apiKey',
+  'imageGen.provider',
   'imageGen.serverId',
   'imageGen.channelId',
   'imageGen.salaiToken',
+  'audioGen.provider',
+  'audioGen.sunoCookie',
+  'audioGen.sessionId',
+  'videoGen.provider',
+  'videoGen.clientId',
+  'videoGen.clientSecret',
+  'videoGen.animationLength',
   'input.csvPath',
+  'parameters.jsonPath',
   'initialPrompt.txtPath',
   'output.directory',
   'test.outputDirectory'

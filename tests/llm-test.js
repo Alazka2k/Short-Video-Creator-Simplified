@@ -9,10 +9,10 @@ async function runLLMTest() {
   try {
     logger.info('Starting LLM test run');
 
-    const inputCsvPath = path.join(__dirname, '..', 'data', 'input', 'input.csv');
-    const parametersJsonPath = path.join(__dirname, '..', 'data', 'input', 'parameters.json');
-    const initialPromptPath = path.join(__dirname, '..', 'data', 'input', 'initial_prompt.txt');
-    const outputDir = path.join(__dirname, 'test_output', 'llm');
+    const inputCsvPath = config.input.csvPath;
+    const parametersJsonPath = config.parameters.jsonPath;
+    const initialPromptPath = config.initialPrompt.txtPath;
+    const outputDir = path.join(config.test.outputDirectory, 'llm');
 
     logger.info('Input CSV Path:', inputCsvPath);
     logger.info('Parameters JSON Path:', parametersJsonPath);
@@ -47,10 +47,23 @@ async function runLLMTest() {
           logger.warn(`Number of generated scenes (${content.scenes.length}) doesn't match the specified scene amount (${parameters.llmGen.sceneAmount})`);
         }
 
-        // Check if each scene has a description and visual_prompt
+        // Check if each scene has all required fields
         content.scenes.forEach((scene, sceneIndex) => {
-          if (!scene.description || !scene.visual_prompt) {
-            logger.warn(`Scene ${sceneIndex + 1} is missing description or visual_prompt`);
+          if (!scene.description || !scene.visual_prompt || !scene.camera_movement || !scene.negative_prompt) {
+            logger.warn(`Scene ${sceneIndex + 1} is missing one or more required fields`);
+          }
+          
+          // Validate camera_movement JSON
+          try {
+            const cameraMovement = JSON.parse(scene.camera_movement);
+            const requiredFields = ['type', 'horizontal', 'vertical', 'zoom', 'tilt', 'pan', 'roll'];
+            requiredFields.forEach(field => {
+              if (!(field in cameraMovement)) {
+                logger.warn(`Scene ${sceneIndex + 1} camera_movement is missing ${field}`);
+              }
+            });
+          } catch (e) {
+            logger.warn(`Scene ${sceneIndex + 1} has invalid camera_movement JSON:`, e);
           }
         });
 
@@ -63,8 +76,9 @@ async function runLLMTest() {
       }
 
       // Save the output to a JSON file
-      const outputPath = path.join(outputDir, `output_test_${index + 1}.json`);
-      await PromptUtils.saveOutputToJson(content, outputDir, `output_test_${index + 1}.json`);
+      const outputFileName = `output_test_${index + 1}.json`;
+      const outputPath = path.join(outputDir, outputFileName);
+      await PromptUtils.saveOutputToJson(content, outputPath);
       logger.info(`Output for prompt ${index + 1} saved to ${outputPath}`);
     }
 

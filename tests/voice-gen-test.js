@@ -7,6 +7,8 @@ const logger = require('../src/utils/logger');
 async function runVoiceGenTest() {
   try {
     logger.info('Starting voice generation test with LLM output');
+    logger.info('Voice generation configuration:', JSON.stringify(config.voiceGen, null, 2));
+    logger.info('Voice generation parameters:', JSON.stringify(config.parameters?.voiceGen, null, 2));
 
     const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
     const voiceOutputDir = path.join(__dirname, 'test_output', 'voice');
@@ -32,12 +34,17 @@ async function runVoiceGenTest() {
           const outputPath = path.join(promptOutputDir, fileName);
 
           try {
+            // Use config.parameters.voiceGen.defaultVoiceId if available, otherwise use a default value
+            const voiceId = config.parameters?.voiceGen?.defaultVoiceId || '21m00Tcm4TlvDq8ikWAM';
+            
+            logger.info(`Generating voice for scene ${index + 1} with voice ID: ${voiceId}`);
+            
             await voiceGenService.generateVoice(
               scene.description,
               outputPath,
               llmOutput.prompt,
               index + 1,
-              config.parameters.voiceGen.defaultVoiceId,
+              voiceId,
               true // isTest flag
             );
 

@@ -11,6 +11,7 @@ const openai = new OpenAI({
   apiKey: config.llm.apiKey,
 });
 
+logger.info('LLM Provider:', config.llm.provider);
 logger.info('OpenAI API Key:', config.llm.apiKey ? 'Loaded' : 'Missing');
 logger.info('OpenAI Model:', config.llm.model);
 
@@ -25,7 +26,7 @@ async function generateContent(initialPromptPath, parametersPath, inputPrompt) {
     const completion = await openai.beta.chat.completions.parse({
       model: config.llm.model,
       messages: [
-        { role: "system", content: "Extract the video script information according to the provided schema, including a music section with title, lyrics, and style." },
+        { role: "system", content: "Extract the video script information according to the provided schema, including a music section with title, lyrics, and style. For each scene, include a description, visual prompt, camera movement (as a JSON string), and negative prompt." },
         { role: "user", content: combined_prompt },
       ],
       response_format: zodResponseFormat(VideoScriptSchema, "video_script"),

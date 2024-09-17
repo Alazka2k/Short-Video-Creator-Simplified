@@ -20,6 +20,11 @@
     "provider": "suno",
     "sunoCookie": "YOUR_SUNO_COOKIE_HERE"
   },
+  "videoGen": {
+    "provider":"immersityAI",
+    "clientId": "YOUR_CLIENT_ID",
+    "clientSecret": "YOUR_CLIENT_SECRET"
+  },
   "input": {
     "csvPath": "./data/input/input.csv"
   },

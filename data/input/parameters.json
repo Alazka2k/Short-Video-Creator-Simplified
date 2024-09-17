@@ -34,5 +34,8 @@
     "pacingStructure": "Vary the pacing throughout the script to create tension and maintain viewer interest. Use shorter, punchier sentences for intense moments and longer, more descriptive ones for scene-setting. End each scene with a mini-cliffhanger or a question to maintain viewer engagement.",
     "sensoryThematicElements": "Incorporate vivid sensory details (sights, sounds, smells, textures) to make the scenes more immersive and engaging. Weave in recurring symbols or motifs throughout the scenes to create a cohesive narrative thread.",
     "characterPerspective": "Consider introducing a relatable character or perspective to humanize the story and increase emotional investment."
+  },  
+  "videoGen": {
+    "animationLength": 5
   }
 }

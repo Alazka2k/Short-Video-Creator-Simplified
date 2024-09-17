@@ -1,0 +1,51 @@
+PS C:\Code\Short-Video-Creator-Simplified> npm run test:video
+
+> short-video-creator-simplified@0.0.1 test:video
+> node tests/video-gen-test.js
+
+info: Starting video generation test with Immersity AI
+info: Immersity AI API key loaded
+info: Generating video for scene_1 using image URL: https://cdn.midjourney.com/e230a285-1429-4f20-9980-a8601bd9394e/0_3.png
+info: Using endpoint: https://api.immersity.ai/api/v1/animation
+info: Generating video for image URL: https://cdn.midjourney.com/e230a285-1429-4f20-9980-a8601bd9394e/0_3.png (Attempt 1)
+info: Request body: {
+  "correlationId": "3e4f7b03-c4d2-4db6-b083-594dc53e0c1a",
+  "inputImageUrl": "https://cdn.midjourney.com/e230a285-1429-4f20-9980-a8601bd9394e/0_3.png",
+  "animationLength": 5
+}
+error: Error generating video (Attempt 1): Request failed with status code 500 {"data":"{\"statusCode\":500,\"message\":\"Internal server error\"}","stack":"AxiosError: Request failed with status code 500\n    at settle (C:\\Code\\Short-Video-Creator-Simplified\\node_modules\\axios\\dist\\node\\axios.cjs:2019:12)\n    at IncomingMessage.handleStreamEnd (C:\\Code\\Short-Video-Creator-Simplified\\node_modules\\axios\\dist\\node\\axios.cjs:3135:11)\n    at IncomingMessage.emit (node:events:532:35)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)\n    at Axios.request (C:\\Code\\Short-Video-Creator-Simplified\\node_modules\\axios\\dist\\node\\axios.cjs:4287:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async VideoGenService.generateVideo (C:\\Code\\Short-Video-Creator-Simplified\\src\\services\\video-gen-service.js:54:26)\n    at async runVideoGenTest (C:\\Code\\Short-Video-Creator-Simplified\\tests\\video-gen-test.js:39:11)","status":500}
+error: Response status: 500
+error: Response headers: {
+  "date": "Sun, 15 Sep 2024 15:26:21 GMT",
+  "content-type": "application/json; charset=utf-8",
+  "content-length": "52",
+  "connection": "keep-alive",
+  "x-powered-by": "Express",
+  "access-control-allow-origin": "*",
+  "etag": "W/\"34-rlKccw1E+/fV8niQk4oFitDfPro\""
+}
+error: Response data: {
+  "statusCode": 500,
+  "message": "Internal server error"
+}
+info: Generating video for image URL: https://cdn.midjourney.com/e230a285-1429-4f20-9980-a8601bd9394e/0_3.png (Attempt 2)
+info: Request body: {
+  "correlationId": "3e4f7b03-c4d2-4db6-b083-594dc53e0c1a",
+  "inputImageUrl": "https://cdn.midjourney.com/e230a285-1429-4f20-9980-a8601bd9394e/0_3.png",
+  "animationLength": 5
+}
+error: Error generating video (Attempt 2): Request failed with status code 500 {"data":"{\"statusCode\":500,\"message\":\"Internal server error\"}","stack":"AxiosError: Request failed with status code 500\n    at settle (C:\\Code\\Short-Video-Creator-Simplified\\node_modules\\axios\\dist\\node\\axios.cjs:2019:12)\n    at IncomingMessage.handleStreamEnd (C:\\Code\\Short-Video-Creator-Simplified\\node_modules\\axios\\dist\\node\\axios.cjs:3135:11)\n    at IncomingMessage.emit (node:events:532:35)\n    at endReadableNT (node:internal/streams/readable:1696:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)\n    at Axios.request (C:\\Code\\Short-Video-Creator-Simplified\\node_modules\\axios\\dist\\node\\axios.cjs:4287:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async VideoGenService.generateVideo (C:\\Code\\Short-Video-Creator-Simplified\\src\\services\\video-gen-service.js:54:26)\n    at async runVideoGenTest (C:\\Code\\Short-Video-Creator-Simplified\\tests\\video-gen-test.js:39:11)","status":500}
+error: Response status: 500
+error: Response headers: {
+  "date": "Sun, 15 Sep 2024 15:26:27 GMT",
+  "content-type": "application/json; charset=utf-8",
+  "content-length": "52",
+  "connection": "keep-alive",
+  "x-powered-by": "Express",
+  "access-control-allow-origin": "*",
+  "etag": "W/\"34-rlKccw1E+/fV8niQk4oFitDfPro\""
+}
+error: Response data: {
+  "statusCode": 500,
+  "message": "Internal server error"
+}

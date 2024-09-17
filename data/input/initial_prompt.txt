@@ -42,7 +42,12 @@
 - Image style: {{ llmGen.imageStyle }}
 - Image details: {{ llmGen.imageDetails }}
 
-The picture description, shot details, image style and image details should be added to every Visual Prompt
+# Video Generation Parameters:
+- Generate a detailed camera movement description for each scene, including horizontal, vertical, zoom, tilt, pan, and roll values.
+- Provide a negative prompt that describes what should not appear in the video.
+- Ensure the camera movement and negative prompt align with the scene description and visual prompt.
+
+The picture description, shot details, image style and image details should be added to every Visual Prompt.
 Keep every visual prompt with the same image style and image details, but vary the picture description and the shot details (like camera options) and connect the whole specifications to one image prompt.
 
 # Title Picture Visual Prompt:
@@ -103,3 +108,5 @@ Scene 12 Visual Prompt: Sunrise over a misty, damaged cityscape. A lone figure s
 Title: Silent Battlefield
 Lyrics: A melancholic metal track reflecting on war's emotional toll, blending heavy riffs with deep lyrical sentiment.
 Music Style: pop metal, male, melancholic
+Camera Movement: "{\"type\":\"pan\",\"horizontal\":10,\"vertical\":0,\"zoom\":5,\"tilt\":0,\"pan\":15,\"roll\":0}",
+Negative Prompt": "No people visible, no cars or vehicles in the foreground"

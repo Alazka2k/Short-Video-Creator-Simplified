@@ -48,6 +48,7 @@ async function runMusicGenTest() {
   try {
     logger.info('Starting Suno music generation test');
     logger.info('Suno base URL:', musicGenService.baseUrl);
+    logger.info('Music generation options:', JSON.stringify(musicGenService.musicGenOptions, null, 2));
 
     const isAuthValid = await checkAuthValidity();
     if (!isAuthValid) {
@@ -88,7 +89,9 @@ async function runMusicGenTest() {
       
       let generationResult;
       try {
-        const makeInstrumental = config.parameters.musicGen.make_instrumental === "true";
+        const makeInstrumental = musicGenService.musicGenOptions.make_instrumental === "true";
+        logger.info(`Make instrumental: ${makeInstrumental}`);
+
         generationResult = await musicGenService.generateMusic(musicData, {
           makeInstrumental: makeInstrumental,
           waitAudio: false

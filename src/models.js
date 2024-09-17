@@ -3,6 +3,18 @@ const { z } = require("zod");
 const SceneSchema = z.object({
   description: z.string(),
   visual_prompt: z.string(),
+  camera_movement: z.string(), // JSON string
+  negative_prompt: z.string()
+});
+
+const CameraMovementSchema = z.object({
+  type: z.string(),
+  horizontal: z.number(),
+  vertical: z.number(),
+  zoom: z.number(),
+  tilt: z.number(),
+  pan: z.number(),
+  roll: z.number()
 });
 
 const MusicSchema = z.object({
@@ -20,4 +32,5 @@ const VideoScriptSchema = z.object({
   music: MusicSchema, // Use MusicSchema directly here
 });
 
-module.exports = { SceneSchema, VideoScriptSchema, MusicSchema };
+
+module.exports = { SceneSchema, VideoScriptSchema, MusicSchema, CameraMovementSchema };

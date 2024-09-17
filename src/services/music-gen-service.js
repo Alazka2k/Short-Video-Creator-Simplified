@@ -7,7 +7,8 @@ const config = require('../utils/config');
 class MusicGenService {
   constructor() {
     this.baseUrl = 'https://suno-api-one-zeta.vercel.app';
-    this.musicGenOptions = config.parameters.musicGen;
+    this.musicGenOptions = config.parameters?.musicGen || {};
+    logger.info('Initialized MusicGenService with options:', JSON.stringify(this.musicGenOptions, null, 2));
   }
 
   async generateMusic(musicData, options = {}) {
@@ -22,7 +23,7 @@ class MusicGenService {
         title: musicData.title,
         make_instrumental: makeInstrumental,
         wait_audio: options.waitAudio || false,
-        mv: "chirp-v3-0"
+        mv: this.musicGenOptions.modelId || "chirp-v3-0"
       };
 
       logger.info(`Make instrumental: ${makeInstrumental}`);

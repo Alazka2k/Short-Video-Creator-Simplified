@@ -73,13 +73,12 @@ class PromptUtils {
     }
   }
 
-  static async saveOutputToJson(output, outputDir, fileName) {
+  static async saveOutputToJson(output, outputPath) {
     try {
-      const outputPath = path.join(outputDir, fileName);
       await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
       logger.info(`Output saved to ${outputPath}`);
     } catch (error) {
-      logger.error(`Error saving output to ${fileName}:`, error);
+      logger.error(`Error saving output to ${outputPath}:`, error);
       throw error;
     }
   }
