@@ -1,8 +1,8 @@
 const axios = require('axios');
 const fs = require('fs').promises;
-const logger = require('../utils/logger');
-const sunoAuth = require('../services/auth-service/suno_auth');
-const config = require('../utils/config');
+const logger = require('../../shared/utils/logger');
+const sunoAuth = require('../auth-service/suno_auth');
+const config = require('../../shared/utils/config');
 
 class MusicGenService {
   constructor() {

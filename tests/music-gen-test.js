@@ -1,9 +1,9 @@
 const path = require('path');
 const fs = require('fs').promises;
-const musicGenService = require('../src/services/music-gen-service');
-const { getTotalAudioDuration, getAudioDuration } = require('../src/utils/audio-utils');
-const config = require('../src/utils/config');
-const logger = require('../src/utils/logger');
+const musicService = require('../backend/services/music-service');
+const { getAudioDuration } = require('../backend/shared/utils/audio-utils');
+const config = require('../backend/shared/utils/config');
+const logger = require('../backend/shared/utils/logger');
 const sunoAuth = require('../backend/services/auth-service/suno_auth');
 
 async function checkAuthValidity() {
@@ -24,7 +24,7 @@ async function checkAuthValidity() {
   logger.info('Cookie is present.');
 
   try {
-    const quotaInfo = await musicGenService.getQuotaInfo();
+    const quotaInfo = await musicService.getQuotaInfo();
     logger.info('Successfully accessed Suno API. Quota information:', JSON.stringify(quotaInfo, null, 2));
     return true;
   } catch (error) {
@@ -47,8 +47,9 @@ async function getLLMOutputFiles() {
 async function runMusicGenTest() {
   try {
     logger.info('Starting Suno music generation test');
-    logger.info('Suno base URL:', musicGenService.baseUrl);
-    logger.info('Music generation options:', JSON.stringify(musicGenService.musicGenOptions, null, 2));
+    logger.info('Music generation options:', JSON.stringify(config.parameters?.musicGen, null, 2));
+
+    await musicService.initialize();
 
     const isAuthValid = await checkAuthValidity();
     if (!isAuthValid) {
@@ -56,7 +57,7 @@ async function runMusicGenTest() {
       return;
     }
 
-    const quotaInfo = await musicGenService.getQuotaInfo();
+    const quotaInfo = await musicService.getQuotaInfo();
     logger.info('Quota information:', JSON.stringify(quotaInfo, null, 2));
 
     if (quotaInfo.credits_left < 10) {
@@ -89,12 +90,11 @@ async function runMusicGenTest() {
       
       let generationResult;
       try {
-        const makeInstrumental = musicGenService.musicGenOptions.make_instrumental === "true";
+        const makeInstrumental = config.parameters?.musicGen?.make_instrumental === "true";
         logger.info(`Make instrumental: ${makeInstrumental}`);
 
-        generationResult = await musicGenService.generateMusic(musicData, {
-          makeInstrumental: makeInstrumental,
-          waitAudio: false
+        generationResult = await musicService.generateMusic(musicData, {
+          makeInstrumental: makeInstrumental
         });
         logger.info('Music generation task initiated:', JSON.stringify(generationResult, null, 2));
       } catch (genError) {
@@ -111,7 +111,7 @@ async function runMusicGenTest() {
       logger.info('Waiting for music generation to complete...');
       let musicInfo;
       try {
-        musicInfo = await musicGenService.waitForMusicGeneration(taskId, 30, 10000);
+        musicInfo = await musicService.waitForMusicGeneration(taskId, 30, 10000);
         logger.info('Music generation completed. Music info:', JSON.stringify(musicInfo, null, 2));
       } catch (waitError) {
         logger.error('Error waiting for music generation:', {
@@ -132,7 +132,7 @@ async function runMusicGenTest() {
       logger.info(`Downloading music to: ${outputPath}`);
       
       try {
-        await musicGenService.downloadMusic(musicInfo.audio_url, outputPath);
+        await musicService.downloadMusic(musicInfo.audio_url, outputPath);
 
         const stats = await fs.stat(outputPath);
         if (stats.size > 0) {
@@ -166,6 +166,8 @@ async function runMusicGenTest() {
       name: error.name,
       stack: error.stack
     });
+  } finally {
+    await musicService.cleanup();
   }
 }
 

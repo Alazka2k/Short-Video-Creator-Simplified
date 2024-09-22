@@ -1,26 +1,43 @@
-// backend/services/[service-name]/index.js
+const MusicGenService = require('./music-gen-service');
 
-const ServiceName = require('./music-gen-service');
-
-class ServiceNameInterface {
+class MusicServiceInterface {
   constructor() {
-    this.service = new ServiceName();
+    this.service = MusicGenService;
   }
 
   async initialize() {
-    // Add any initialization logic here
-    await this.service.init();
+    // No initialization needed for MusicGenService
+    return;
   }
 
-  async process(data) {
-    // Add processing logic here
-    return await this.service.generateContent(data);
+  async generateMusic(musicData, options) {
+    return await this.service.generateMusic(musicData, options);
+  }
+
+  async getMusicInfo(id) {
+    return await this.service.getMusicInfo(id);
+  }
+
+  async waitForMusicGeneration(id, maxAttempts, interval) {
+    return await this.service.waitForMusicGeneration(id, maxAttempts, interval);
+  }
+
+  async downloadMusic(audioUrl, outputPath) {
+    return await this.service.downloadMusic(audioUrl, outputPath);
+  }
+
+  async getQuotaInfo() {
+    return await this.service.getQuotaInfo();
+  }
+
+  async checkCookieValidity() {
+    return await this.service.checkCookieValidity();
   }
 
   async cleanup() {
-    // Add any cleanup logic here
-    await this.service.close();
+    // No cleanup needed for MusicGenService
+    return;
   }
 }
 
-module.exports = new ServiceNameInterface();
+module.exports = new MusicServiceInterface();
