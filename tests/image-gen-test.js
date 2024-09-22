@@ -1,72 +1,81 @@
 const path = require('path');
 const fs = require('fs').promises;
-const videoGenService = require('../src/services/video-gen-service');
-const logger = require('../src/utils/logger');
-const config = require('../src/utils/config');
+const imageService = require('../backend/services/image-service');
+const config = require('../backend/shared/utils/config');
+const logger = require('../backend/shared/utils/logger');
 
-async function runVideoGenTest() {
+async function runImageGenTest() {
   try {
-    logger.info('Starting video generation test with Immersity AI');
-    logger.info('Video Generation Config:', JSON.stringify(config.videoGen, null, 2));
+    logger.info('Starting image generation test');
+    logger.info('Image Generation Config:', JSON.stringify(config.imageGen, null, 2));
 
-    await videoGenService.init();
+    await imageService.initialize();
 
-    const imageBaseDir = path.join(__dirname, 'test_output', 'image');
-    const videoOutputDir = path.join(__dirname, 'test_output', 'video');
+    const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
+    const imageOutputDir = path.join(__dirname, 'test_output', 'image');
 
-    await fs.mkdir(videoOutputDir, { recursive: true });
+    await fs.mkdir(imageOutputDir, { recursive: true });
 
-    const testFolders = await fs.readdir(imageBaseDir);
+    const llmOutputFiles = await fs.readdir(llmOutputDir);
 
-    for (const folder of testFolders) {
-      const imageFolderPath = path.join(imageBaseDir, folder);
-      const metadataPath = path.join(imageFolderPath, 'metadata.json');
+    for (const llmOutputFile of llmOutputFiles) {
+      if (llmOutputFile.startsWith('output_test_') && llmOutputFile.endsWith('.json')) {
+        const llmOutputPath = path.join(llmOutputDir, llmOutputFile);
+        const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
 
-      try {
-        const metadataContent = await fs.readFile(metadataPath, 'utf8');
-        const metadata = JSON.parse(metadataContent);
+        logger.info(`Processing LLM output: ${llmOutputFile}`);
 
-        logger.info(`Processing folder: ${folder}`);
-        logger.info(`Metadata content: ${JSON.stringify(metadata, null, 2)}`);
+        const promptOutputDir = path.join(imageOutputDir, path.basename(llmOutputFile, '.json'));
+        await fs.mkdir(promptOutputDir, { recursive: true });
 
-        const videoFolder = path.join(videoOutputDir, folder);
-        await fs.mkdir(videoFolder, { recursive: true });
+        for (const [index, scene] of llmOutput.scenes.entries()) {
+          try {
+            logger.info(`Generating image for scene ${index + 1}`);
+            
+            const result = await imageService.generateImage(
+              scene.visual_prompt,
+              promptOutputDir,
+              index
+            );
 
-        // Process only the first scene in the metadata
-        const firstSceneKey = Object.keys(metadata)[0];
-        const sceneData = metadata[firstSceneKey];
+            logger.info(`Image generated successfully: ${result.filePath}`);
+            logger.info(`Original URL: ${result.originalUrl}`);
+            logger.info(`Selected variation URL: ${result.imageUrl}`);
 
-        if (!sceneData || !sceneData.fileName) {
-          logger.warn(`Invalid or missing data for ${firstSceneKey} in ${folder}. Skipping.`);
-          continue;
+            const stats = await fs.stat(result.filePath);
+            logger.info(`File size: ${stats.size} bytes`);
+
+            // Verify the image file
+            if (stats.size > 0) {
+              logger.info(`Image file verified: ${result.filePath}`);
+            } else {
+              logger.warn(`Generated image file is empty: ${result.filePath}`);
+            }
+
+            // Verify metadata
+            const metadataPath = path.join(promptOutputDir, 'metadata.json');
+            const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+            if (metadata[`scene_${index + 1}`]) {
+              logger.info(`Metadata verified for scene ${index + 1}`);
+            } else {
+              logger.warn(`Metadata missing for scene ${index + 1}`);
+            }
+
+          } catch (error) {
+            logger.error(`Error generating image for scene ${index + 1}:`, error.message);
+          }
         }
-
-        const imagePath = path.join(imageFolderPath, sceneData.fileName);
-        const videoOutputPath = path.join(videoFolder, `${firstSceneKey}_video.mp4`);
-
-        logger.info(`Generating video for ${firstSceneKey}`);
-        logger.info(`Image path: ${imagePath}`);
-        logger.info(`Video output path: ${videoOutputPath}`);
-
-        try {
-          await videoGenService.generateVideo(imagePath, videoOutputPath, {
-            animationLength: config.videoGen.animationLength
-          });
-          logger.info(`Video generated successfully: ${videoOutputPath}`);
-        } catch (error) {
-          logger.error(`Error generating video for ${firstSceneKey}:`, error.message);
-        }
-      } catch (error) {
-        logger.error(`Error processing folder ${folder}:`, error.message);
       }
     }
 
-    logger.info('Video generation test completed');
+    await imageService.close();
+
+    logger.info('Image generation test completed');
   } catch (error) {
-    logger.error('Error in video generation test:', error.message);
+    logger.error('Error in image generation test:', error.message);
   }
 }
 
-runVideoGenTest().catch(error => {
-  logger.error('Unhandled error in video generation test:', error.message);
+runImageGenTest().catch(error => {
+  logger.error('Unhandled error in image generation test:', error.message);
 });

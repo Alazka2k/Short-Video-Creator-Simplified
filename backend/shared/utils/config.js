@@ -16,8 +16,8 @@ function deepMerge(target, source) {
 }
 
 function loadConfig() {
-  const configPath = path.join(__dirname, '..', '..', 'config', 'default.json');
-  const parametersPath = path.join(__dirname, '..', '..', 'data', 'input', 'parameters.json');
+  const configPath = path.join(__dirname, '..', '..', '..', 'config', 'default.json');
+  const parametersPath = path.join(__dirname, '..', '..', '..', 'data', 'input', 'parameters.json');
   
   let rawConfig, rawParameters;
 
@@ -56,7 +56,7 @@ function loadConfig() {
 
   // Add test output directory
   config.test = {
-    outputDirectory: path.join(__dirname, '..', '..', 'tests', 'test_output')
+    outputDirectory: path.join(__dirname, '..', '..', '..', 'tests', 'test_output')
   };
 
   return config;

@@ -4,7 +4,7 @@ const musicGenService = require('../src/services/music-gen-service');
 const { getTotalAudioDuration, getAudioDuration } = require('../src/utils/audio-utils');
 const config = require('../src/utils/config');
 const logger = require('../src/utils/logger');
-const sunoAuth = require('../src/services/suno_auth');
+const sunoAuth = require('../backend/services/auth-service/suno_auth');
 
 async function checkAuthValidity() {
   logger.info('Checking Suno authentication validity...');

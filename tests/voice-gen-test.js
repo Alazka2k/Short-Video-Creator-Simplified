@@ -1,8 +1,8 @@
 const path = require('path');
 const fs = require('fs').promises;
-const voiceGenService = require('../src/services/voice-gen-service');
-const config = require('../src/utils/config');
-const logger = require('../src/utils/logger');
+const voiceService = require('../backend/services/voice-service');
+const config = require('../backend/shared/utils/config');
+const logger = require('../backend/shared/utils/logger');
 
 async function runVoiceGenTest() {
   try {
@@ -39,13 +39,10 @@ async function runVoiceGenTest() {
             
             logger.info(`Generating voice for scene ${index + 1} with voice ID: ${voiceId}`);
             
-            await voiceGenService.generateVoice(
+            await voiceService.process(
               scene.description,
               outputPath,
-              llmOutput.prompt,
-              index + 1,
-              voiceId,
-              true // isTest flag
+              voiceId
             );
 
             // Check if the file exists and has content
@@ -73,6 +70,14 @@ async function runVoiceGenTest() {
           }
         }
       }
+    }
+
+    // Test listVoices functionality
+    try {
+      const voices = await voiceService.listVoices();
+      logger.info(`Available voices: ${voices.length}`);
+    } catch (error) {
+      logger.error('Error listing voices:', error);
     }
 
     logger.info('Voice generation test completed');

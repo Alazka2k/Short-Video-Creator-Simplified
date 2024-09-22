@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs').promises;
 const logger = require('../utils/logger');
-const sunoAuth = require('./suno_auth');
+const sunoAuth = require('../services/auth-service/suno_auth');
 const config = require('../utils/config');
 
 class MusicGenService {

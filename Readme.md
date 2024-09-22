@@ -13,9 +13,11 @@
 10. [API Integrations](#api-integrations)
 11. [Output Format](#output-format)
 12. [Testing](#testing)
-13. [Troubleshooting](#troubleshooting)
-14. [Contributing](#contributing)
-15. [License](#license)
+13. [Source Code Export](#source-code-export)
+14. [Troubleshooting](#troubleshooting)
+15. [Contributing](#contributing)
+16. [License](#license)
+17. [Next Steps](#next-steps)
 
 ## Introduction
 
@@ -45,6 +47,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - Robust error handling and comprehensive logging
 - Separate test environment for LLM, voice generation, image generation, music generation, and video generation services
 - Integration test for end-to-end workflow verification
+- Source code export functionality for easy sharing and versioning
 
 ## Prerequisites
 
@@ -136,31 +139,78 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   ├── input.csv
 │   │   └── parameters.json
 │   └── output/
+├── docs/
 ├── logs/
-├── src/
+├── node_modules/
+├── backend/
+│   ├── api-gateway/
+│   │   └── server.js
 │   ├── services/
-│   │   ├── llm-service.js
-│   │   ├── voice-gen-service.js
-│   │   ├── image-gen-service.js
-│   │   ├── music-gen-service.js
-│   │   ├── video-gen-service.js
-│   │   └── suno_auth.js
-│   ├── utils/
-│   │   ├── config.js
-│   │   ├── logger.js
-│   │   ├── prompt-utils.js
-│   │   └── audio-utils.js
-│   ├── workflows/
-│   │   └── content-pipeline.js
-│   ├── models.js
-│   └── index.js
+│   │   ├── auth-service/
+│   │   │   ├── auth-controller.js
+│   │   │   └── auth-model.js
+│   │   ├── job-service/
+│   │   │   ├── job-controller.js
+│   │   │   └── job-model.js
+│   │   ├── billing-service/
+│   │   │   ├── billing-controller.js
+│   │   │   └── billing-model.js
+│   │   ├── llm-service/
+│   │   │   ├── llm-service.js
+│   │   │   └── index.js
+│   │   ├── image-service/
+│   │   │   └── image-gen-service.js
+│   │   ├── voice-service/
+│   │   │   └── voice-gen-service.js
+│   │   ├── music-service/
+│   │   │   └── music-gen-service.js
+│   │   └── video-service/
+│   │       └── video-gen-service.js
+│   └── shared/
+│       ├── middleware/
+│       │   ├── auth-middleware.js
+│       │   └── error-handler.js
+│       ├── utils/
+│       │   ├── config.js
+│       │   ├── logger.js
+│       │   ├── prompt-utils.js
+│       │   ├── audio-utils.js
+│       │   └── export-source-code.js
+│       └── config/
+│           ├── database.js
+│           └── models.js
+├── frontend/
+│   └── src/
+│       ├── public/
+│       ├── components/
+│       │   ├── Header.js
+│       │   ├── Footer.js
+│       │   └── ServiceSelector.js
+│       ├── pages/
+│       │   ├── Home.js
+│       │   ├── Dashboard.js
+│       │   └── JobSubmission.js
+│       ├── services/
+│       │   ├── api.js
+│       │   └── auth.js
+│       └── App.js
+├── database/
+│   ├── migrations/
+│   │   └── initial-schema.sql
+│   └── seeds/
+├── infrastructure/
+│   ├── docker/
+│   └── kubernetes/
 ├── tests/
-│   ├── llm-test.js
-│   ├── voice-gen-test.js
+│   ├── discord-websocket-test.js
+│   ├── image-download-test.js
 │   ├── image-gen-test.js
+│   ├── integration-test.js
+│   ├── llm-test.js
+│   ├── midjourney-test.js
 │   ├── music-gen-test.js
 │   ├── video-gen-test.js
-│   ├── integration-test.js
+│   ├── voice-gen-test.js
 │   └── test_output/
 │       ├── llm/
 │       ├── voice/
@@ -170,6 +220,7 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │       └── integration/
 ├── .gitignore
 ├── package.json
+├── package-lock.json
 └── README.md
 ```
 
@@ -178,13 +229,18 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 The application follows a modular architecture designed for flexibility and maintainability:
 
 1. Input Processing: Parses CSV input with multiple prompts and loads configuration parameters
-2. LLM Service: Generates dynamic script content based on input and parameters
-3. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
-4. Image Generation Service: Creates visual content based on scene descriptions
-5. Music Generation Service: Produces custom background music tracks
-6. Video Generation Service: Creates video content from generated images
-7. Content Pipeline: Orchestrates the flow between services and manages the overall process
-8. Output Formatting: Structures and saves the generated content in an editor-friendly format
+2. API Gateway: Handles routing and request/response transformation
+3. Authentication Service: Manages user registration, login, and authorization
+4. Job Service: Orchestrates the content generation process and manages job statuses
+5. Billing Service: Handles subscription management and usage-based billing
+6. LLM Service: Generates dynamic script content based on input and parameters
+7. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
+8. Image Generation Service: Creates visual content based on scene descriptions
+9. Music Generation Service: Produces custom background music tracks
+10. Video Generation Service: Creates video content from generated images
+11. Shared Utilities: Provides common functionality across services
+12. Frontend Application: Offers a user-friendly interface for interacting with the backend services
+13. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
 ## API Integrations
 
@@ -194,7 +250,7 @@ The application follows a modular architecture designed for flexibility and main
 - Music Generation: Uses Suno AI for custom background music creation
 - Video Generation: Employs Immersity AI for generating videos from images
 
-Detailed documentation for each service integration can be found in the respective files within the `src/services/` directory.
+Detailed documentation for each service integration can be found in the respective files within the `backend/services/` directory.
 
 ## Output Format
 
@@ -228,38 +284,51 @@ This structure is optimized for seamless import into video editing software, all
 
 ## Testing
 
-The project includes separate test files for the LLM, voice generation, image generation, music generation, video generation services, and an integration test:
+The project includes various test files for different components and integrations. Currently, the LLM service has been successfully tested with the new microservices architecture. Other services are yet to be tested.
 
-- To run all tests:
-  ```
-  npm test
-  ```
-- To run only the LLM test:
-  ```
-  npm run test:llm
-  ```
-- To run only the voice generation test:
-  ```
-  npm run test:voice
-  ```
-- To run only the image generation test:
-  ```
-  npm run test:image
-  ```
-- To run only the music generation test:
-  ```
-  npm run test:music
-  ```
-- To run only the video generation test:
-  ```
-  npm run test:video
-  ```
-- To run the integration test:
-  ```
-  npm run test:integration
-  ```
+To run all tests:
+```
+npm test
+```
+
+To run specific tests:
+```
+npm run test:llm
+npm run test:voice
+npm run test:image
+npm run test:music
+npm run test:video
+npm run test:integration
+npm run test:discord
+npm run test:midjourney
+npm run test:image-download
+```
 
 Test outputs are stored in the `tests/test_output/` directory. The integration test processes all scenes for each prompt in the input CSV, exercising all components of the pipeline.
+
+### Current Testing Status:
+
+1. LLM Service: Successfully tested with the new microservices architecture.
+2. Voice Generation Service: Not yet tested with the new structure.
+3. Image Generation Service: Not yet tested with the new structure.
+4. Music Generation Service: Not yet tested with the new structure.
+5. Video Generation Service: Not yet tested with the new structure.
+6. Integration Test: Not yet updated or tested with the new structure.
+
+The successful testing of the LLM service marks a significant milestone in the refactoring process. It validates the new directory structure and the modular approach we've taken. As we progress, we'll need to update and test each service individually, ensuring they work within the new architecture before moving on to integration testing.
+
+## Source Code Export
+
+The project includes a utility for exporting the full source code, which can be useful for version control, sharing, or backup purposes. To use this feature:
+
+1. Navigate to the project root directory
+2. Run the following command:
+   ```
+   node backend/shared/utils/export-source-code.js
+   ```
+3. The exported source code will be saved as `full_source_code.txt` in the project root directory
+
+This exported file will contain the entire project structure and the content of all source files, making it easy to review or share the complete codebase.
 
 ## Troubleshooting
 
@@ -271,6 +340,10 @@ Test outputs are stored in the `tests/test_output/` directory. The integration t
 - For Suno-specific issues, ensure your cookie and session ID are up-to-date and valid
 - For Immersity AI-specific issues, verify that the client ID and client secret are correct
 - If the integration test fails, check individual component tests to isolate the issue
+- For frontend-related issues, check the browser console for error messages and ensure that the API Gateway is correctly configured to handle frontend requests
+- If you encounter issues with the new microservices architecture, ensure that all import paths have been updated correctly in each service
+- When running tests, make sure you're using the correct paths for input files (like CSV, JSON, and TXT files) as they may have changed in the new structure
+- If you encounter "Module not found" errors, double-check that all dependencies are correctly listed in the `package.json` file and that you've run `npm install` after making any changes
 
 ## Contributing
 
@@ -287,3 +360,15 @@ For major changes, please open an issue first to discuss what you would like to 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Next Steps
+
+With the successful testing of the LLM service in the new microservices architecture, our next steps are:
+
+1. Update and test the remaining services (Voice, Image, Music, and Video) within the new structure.
+2. Refactor the integration test to work with the new architecture.
+3. Develop the API Gateway to route requests to the appropriate microservices.
+4. Implement the new services (Auth, Job, and Billing) as outlined in the architecture.
+5. Begin frontend development to interact with the new backend structure.
+
+As we progress through these steps, we'll continue to update this README and the project documentation to reflect the current state of development.

@@ -1,6 +1,6 @@
 {
   "name": "short-video-creator-simplified",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A tool for creating short video content using AI services",
   "main": "src/index.js",
   "scripts": {

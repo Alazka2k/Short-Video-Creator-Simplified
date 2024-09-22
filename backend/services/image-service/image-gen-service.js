@@ -1,6 +1,6 @@
 const { Midjourney } = require('midjourney');
-const config = require('../utils/config');
-const logger = require('../utils/logger');
+const config = require('../../shared/utils/config');
+const logger = require('../../shared/utils/logger');
 const fs = require('fs').promises;
 const path = require('path');
 const puppeteer = require('puppeteer');

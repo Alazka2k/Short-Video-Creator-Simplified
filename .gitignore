@@ -6,12 +6,10 @@ config/default.json
 
 # Generated files
 full_source_code.txt
-src/utils/export-source-code.js
 
 # Logs
 logs
 *.log
-app.log
 npm-debug.log*
 
 # Runtime data
@@ -89,3 +87,36 @@ dist
 
 # Test output
 tests/test_output/
+
+# Generated content output
+data/output/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Frontend build output
+frontend/build/
+
+# Backend temporary files
+backend/tmp/
+
+# Database files
+*.sqlite
+*.db
+
+# Kubernetes secrets
+infrastructure/kubernetes/secrets/
+
+# Docker volumes
+infrastructure/docker/volumes/
+
+# Temporary files
+*.tmp
+*.temp
