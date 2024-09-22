@@ -1,14 +1,32 @@
 const path = require('path');
 const fs = require('fs').promises;
+const https = require('https');
 const imageService = require('../backend/services/image-service');
 const config = require('../backend/shared/utils/config');
 const logger = require('../backend/shared/utils/logger');
+
+function checkInternetConnectivity() {
+  return new Promise((resolve) => {
+    https.get('https://discord.com', (res) => {
+      resolve(res.statusCode === 200);
+    }).on('error', () => {
+      resolve(false);
+    });
+  });
+}
 
 async function runImageGenTest() {
   try {
     logger.info('Starting image generation test');
     logger.info('Image Generation Config:', JSON.stringify(config.imageGen, null, 2));
 
+    const isConnected = await checkInternetConnectivity();
+    if (!isConnected) {
+      logger.error('No internet connectivity. Please check your network connection.');
+      return;
+    }
+
+    logger.info('Internet connectivity confirmed. Initializing Image Generation Service...');
     await imageService.initialize();
 
     const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
@@ -32,7 +50,7 @@ async function runImageGenTest() {
           try {
             logger.info(`Generating image for scene ${index + 1}`);
             
-            const result = await imageService.generateImage(
+            const result = await imageService.process(
               scene.visual_prompt,
               promptOutputDir,
               index
@@ -68,11 +86,14 @@ async function runImageGenTest() {
       }
     }
 
-    await imageService.close();
-
-    logger.info('Image generation test completed');
+    logger.info('Image generation test completed successfully');
   } catch (error) {
     logger.error('Error in image generation test:', error.message);
+    if (error.stack) {
+      logger.error('Stack trace:', error.stack);
+    }
+  } finally {
+    await imageService.cleanup();
   }
 }
 
