@@ -17,6 +17,10 @@ class MusicGenService {
       
       const makeInstrumental = this.musicGenOptions.make_instrumental === "true" || options.makeInstrumental === true;
       
+      logger.info(`Make instrumental (from config): ${this.musicGenOptions.make_instrumental}`);
+      logger.info(`Make instrumental (from options): ${options.makeInstrumental}`);
+      logger.info(`Make instrumental (final): ${makeInstrumental}`);
+
       const payload = {
         prompt: makeInstrumental ? "" : musicData.lyrics,
         tags: musicData.style,
@@ -26,7 +30,6 @@ class MusicGenService {
         mv: this.musicGenOptions.modelId || "chirp-v3-0"
       };
 
-      logger.info(`Make instrumental: ${makeInstrumental}`);
       logger.info(`Payload for music generation:`, JSON.stringify(payload, null, 2));
 
       const endpoint = `${this.baseUrl}/api/custom_generate`;

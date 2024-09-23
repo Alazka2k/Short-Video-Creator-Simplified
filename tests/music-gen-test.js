@@ -91,7 +91,8 @@ async function runMusicGenTest() {
       let generationResult;
       try {
         const makeInstrumental = config.parameters?.musicGen?.make_instrumental === "true";
-        logger.info(`Make instrumental: ${makeInstrumental}`);
+        logger.info(`Make instrumental (from config): ${makeInstrumental}`);
+        logger.info(`Make instrumental (raw value): ${config.parameters?.musicGen?.make_instrumental}`);
 
         generationResult = await musicService.generateMusic(musicData, {
           makeInstrumental: makeInstrumental
