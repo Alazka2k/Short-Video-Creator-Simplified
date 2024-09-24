@@ -7,7 +7,7 @@ const OUTPUT_FILE = path.join(PROJECT_ROOT, 'full_source_code.txt');
 
 const INCLUDE_EXTENSIONS = ['.js', '.json', '.txt', '.csv', '.md', '.sql'];
 const EXCLUDE_EXTENSIONS = ['.log', '.lock'];
-const EXCLUDE_DIRS = ['node_modules', '.git', 'logs', 'data/output', 'frontend/build', 'backend/tmp'];
+const EXCLUDE_DIRS = ['node_modules', '.git', 'logs', 'data', 'tests/test_output', 'frontend/build', 'backend/tmp'];
 const EXCLUDE_FILES = ['package-lock.json', '.DS_Store', 'Thumbs.db'];
 
 async function writeToFile(filePath, content) {

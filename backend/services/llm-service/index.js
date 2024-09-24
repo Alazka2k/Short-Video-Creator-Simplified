@@ -1,5 +1,3 @@
-// backend/services/llm-service/index.js
-
 const LLMService = require('./llm-service');
 
 class LLMServiceInterface {
@@ -15,8 +13,8 @@ class LLMServiceInterface {
     return await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
   }
 
-  async saveOutput(output, fileName) {
-    await this.service.saveOutputToJson(output, fileName);
+  async saveOutput(output, fileName, isTest = false) {
+    return await this.service.saveOutputToJson(output, fileName, isTest);
   }
 
   async cleanup() {

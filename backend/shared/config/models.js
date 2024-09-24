@@ -4,7 +4,9 @@ const SceneSchema = z.object({
   description: z.string(),
   visual_prompt: z.string(),
   video_prompt: z.string(),
-  camera_movement: z.string()
+  camera_movement: z.string(),
+  animation: z.string(),
+  animation_movement: z.string()
 });
 
 const MusicSchema = z.object({
