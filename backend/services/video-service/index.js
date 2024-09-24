@@ -1,26 +1,21 @@
-// backend/services/[service-name]/index.js
+const VideoGenService = require('./video-gen-service');
 
-const ServiceName = require('./video-gen-service');
-
-class ServiceNameInterface {
+class VideoServiceInterface {
   constructor() {
-    this.service = new ServiceName();
+    this.service = VideoGenService;
   }
 
   async initialize() {
-    // Add any initialization logic here
-    await this.service.init();
+    await this.service.initialize();
   }
 
-  async process(data) {
-    // Add processing logic here
-    return await this.service.generateContent(data);
+  async generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, outputPath) {
+    return await this.service.generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, outputPath);
   }
 
   async cleanup() {
-    // Add any cleanup logic here
-    await this.service.close();
+    await this.service.cleanup();
   }
 }
 
-module.exports = new ServiceNameInterface();
+module.exports = new VideoServiceInterface();

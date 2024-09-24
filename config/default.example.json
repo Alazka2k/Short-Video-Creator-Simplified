@@ -20,10 +20,14 @@
     "provider": "suno",
     "sunoCookie": "YOUR_SUNO_COOKIE_HERE"
   },
-  "videoGen": {
+  "animationGen": {
     "provider":"immersityAI",
     "clientId": "YOUR_CLIENT_ID",
     "clientSecret": "YOUR_CLIENT_SECRET"
+  },
+  "videoGen": {
+    "provider":"lumalabsAI",
+    "apiKey": "YOUR_LUMALABS_API_KEY"
   },
   "input": {
     "csvPath": "./data/input/input.csv"

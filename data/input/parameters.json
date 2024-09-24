@@ -6,7 +6,7 @@
   },
   "voiceGen": {
     "modelId": "eleven_multilingual_v2",
-    "defaultVoiceId": "21m00Tcm4TlvDq8ikWAM",
+    "defaultVoiceId": "e5WNhrdI30aXpS2RSGm1",
     "stability": 0.5,
     "similarity_boost": 0.75
   },
@@ -22,8 +22,16 @@
     "sceneAmount": "2",
     "pictureDescription": "An image which describes the corresponding scene. Add information about the scene and details about the time period",
     "shotDetails": "Describe also the lighting effects, the time of the day, and the camera angles",
-    "imageStyle": "by Jakub Rozalski. Photorealistic, cinematic",
-    "imageDetails": "--ar 9:16 --style raw --s 500 --v 6",
+    "artistStyle":"by Jakub Rozalski.",
+    "shotStyle":"Photorealistic, cinematic",
+    "aspectRatioPrompt":"--ar",
+    "aspectRatio":"9:16",
+    "stylePrompt":"--style",
+    "style":"raw",
+    "sPrompt":"--s",
+    "sValue":"500",
+    "versionPrompt":"--v",
+    "version":"6.1",
     "lengthDescription": "Your task is to write a 45 seconds video",
     "generalDescription": "End of the world scenarios and step-by-step progression, focusing on both global impact and personal stories within the chaos",
     "scriptTone": "A dramatic, urgent tone that balances between panic and authoritative narration, mimicking a documentary-style voice-over",
@@ -35,7 +43,9 @@
     "sensoryThematicElements": "Incorporate vivid sensory details (sights, sounds, smells, textures) to make the scenes more immersive and engaging. Weave in recurring symbols or motifs throughout the scenes to create a cohesive narrative thread.",
     "characterPerspective": "Consider introducing a relatable character or perspective to humanize the story and increase emotional investment."
   },  
-  "videoGen": {
+  "animationGen": {
     "animationLength": 5
+  },
+  "videoGen": {
   }
 }

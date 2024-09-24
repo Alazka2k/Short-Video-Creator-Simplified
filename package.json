@@ -13,6 +13,7 @@
     "test:voice": "node tests/voice-gen-test.js",
     "test:image": "node tests/image-gen-test.js",
     "test:music": "node tests/music-gen-test.js",
+    "test:animation": "node tests/animation-gen-test.js",
     "test:video": "node tests/video-gen-test.js",
     "test:integration": "node tests/integration-test.js"
   },
@@ -37,6 +38,7 @@
     "ffprobe-static": "^3.1.0",
     "form-data": "^4.0.0",
     "isomorphic-ws": "^5.0.0",
+    "lumaai": "^1.0.2",
     "midjourney": "^4.3.17",
     "novita-sdk": "^1.1.0",
     "openai": "^4.58.1",

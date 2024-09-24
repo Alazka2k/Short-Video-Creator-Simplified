@@ -56,10 +56,20 @@ class LLMService {
     }
   }
 
-  async saveOutputToJson(output, fileName) {
-    const outputPath = path.join(__dirname, '..', '..', '..', 'data', 'output', fileName);
+  async saveOutputToJson(output, fileName, isTest = false) {
+    let outputPath;
+    if (isTest) {
+      outputPath = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'llm', fileName);
+    } else {
+      const date = new Date();
+      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}-${String(date.getSeconds()).padStart(2, '0')}`;
+      const promptDir = path.join(config.output.directory, dateString, `prompt_${output.prompt.replace(/\s+/g, '_').toLowerCase()}`);
+      await fs.mkdir(promptDir, { recursive: true });
+      outputPath = path.join(promptDir, 'llm_output.json');
+    }
     await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
     logger.info(`Output saved to ${outputPath}`);
+    return outputPath;
   }
 }
 
