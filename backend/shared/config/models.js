@@ -4,15 +4,18 @@ const SceneSchema = z.object({
   description: z.string(),
   visual_prompt: z.string(),
   video_prompt: z.string(),
-  camera_movement: z.string(),
-  animation: z.string(),
-  animation_movement: z.string()
+  camera_movement: z.string()
 });
 
 const MusicSchema = z.object({
   title: z.string(),
   lyrics: z.string(),
   style: z.string(),
+});
+
+const AnimationPatternSchema = z.object({
+  pattern: z.string(),
+  description: z.string()
 });
 
 const VideoScriptSchema = z.object({
@@ -25,4 +28,4 @@ const VideoScriptSchema = z.object({
 });
 
 
-module.exports = { SceneSchema, VideoScriptSchema, MusicSchema};
+module.exports = { SceneSchema, VideoScriptSchema, MusicSchema, AnimationPatternSchema};

@@ -1,10 +1,11 @@
 const axios = require('axios');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const sharp = require('sharp');
 const FormData = require('form-data');
+const AnimationPatternGenerator = require('./animationPatternGenerator');
 
 class AnimationGenService {
   constructor() {
@@ -14,14 +15,16 @@ class AnimationGenService {
     this.clientSecret = config.animationGen.clientSecret;
     this.animationLength = config.animationGen.animationLength;
     this.accessToken = null;
+    logger.info('AnimationGenService constructed');
   }
 
   async init() {
     try {
+      logger.info('Initializing AnimationGenService...');
       await this.getAccessToken();
       logger.info('Immersity AI service initialized successfully');
     } catch (error) {
-      this.logError('Failed to initialize Animation Generation Service:', error);
+      logger.error('Failed to initialize Animation Generation Service:', error);
       throw error;
     }
   }
@@ -40,28 +43,30 @@ class AnimationGenService {
       });
 
       this.accessToken = response.data.access_token;
-      logger.info('Immersity AI Login AccessToken acquired');
+      logger.info('Immersity AI Login AccessToken acquired successfully');
     } catch (error) {
-      this.logError('Error acquiring access token:', error);
+      logger.error('Error acquiring access token:', error);
       throw error;
     }
   }
 
   async convertToJpeg(inputPath, outputPath) {
     try {
+      logger.info(`Converting image to JPEG: ${inputPath} -> ${outputPath}`);
       await sharp(inputPath)
         .jpeg({ quality: 90 })
         .toFile(outputPath);
-      logger.info(`Image converted to JPEG: ${outputPath}`);
+      logger.info(`Image converted to JPEG successfully: ${outputPath}`);
     } catch (error) {
-      this.logError('Error converting image to JPEG:', error);
+      logger.error('Error converting image to JPEG:', error);
       throw error;
     }
   }
 
   async uploadImageToPicsur(imagePath) {
     try {
-      const imageBuffer = await fs.promises.readFile(imagePath);
+      logger.info(`Uploading image to Picsur: ${imagePath}`);
+      const imageBuffer = await fs.readFile(imagePath);
       const formData = new FormData();
       formData.append('image', imageBuffer, path.basename(imagePath));
 
@@ -73,18 +78,21 @@ class AnimationGenService {
 
       if (response.data.success) {
         const imageId = response.data.data.id;
+        logger.info(`Image uploaded successfully. Image ID: ${imageId}`);
         return { imageId, uploadResponse: response.data };
       } else {
         throw new Error('Image upload failed');
       }
     } catch (error) {
-      this.logError('Error uploading image to Picsur:', error);
+      logger.error('Error uploading image to Picsur:', error);
       throw error;
     }
   }
 
   constructImageUrl(imageId) {
-    return `https://picsur.org/i/${imageId}.jpg`;
+    const url = `https://picsur.org/i/${imageId}.jpg`;
+    logger.info(`Constructed image URL: ${url}`);
+    return url;
   }
 
   async generateDisparityMap(imagePath) {
@@ -120,12 +128,37 @@ class AnimationGenService {
 
       return { disparityUrl: response.data.resultPresignedUrl, inputImageUrl };
     } catch (error) {
-      this.logError(`Error generating disparity map:`, error);
+      logger.error(`Error generating disparity map:`, error);
       throw error;
     }
   }
 
+  // Generate animation pattern separately to validate it before generating the animation
+  async generateAnimationPattern(animationPrompt) {
+    try {
+      logger.info(`Generating animation pattern for visual prompt: ${animationPrompt}`);
+      const generatedPattern = await AnimationPatternGenerator.generatePattern(animationPrompt);
+
+      // Validate the generated pattern
+      const pattern = generatedPattern.pattern;
+      const values = pattern.slice(1, -1).split(',').map(Number);
+
+      if (values.length % 3 !== 0 || values.length > 405) {
+        throw new Error(`Invalid animation pattern: ${values.length} values`);
+      }
+
+      logger.info(`Generated and validated animation pattern: ${pattern}`);
+      return generatedPattern;
+    } catch (error) {
+      logger.error('Error generating or validating animation pattern:', error);
+      throw error;
+    }
+  }
+
+  // Main function to generate the animation
   async generateAnimation(imagePath, outputPath, options = {}) {
+    logger.info('generateAnimation called with:', { imagePath, outputPath, options });
+    
     if (!this.accessToken) {
       throw new Error('Animation Generation Service not initialized. Call init() first.');
     }
@@ -134,23 +167,30 @@ class AnimationGenService {
       throw new Error('Image path is undefined or empty');
     }
   
+    if (!options.animationPattern) {
+      throw new Error('Animation pattern is required to generate the animation');
+    }
+
     logger.info(`Starting animation generation for image: ${imagePath}`);
     
     const jpegPath = path.join(path.dirname(imagePath), 'converted.jpg');
     await this.convertToJpeg(imagePath, jpegPath);
     
     const animationLength = options.animationLength || this.animationLength;
+    const animationPattern = options.animationPattern;
+
     const endpoint = `${this.baseUrl}/api/v1/animation`;
   
     try {
-      logger.info(`Generating animation`);
-      
+      logger.info(`Generating animation with the provided pattern`);
+
       const { disparityUrl, inputImageUrl } = await this.generateDisparityMap(jpegPath);
       
       const requestBody = {
         inputImageUrl,
         inputDisparityUrl: disparityUrl,
-        animationLength
+        animationLength,
+        pattern: animationPattern
       };
       logger.info(`Request body for animation generation: ${JSON.stringify(requestBody, null, 2)}`);
   
@@ -177,11 +217,11 @@ class AnimationGenService {
       logger.info(`Animation generated and saved to ${outputPath}`);
       return outputPath;
     } catch (error) {
-      this.logError(`Error generating animation:`, error);
+      logger.error(`Error generating animation:`, error);
       throw error;
     } finally {
       try {
-        await fs.promises.unlink(jpegPath);
+        await fs.unlink(jpegPath);
         logger.info(`Temporary JPEG file removed: ${jpegPath}`);
       } catch (unlinkError) {
         logger.warn(`Failed to remove temporary JPEG file: ${jpegPath}`, unlinkError);
@@ -195,45 +235,23 @@ class AnimationGenService {
       const response = await axios({
         method: 'get',
         url: url,
-        responseType: 'stream'
+        responseType: 'arraybuffer'  // Changed from 'stream' to 'arraybuffer'
       });
 
-      const writer = fs.createWriteStream(outputPath);
-      response.data.pipe(writer);
+      await fs.writeFile(outputPath, Buffer.from(response.data));  // Write the file using fs.promises
 
-      return new Promise((resolve, reject) => {
-        writer.on('finish', () => {
-          logger.info(`Animation downloaded successfully to: ${outputPath}`);
-          resolve();
-        });
-        writer.on('error', (err) => {
-          this.logError(`Error writing animation to file: ${err.message}`, err);
-          reject(err);
-        });
-      });
+      logger.info(`Animation downloaded successfully to: ${outputPath}`);
+      return outputPath;
     } catch (error) {
-      this.logError('Error downloading animation:', error);
+      logger.error('Error downloading animation:', error);
       throw new Error('Failed to download animation');
     }
   }
 
-  logError(message, error) {
-    const errorInfo = {
-      message: error.message,
-      name: error.name,
-      stack: error.stack
-    };
-
-    if (error.response) {
-      errorInfo.response = {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        headers: error.response.headers,
-        data: error.response.data
-      };
-    }
-
-    logger.error(message, errorInfo);
+  async cleanup() {
+    logger.info('AnimationGenService cleanup initiated');
+    // Add any cleanup logic if needed
+    logger.info('AnimationGenService cleanup completed');
   }
 }
 

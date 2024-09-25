@@ -6,35 +6,56 @@ const config = require('../backend/shared/utils/config');
 
 async function runAnimationGenTest() {
   try {
-    logger.info('Starting animation generation test with Immersity AI');
+    logger.info('==== Starting animation generation test ====');
     logger.info('Animation Generation Config:', JSON.stringify(config.animationGen, null, 2));
 
-    await animationService.initialize();
+    logger.info('Attempting to initialize animation service...');
+    try {
+      await animationService.initialize();
+      logger.info('Animation service initialized successfully');
+    } catch (initError) {
+      logger.error('Failed to initialize animation service:', initError);
+      return;
+    }
 
     const imageBaseDir = path.join(__dirname, 'test_output', 'image');
+    const llmBaseDir = path.join(__dirname, 'test_output', 'llm');
     const animationOutputDir = path.join(__dirname, 'test_output', 'animation');
 
-    await fs.mkdir(animationOutputDir, { recursive: true });
+    logger.info(`Image base directory: ${imageBaseDir}`);
+    logger.info(`LLM base directory: ${llmBaseDir}`);
+    logger.info(`Animation output directory: ${animationOutputDir}`);
 
-    const testFolders = await fs.readdir(imageBaseDir);
+    try {
+      await fs.mkdir(animationOutputDir, { recursive: true });
+      logger.info('Animation output directory created successfully');
+    } catch (mkdirError) {
+      logger.error('Failed to create animation output directory:', mkdirError);
+      return;
+    }
+
+    let testFolders;
+    try {
+      testFolders = await fs.readdir(imageBaseDir);
+      logger.info(`Found ${testFolders.length} test folders`);
+    } catch (readdirError) {
+      logger.error('Failed to read test folders:', readdirError);
+      return;
+    }
 
     for (const folder of testFolders) {
+      logger.info(`Processing folder: ${folder}`);
       const imageFolderPath = path.join(imageBaseDir, folder);
       const metadataPath = path.join(imageFolderPath, 'metadata.json');
+      const llmOutputPath = path.join(llmBaseDir, `${folder}.json`);
 
       try {
-        const metadataContent = await fs.readFile(metadataPath, 'utf8');
-        const metadata = JSON.parse(metadataContent);
+        const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+        const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
 
-        logger.info(`Processing folder: ${folder}`);
-        logger.info(`Metadata content: ${JSON.stringify(metadata, null, 2)}`);
-
-        const animationFolder = path.join(animationOutputDir, folder);
-        await fs.mkdir(animationFolder, { recursive: true });
-
-        // Process only the first scene in the metadata
         const firstSceneKey = Object.keys(metadata)[0];
         const sceneData = metadata[firstSceneKey];
+        const llmSceneData = llmOutput.scenes[0];
 
         if (!sceneData || !sceneData.fileName) {
           logger.warn(`Invalid or missing data for ${firstSceneKey} in ${folder}. Skipping.`);
@@ -42,33 +63,46 @@ async function runAnimationGenTest() {
         }
 
         const imagePath = path.join(imageFolderPath, sceneData.fileName);
-        const animationOutputPath = path.join(animationFolder, `${firstSceneKey}_animation.mp4`);
+        const animationOutputPath = path.join(animationOutputDir, `${firstSceneKey}_animation.mp4`);
 
         logger.info(`Generating animation for ${firstSceneKey}`);
         logger.info(`Image path: ${imagePath}`);
         logger.info(`Animation output path: ${animationOutputPath}`);
 
         try {
-          await animationService.process(imagePath, animationOutputPath, {
-            animationLength: config.animationGen.animationLength
+          const result = await animationService.process(imagePath, animationOutputPath, {
+            animationLength: config.animationGen.animationLength,
+            animationPrompt: llmSceneData.video_prompt
           });
-          logger.info(`Animation generated successfully: ${animationOutputPath}`);
-        } catch (error) {
-          logger.error(`Error generating animation for ${firstSceneKey}:`, error.message);
+          logger.info('Animation processing completed. Result:', result);
+        } catch (processError) {
+          logger.error(`Error processing animation for ${firstSceneKey}:`, processError);
         }
-      } catch (error) {
-        logger.error(`Error processing folder ${folder}:`, error.message);
+      } catch (folderError) {
+        logger.error(`Error processing folder ${folder}:`, folderError);
       }
     }
 
-    logger.info('Animation generation test completed');
+    logger.info('==== Animation generation test completed ====');
   } catch (error) {
-    logger.error('Error in animation generation test:', error.message);
+    logger.error('Unexpected error in animation generation test:', error);
   } finally {
-    await animationService.cleanup();
+    try {
+      await animationService.cleanup();
+      logger.info('Animation service cleanup completed');
+    } catch (cleanupError) {
+      logger.error('Error during animation service cleanup:', cleanupError);
+    }
   }
 }
 
-runAnimationGenTest().catch(error => {
-  logger.error('Unhandled error in animation generation test:', error.message);
-});
+// Wrap the execution in a try-catch block
+try {
+  runAnimationGenTest().catch(error => {
+    logger.error('Unhandled error in runAnimationGenTest:', error);
+  });
+} catch (error) {
+  logger.error('Error executing runAnimationGenTest:', error);
+}
+
+module.exports = runAnimationGenTest;

@@ -14,6 +14,7 @@
     "test:image": "node tests/image-gen-test.js",
     "test:music": "node tests/music-gen-test.js",
     "test:animation": "node tests/animation-gen-test.js",
+    "test:animation-pattern": "node tests/animation-pattern-generator-test.js",
     "test:video": "node tests/video-gen-test.js",
     "test:integration": "node tests/integration-test.js"
   },
