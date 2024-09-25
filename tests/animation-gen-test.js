@@ -20,17 +20,17 @@ async function runAnimationGenTest() {
 
     const imageBaseDir = path.join(__dirname, 'test_output', 'image');
     const llmBaseDir = path.join(__dirname, 'test_output', 'llm');
-    const animationOutputDir = path.join(__dirname, 'test_output', 'animation');
+    const animationBaseDir = path.join(__dirname, 'test_output', 'animation');
 
     logger.info(`Image base directory: ${imageBaseDir}`);
     logger.info(`LLM base directory: ${llmBaseDir}`);
-    logger.info(`Animation output directory: ${animationOutputDir}`);
+    logger.info(`Animation base directory: ${animationBaseDir}`);
 
     try {
-      await fs.mkdir(animationOutputDir, { recursive: true });
-      logger.info('Animation output directory created successfully');
+      await fs.mkdir(animationBaseDir, { recursive: true });
+      logger.info('Animation base directory created successfully');
     } catch (mkdirError) {
-      logger.error('Failed to create animation output directory:', mkdirError);
+      logger.error('Failed to create animation base directory:', mkdirError);
       return;
     }
 
@@ -48,35 +48,38 @@ async function runAnimationGenTest() {
       const imageFolderPath = path.join(imageBaseDir, folder);
       const metadataPath = path.join(imageFolderPath, 'metadata.json');
       const llmOutputPath = path.join(llmBaseDir, `${folder}.json`);
+      const animationOutputDir = path.join(animationBaseDir, folder);
 
       try {
+        await fs.mkdir(animationOutputDir, { recursive: true });
+        logger.info(`Created animation output directory: ${animationOutputDir}`);
+
         const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
         const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
 
-        const firstSceneKey = Object.keys(metadata)[0];
-        const sceneData = metadata[firstSceneKey];
+        // Process only the first scene
+        const sceneKey = 'scene_1';
+        const sceneData = metadata[sceneKey];
         const llmSceneData = llmOutput.scenes[0];
 
         if (!sceneData || !sceneData.fileName) {
-          logger.warn(`Invalid or missing data for ${firstSceneKey} in ${folder}. Skipping.`);
+          logger.warn(`Invalid or missing data for ${sceneKey} in ${folder}. Skipping.`);
           continue;
         }
 
         const imagePath = path.join(imageFolderPath, sceneData.fileName);
-        const animationOutputPath = path.join(animationOutputDir, `${firstSceneKey}_animation.mp4`);
 
-        logger.info(`Generating animation for ${firstSceneKey}`);
+        logger.info(`Generating animation for ${sceneKey}`);
         logger.info(`Image path: ${imagePath}`);
-        logger.info(`Animation output path: ${animationOutputPath}`);
 
         try {
-          const result = await animationService.process(imagePath, animationOutputPath, {
+          const result = await animationService.process(imagePath, animationOutputDir, 1, {
             animationLength: config.animationGen.animationLength,
             animationPrompt: llmSceneData.video_prompt
           });
           logger.info('Animation processing completed. Result:', result);
         } catch (processError) {
-          logger.error(`Error processing animation for ${firstSceneKey}:`, processError);
+          logger.error(`Error processing animation for ${sceneKey}:`, processError);
         }
       } catch (folderError) {
         logger.error(`Error processing folder ${folder}:`, folderError);

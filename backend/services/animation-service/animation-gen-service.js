@@ -138,16 +138,29 @@ class AnimationGenService {
     try {
       logger.info(`Generating animation pattern for visual prompt: ${animationPrompt}`);
       const generatedPattern = await AnimationPatternGenerator.generatePattern(animationPrompt);
-
+  
       // Validate the generated pattern
       const pattern = generatedPattern.pattern;
       const values = pattern.slice(1, -1).split(',').map(Number);
-
-      if (values.length % 3 !== 0 || values.length > 405) {
-        throw new Error(`Invalid animation pattern: ${values.length} values`);
+  
+      if (values.length < 702 || values.length > 825 || values.length % 3 !== 0) {
+        logger.warn(`Invalid animation pattern: ${values.length} values. Adjusting...`);
+        // Ensure at least 702 values
+        while (values.length < 702) {
+          values.push(...values.slice(0, 3));
+        }
+        // Truncate to 825 values if too long
+        if (values.length > 825) {
+          values.length = 825;
+        }
+        // Ensure the length is a multiple of 3
+        while (values.length % 3 !== 0) {
+          values.pop();
+        }
+        generatedPattern.pattern = `{${values.join(',')}}`;
       }
-
-      logger.info(`Generated and validated animation pattern: ${pattern}`);
+  
+      logger.info(`Generated and validated animation pattern: ${generatedPattern.pattern}`);
       return generatedPattern;
     } catch (error) {
       logger.error('Error generating or validating animation pattern:', error);

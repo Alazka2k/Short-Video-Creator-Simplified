@@ -2,6 +2,7 @@ const OpenAI = require("openai");
 const { zodResponseFormat } = require("openai/helpers/zod");
 const fs = require('fs').promises;
 const path = require('path');
+const csv = require('csv-parse/sync');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
 const PromptUtils = require('../../shared/utils/prompt-utils');
@@ -13,16 +14,27 @@ class LLMService {
       apiKey: config.llm.apiKey,
     });
 
-    logger.info('LLM Provider:', config.llm.provider);
-    logger.info('OpenAI API Key:', config.llm.apiKey ? 'Loaded' : 'Missing');
-    logger.info('OpenAI Model:', config.llm.model);
+    logger.info(`LLM Provider: ${config.llm.provider}`);
+    logger.info(`OpenAI API Key: ${config.llm.apiKey ? 'Loaded' : 'Missing'}`);
+    logger.info(`OpenAI Model: ${config.llm.model}`);
+  }
+
+  async loadPromptsFromCsv(csvPath) {
+    try {
+      const content = await fs.readFile(csvPath, 'utf8');
+      const records = csv.parse(content, { columns: true, skip_empty_lines: true });
+      return records.map(record => record.Prompt);
+    } catch (error) {
+      logger.error('Error loading prompts from CSV:', error);
+      throw error;
+    }
   }
 
   async generateContent(initialPromptPath, parametersPath, inputPrompt) {
     try {
       const parameters = await PromptUtils.loadParameters(parametersPath);
       const dynamicPrompt = await PromptUtils.generateDynamicPrompt(initialPromptPath, parameters);
-      const combined_prompt = `${dynamicPrompt}\n\n${inputPrompt}`;
+      const combined_prompt = `${dynamicPrompt}\n\nCreate a video script about the following topic: ${inputPrompt}`;
 
       logger.info('Sending request to OpenAI API...');
       

@@ -1,5 +1,6 @@
 const AnimationGenService = require('./animation-gen-service');
 const logger = require('../../shared/utils/logger');
+const path = require('path');
 
 class AnimationServiceInterface {
   constructor() {
@@ -23,9 +24,11 @@ class AnimationServiceInterface {
     }
   }
 
-  async process(imagePath, outputPath, options = {}) {
+  async process(imagePath, outputDir, sceneNumber, options = {}) {
     try {
-      logger.info(`Processing animation request: ${imagePath} -> ${outputPath}`);
+      logger.info(`Processing animation request for scene ${sceneNumber}`);
+      logger.info(`Image path: ${imagePath}`);
+      logger.info(`Output directory: ${outputDir}`);
       logger.info('Animation options:', JSON.stringify(options));
 
       if (!options.animationPrompt) {
@@ -41,6 +44,10 @@ class AnimationServiceInterface {
       const animationPattern = patternData.pattern;
       logger.info('Animation pattern generated successfully');
 
+      // Construct the output path for the animation
+      const outputFileName = `scene_${sceneNumber}_animation.mp4`;
+      const outputPath = path.join(outputDir, outputFileName);
+
       // Proceed with animation generation using the generated pattern
       logger.info('Starting animation generation');
       const result = await this.service.generateAnimation(imagePath, outputPath, {
@@ -48,6 +55,7 @@ class AnimationServiceInterface {
         animationPattern: animationPattern
       });
       logger.info('Animation generation completed successfully');
+      logger.info(`Animation saved to: ${result}`);
       return result;
     } catch (error) {
       logger.error('Error processing animation:', error);

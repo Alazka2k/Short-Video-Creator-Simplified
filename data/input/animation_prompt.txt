@@ -55,7 +55,7 @@ For x-axis scale every third value starting with the 1st value in the list
 For y-axis scale every third value starting with the 2nd value in the list
 For z-axis scale every third value starting with the 3rd value in the list
 
-We need a maxium of 5-6 seconds animation, so in total in between 120 - 135 Triplets.  
+We need in the generated response a minimum of 250 Triplets which equals to a minimum of 750 values.  
 
 Also provide a brief description of the animation movement.
 

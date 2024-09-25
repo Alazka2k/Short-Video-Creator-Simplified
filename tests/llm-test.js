@@ -21,9 +21,8 @@ async function runLLMTest() {
     // Ensure output directory exists
     await fs.mkdir(outputDir, { recursive: true });
 
-    // Read prompts from CSV
-    const promptsContent = await fs.readFile(inputCsvPath, 'utf8');
-    const prompts = promptsContent.split('\n').filter(line => line.trim() !== '').slice(1);
+    // Load prompts from CSV
+    const prompts = await llmService.loadPromptsFromCsv(inputCsvPath);
 
     for (const [index, promptToTest] of prompts.entries()) {
       logger.info(`Generating content for prompt ${index + 1}:`, promptToTest);

@@ -9,6 +9,10 @@ class LLMServiceInterface {
     // Add any initialization logic here if needed
   }
 
+  async loadPromptsFromCsv(csvPath) {
+    return await this.service.loadPromptsFromCsv(csvPath);
+  }
+
   async process(initialPromptPath, parametersPath, inputPrompt) {
     return await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
   }
@@ -19,6 +23,19 @@ class LLMServiceInterface {
 
   async cleanup() {
     // Add any cleanup logic here if needed
+  }
+
+  // This method can be used to process all prompts from a CSV file
+  async processAllPrompts(csvPath, initialPromptPath, parametersPath) {
+    const prompts = await this.loadPromptsFromCsv(csvPath);
+    const results = [];
+
+    for (const prompt of prompts) {
+      const result = await this.process(initialPromptPath, parametersPath, prompt);
+      results.push(result);
+    }
+
+    return results;
   }
 }
 

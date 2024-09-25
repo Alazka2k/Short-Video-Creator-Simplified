@@ -63,18 +63,24 @@ class AnimationPatternGenerator {
       });
       
       logger.info(`Extracted ${values.length} values from pattern`);
-
-      // Ensure we have at least 3 values and it's a multiple of 3
-      while (values.length < 3 || values.length % 3 !== 0) {
+  
+      // Ensure we have at least 702 values (234 triplets) and it's a multiple of 3
+      while (values.length < 702 || values.length % 3 !== 0) {
         values.push(0);
         logger.info(`Added padding zero. New length: ${values.length}`);
       }
       
-      // Limit to 135 triplets (405 values)
-      const maxValues = 405;
+      // Limit to 275 triplets (825 values)
+      const maxValues = 825;
       if (values.length > maxValues) {
         logger.warn(`Pattern had ${values.length} values. Truncating to ${maxValues} values.`);
         values.length = maxValues;
+      }
+      
+      // If the pattern is shorter than 700 values, extend it by repeating the pattern
+      while (values.length < 702) {
+        values.push(...values.slice(0, 3));
+        logger.info(`Extended pattern. New length: ${values.length}`);
       }
       
       // Reconstruct the pattern string
@@ -83,8 +89,9 @@ class AnimationPatternGenerator {
       return reconstructedPattern;
     } catch (error) {
       logger.error('Error validating and reconstructing pattern:', error);
-      logger.warn('Returning default pattern {0,0,0}');
-      return '{0,0,0}'; // Return a default pattern in case of error
+      logger.warn('Returning default pattern with 702 values');
+      // Return a default pattern with 702 values (234 triplets of 0,0,0)
+      return '{' + '0,0,0,'.repeat(233) + '0,0,0}';
     }
   }
 
