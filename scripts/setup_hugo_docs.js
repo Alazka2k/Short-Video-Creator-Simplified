@@ -8,9 +8,9 @@ const logger = require('../backend/shared/utils/logger');
 
 const docsStructure = [
     { path: 'content/docs/_index.md', title: 'Documentation' },
-    { path: 'content/docs/1_getting-started/_index.md', title: '1. Getting Started' },
-    { path: 'content/docs/2_architecture/_index.md', title: '2. Architecture' },
-    { path: 'content/docs/3_functionalities/_index.md', title: '3. Functionalities' },
+    { path: 'content/docs/1_getting-started/_index.md', title: '1.Getting Started' },
+    { path: 'content/docs/2_architecture/_index.md', title: '2.Architecture' },
+    { path: 'content/docs/3_functionalities/_index.md', title: '3.Functionalities' },
     { path: 'content/docs/4_api-reference/_index.md', title: '4.API Reference' }
 ];
 
@@ -36,8 +36,11 @@ async function getProjectDescription() {
     }
 }
 
-async function generateDocContent(title, projectDescription) {
-    const prompt = `Generate documentation content for a section titled "${title}" in a software project. Use the following project description as context:\n\n${projectDescription}\n\nProvide a detailed markdown-formatted content suitable for a technical audience.`;
+async function generateDocContent(title, projectDescription, existingContent = '') {
+    const prompt = `Generate or update documentation content for a section titled "${title}" in a software project. 
+    Use the following project description as context:\n\n${projectDescription}\n\n
+    ${existingContent ? 'Existing content to update:\n\n' + existingContent + '\n\n' : ''}
+    Provide a detailed markdown-formatted content suitable for a technical audience.`;
     
     logger.info(`Generating content for "${title}"`);
 
@@ -85,9 +88,9 @@ async function checkHugoInstallation() {
     }
 }
 
-async function setupHugoDocs() {
+async function setupOrUpdateHugoDocs() {
     try {
-        logger.info('Starting Hugo docs setup...');
+        logger.info('Starting Hugo docs setup or update...');
 
         const projectRoot = path.resolve(__dirname, '..');
         const docsDir = path.join(projectRoot, 'docs');
@@ -101,42 +104,44 @@ async function setupHugoDocs() {
             return;
         }
 
-        logger.info('Creating new Hugo site...');
-        await executeCommand(`hugo new site ${docsDir} --force`);
-        
-        process.chdir(docsDir);
+        const docsExist = await fs.access(docsDir).then(() => true).catch(() => false);
 
-        logger.info('Setting up Docsy theme...');
-        await executeCommand('git clone https://github.com/google/docsy.git themes/docsy');
-        await executeCommand('cd themes/docsy && npm install');
+        if (!docsExist) {
+            logger.info('Creating new Hugo site...');
+            await executeCommand(`hugo new site ${docsDir} --force`);
+            process.chdir(docsDir);
 
-        // Initialize Hugo modules
-        await executeCommand('hugo mod init github.com/alazka2k/SHORT-VIDEO-CREATOR-SIMPLIFIED');
-        await executeCommand('hugo mod get github.com/google/docsy@v0.10.0');
-        await executeCommand('hugo mod get github.com/google/docsy/dependencies');
+            logger.info('Setting up Docsy theme...');
+            await executeCommand('git clone https://github.com/google/docsy.git themes/docsy');
+            await executeCommand('cd themes/docsy && npm install');
 
-        // Create package.json
-        const packageJson = {
-            "name": "short-video-creator-simplified-docs",
-            "version": "1.0.0",
-            "description": "Documentation for SHORT-VIDEO-CREATOR-SIMPLIFIED",
-            "scripts": {
-                "start": "hugo server",
-                "build": "hugo --minify"
-            },
-            "dependencies": {},
-            "devDependencies": {
-                "autoprefixer": "^10.4.0",
-                "postcss-cli": "^10.1.0"
-            }
-        };
-        await fs.writeFile('package.json', JSON.stringify(packageJson, null, 2));
+            // Initialize Hugo modules
+            await executeCommand('hugo mod init github.com/alazka2k/SHORT-VIDEO-CREATOR-SIMPLIFIED');
+            await executeCommand('hugo mod get github.com/google/docsy@v0.10.0');
+            await executeCommand('hugo mod get github.com/google/docsy/dependencies');
 
-        // Install dependencies
-        await executeCommand('npm install');
+            // Create package.json
+            const packageJson = {
+                "name": "short-video-creator-simplified-docs",
+                "version": "1.0.0",
+                "description": "Documentation for SHORT-VIDEO-CREATOR-SIMPLIFIED",
+                "scripts": {
+                    "start": "hugo server",
+                    "build": "hugo --minify"
+                },
+                "dependencies": {},
+                "devDependencies": {
+                    "autoprefixer": "^10.4.0",
+                    "postcss-cli": "^10.1.0"
+                }
+            };
+            await fs.writeFile('package.json', JSON.stringify(packageJson, null, 2));
 
-        // Write the updated hugo.toml content
-        const hugoConfig = `
+            // Install dependencies
+            await executeCommand('npm install');
+
+            // Write the updated hugo.toml content
+            const hugoConfig = `
 baseURL = 'http://example.org/'
 languageCode = 'en-us'
 title = 'SHORT-VIDEO-CREATOR-SIMPLIFIED Documentation'
@@ -168,34 +173,58 @@ enableGitInfo = true
   [[module.imports]]
     path = "github.com/google/docsy/dependencies"
 `;
-        await fs.writeFile('hugo.toml', hugoConfig);
+            await fs.writeFile('hugo.toml', hugoConfig);
+        } else {
+            process.chdir(docsDir);
+            logger.info('Existing Hugo site found. Proceeding with updates.');
+        }
 
         // Prompt user for action
-        const action = await promptUser("Do you want to recreate all docs or choose specific sections? (all/specific): ");
+        const action = await promptUser("Do you want to update all docs, choose specific sections, or add a new section? (all/specific/new): ");
 
         if (action.toLowerCase() === 'all') {
             for (const item of docsStructure) {
-                const content = await generateDocContent(item.title, projectDescription);
                 const filePath = path.join(docsDir, item.path);
+                let existingContent = '';
+                try {
+                    existingContent = await fs.readFile(filePath, 'utf8');
+                } catch (error) {
+                    // File doesn't exist, which is fine
+                }
+                const content = await generateDocContent(item.title, projectDescription, existingContent);
                 await fs.mkdir(path.dirname(filePath), { recursive: true });
                 await fs.writeFile(filePath, content);
-                logger.info(`Created ${item.path}`);
+                logger.info(`Updated ${item.path}`);
             }
         } else if (action.toLowerCase() === 'specific') {
             const choices = docsStructure.map((item, index) => `${index + 1}. ${item.title}`).join('\n');
-            const selection = await promptUser(`Choose the number(s) of the section(s) to recreate (comma-separated):\n${choices}\n`);
+            const selection = await promptUser(`Choose the number(s) of the section(s) to update (comma-separated):\n${choices}\n`);
             const selectedIndices = selection.split(',').map(s => parseInt(s.trim()) - 1);
 
             for (const index of selectedIndices) {
                 if (index >= 0 && index < docsStructure.length) {
                     const item = docsStructure[index];
-                    const content = await generateDocContent(item.title, projectDescription);
                     const filePath = path.join(docsDir, item.path);
+                    let existingContent = '';
+                    try {
+                        existingContent = await fs.readFile(filePath, 'utf8');
+                    } catch (error) {
+                        // File doesn't exist, which is fine
+                    }
+                    const content = await generateDocContent(item.title, projectDescription, existingContent);
                     await fs.mkdir(path.dirname(filePath), { recursive: true });
                     await fs.writeFile(filePath, content);
-                    logger.info(`Created ${item.path}`);
+                    logger.info(`Updated ${item.path}`);
                 }
             }
+        } else if (action.toLowerCase() === 'new') {
+            const newSectionTitle = await promptUser("Enter the title for the new section: ");
+            const newSectionPath = await promptUser("Enter the path for the new section (e.g., content/docs/new-section/_index.md): ");
+            const filePath = path.join(docsDir, newSectionPath);
+            const content = await generateDocContent(newSectionTitle, projectDescription);
+            await fs.mkdir(path.dirname(filePath), { recursive: true });
+            await fs.writeFile(filePath, content);
+            logger.info(`Created new section: ${newSectionPath}`);
         } else {
             logger.info("Invalid action. No documents were created or updated.");
             return;
@@ -211,21 +240,21 @@ enableGitInfo = true
 
         // Reminder about .gitignore
         logger.info("Don't forget to update your .gitignore file to exclude the docs directory except for the content folder.");
-        logger.info("Add the following lines to your .gitignore:");
+        logger.info("Add the following lines to your .gitignore if not already present:");
         logger.info("docs/*");
         logger.info("!docs/content/");
     } catch (error) {
-        logger.error('Error setting up Hugo docs:', error);
+        logger.error('Error setting up or updating Hugo docs:', error);
         throw error;
     }
 }
 
 // If you're running this script directly:
 if (require.main === module) {
-    setupHugoDocs().catch(error => {
-        logger.error('Unhandled error in setupHugoDocs:', error);
+    setupOrUpdateHugoDocs().catch(error => {
+        logger.error('Unhandled error in setupOrUpdateHugoDocs:', error);
         process.exit(1);
     });
 }
 
-module.exports = { setupHugoDocs };
+module.exports = { setupOrUpdateHugoDocs };
