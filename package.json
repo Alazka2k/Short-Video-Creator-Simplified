@@ -16,7 +16,8 @@
     "test:animation": "node tests/animation-gen-test.js",
     "test:animation-pattern": "node tests/animation-pattern-generator-test.js",
     "test:video": "node tests/video-gen-test.js",
-    "test:integration": "node tests/integration-test.js"
+    "test:integration": "node tests/integration-test.js",
+    "create:docs": "node scripts/setup_hugo_docs.js"
   },
   "keywords": [
     "AI",
@@ -57,7 +58,11 @@
     "@types/async": "^3.2.20",
     "@types/node": "^18.16.0",
     "@types/ws": "^8.5.4",
+    "autoprefixer": "^10.4.20",
+    "child_process": "^1.0.2",
+    "postcss-cli": "^11.0.0",
     "tsx": "^3.12.6",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "util": "^0.12.5"
   }
 }

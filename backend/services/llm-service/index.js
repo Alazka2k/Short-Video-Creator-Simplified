@@ -17,6 +17,10 @@ class LLMServiceInterface {
     return await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
   }
 
+  async generateDocContent(prompt) {
+    return await this.service.generateDocContent(prompt);
+  }
+
   async saveOutput(output, fileName, isTest = false) {
     return await this.service.saveOutputToJson(output, fileName, isTest);
   }

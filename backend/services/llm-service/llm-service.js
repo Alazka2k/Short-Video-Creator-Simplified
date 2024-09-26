@@ -68,6 +68,33 @@ class LLMService {
     }
   }
 
+  async generateDocContent(prompt) {
+    try {
+      logger.info('Sending request to OpenAI API for documentation content...');
+      
+      const completion = await this.openai.chat.completions.create({
+        model: config.llm.model,
+        messages: [
+          { role: "system", content: "You are an AI assistant tasked with generating documentation for a software project." },
+          { role: "user", content: prompt },
+        ],
+      });
+
+      logger.info('Received response from OpenAI API');
+      
+      return {
+        description: completion.choices[0].message.content
+      };
+    } catch (error) {
+      logger.error('Error generating documentation content with LLM:', { 
+        error: error.toString(), 
+        stack: error.stack,
+        details: error.cause ? error.cause.toString() : 'No additional details'
+      });
+      throw error;
+    }
+  }
+
   async saveOutputToJson(output, fileName, isTest = false) {
     let outputPath;
     if (isTest) {

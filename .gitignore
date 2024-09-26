@@ -120,3 +120,8 @@ infrastructure/docker/volumes/
 # Temporary files
 *.tmp
 *.temp
+
+# Ignore everything in the docs directory
+docs/*
+# Except the content directory
+!docs/content/
