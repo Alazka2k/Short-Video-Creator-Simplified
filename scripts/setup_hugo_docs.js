@@ -11,14 +11,13 @@ const docsStructure = [
     { path: 'content/docs/1_getting-started/_index.md', title: '1. Getting Started' },
     { path: 'content/docs/2_architecture/_index.md', title: '2. Architecture' },
     { path: 'content/docs/3_functionalities/_index.md', title: '3. Functionalities' },
-    { path: 'content/docs/4_api-reference/_index.md', title: '4. API Reference' }
+    { path: 'content/docs/4_api-reference/_index.md', title: '4.API Reference' }
 ];
 
 async function executeCommand(command) {
     try {
-        const output = execSync(command, { encoding: 'utf8' });
+        const output = execSync(command, { encoding: 'utf8', stdio: 'inherit' });
         logger.info(`Command executed: ${command}`);
-        logger.debug(output);
         return output;
     } catch (error) {
         logger.error(`Error executing command: ${command}`);
@@ -68,7 +67,7 @@ async function promptUser(question) {
 
 async function checkHugoInstallation() {
     try {
-        const hugoVersion = await executeCommand('hugo version');
+        const hugoVersion = execSync('hugo version', { encoding: 'utf8' });
         logger.info(`Hugo is installed. Version: ${hugoVersion.trim()}`);
         return true;
     } catch (error) {
@@ -107,10 +106,14 @@ async function setupHugoDocs() {
         
         process.chdir(docsDir);
 
-        logger.info('Initializing new Hugo site...');
-        await executeCommand('git init');
-        await executeCommand('git submodule add https://github.com/google/docsy.git themes/docsy');
-        await executeCommand('git submodule update --init --recursive');
+        logger.info('Setting up Docsy theme...');
+        await executeCommand('git clone https://github.com/google/docsy.git themes/docsy');
+        await executeCommand('cd themes/docsy && npm install');
+
+        // Initialize Hugo modules
+        await executeCommand('hugo mod init github.com/alazka2k/SHORT-VIDEO-CREATOR-SIMPLIFIED');
+        await executeCommand('hugo mod get github.com/google/docsy@v0.10.0');
+        await executeCommand('hugo mod get github.com/google/docsy/dependencies');
 
         // Create package.json
         const packageJson = {
@@ -119,7 +122,7 @@ async function setupHugoDocs() {
             "description": "Documentation for SHORT-VIDEO-CREATOR-SIMPLIFIED",
             "scripts": {
                 "start": "hugo server",
-                "build": "hugo"
+                "build": "hugo --minify"
             },
             "dependencies": {},
             "devDependencies": {
@@ -139,33 +142,33 @@ languageCode = 'en-us'
 title = 'SHORT-VIDEO-CREATOR-SIMPLIFIED Documentation'
 
 # Theme settings
-theme = "docsy"
+theme = ["github.com/google/docsy"]
+enableGitInfo = true
 
 # Docsy theme settings
 [params]
   copyright = "The SHORT-VIDEO-CREATOR-SIMPLIFIED Authors"
   github_repo = "https://github.com/alazka2k/SHORT-VIDEO-CREATOR-SIMPLIFIED"
 
+[menu]
+  [[menu.main]]
+    name = "Documentation"
+    weight = 30
+    pre = "<i class='fas fa-book'></i>"
+    url = "/docs/"
+
+# Needed for Docsy theme
 [module]
   proxy = "direct"
-  # uncomment line below for temporary local development of module
-  # replacements = "github.com/google/docsy -> ../../docsy"
   [module.hugoVersion]
     extended = true
     min = "0.110.0"
   [[module.imports]]
     path = "github.com/google/docsy"
-    disable = false
   [[module.imports]]
     path = "github.com/google/docsy/dependencies"
-    disable = false
 `;
         await fs.writeFile('hugo.toml', hugoConfig);
-
-        // Initialize and update Hugo modules
-        await executeCommand('hugo mod init github.com/alazka2k/SHORT-VIDEO-CREATOR-SIMPLIFIED');
-        await executeCommand('hugo mod get -u ./...');
-        await executeCommand('hugo mod tidy');
 
         // Prompt user for action
         const action = await promptUser("Do you want to recreate all docs or choose specific sections? (all/specific): ");
@@ -199,11 +202,18 @@ theme = "docsy"
         }
 
         // Build the site
+        await executeCommand('hugo mod tidy');
         await executeCommand('hugo --minify');
 
         logger.info("Hugo site has been built successfully.");
         logger.info("Hugo site has been updated in the 'docs' folder.");
         logger.info("To serve the site locally, run: cd docs && hugo server");
+
+        // Reminder about .gitignore
+        logger.info("Don't forget to update your .gitignore file to exclude the docs directory except for the content folder.");
+        logger.info("Add the following lines to your .gitignore:");
+        logger.info("docs/*");
+        logger.info("!docs/content/");
     } catch (error) {
         logger.error('Error setting up Hugo docs:', error);
         throw error;
