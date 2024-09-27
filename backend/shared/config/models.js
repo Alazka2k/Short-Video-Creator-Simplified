@@ -10,7 +10,7 @@ const SceneSchema = z.object({
 const MusicSchema = z.object({
   title: z.string(),
   lyrics: z.string(),
-  style: z.string(),
+  tags: z.string(),
 });
 
 const AnimationPatternSchema = z.object({

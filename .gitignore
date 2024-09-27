@@ -125,3 +125,6 @@ infrastructure/docker/volumes/
 docs/*
 # Except the content directory
 !docs/content/
+
+# Pesonal Notes
+config/instruction_suno_cookie.txt

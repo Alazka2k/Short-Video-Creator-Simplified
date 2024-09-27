@@ -25,33 +25,34 @@ async function processPrompt(prompt, outputDir, initialPromptPath, parametersJso
 
     // Process all scenes
     for (const [index, scene] of content.scenes.entries()) {
-      const sceneDir = path.join(outputDir, `scene_${index + 1}`);
+      const sceneNumber = index + 1;
+      const sceneDir = path.join(outputDir, `scene_${sceneNumber}`);
       await fs.mkdir(sceneDir, { recursive: true });
-
+  
       try {
         // Generate voice
-        const voiceFileName = 'voice.mp3';
+        const voiceFileName = `scene_${sceneNumber}_voice.mp3`;
         const voiceFilePath = path.join(sceneDir, voiceFileName);
         await voiceGenService.process(scene.description, voiceFilePath, config.parameters.voiceGen.defaultVoiceId);
-        logger.info(`Voice generated for scene ${index + 1}: ${voiceFilePath}`);
-
+        logger.info(`Voice generated for scene ${sceneNumber}: ${voiceFilePath}`);
+  
         // Generate image
-        const imageFileName = 'image.png';
+        const imageFileName = `scene_${sceneNumber}_image.png`;
         const imageFilePath = path.join(sceneDir, imageFileName);
         const imageResult = await imageGenService.process(scene.visual_prompt, sceneDir, index);
-        logger.info(`Image generated for scene ${index + 1}: ${imageResult.filePath}`);
-
+        logger.info(`Image generated for scene ${sceneNumber}: ${imageResult.filePath}`);
+  
         // Generate animation
-        const animationFileName = 'animation.mp4';
+        const animationFileName = `scene_${sceneNumber}_animation.mp4`;
         const animationFilePath = path.join(sceneDir, animationFileName);
-        await animationGenService.process(imageResult.filePath, sceneDir, index + 1, {
+        await animationGenService.process(imageResult.filePath, sceneDir, sceneNumber, {
           animationLength: config.parameters.animationGen.animationLength,
           animationPrompt: scene.video_prompt
         });
-        logger.info(`Animation generated for scene ${index + 1}: ${animationFilePath}`);
-
+        logger.info(`Animation generated for scene ${sceneNumber}: ${animationFilePath}`);
+  
         // Generate video
-        const videoFileName = 'video.mp4';
+        const videoFileName = `scene_${sceneNumber}_video.mp4`;
         const videoFilePath = path.join(sceneDir, videoFileName);
         await videoGenService.generateVideo(
           imageResult.filePath,
@@ -60,7 +61,7 @@ async function processPrompt(prompt, outputDir, initialPromptPath, parametersJso
           config.parameters.llmGen.aspectRatio,
           videoFilePath
         );
-        logger.info(`Video generated for scene ${index + 1}: ${videoFilePath}`);
+        logger.info(`Video generated for scene ${sceneNumber}: ${videoFilePath}`);
 
         // Save scene metadata
         const sceneMetadata = {

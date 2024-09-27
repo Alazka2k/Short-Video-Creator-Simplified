@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs').promises;
 const logger = require('../../shared/utils/logger');
-const sunoAuth = require('../auth-service/suno_auth');
+const sunoAuth = require('./suno_auth');
 const config = require('../../shared/utils/config');
 
 class MusicGenService {
@@ -14,13 +14,20 @@ class MusicGenService {
   async generateMusic(musicData, options = {}) {
     try {
       logger.info(`Generating music for title: "${musicData.title}"`);
+      logger.info('Music data:', JSON.stringify(musicData, null, 2));
       
       const makeInstrumental = this.musicGenOptions.make_instrumental === "true" || options.makeInstrumental === true;
       
-      logger.info(`Make instrumental (from config): ${this.musicGenOptions.make_instrumental}`);
-      logger.info(`Make instrumental (from options): ${options.makeInstrumental}`);
       logger.info(`Make instrumental (final): ${makeInstrumental}`);
-
+  
+      // Check the length of the tags
+      const maxTagLength = 100; // You can adjust this value based on the actual limit
+      if (musicData.style.length > maxTagLength) {
+        const errorMessage = `Tags are too long (${musicData.style.length} characters). Maximum allowed is ${maxTagLength} characters.`;
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+  
       const payload = {
         prompt: makeInstrumental ? "" : musicData.lyrics,
         tags: musicData.style,
@@ -29,27 +36,37 @@ class MusicGenService {
         wait_audio: options.waitAudio || false,
         mv: this.musicGenOptions.modelId || "chirp-v3-0"
       };
-
-      logger.info(`Payload for music generation:`, JSON.stringify(payload, null, 2));
-
+  
+      logger.info('Payload for music generation:', JSON.stringify(payload, null, 2));
+  
       const endpoint = `${this.baseUrl}/api/custom_generate`;
       logger.info(`Calling endpoint: ${endpoint}`);
   
-      const response = await axios.post(endpoint, payload, {
-        headers: this.getHeaders()
-      });
+      const headers = this.getHeaders();
+      logger.info('Request headers:', JSON.stringify(headers, null, 2));
+  
+      const response = await axios.post(endpoint, payload, { headers });
   
       logger.debug('API response:', JSON.stringify(response.data, null, 2));
   
       if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-        logger.error('Invalid response from music generation API:', JSON.stringify(response.data, null, 2));
         throw new Error('Invalid response from music generation API');
       }
   
       logger.info('Music generation task initiated successfully');
       return response.data[0];
     } catch (error) {
-      logger.error('Error generating music:', this.formatError(error));
+      if (error.message.includes('Tags are too long')) {
+        // This is our custom error, so we can log it differently
+        logger.error('Tag length error:', error.message);
+      } else {
+        logger.error('Error generating music:', this.formatError(error));
+        if (error.response) {
+          logger.error('Response status:', error.response.status);
+          logger.error('Response headers:', JSON.stringify(error.response.headers, null, 2));
+          logger.error('Response data:', JSON.stringify(error.response.data, null, 2));
+        }
+      }
       throw error;
     }
   }
@@ -165,13 +182,7 @@ class MusicGenService {
   }
 
   getHeaders() {
-    return {
-      'Cookie': sunoAuth.getCookie(),
-      'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      'Referer': 'https://suno.com',
-      'Origin': 'https://suno.com'
-    };
+    return sunoAuth.getAuthHeaders();
   }
 
   formatError(error) {

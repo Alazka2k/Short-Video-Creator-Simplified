@@ -3,30 +3,22 @@ const logger = require('../../shared/utils/logger');
 
 class SunoCookie {
     constructor() {
-        this.sessionId = null;
         this.cookie = null;
     }
 
     loadCookie(cookieStr) {
         this.cookie = cookieStr;
+        logger.info('Cookie loaded successfully');
     }
 
     getCookie() {
         return this.cookie;
     }
 
-    setSessionId(sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    getSessionId() {
-        return this.sessionId;
-    }
-
     getAuthHeaders() {
         return {
-            'Cookie': `session_id=${this.sessionId}; ${this.cookie}`,
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Cookie': this.cookie,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://suno.com',
             'Origin': 'https://suno.com'
         };
@@ -34,7 +26,6 @@ class SunoCookie {
 }
 
 const sunoAuth = new SunoCookie();
-sunoAuth.setSessionId(config.audioGen.sessionId);
-sunoAuth.loadCookie(config.audioGen.sunoCookie);
+sunoAuth.loadCookie(config.musicGen.sunoCookie);
 
 module.exports = sunoAuth;

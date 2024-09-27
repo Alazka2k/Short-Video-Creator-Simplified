@@ -4,17 +4,10 @@ const musicService = require('../backend/services/music-service');
 const { getAudioDuration } = require('../backend/shared/utils/audio-utils');
 const config = require('../backend/shared/utils/config');
 const logger = require('../backend/shared/utils/logger');
-const sunoAuth = require('../backend/services/auth-service/suno_auth');
+const sunoAuth = require('../backend/services/music-service/suno_auth');
 
 async function checkAuthValidity() {
   logger.info('Checking Suno authentication validity...');
-
-  const sessionId = sunoAuth.getSessionId();
-  if (!sessionId) {
-    logger.error('Session ID is missing. Please check your configuration.');
-    return false;
-  }
-  logger.info('Session ID is present.');
 
   const cookie = sunoAuth.getCookie();
   if (!cookie) {
@@ -48,8 +41,6 @@ async function runMusicGenTest() {
   try {
     logger.info('Starting Suno music generation test');
     logger.info('Music generation options:', JSON.stringify(config.parameters?.musicGen, null, 2));
-
-    await musicService.initialize();
 
     const isAuthValid = await checkAuthValidity();
     if (!isAuthValid) {
@@ -92,20 +83,29 @@ async function runMusicGenTest() {
       try {
         const makeInstrumental = config.parameters?.musicGen?.make_instrumental === "true";
         logger.info(`Make instrumental (from config): ${makeInstrumental}`);
-        logger.info(`Make instrumental (raw value): ${config.parameters?.musicGen?.make_instrumental}`);
 
         generationResult = await musicService.generateMusic(musicData, {
           makeInstrumental: makeInstrumental
         });
         logger.info('Music generation task initiated:', JSON.stringify(generationResult, null, 2));
       } catch (genError) {
-        logger.error('Error in music generation step:', {
-          message: genError.message,
-          name: genError.name,
-          stack: genError.stack
-        });
+        if (genError.message.includes('Tags are too long')) {
+          logger.error('Tag length error. Please shorten the tags and try again:', genError.message);
+          // Optionally, you could try to automatically shorten the tags here
+          // musicData.style = musicData.style.substring(0, 100);
+          // And then retry the generation
+        } else {
+          logger.error('Error in music generation step:', {
+            message: genError.message,
+            name: genError.name,
+            stack: genError.stack
+          });
+        }
         continue;
       }
+
+      // Add a delay between requests (5 seconds)
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       const taskId = generationResult.id;
 
@@ -167,8 +167,6 @@ async function runMusicGenTest() {
       name: error.name,
       stack: error.stack
     });
-  } finally {
-    await musicService.cleanup();
   }
 }
 

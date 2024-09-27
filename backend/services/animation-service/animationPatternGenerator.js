@@ -70,8 +70,8 @@ class AnimationPatternGenerator {
         logger.info(`Added padding zero. New length: ${values.length}`);
       }
       
-      // Limit to 275 triplets (825 values)
-      const maxValues = 825;
+      // Limit to 250 triplets (750 values)
+      const maxValues = 750;
       if (values.length > maxValues) {
         logger.warn(`Pattern had ${values.length} values. Truncating to ${maxValues} values.`);
         values.length = maxValues;

@@ -16,9 +16,10 @@
     "debug": true,
     "ws": true
   },
-  "audioGen": {
+  "musicGen": {
     "provider": "suno",
-    "sunoCookie": "YOUR_SUNO_COOKIE_HERE"
+    "sunoCookie": "YOUR_SUNO_COOKIE_HERE",
+    "sessionId":"YOUR_SUNO_SESSION_ID"
   },
   "animationGen": {
     "provider":"immersityAI",

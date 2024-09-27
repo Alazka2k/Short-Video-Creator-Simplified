@@ -28,10 +28,12 @@
 - {{ llmGen.scriptTone }}
 - {{ llmGen.vocabulary }}
 - {{ llmGen.pacingStructure }}
-- Imagine to speak out load the script as narrator. The length of each scene as narration should not be longer then 5 seconds.
-- Reference length: 
-1. "Gasp. The air feels thin. You check your phone - oxygen levels are plummeting worldwide. This is how it begins..." is 10 seconds
-2. "The last warmth of a nearby fire fades as the horizon reveals a sunless dawn. A figure stands solitary, wrapped in layers of hope and despair." is 10 seconds 
+- Imagine to speak out load the script as narrator. 
+- The length of each scene as narration should not be longer then 5 seconds.
+
+Example: 
+1. "Gasp. The air feels thin. You check your phone - oxygen levels are plummeting worldwide. This is how it begins..." is 10 seconds (too long)
+2. "The last warmth of a nearby fire fades as the horizon reveals a sunless dawn. A figure stands solitary, wrapped in layers of hope and despair." is 10 seconds (too long)
 
 # Content Guidelines:
 - {{ llmGen.providedInformation }}
@@ -115,4 +117,4 @@ The pattern is always the same. Artist (if given) Shot Style (if given) --ar [gi
 # Example for Music Schema:
 title: Silent Battlefield
 Lyrics: In the silent void where echoes call, Grasp the ghost of what was whole. Yet, beneath this icy pall, Hope's ember stirs, a faint, restless soul.
-Music Style: Ethereal electronic with mournful overtones, instrumental balance of icy synths and deep bass, evoking a haunting, post-apocalyptic atmosphere.
+Music Tags: Ethereal electronic, mournful overtones, icy synths and deep bass, post-apocalyptic atmosphere
