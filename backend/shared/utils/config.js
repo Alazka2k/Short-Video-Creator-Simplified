@@ -19,8 +19,9 @@ function deepMerge(target, source) {
 }
 
 function loadConfig() {
-  const configPath = path.join(__dirname, '..', '..', '..', 'config', 'default.json');
-  const parametersPath = path.join(__dirname, '..', '..', '..', 'data', 'input', 'parameters.json');
+  const rootDir = path.join(__dirname, '..', '..', '..');
+  const configPath = path.join(rootDir, 'config', 'default.json');
+  const parametersPath = path.join(rootDir, 'data', 'input', 'parameters.json');
   
   let rawConfig, rawParameters;
 
@@ -69,9 +70,23 @@ function loadConfig() {
   // Deep merge parameters into config
   config = deepMerge(config, { parameters });
 
+  // Update the base paths
+  config.basePaths = {
+    root: rootDir,
+    input: path.join(rootDir, 'data', 'input'),
+    output: path.join(rootDir, 'data', 'output'),
+    test: path.join(rootDir, 'tests', 'test_output')
+  };
+
   // Add test output directory
   config.test = {
-    outputDirectory: path.join(__dirname, '..', '..', '..', 'tests', 'test_output')
+    outputDirectory: config.basePaths.test
+  };
+
+  // Update LLM config
+  config.llm = {
+    ...config.llm,
+    basePath: config.basePaths.input
   };
 
   // Add service URLs to the configuration

@@ -7,7 +7,7 @@
 - Use Clickbait techniques to call attention. 
 - Use tl;dr techniques in addition to clickbait techniques. 
 - Create the video script essay to be used as a voice over.
-- Add a hook to increase retention
+- Add a hook at the beginnning to increase retention with the main topic of the video
 - Speak to the target audience without using their direct name. 
 - The presentation needs to look natural. 
 - Use the best language for a target audience of ages 18-50.  
@@ -15,6 +15,7 @@
 - Add everything in a table format.
 - A line in the table starts with the "Title" and ends with the description of the last visual prompt scene.
 - Don't use any input words in the script.
+- Imagine a narrator is reading the script or the scenes act as a musicvideo with songtext in the backround
 - Add a visual prompt for each scene and a title picture for an AI image creation tool (e.g., for Dall-E).
 - Describe the images in detail, including the style to be used.
 - Add a music description to the video, which you think would fit very well as underlying music.

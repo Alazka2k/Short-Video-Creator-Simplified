@@ -16,8 +16,10 @@ class LLMServiceInterface {
     return await this.service.loadPromptsFromCsv(csvPath);
   }
 
-  async process(initialPromptPath, parametersPath, inputPrompt) {
-    return await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
+  async process(initialPromptFile, parametersFile, inputPrompt) {
+    const initialPromptPath = config.llm.basePath.initialPrompt;
+    const parametersPath = config.llm.basePath.parameters;
+    return await this.service.generateContent(initialPromptPath, parametersPath, initialPromptFile, parametersFile, inputPrompt);
   }
 
   async generateDocContent(prompt) {
@@ -32,12 +34,12 @@ class LLMServiceInterface {
     // Add any cleanup logic here if needed
   }
 
-  async processAllPrompts(csvPath, initialPromptPath, parametersPath) {
+  async processAllPrompts(csvPath, initialPromptFile, parametersFile) {
     const prompts = await this.loadPromptsFromCsv(csvPath);
     const results = [];
 
     for (const prompt of prompts) {
-      const result = await this.process(initialPromptPath, parametersPath, prompt);
+      const result = await this.process(initialPromptFile, parametersFile, prompt);
       results.push(result);
     }
 
@@ -48,6 +50,12 @@ class LLMServiceInterface {
     const PORT = process.env.LLM_SERVICE_PORT || 3001;
     const app = createServer(this);
     
+    // Add request logging
+    app.use((req, res, next) => {
+      logger.info(`Received ${req.method} request on ${req.path}`);
+      next();
+    });
+
     app.listen(PORT, () => {
       logger.info(`LLM Service running on port ${PORT}`);
     });

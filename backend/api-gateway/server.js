@@ -6,49 +6,58 @@ const config = require('../shared/utils/config');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware for parsing JSON and url-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logging middleware
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
+  logger.info(`API Gateway: Received ${req.method} request for ${req.url}`);
   next();
 });
 
-// Define routes and their corresponding microservices
 const routes = {
   '/api/llm': config.services.llm.url,
-  '/api/image': config.services.image.url,
-  '/api/voice': config.services.voice.url,
-  '/api/animation': config.services.animation.url,
-  '/api/music': config.services.music.url,
-  '/api/video': config.services.video.url,
-  '/api/auth': config.services.auth.url,
-  '/api/job': config.services.job.url,
-  '/api/billing': config.services.billing.url
+  // ... other routes ...
 };
 
-// Set up proxy middleware for each route
 Object.entries(routes).forEach(([route, target]) => {
-  app.use(route, createProxyMiddleware({ 
-    target, 
+  logger.info(`Setting up proxy for ${route} to ${target}`);
+  app.use(route, createProxyMiddleware({
+    target,
     changeOrigin: true,
     pathRewrite: {
       [`^${route}`]: '',
     },
+    onProxyReq: (proxyReq, req, res) => {
+      logger.info(`Proxying ${req.method} request to ${target}${proxyReq.path}`);
+      logger.info(`Request body: ${JSON.stringify(req.body)}`);
+    },
+    onProxyRes: (proxyRes, req, res) => {
+      logger.info(`Received response from ${target} with status ${proxyRes.statusCode}`);
+    },
+    onError: (err, req, res) => {
+      logger.error(`Proxy error: ${err.message}`);
+      logger.error(`Error stack: ${err.stack}`);
+      res.status(500).json({ error: 'Proxy error', details: err.message });
+    }
   }));
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  logger.error(err.stack);
-  res.status(500).send('Something went wrong!');
+app.use((req, res) => {
+  logger.warn(`Received request for undefined route: ${req.method} ${req.url}`);
+  res.status(404).json({ error: 'Not Found' });
 });
 
-// Start the server
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled error: ${err.stack}`);
+  res.status(500).json({ error: 'Internal server error', details: err.message });
+});
+
 app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
+  logger.info('Configured routes:');
+  Object.entries(routes).forEach(([route, target]) => {
+    logger.info(`  ${route} -> ${target}`);
+  });
 });
 
 module.exports = app;
