@@ -32,8 +32,8 @@
 - The length of each scene as narration should not be longer then 5 seconds.
 
 Example: 
-1. "Gasp. The air feels thin. You check your phone - oxygen levels are plummeting worldwide. This is how it begins..." is 10 seconds (too long)
-2. "The last warmth of a nearby fire fades as the horizon reveals a sunless dawn. A figure stands solitary, wrapped in layers of hope and despair." is 10 seconds (too long)
+1. "Gasp. The air feels thin. You check your phone. This is how it begins..." - good 
+2. "The last warmth of a nearby fire fades as the horizon reveals a sunless dawn. A figure stands solitary, wrapped in layers of hope and despair." - too long
 
 # Content Guidelines:
 - {{ llmGen.providedInformation }}
@@ -92,7 +92,7 @@ description: An intense depiction of the aftermath of nuclear war, as survivors 
 hashtags: #NuclearWinter #SurvivalSaga #ChillofWar #SilentBattlefield #ApocalypseNow
 
 # Example for a Scene Schema:
-description: Gasp. The air feels thin. You check your phone - oxygen levels are plummeting worldwide. This is how it begins...
+description: Gasp. The air feels thin. You check your phone. This is how it begins...
 visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, patches of ash falling like snow. Skyscrapers, once proud, now skeletal remains shrouded in dense fog. Low-angle view, evening bluish glow, shadows long and stark; by  {{ artistStyle }}. {{ shotStyle }} {{ aspectRatioPrompt }} {{ aspectRatioPrompt }} {{ stylePrompt }} {{ style }} {{ sPrompt }} {{ sValue }} {{ versionPrompt }} {{ version }}
 video_prompt: A visual of a ruined cityscape, ash drifting softly, as the camera pans slowly across the destroyed infrastructure, capturing the haunted remnants of civilization. The gray sky thickens ominously, setting a chilling tone.
 camera_movement: Pull Out

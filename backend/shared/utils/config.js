@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const logger = require('./logger'); // Make sure to import the logger
+const logger = require('./logger');
 
 function deepMerge(target, source) {
   for (const key in source) {
@@ -72,6 +72,19 @@ function loadConfig() {
   // Add test output directory
   config.test = {
     outputDirectory: path.join(__dirname, '..', '..', '..', 'tests', 'test_output')
+  };
+
+  // Add service URLs to the configuration
+  config.services = {
+    llm: { url: process.env.LLM_SERVICE_URL || 'http://localhost:3001' },
+    image: { url: process.env.IMAGE_SERVICE_URL || 'http://localhost:3002' },
+    voice: { url: process.env.VOICE_SERVICE_URL || 'http://localhost:3003' },
+    animation: { url: process.env.ANIMATION_SERVICE_URL || 'http://localhost:3004' },
+    music: { url: process.env.MUSIC_SERVICE_URL || 'http://localhost:3005' },
+    video: { url: process.env.VIDEO_SERVICE_URL || 'http://localhost:3006' },
+    auth: { url: process.env.AUTH_SERVICE_URL || 'http://localhost:3007' },
+    job: { url: process.env.JOB_SERVICE_URL || 'http://localhost:3008' },
+    billing: { url: process.env.BILLING_SERVICE_URL || 'http://localhost:3009' }
   };
 
   // Log the merged configuration

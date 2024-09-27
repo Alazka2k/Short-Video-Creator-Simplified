@@ -1,4 +1,7 @@
 const LLMService = require('./llm-service');
+const createServer = require('./server');
+const logger = require('../../shared/utils/logger');
+const config = require('../../shared/utils/config');
 
 class LLMServiceInterface {
   constructor() {
@@ -29,7 +32,6 @@ class LLMServiceInterface {
     // Add any cleanup logic here if needed
   }
 
-  // This method can be used to process all prompts from a CSV file
   async processAllPrompts(csvPath, initialPromptPath, parametersPath) {
     const prompts = await this.loadPromptsFromCsv(csvPath);
     const results = [];
@@ -41,6 +43,22 @@ class LLMServiceInterface {
 
     return results;
   }
+
+  startServer() {
+    const PORT = process.env.LLM_SERVICE_PORT || 3001;
+    const app = createServer(this);
+    
+    app.listen(PORT, () => {
+      logger.info(`LLM Service running on port ${PORT}`);
+    });
+  }
 }
 
-module.exports = new LLMServiceInterface();
+const llmServiceInterface = new LLMServiceInterface();
+
+// Start the server if this file is run directly
+if (require.main === module) {
+  llmServiceInterface.startServer();
+}
+
+module.exports = llmServiceInterface;

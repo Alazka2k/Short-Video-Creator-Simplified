@@ -2,36 +2,39 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Adjust PROJECT_ROOT to point to the actual project root
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 const OUTPUT_FILE = path.join(PROJECT_ROOT, 'full_source_code.txt');
 
 const INCLUDE_EXTENSIONS = ['.js', '.json', '.txt', '.csv', '.md', '.sql'];
 const EXCLUDE_EXTENSIONS = ['.log', '.lock'];
 const EXCLUDE_DIRS = ['node_modules', '.git', 'logs', 'data', 'tests/test_output', 'frontend/build', 'backend/tmp'];
-const EXCLUDE_FILES = ['package-lock.json', '.DS_Store', 'Thumbs.db'];
+const EXCLUDE_FILES = ['package-lock.json', '.DS_Store', 'Thumbs.db', 'full_source_code.txt'];
 
 async function writeToFile(filePath, content) {
   await fs.appendFile(filePath, content, 'utf8');
 }
 
-function shouldIncludeFile(fileName) {
+function shouldIncludeFile(fileName, relativePath) {
   const ext = path.extname(fileName);
   return INCLUDE_EXTENSIONS.includes(ext) && 
          !EXCLUDE_EXTENSIONS.includes(ext) &&
-         !EXCLUDE_FILES.includes(fileName);
+         !EXCLUDE_FILES.includes(fileName) &&
+         (relativePath.startsWith('docs/content/docs') || !relativePath.startsWith('docs'));
 }
 
-async function generateProjectStructure(dir, prefix = '') {
+async function generateProjectStructure(dir, prefix = '', relativePath = '') {
   let structure = '';
   const entries = await fs.readdir(dir, { withFileTypes: true });
 
   for (const entry of entries) {
+    const entryRelativePath = path.join(relativePath, entry.name);
     if (EXCLUDE_DIRS.includes(entry.name) || EXCLUDE_FILES.includes(entry.name)) continue;
+    if (entryRelativePath.startsWith('docs') && !entryRelativePath.startsWith('docs/content/docs')) continue;
 
     if (entry.isDirectory()) {
       structure += `${prefix}${entry.name}/\n`;
-      structure += await generateProjectStructure(path.join(dir, entry.name), prefix + '  ');
-    } else if (shouldIncludeFile(entry.name)) {
+      structure += await generateProjectStructure(path.join(dir, entry.name), prefix + '  ', entryRelativePath);
+    } else if (shouldIncludeFile(entry.name, entryRelativePath)) {
       structure += `${prefix}${entry.name}\n`;
     }
   }
@@ -41,6 +44,8 @@ async function generateProjectStructure(dir, prefix = '') {
 
 async function processFile(filePath) {
   const relativePath = path.relative(PROJECT_ROOT, filePath);
+  if (!shouldIncludeFile(path.basename(filePath), relativePath)) return;
+
   const content = await fs.readFile(filePath, 'utf8');
   
   await writeToFile(OUTPUT_FILE, `\n\n// File: ${path.basename(filePath)}\n`);
@@ -48,17 +53,19 @@ async function processFile(filePath) {
   await writeToFile(OUTPUT_FILE, content);
 }
 
-async function traverseDirectory(dirPath) {
+async function traverseDirectory(dirPath, relativePath = '') {
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
+    const entryRelativePath = path.join(relativePath, entry.name);
 
     if (entry.isDirectory()) {
-      if (!EXCLUDE_DIRS.includes(entry.name)) {
-        await traverseDirectory(fullPath);
+      if (!EXCLUDE_DIRS.includes(entry.name) && 
+          (entryRelativePath.startsWith('docs/content/docs') || !entryRelativePath.startsWith('docs'))) {
+        await traverseDirectory(fullPath, entryRelativePath);
       }
-    } else if (entry.isFile() && shouldIncludeFile(entry.name)) {
+    } else if (entry.isFile() && shouldIncludeFile(entry.name, entryRelativePath)) {
       await processFile(fullPath);
     }
   }
@@ -67,6 +74,8 @@ async function traverseDirectory(dirPath) {
 async function exportSourceCode() {
   try {
     console.log('Starting source code export...');
+    console.log(`Project root: ${PROJECT_ROOT}`);
+    console.log(`Output file: ${OUTPUT_FILE}`);
 
     // Clear the output file if it exists
     await fs.writeFile(OUTPUT_FILE, '', 'utf8');
@@ -89,6 +98,7 @@ async function exportSourceCode() {
     console.log(`Source code exported successfully to ${OUTPUT_FILE}`);
   } catch (error) {
     console.error('Error exporting source code:', error);
+    console.error('Error details:', error);
   }
 }
 

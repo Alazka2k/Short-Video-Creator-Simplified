@@ -17,7 +17,15 @@
     "test:animation-pattern": "node tests/animation-pattern-generator-test.js",
     "test:video": "node tests/video-gen-test.js",
     "test:integration": "node tests/integration-test.js",
-    "create:docs": "node scripts/setup_hugo_docs.js"
+    "create:docs": "node scripts/setup_hugo_docs.js",
+    "create:code": "node scripts/export-source-code.js",
+    "start:gateway": "node backend/api-gateway/server.js",
+    "start:llm": "node backend/services/llm-service/index.js",
+    "start:voice": "node backend/services/voice-service/index.js",
+    "start:image": "node backend/services/image-service/index.js",
+    "start:animation": "node backend/services/animation-service/index.js",
+    "start:video": "node backend/services/video-service/index.js",
+    "start:music": "node backend/services/music-service/index.js"
   },
   "keywords": [
     "AI",
@@ -37,8 +45,10 @@
     "csv-parse": "^5.5.6",
     "dotenv": "^16.0.3",
     "elevenlabs": "^0.15.0",
+    "express": "^4.21.0",
     "ffprobe-static": "^3.1.0",
     "form-data": "^4.0.0",
+    "http-proxy-middleware": "^3.0.2",
     "isomorphic-ws": "^5.0.0",
     "lumaai": "^1.0.2",
     "midjourney": "^4.3.17",
