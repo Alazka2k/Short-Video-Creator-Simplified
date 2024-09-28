@@ -17,6 +17,7 @@ class LLMService {
     logger.info(`LLM Provider: ${config.llm.provider}`);
     logger.info(`OpenAI API Key: ${config.llm.apiKey ? 'Loaded' : 'Missing'}`);
     logger.info(`OpenAI Model: ${config.llm.model}`);
+    logger.info(`LLM Base Path: ${config.llm.basePath}`);
   }
 
   async loadPromptsFromCsv(csvPath) {
@@ -30,13 +31,20 @@ class LLMService {
     }
   }
 
-  async generateContent(initialPromptFile, parametersFile, inputPrompt) {
+  async generateContent(initialPromptPath, parametersPath, initialPromptFile, parametersFile, inputPrompt) {
     try {
-      const fullInitialPromptPath = path.join(config.llm.basePath, initialPromptFile);
-      const fullParametersPath = path.join(config.llm.basePath, parametersFile);
+      logger.debug('generateContent called with:', { initialPromptPath, parametersPath, initialPromptFile, parametersFile, inputPrompt });
+      logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
+
+      const fullInitialPromptPath = path.join(initialPromptPath, initialPromptFile);
+      const fullParametersPath = path.join(parametersPath, parametersFile);
 
       logger.info(`Full Initial Prompt Path: ${fullInitialPromptPath}`);
       logger.info(`Full Parameters Path: ${fullParametersPath}`);
+
+      // Check if files exist
+      await fs.access(fullInitialPromptPath);
+      await fs.access(fullParametersPath);
 
       const parameters = await PromptUtils.loadParameters(fullParametersPath);
       const dynamicPrompt = await PromptUtils.generateDynamicPrompt(fullInitialPromptPath, parameters);
@@ -73,6 +81,7 @@ class LLMService {
       throw error;
     }
   }
+
 
   async generateDocContent(prompt) {
     try {

@@ -83,11 +83,12 @@ function loadConfig() {
     outputDirectory: config.basePaths.test
   };
 
-  // Update LLM config
   config.llm = {
     ...config.llm,
     basePath: config.basePaths.input
   };
+  
+  logger.info('LLM configuration:', JSON.stringify(config.llm, null, 2));
 
   // Add service URLs to the configuration
   config.services = {
