@@ -5,57 +5,64 @@ const config = require('../../shared/utils/config');
 
 function createServer(llmServiceInterface) {
     const app = express();
-    app.use(express.json());
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   
     app.use((req, res, next) => {
       logger.info(`LLM Service: Received ${req.method} request for ${req.url}`);
+      logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
       next();
     });
   
-    const router = express.Router();
-  
-    router.post('/generate', async (req, res) => {
+    // Health check endpoint
+    app.get('/health', (req, res) => {
+      res.json({ status: 'LLM Service is healthy' });
+    });
+
+    // Test endpoint
+    app.get('/test', (req, res) => {
+      logger.info('LLM Service: Test endpoint hit');
+      res.json({ message: 'LLM Service is running' });
+    });
+
+    app.post('/generate', async (req, res) => {
       logger.info('LLM Service: Handling /generate request');
+      const requestTimeout = setTimeout(() => {
+        logger.error('LLM Service: Request timed out');
+        res.status(504).json({ error: 'Request timed out' });
+      }, 300000); // 5 minutes timeout
+
       try {
         const { initialPromptFile, parametersFile, inputPrompt } = req.body;
         logger.info(`LLM Service: Request body: ${JSON.stringify(req.body)}`);
         
-        if (!initialPromptFile) {
-          throw new Error('initialPromptFile is missing or undefined');
-        }
-        if (!parametersFile) {
-          throw new Error('parametersFile is missing or undefined');
-        }
-        if (!inputPrompt) {
-          throw new Error('inputPrompt is missing or undefined');
+        if (!initialPromptFile || !parametersFile || !inputPrompt) {
+          throw new Error('Missing required parameters');
         }
   
         logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
-        logger.info(`LLM Service: Initial Prompt File: ${initialPromptFile}`);
-        logger.info(`LLM Service: Parameters File: ${parametersFile}`);
         
         const content = await llmServiceInterface.process(initialPromptFile, parametersFile, inputPrompt);
         
+        clearTimeout(requestTimeout);
         logger.info('LLM Service: Content generated successfully');
         res.json(content);
       } catch (error) {
+        clearTimeout(requestTimeout);
         logger.error('LLM Service: Error generating content:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
       }
     });
 
-    router.post('/generate-doc', async (req, res) => {
+    app.post('/generate-doc', async (req, res) => {
       logger.info('LLM Service: Handling /generate-doc request');
       try {
         const { prompt } = req.body;
         logger.info(`LLM Service: Generating doc content with prompt: ${prompt}`);
         
-        const startTime = Date.now();
         const content = await llmServiceInterface.generateDocContent(prompt);
-        const endTime = Date.now();
         
-        logger.info(`LLM Service: Doc content generated successfully in ${endTime - startTime}ms`);
-        logger.info(`LLM Service: Generated doc content: ${JSON.stringify(content)}`);
+        logger.info('LLM Service: Doc content generated successfully');
         res.json(content);
       } catch (error) {
         logger.error('LLM Service: Error generating doc content:', error);
@@ -63,32 +70,10 @@ function createServer(llmServiceInterface) {
       }
     });
 
-    router.post('/process-all', async (req, res) => {
-      logger.info('LLM Service: Handling /process-all request');
-      try {
-        const { csvPath, initialPromptFile, parametersFile } = req.body;
-        logger.info(`LLM Service: Processing all prompts from CSV: ${csvPath}`);
-        
-        const startTime = Date.now();
-        const results = await llmServiceInterface.processAllPrompts(csvPath, initialPromptFile, parametersFile);
-        const endTime = Date.now();
-        
-        logger.info(`LLM Service: All prompts processed successfully in ${endTime - startTime}ms`);
-        logger.info(`LLM Service: Number of results: ${results.length}`);
-        res.json(results);
-      } catch (error) {
-        logger.error('LLM Service: Error processing all prompts:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
-      }
-    });
-
-    // Use the router with the /api/llm prefix
-    app.use('/api/llm', router);
-
-    // Catch-all for undefined routes
-    app.use((req, res) => {
-      logger.warn(`LLM Service: Received request for undefined route: ${req.method} ${req.url}`);
-      res.status(404).json({ error: 'Not Found' });
+    // Catch-all route for unhandled requests
+    app.use('*', (req, res) => {
+      logger.warn(`LLM Service: Received unhandled request: ${req.method} ${req.originalUrl}`);
+      res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
     });
 
     // Error handling middleware

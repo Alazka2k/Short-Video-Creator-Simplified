@@ -1,52 +1,81 @@
 const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const axios = require('axios');
 const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use((req, res, next) => {
   logger.info(`API Gateway: Received ${req.method} request for ${req.url}`);
+  logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+  logger.info(`Request body: ${JSON.stringify(req.body)}`);
   next();
 });
 
-const routes = {
-  '/api/llm': config.services.llm.url,
-  // ... other routes ...
-};
-
-Object.entries(routes).forEach(([route, target]) => {
-  logger.info(`Setting up proxy for ${route} to ${target}`);
-  app.use(route, createProxyMiddleware({
-    target,
-    changeOrigin: true,
-    pathRewrite: {
-      [`^${route}`]: '',
-    },
-    onProxyReq: (proxyReq, req, res) => {
-      logger.info(`Proxying ${req.method} request to ${target}${proxyReq.path}`);
-      logger.info(`Request body: ${JSON.stringify(req.body)}`);
-    },
-    onProxyRes: (proxyRes, req, res) => {
-      logger.info(`Received response from ${target} with status ${proxyRes.statusCode}`);
-    },
-    onError: (err, req, res) => {
-      logger.error(`Proxy error: ${err.message}`);
-      logger.error(`Error stack: ${err.stack}`);
-      res.status(500).json({ error: 'Proxy error', details: err.message });
-    }
-  }));
+// Health check endpoint for API Gateway
+app.get('/health', (req, res) => {
+  res.json({ status: 'API Gateway is healthy' });
 });
 
-app.use((req, res) => {
-  logger.warn(`Received request for undefined route: ${req.method} ${req.url}`);
-  res.status(404).json({ error: 'Not Found' });
+// LLM Service route
+app.post('/api/llm/generate', async (req, res) => {
+  try {
+    logger.info('Forwarding request to LLM service');
+    const response = await axios.post(`${config.services.llm.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 120000  // 2 minutes timeout
+    });
+    logger.info(`Received response from LLM service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`LLM request error: ${error.message}`);
+    res.status(500).json({ error: 'LLM request failed', details: error.message });
+  }
 });
 
+// Voice Service route
+app.post('/api/voice/generate', async (req, res) => {
+  try {
+    logger.info('Forwarding request to Voice service');
+    const response = await axios.post(`${config.services.voice.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 120000  // 2 minutes timeout
+    });
+    logger.info(`Received response from Voice service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Voice request error: ${error.message}`);
+    res.status(500).json({ error: 'Voice request failed', details: error.message });
+  }
+});
+
+// Network connection test route
+app.get('/test-network-connection', async (req, res) => {
+  try {
+    const llmResponse = await axios.get(`${config.services.llm.url}/health`, { timeout: 5000 });
+    const voiceResponse = await axios.get(`${config.services.voice.url}/health`, { timeout: 5000 });
+    res.json({ 
+      status: 'success', 
+      llm: llmResponse.data,
+      voice: voiceResponse.data
+    });
+  } catch (error) {
+    logger.error(`Network connection error: ${error.message}`);
+    res.status(500).json({ status: 'error', message: `Network connection failed: ${error.message}` });
+  }
+});
+
+// Catch-all route for unhandled requests
+app.use('*', (req, res) => {
+  logger.warn(`Received unhandled request: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
+});
+
+// Error handling middleware
 app.use((err, req, res, next) => {
   logger.error(`Unhandled error: ${err.stack}`);
   res.status(500).json({ error: 'Internal server error', details: err.message });
@@ -55,9 +84,8 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
   logger.info('Configured routes:');
-  Object.entries(routes).forEach(([route, target]) => {
-    logger.info(`  ${route} -> ${target}`);
-  });
+  logger.info(`  /api/llm/generate -> ${config.services.llm.url}/generate`);
+  logger.info(`  /api/voice/generate -> ${config.services.voice.url}/generate`);
 });
 
 module.exports = app;

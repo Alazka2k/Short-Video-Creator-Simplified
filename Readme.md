@@ -49,6 +49,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - Separate test environment for all services
 - Integration test for end-to-end workflow verification
 - Source code export functionality for easy sharing and versioning
+- API Gateway for centralized request handling and routing
 
 ## Prerequisites
 
@@ -126,11 +127,21 @@ The system processes input from a CSV file containing multiple prompts, leverage
 1. Prepare your input CSV file in `data/input/input.csv` with multiple prompts, one per line
 2. Set up your parameters in `data/input/parameters.json`
 3. Customize the initial prompt in `data/input/initial_prompt.txt`
-4. Run the application:
+4. Start the API Gateway:
    ```
-   npm start
+   npm run start:gateway
    ```
-5. Find the generated content in the `data/output` directory
+5. Start individual services:
+   ```
+   npm run start:llm
+   npm run start:voice
+   npm run start:image
+   npm run start:animation
+   npm run start:music
+   npm run start:video
+   ```
+6. Use Postman or any HTTP client to send requests to `http://localhost:3000/api/{service}/{endpoint}`
+7. Find the generated content in the `data/output` directory
 
 ## Project Structure
 
@@ -163,12 +174,14 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   └── billing-model.js
 │   │   ├── llm-service/
 │   │   │   ├── llm-service.js
+│   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── image-service/
 │   │   │   ├── image-gen-service.js
 │   │   │   └── index.js
 │   │   ├── voice-service/
 │   │   │   ├── voice-gen-service.js
+│   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── music-service/
 │   │   │   ├── music-gen-service.js
@@ -241,10 +254,10 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 
 ## Architecture
 
-The application follows a modular architecture designed for flexibility and maintainability:
+The application follows a microservices architecture designed for flexibility and maintainability:
 
-1. Input Processing: Parses CSV input with multiple prompts and loads configuration parameters
-2. API Gateway: Handles routing and request/response transformation
+1. API Gateway: Handles routing and request/response transformation for all services
+2. Input Processing: Parses CSV input with multiple prompts and loads configuration parameters
 3. Authentication Service: Manages user registration, login, and authorization
 4. Job Service: Orchestrates the content generation process and manages job statuses
 5. Billing Service: Handles subscription management and usage-based billing
@@ -257,6 +270,8 @@ The application follows a modular architecture designed for flexibility and main
 12. Shared Utilities: Provides common functionality across services
 13. Frontend Application: Offers a user-friendly interface for interacting with the backend services
 14. Output Formatting: Structures and saves the generated content in an editor-friendly format
+
+Each service runs independently and communicates through the API Gateway, allowing for better scalability and easier maintenance.
 
 ## API Integrations
 
@@ -333,7 +348,7 @@ The project includes a utility for exporting the full source code, which can be 
 1. Navigate to the project root directory
 2. Run the following command:
    ```
-   node backend/shared/utils/export-source-code.js
+   npm run create:code
    ```
 3. The exported source code will be saved as `full_source_code.txt` in the project root directory
 
@@ -354,6 +369,7 @@ This exported file will contain the entire project structure and the content of 
 - If you encounter issues with the microservices architecture, ensure that all import paths have been updated correctly in each service
 - When running tests, make sure you're using the correct paths for input files (like CSV, JSON, and TXT files) as they may have changed in the new structure
 - If you encounter "Module not found" errors, double-check that all dependencies are correctly listed in the `package.json` file and that you've run `npm install` after making any changes
+- If requests to the API Gateway are not being routed correctly, check the `server.js` file in the `api-gateway` directory and ensure all routes are properly configured
 
 ## Contributing
 

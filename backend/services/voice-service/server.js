@@ -5,17 +5,34 @@ const config = require('../../shared/utils/config');
 
 function createServer(voiceServiceInterface) {
     const app = express();
-    app.use(express.json());
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   
     app.use((req, res, next) => {
-      logger.info(`Voice Service: Received ${req.method} request for ${req.url}`);
-      next();
+        logger.info(`Voice Service: Received ${req.method} request for ${req.url}`);
+        logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+        logger.info(`Request body: ${JSON.stringify(req.body)}`);
+        next();
     });
   
-    const router = express.Router();
-  
-    router.post('/generate', async (req, res) => {
+    // Health check endpoint
+    app.get('/health', (req, res) => {
+      res.json({ status: 'Voice Service is healthy' });
+    });
+
+    // Test endpoint
+    app.get('/test', (req, res) => {
+      logger.info('Voice Service: Test endpoint hit');
+      res.json({ message: 'Voice Service is running' });
+    });
+
+    app.post('/generate', async (req, res) => {
       logger.info('Voice Service: Handling /generate request');
+      const requestTimeout = setTimeout(() => {
+        logger.error('Voice Service: Request timed out');
+        res.status(504).json({ error: 'Request timed out' });
+      }, 300000); // 5 minutes timeout
+
       try {
         const { text, voiceId } = req.body;
         logger.info(`Voice Service: Request body: ${JSON.stringify(req.body)}`);
@@ -24,7 +41,6 @@ function createServer(voiceServiceInterface) {
           throw new Error('text is missing or undefined');
         }
   
-        // Generate a unique filename for this request
         const filename = `voice_${Date.now()}.mp3`;
         const outputPath = path.join(config.voiceGen.outputDirectory, filename);
   
@@ -32,18 +48,20 @@ function createServer(voiceServiceInterface) {
         
         const result = await voiceServiceInterface.process(text, outputPath, voiceId);
         
+        clearTimeout(requestTimeout);
         logger.info('Voice Service: Voice generated successfully');
         res.json({ 
           message: 'Voice generated successfully',
           filePath: result
         });
       } catch (error) {
+        clearTimeout(requestTimeout);
         logger.error('Voice Service: Error generating voice:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
       }
     });
 
-    router.get('/voices', async (req, res) => {
+    app.get('/voices', async (req, res) => {
       logger.info('Voice Service: Handling /voices request');
       try {
         const voices = await voiceServiceInterface.listVoices();
@@ -55,13 +73,16 @@ function createServer(voiceServiceInterface) {
       }
     });
 
-    // Use the router with the /api/voice prefix
-    app.use('/api/voice', router);
+    // Add this at the end of your routes, but before any error handling middleware
+    app.use((req, res, next) => {
+    logger.warn(`Voice Service: Unhandled ${req.method} request for ${req.url}`);
+    next();
+    });
 
-    // Catch-all for undefined routes
-    app.use((req, res) => {
-      logger.warn(`Voice Service: Received request for undefined route: ${req.method} ${req.url}`);
-      res.status(404).json({ error: 'Not Found' });
+    // Catch-all route for unhandled requests
+    app.use('*', (req, res) => {
+      logger.warn(`Voice Service: Received unhandled request: ${req.method} ${req.originalUrl}`);
+      res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
     });
 
     // Error handling middleware

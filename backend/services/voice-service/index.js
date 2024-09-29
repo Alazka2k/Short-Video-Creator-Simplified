@@ -1,6 +1,5 @@
-// backend/services/voice-service/index.js
-
 const VoiceGenService = require('./voice-gen-service');
+const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 
@@ -13,7 +12,7 @@ class VoiceServiceInterface {
 
   async initialize() {
     logger.info('VoiceServiceInterface initializing');
-    // No initialization needed for VoiceGenService, but we can add checks here if needed
+    // Add any necessary initialization logic here
     logger.info('VoiceServiceInterface initialized');
   }
 
@@ -26,37 +25,36 @@ class VoiceServiceInterface {
     logger.info('Listing available voices');
     return await this.service.listVoices();
   }
-
-  async cleanup() {
-    logger.info('Cleaning up VoiceServiceInterface');
-    // No cleanup needed for VoiceGenService, but we can add any necessary cleanup logic here
-  }
-
-  startServer() {
-    const PORT = process.env.VOICE_SERVICE_PORT || 3003;
-    const app = createServer(this);
-    
-    app.use((req, res, next) => {
-      logger.info(`Received ${req.method} request on ${req.path}`);
-      next();
-    });
-
-    app.listen(PORT, () => {
-      logger.info(`Voice Service running on port ${PORT}`);
-    });
-  }
 }
 
-const voiceServiceInterface = new VoiceServiceInterface();
+async function startServer() {
+  const voiceServiceInterface = new VoiceServiceInterface();
+  await voiceServiceInterface.initialize();
 
-// Initialize and start the server if this file is run directly
+  const PORT = process.env.VOICE_SERVICE_PORT || 3003;
+  const app = createServer(voiceServiceInterface);
+
+  app.listen(PORT, () => {
+    logger.info(`Voice Service running on port ${PORT}`);
+  });
+}
+
+// Error handling for unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Error handling for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+});
+
+// Start the server if this file is run directly
 if (require.main === module) {
-  voiceServiceInterface.initialize().then(() => {
-    voiceServiceInterface.startServer();
-  }).catch(error => {
-    logger.error('Failed to initialize Voice Service:', error);
+  startServer().catch(error => {
+    logger.error('Failed to start Voice Service:', error);
     process.exit(1);
   });
 }
 
-module.exports = voiceServiceInterface;
+module.exports = { VoiceServiceInterface, startServer };

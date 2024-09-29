@@ -83,12 +83,20 @@ function loadConfig() {
     outputDirectory: config.basePaths.test
   };
 
+  // Update LLM config
   config.llm = {
     ...config.llm,
     basePath: config.basePaths.input
   };
+
+  // Update Voice config
+  config.voiceGen = {
+    ...config.voiceGen,
+    outputDirectory: path.join(config.basePaths.output, 'voice')
+  };
   
   logger.info('LLM configuration:', JSON.stringify(config.llm, null, 2));
+  logger.info('Voice configuration:', JSON.stringify(config.voiceGen, null, 2));
 
   // Add service URLs to the configuration
   config.services = {
@@ -118,6 +126,7 @@ const requiredConfigs = [
   'llm.apiKey',
   'voiceGen.provider',
   'voiceGen.apiKey',
+  'voiceGen.outputDirectory',
   'imageGen.provider',
   'imageGen.serverId',
   'imageGen.channelId',
@@ -135,7 +144,9 @@ const requiredConfigs = [
   'initialPrompt.txtPath',
   'output.directory',
   'test.outputDirectory',
-  'parameters.musicGen.make_instrumental'
+  'parameters.musicGen.make_instrumental',
+  'services.voice.url',
+  'services.llm.url'
 ];
 
 requiredConfigs.forEach(configPath => {
@@ -150,7 +161,7 @@ requiredConfigs.forEach(configPath => {
   }
 });
 
-// Log the musicGen configuration specifically
-logger.info('MusicGen configuration:', JSON.stringify(config.parameters?.musicGen, null, 2));
+// Log all service URLs
+logger.info('Service URLs:', JSON.stringify(config.services, null, 2));
 
 module.exports = config;

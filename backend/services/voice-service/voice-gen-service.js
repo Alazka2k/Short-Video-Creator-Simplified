@@ -8,7 +8,8 @@ class VoiceGenService {
   constructor() {
     logger.info('Initializing VoiceGenService');
     this.client = new ElevenLabsClient({
-      apiKey: config.voiceGen.apiKey
+      apiKey: config.voiceGen.apiKey,
+      timeoutMs: 120000 // 2 minutes timeout
     });
     this.defaultModelId = config.voiceGen.modelId || 'eleven_multilingual_v2';
     logger.info(`Voice Generation Provider: ElevenLabs`);
@@ -42,16 +43,32 @@ class VoiceGenService {
         fs.mkdirSync(outputDir, { recursive: true });
       }
 
-      const writeStream = fs.createWriteStream(outputPath);
+      const writeStream = fs.createWriteStream(outputPath, { highWaterMark: 1024 * 1024 }); // 1MB buffer
 
       return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          audioStream.destroy();
+          writeStream.destroy();
+          reject(new Error('Voice generation timed out'));
+        }, 180000); // 3 minutes timeout
+
         audioStream.pipe(writeStream);
+
         writeStream.on('finish', () => {
+          clearTimeout(timeout);
           logger.info(`Voice generated and saved to ${outputPath}`);
           resolve(outputPath);
         });
+
         writeStream.on('error', (error) => {
+          clearTimeout(timeout);
           logger.error('Error writing voice file:', error);
+          reject(error);
+        });
+
+        audioStream.on('error', (error) => {
+          clearTimeout(timeout);
+          logger.error('Error in audio stream:', error);
           reject(error);
         });
       });
