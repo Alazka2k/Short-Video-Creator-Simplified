@@ -49,7 +49,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - Separate test environment for all services
 - Integration test for end-to-end workflow verification
 - Source code export functionality for easy sharing and versioning
-- API Gateway for centralized request handling and routing
+- API Gateway for centralized request handling and direct service communication
 
 ## Prerequisites
 
@@ -256,11 +256,11 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 
 The application follows a microservices architecture designed for flexibility and maintainability:
 
-1. API Gateway: Handles routing and request/response transformation for all services
+1. API Gateway: Handles routing and direct communication with all services
 2. Input Processing: Parses CSV input with multiple prompts and loads configuration parameters
-3. Authentication Service: Manages user registration, login, and authorization
-4. Job Service: Orchestrates the content generation process and manages job statuses
-5. Billing Service: Handles subscription management and usage-based billing
+3. Authentication Service: Manages user registration, login, and authorization (Planned)
+4. Job Service: Orchestrates the content generation process and manages job statuses (Planned)
+5. Billing Service: Handles subscription management and usage-based billing (Planned)
 6. LLM Service: Generates dynamic script content based on input and parameters
 7. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
 8. Image Generation Service: Creates visual content based on scene descriptions
@@ -271,7 +271,7 @@ The application follows a microservices architecture designed for flexibility an
 13. Frontend Application: Offers a user-friendly interface for interacting with the backend services
 14. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
-Each service runs independently and communicates through the API Gateway, allowing for better scalability and easier maintenance.
+Each service runs independently, and the API Gateway communicates directly with each service using HTTP requests, allowing for better scalability and easier maintenance.
 
 ## API Integrations
 
@@ -366,10 +366,11 @@ This exported file will contain the entire project structure and the content of 
 - For Luma AI-specific issues, ensure your API key is valid and has the necessary permissions
 - If the integration test fails, check individual component tests to isolate the issue
 - For frontend-related issues, check the browser console for error messages and ensure that the API Gateway is correctly configured to handle frontend requests
-- If you encounter issues with the microservices architecture, ensure that all import paths have been updated correctly in each service
+- If you encounter issues with the microservices architecture, ensure that all services are running and that the API Gateway can communicate with them
 - When running tests, make sure you're using the correct paths for input files (like CSV, JSON, and TXT files) as they may have changed in the new structure
 - If you encounter "Module not found" errors, double-check that all dependencies are correctly listed in the `package.json` file and that you've run `npm install` after making any changes
 - If requests to the API Gateway are not being routed correctly, check the `server.js` file in the `api-gateway` directory and ensure all routes are properly configured
+- Verify network connectivity between the API Gateway and individual services if requests are not being forwarded correctly
 
 ## Contributing
 
