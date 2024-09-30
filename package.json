@@ -21,8 +21,8 @@
     "create:code": "node scripts/export-source-code.js",
     "start:gateway": "node backend/api-gateway/server.js",
     "start:llm": "node backend/services/llm-service/index.js",
-    "start:voice": "node backend/services/voice-service/index.js",
     "start:image": "node backend/services/image-service/index.js",
+    "start:voice": "node backend/services/voice-service/index.js",
     "start:animation": "node backend/services/animation-service/index.js",
     "start:video": "node backend/services/video-service/index.js",
     "start:music": "node backend/services/music-service/index.js"

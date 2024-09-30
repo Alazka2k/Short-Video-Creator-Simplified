@@ -16,6 +16,7 @@ class ImageGenService {
       Ws: config.imageGen.ws
     });
     this.initialized = false;
+    logger.info('ImageGenService constructed');
   }
 
   async init() {
@@ -51,22 +52,36 @@ class ImageGenService {
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      const imageFileName = `scene_${sceneIndex + 1}_image.png`;
-      const imageFilePath = path.join(outputDir, imageFileName);
+      const { imageFilePath, metadataPath } = await this.createOutputStructure(outputDir, sceneIndex);
       await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
       
-      await this.saveImageMetadata(outputDir, sceneIndex, originalImageUrl, selectedVariationUrl, imageFileName);
+      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath));
 
       return {
         originalUrl: originalImageUrl,
         imageUrl: selectedVariationUrl,
         filePath: imageFilePath,
-        fileName: imageFileName
+        fileName: path.basename(imageFilePath)
       };
     } catch (error) {
       logger.error('Error generating image:', error);
       throw error;
     }
+  }
+
+  async createOutputStructure(baseOutputDir, sceneIndex) {
+    const currentDate = new Date();
+    const dateString = currentDate.toISOString().split('T')[0];
+    const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+    
+    const imageOutputDir = path.join(baseOutputDir, 'image', `${dateString}_${timeString}`, `prompt_1`, `scene_${sceneIndex + 1}`);
+    await fs.mkdir(imageOutputDir, { recursive: true });
+
+    const imageFilePath = path.join(imageOutputDir, `image.png`);
+    const metadataPath = path.join(imageOutputDir, 'metadata.json');
+
+    logger.info(`Created output directory: ${imageOutputDir}`);
+    return { imageFilePath, metadataPath };
   }
 
   getRandomVariationUrl(originalUrl) {
@@ -100,8 +115,7 @@ class ImageGenService {
     }
   }
 
-  async saveImageMetadata(outputDir, sceneIndex, originalUrl, imageUrl, fileName) {
-    const metadataPath = path.join(outputDir, 'metadata.json');
+  async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName) {
     let metadata = {};
 
     try {
@@ -120,7 +134,7 @@ class ImageGenService {
     };
 
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-    logger.info(`Metadata saved for scene ${sceneIndex + 1}`);
+    logger.info(`Metadata saved to ${metadataPath}`);
   }
 
   async close() {
@@ -132,4 +146,4 @@ class ImageGenService {
   }
 }
 
-module.exports = new ImageGenService();
+module.exports = ImageGenService;

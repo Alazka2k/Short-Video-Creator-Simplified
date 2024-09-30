@@ -53,19 +53,19 @@ app.post('/api/voice/generate', async (req, res) => {
   }
 });
 
-// Network connection test route
-app.get('/test-network-connection', async (req, res) => {
+// Image Service route
+app.post('/api/image/generate', async (req, res) => {
   try {
-    const llmResponse = await axios.get(`${config.services.llm.url}/health`, { timeout: 5000 });
-    const voiceResponse = await axios.get(`${config.services.voice.url}/health`, { timeout: 5000 });
-    res.json({ 
-      status: 'success', 
-      llm: llmResponse.data,
-      voice: voiceResponse.data
+    logger.info('Forwarding request to Image service');
+    const response = await axios.post(`${config.services.image.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 300000  // 5 minutes timeout
     });
+    logger.info(`Received response from Image service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
   } catch (error) {
-    logger.error(`Network connection error: ${error.message}`);
-    res.status(500).json({ status: 'error', message: `Network connection failed: ${error.message}` });
+    logger.error(`Image request error: ${error.message}`);
+    res.status(500).json({ error: 'Image request failed', details: error.message });
   }
 });
 
@@ -86,6 +86,7 @@ app.listen(PORT, () => {
   logger.info('Configured routes:');
   logger.info(`  /api/llm/generate -> ${config.services.llm.url}/generate`);
   logger.info(`  /api/voice/generate -> ${config.services.voice.url}/generate`);
+  logger.info(`  /api/image/generate -> ${config.services.image.url}/generate`);
 });
 
 module.exports = app;
