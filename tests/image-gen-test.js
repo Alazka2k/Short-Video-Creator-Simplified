@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const https = require('https');
-const imageService = require('../backend/services/image-service');
+const { ImageServiceInterface } = require('../backend/services/image-service');
 const config = require('../backend/shared/utils/config');
 const logger = require('../backend/shared/utils/logger');
 
@@ -27,6 +27,7 @@ async function runImageGenTest() {
     }
 
     logger.info('Internet connectivity confirmed. Initializing Image Generation Service...');
+    const imageService = new ImageServiceInterface();
     await imageService.initialize();
 
     const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
@@ -53,7 +54,8 @@ async function runImageGenTest() {
             const result = await imageService.process(
               scene.visual_prompt,
               promptOutputDir,
-              index
+              index,
+              true  // isTest parameter
             );
 
             logger.info(`Image generated successfully: ${result.filePath}`);

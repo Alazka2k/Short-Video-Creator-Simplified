@@ -16,7 +16,6 @@ class ImageGenService {
       Ws: config.imageGen.ws
     });
     this.initialized = false;
-    logger.info('ImageGenService constructed');
   }
 
   async init() {
@@ -31,7 +30,7 @@ class ImageGenService {
     }
   }
 
-  async generateImage(prompt, outputDir, sceneIndex) {
+  async generateImage(prompt, outputDir, sceneIndex, isTest = false) {
     if (!this.initialized) {
       throw new Error('ImageGenService not initialized. Call init() first.');
     }
@@ -52,16 +51,33 @@ class ImageGenService {
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      const { imageFilePath, metadataPath } = await this.createOutputStructure(outputDir, sceneIndex);
+      let imageFileName, imageFilePath, metadataPath;
+
+      if (isTest) {
+        imageFileName = `scene_${sceneIndex + 1}_image.png`;
+        imageFilePath = path.join(outputDir, imageFileName);
+        metadataPath = path.join(outputDir, 'metadata.json');
+      } else {
+        const currentDate = new Date();
+        const dateString = currentDate.toISOString().split('T')[0];
+        const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+        const promptDir = path.join(config.output.directory, 'image', `${dateString}_${timeString}`, `prompt_1`, `scene_${sceneIndex + 1}`);
+        await fs.mkdir(promptDir, { recursive: true });
+        
+        imageFileName = `image.png`;
+        imageFilePath = path.join(promptDir, imageFileName);
+        metadataPath = path.join(promptDir, 'metadata.json');
+      }
+
       await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
       
-      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath));
+      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, imageFileName);
 
       return {
         originalUrl: originalImageUrl,
         imageUrl: selectedVariationUrl,
         filePath: imageFilePath,
-        fileName: path.basename(imageFilePath)
+        fileName: imageFileName
       };
     } catch (error) {
       logger.error('Error generating image:', error);
