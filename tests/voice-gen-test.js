@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs').promises;
-const voiceService = require('../backend/services/voice-service');
+const { VoiceServiceInterface } = require('../backend/services/voice-service');
 const config = require('../backend/shared/utils/config');
 const logger = require('../backend/shared/utils/logger');
 
@@ -9,6 +9,9 @@ async function runVoiceGenTest() {
     logger.info('Starting voice generation test with LLM output');
     logger.info('Voice generation configuration:', JSON.stringify(config.voiceGen, null, 2));
     logger.info('Voice generation parameters:', JSON.stringify(config.parameters?.voiceGen, null, 2));
+
+    const voiceService = new VoiceServiceInterface();
+    await voiceService.initialize();
 
     const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
     const voiceOutputDir = path.join(__dirname, 'test_output', 'voice');
@@ -30,29 +33,28 @@ async function runVoiceGenTest() {
         await fs.mkdir(promptOutputDir, { recursive: true });
 
         for (const [index, scene] of llmOutput.scenes.entries()) {
-          const fileName = `scene_${index + 1}.mp3`;
-          const outputPath = path.join(promptOutputDir, fileName);
-
           try {
             // Use config.parameters.voiceGen.defaultVoiceId if available, otherwise use a default value
             const voiceId = config.parameters?.voiceGen?.defaultVoiceId || '21m00Tcm4TlvDq8ikWAM';
             
             logger.info(`Generating voice for scene ${index + 1} with voice ID: ${voiceId}`);
             
-            await voiceService.process(
+            const result = await voiceService.process(
               scene.description,
-              outputPath,
-              voiceId
+              promptOutputDir,
+              index,
+              voiceId,
+              true  // isTest parameter
             );
 
             // Check if the file exists and has content
-            const stats = await fs.stat(outputPath);
+            const stats = await fs.stat(result.outputPath);
             if (stats.size > 0) {
-              logger.info(`Voice file generated successfully: ${outputPath}`);
+              logger.info(`Voice file generated successfully: ${result.outputPath}`);
               logger.info(`File size: ${stats.size} bytes`);
 
               // Read the first few bytes of the file to verify it's a valid MP3
-              const fileHandle = await fs.open(outputPath, 'r');
+              const fileHandle = await fs.open(result.outputPath, 'r');
               const buffer = Buffer.alloc(4);
               await fileHandle.read(buffer, 0, 4, 0);
               await fileHandle.close();
@@ -63,7 +65,7 @@ async function runVoiceGenTest() {
                 logger.warn('File does not start with a valid MP3 header');
               }
             } else {
-              logger.warn(`Generated voice file is empty: ${outputPath}`);
+              logger.warn(`Generated voice file is empty: ${result.outputPath}`);
             }
           } catch (error) {
             logger.error(`Error generating voice for scene ${index + 1}:`, error);

@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 
@@ -20,12 +19,7 @@ function createServer(voiceServiceInterface) {
       res.json({ status: 'Voice Service is healthy' });
     });
 
-    // Test endpoint
-    app.get('/test', (req, res) => {
-      logger.info('Voice Service: Test endpoint hit');
-      res.json({ message: 'Voice Service is running' });
-    });
-
+    // Generate voice endpoint
     app.post('/generate', async (req, res) => {
       logger.info('Voice Service: Handling /generate request');
       const requestTimeout = setTimeout(() => {
@@ -34,25 +28,22 @@ function createServer(voiceServiceInterface) {
       }, 300000); // 5 minutes timeout
 
       try {
-        const { text, voiceId } = req.body;
+        const { text, sceneIndex, voiceId } = req.body;
         logger.info(`Voice Service: Request body: ${JSON.stringify(req.body)}`);
         
         if (!text) {
           throw new Error('text is missing or undefined');
         }
   
-        const filename = `voice_${Date.now()}.mp3`;
-        const outputPath = path.join(config.voiceGen.outputDirectory, filename);
-  
         logger.info(`Voice Service: Generating voice with input text length: ${text.length}`);
         
-        const result = await voiceServiceInterface.process(text, outputPath, voiceId);
+        const result = await voiceServiceInterface.process(text, sceneIndex || 0, voiceId);
         
         clearTimeout(requestTimeout);
         logger.info('Voice Service: Voice generated successfully');
         res.json({ 
           message: 'Voice generated successfully',
-          filePath: result
+          result: result
         });
       } catch (error) {
         clearTimeout(requestTimeout);

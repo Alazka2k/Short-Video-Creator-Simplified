@@ -16,45 +16,43 @@ class VoiceServiceInterface {
     logger.info('VoiceServiceInterface initialized');
   }
 
-  async process(text, outputPath, voiceId) {
-    logger.info('Processing voice generation request', { textLength: text.length, outputPath, voiceId });
-    return await this.service.generateVoice(text, outputPath, voiceId);
+  async process(text, sceneIndex, voiceId, isTest = false) {
+    logger.info('Processing voice generation request', { textLength: text.length, sceneIndex, voiceId, isTest });
+    return await this.service.generateVoice(text, sceneIndex, voiceId, isTest);
   }
 
   async listVoices() {
     logger.info('Listing available voices');
     return await this.service.listVoices();
   }
+
+  async cleanup() {
+    logger.info('Cleaning up VoiceServiceInterface');
+    // Add any cleanup logic here if needed
+  }
 }
 
 async function startServer() {
-  const voiceServiceInterface = new VoiceServiceInterface();
-  await voiceServiceInterface.initialize();
+  try {
+    logger.info('Starting Voice Service');
+    const voiceServiceInterface = new VoiceServiceInterface();
+    await voiceServiceInterface.initialize();
 
-  const PORT = process.env.VOICE_SERVICE_PORT || 3003;
-  const app = createServer(voiceServiceInterface);
+    const PORT = process.env.VOICE_SERVICE_PORT || 3003;
+    const app = createServer(voiceServiceInterface);
 
-  app.listen(PORT, () => {
-    logger.info(`Voice Service running on port ${PORT}`);
-  });
+    app.listen(PORT, () => {
+      logger.info(`Voice Service running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start Voice Service:', error);
+    process.exit(1);
+  }
 }
-
-// Error handling for unhandled rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-// Error handling for uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-});
 
 // Start the server if this file is run directly
 if (require.main === module) {
-  startServer().catch(error => {
-    logger.error('Failed to start Voice Service:', error);
-    process.exit(1);
-  });
+  startServer();
 }
 
 module.exports = { VoiceServiceInterface, startServer };

@@ -30,7 +30,7 @@ class ImageGenService {
     }
   }
 
-  async generateImage(prompt, outputDir, sceneIndex, isTest = false) {
+  async generateImage(prompt, sceneIndex, isTest = false) {
     if (!this.initialized) {
       throw new Error('ImageGenService not initialized. Call init() first.');
     }
@@ -51,33 +51,17 @@ class ImageGenService {
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      let imageFileName, imageFilePath, metadataPath;
-
-      if (isTest) {
-        imageFileName = `scene_${sceneIndex + 1}_image.png`;
-        imageFilePath = path.join(outputDir, imageFileName);
-        metadataPath = path.join(outputDir, 'metadata.json');
-      } else {
-        const currentDate = new Date();
-        const dateString = currentDate.toISOString().split('T')[0];
-        const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-        const promptDir = path.join(config.output.directory, 'image', `${dateString}_${timeString}`, `prompt_1`, `scene_${sceneIndex + 1}`);
-        await fs.mkdir(promptDir, { recursive: true });
-        
-        imageFileName = `image.png`;
-        imageFilePath = path.join(promptDir, imageFileName);
-        metadataPath = path.join(promptDir, 'metadata.json');
-      }
+      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, isTest);
 
       await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
       
-      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, imageFileName);
+      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath));
 
       return {
         originalUrl: originalImageUrl,
         imageUrl: selectedVariationUrl,
         filePath: imageFilePath,
-        fileName: imageFileName
+        fileName: path.basename(imageFilePath)
       };
     } catch (error) {
       logger.error('Error generating image:', error);
@@ -85,18 +69,22 @@ class ImageGenService {
     }
   }
 
-  async createOutputStructure(baseOutputDir, sceneIndex) {
-    const currentDate = new Date();
-    const dateString = currentDate.toISOString().split('T')[0];
-    const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-    
-    const imageOutputDir = path.join(baseOutputDir, 'image', `${dateString}_${timeString}`, `prompt_1`, `scene_${sceneIndex + 1}`);
-    await fs.mkdir(imageOutputDir, { recursive: true });
+  getOutputPaths(sceneIndex, isTest) {
+    let imageFilePath, metadataPath;
 
-    const imageFilePath = path.join(imageOutputDir, `image.png`);
-    const metadataPath = path.join(imageOutputDir, 'metadata.json');
+    if (isTest) {
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image');
+      imageFilePath = path.join(testOutputDir, `image_scene_${sceneIndex}.png`);
+      metadataPath = path.join(testOutputDir, 'metadata.json');
+    } else {
+      const currentDate = new Date();
+      const dateString = currentDate.toISOString().split('T')[0];
+      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+      const promptDir = path.join(config.output.directory, 'image', `${dateString}_${timeString}`, `prompt_1`);
+      imageFilePath = path.join(promptDir, `image_scene_${sceneIndex}.png`);
+      metadataPath = path.join(promptDir, 'metadata.json');
+    }
 
-    logger.info(`Created output directory: ${imageOutputDir}`);
     return { imageFilePath, metadataPath };
   }
 
@@ -121,6 +109,7 @@ class ImageGenService {
       await page.waitForSelector('img');
       const viewSource = await page.goto(url);
       const buffer = await viewSource.buffer();
+      await fs.mkdir(path.dirname(outputPath), { recursive: true });
       await fs.writeFile(outputPath, buffer);
       logger.info(`Image downloaded successfully to ${outputPath}`);
     } catch (error) {
@@ -143,12 +132,13 @@ class ImageGenService {
       }
     }
 
-    metadata[`scene_${sceneIndex + 1}`] = { 
+    metadata[`scene_${sceneIndex}`] = { 
       originalUrl, 
       imageUrl,
       fileName
     };
 
+    await fs.mkdir(path.dirname(metadataPath), { recursive: true });
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
     logger.info(`Metadata saved to ${metadataPath}`);
   }

@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 
@@ -36,17 +35,15 @@ function createServer(imageServiceInterface) {
           throw new Error('prompt is missing or undefined');
         }
   
-        const outputDir = config.output.directory;
         logger.info(`Image Service: Generating image with prompt: ${prompt}`);
         
-        const result = await imageServiceInterface.generateContent(prompt, outputDir, sceneIndex);
+        const result = await imageServiceInterface.generateContent(prompt, sceneIndex);
         
         clearTimeout(requestTimeout);
         logger.info('Image Service: Image generated successfully');
         res.json({ 
           message: 'Image generated successfully',
-          result: result.content,
-          outputPath: result.outputPath
+          result: result
         });
       } catch (error) {
         clearTimeout(requestTimeout);

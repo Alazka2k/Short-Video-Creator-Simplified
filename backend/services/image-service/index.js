@@ -2,7 +2,6 @@ const ImageGenService = require('./image-gen-service');
 const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const path = require('path');
 
 class ImageServiceInterface {
   constructor() {
@@ -17,28 +16,14 @@ class ImageServiceInterface {
     logger.info('ImageServiceInterface initialized');
   }
 
-  async generateContent(prompt, outputDir, sceneIndex, isTest = false) {
-    logger.info('Generating image content', { prompt, outputDir, sceneIndex, isTest });
-    const result = await this.service.generateImage(prompt, outputDir, sceneIndex, isTest);
-    
-    if (!isTest) {
-      const currentDate = new Date();
-      const dateString = currentDate.toISOString().split('T')[0];
-      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const imagePath = path.join(config.output.directory, 'image', `${dateString}_${timeString}`, `prompt_1`, `scene_${sceneIndex + 1}`, 'image.png');
-      
-      return {
-        content: result,
-        outputPath: imagePath
-      };
-    }
-    
-    return result;
+  async generateContent(prompt, sceneIndex, isTest = false) {
+    logger.info(`Generating image content: ${prompt}`);
+    return await this.service.generateImage(prompt, sceneIndex, isTest);
   }
 
-  async process(prompt, outputDir, sceneIndex, isTest = false) {
+  async process(prompt, sceneIndex, isTest = false) {
     logger.info(`Processing image generation request: ${prompt}`);
-    return await this.generateContent(prompt, outputDir, sceneIndex, isTest);
+    return await this.generateContent(prompt, sceneIndex, isTest);
   }
 
   async cleanup() {
@@ -65,7 +50,6 @@ async function startServer() {
   }
 }
 
-// Start the server if this file is run directly
 if (require.main === module) {
   startServer();
 }
