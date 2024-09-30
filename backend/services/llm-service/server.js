@@ -11,6 +11,7 @@ function createServer(llmServiceInterface) {
     app.use((req, res, next) => {
       logger.info(`LLM Service: Received ${req.method} request for ${req.url}`);
       logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+      logger.info(`Request body: ${JSON.stringify(req.body)}`);
       next();
     });
   
@@ -33,20 +34,27 @@ function createServer(llmServiceInterface) {
       }, 300000); // 5 minutes timeout
 
       try {
-        const { initialPromptFile, parametersFile, inputPrompt } = req.body;
+        const { inputPrompt } = req.body;
         logger.info(`LLM Service: Request body: ${JSON.stringify(req.body)}`);
         
-        if (!initialPromptFile || !parametersFile || !inputPrompt) {
-          throw new Error('Missing required parameters');
+        if (!inputPrompt) {
+          throw new Error('Missing required parameter: inputPrompt');
         }
   
         logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
         
-        const content = await llmServiceInterface.process(initialPromptFile, parametersFile, inputPrompt);
+        const initialPromptPath = path.join(config.llm.basePath, 'initial_prompt.txt');
+        const parametersPath = path.join(config.llm.basePath, 'parameters.json');
+        
+        const result = await llmServiceInterface.generateContent(initialPromptPath, parametersPath, inputPrompt);
         
         clearTimeout(requestTimeout);
         logger.info('LLM Service: Content generated successfully');
-        res.json(content);
+        res.json({
+          message: 'Content generated successfully',
+          result: result.content,
+          outputPath: result.outputPath
+        });
       } catch (error) {
         clearTimeout(requestTimeout);
         logger.error('LLM Service: Error generating content:', error);

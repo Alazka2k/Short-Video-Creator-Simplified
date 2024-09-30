@@ -2,6 +2,8 @@ const LLMService = require('./llm-service');
 const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
+const path = require('path');
+const fs = require('fs').promises;
 
 class LLMServiceInterface {
   constructor() {
@@ -21,16 +23,39 @@ class LLMServiceInterface {
     return await this.service.loadPromptsFromCsv(csvPath);
   }
 
+  async generateContent(initialPromptPath, parametersPath, inputPrompt) {
+    logger.info('Generating content', { initialPromptPath, parametersPath, inputPrompt });
+    const content = await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
+    
+    // Create output directory
+    const currentDate = new Date();
+    const dateString = currentDate.toISOString().split('T')[0];
+    const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const outputDir = path.join(config.output.directory, 'llm', `${dateString}_${timeString}`, 'prompt_1');
+    await fs.mkdir(outputDir, { recursive: true });
+
+    // Save content to JSON file
+    const outputPath = path.join(outputDir, 'llm_output.json');
+    await fs.writeFile(outputPath, JSON.stringify(content, null, 2));
+    
+    logger.info(`LLM output saved to ${outputPath}`);
+
+    return {
+      content: content,
+      outputPath: outputPath
+    };
+  }
+
   async process(initialPromptFile, parametersFile, inputPrompt) {
     logger.info('Processing LLM request', { initialPromptFile, parametersFile, inputPrompt });
     logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
 
-    const initialPromptPath = config.llm.basePath;
-    const parametersPath = config.llm.basePath;
+    const initialPromptPath = path.join(config.llm.basePath, initialPromptFile);
+    const parametersPath = path.join(config.llm.basePath, parametersFile);
 
     logger.info('Paths for processing:', { initialPromptPath, parametersPath });
 
-    return await this.service.generateContent(initialPromptPath, parametersPath, initialPromptFile, parametersFile, inputPrompt);
+    return await this.generateContent(initialPromptPath, parametersPath, inputPrompt);
   }
 
   async generateDocContent(prompt) {

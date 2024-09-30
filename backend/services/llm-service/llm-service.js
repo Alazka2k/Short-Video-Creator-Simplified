@@ -31,23 +31,16 @@ class LLMService {
     }
   }
 
-  async generateContent(initialPromptPath, parametersPath, initialPromptFile, parametersFile, inputPrompt) {
+  async generateContent(initialPromptPath, parametersPath, inputPrompt, isTest = false) {
     try {
-      logger.debug('generateContent called with:', { initialPromptPath, parametersPath, initialPromptFile, parametersFile, inputPrompt });
+      logger.debug('generateContent called with:', { initialPromptPath, parametersPath, inputPrompt, isTest });
       logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
 
-      const fullInitialPromptPath = path.join(initialPromptPath, initialPromptFile);
-      const fullParametersPath = path.join(parametersPath, parametersFile);
+      await fs.access(initialPromptPath);
+      await fs.access(parametersPath);
 
-      logger.info(`Full Initial Prompt Path: ${fullInitialPromptPath}`);
-      logger.info(`Full Parameters Path: ${fullParametersPath}`);
-
-      // Check if files exist
-      await fs.access(fullInitialPromptPath);
-      await fs.access(fullParametersPath);
-
-      const parameters = await PromptUtils.loadParameters(fullParametersPath);
-      const dynamicPrompt = await PromptUtils.generateDynamicPrompt(fullInitialPromptPath, parameters);
+      const parameters = await PromptUtils.loadParameters(parametersPath);
+      const dynamicPrompt = await PromptUtils.generateDynamicPrompt(initialPromptPath, parameters);
       const combined_prompt = `${dynamicPrompt}\n\nCreate a video script about the following topic: ${inputPrompt}`;
 
       logger.info('Sending request to OpenAI API...');
@@ -65,8 +58,6 @@ class LLMService {
       logger.debug('Raw API Response:', JSON.stringify(completion, null, 2));
 
       const video_script = completion.choices[0].message.parsed;
-      
-      // Add the input prompt to the video_script object
       video_script.prompt = inputPrompt;
 
       logger.info('Generated content structure:', { video_script });
@@ -81,7 +72,6 @@ class LLMService {
       throw error;
     }
   }
-
 
   async generateDocContent(prompt) {
     try {
@@ -115,15 +105,29 @@ class LLMService {
     if (isTest) {
       outputPath = path.join(config.basePaths.test, 'llm', fileName);
     } else {
-      const date = new Date();
-      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}-${String(date.getSeconds()).padStart(2, '0')}`;
-      const promptDir = path.join(config.basePaths.output, dateString, `prompt_${output.prompt.replace(/\s+/g, '_').toLowerCase()}`);
-      await fs.mkdir(promptDir, { recursive: true });
-      outputPath = path.join(promptDir, 'llm_output.json');
+      const currentDate = new Date();
+      const dateString = currentDate.toISOString().split('T')[0];
+      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+      
+      const outputDir = path.join(config.output.directory, 'llm', `${dateString}_${timeString}`, `prompt_1`);
+      await fs.mkdir(outputDir, { recursive: true });
+      outputPath = path.join(outputDir, 'llm_output.json');
     }
     await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
     logger.info(`Output saved to ${outputPath}`);
     return outputPath;
+  }
+
+  async process(initialPromptFile, parametersFile, inputPrompt) {
+    logger.info('Processing LLM request', { initialPromptFile, parametersFile, inputPrompt });
+    logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
+  
+    const initialPromptPath = path.join(config.llm.basePath, initialPromptFile);
+    const parametersPath = path.join(config.llm.basePath, parametersFile);
+  
+    logger.info('Paths for processing:', { initialPromptPath, parametersPath });
+  
+    return await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
   }
 }
 
