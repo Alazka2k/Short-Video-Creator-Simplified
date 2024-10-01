@@ -1,29 +1,29 @@
 const MusicGenService = require('./music-gen-service');
+const createServer = require('./server');
+const logger = require('../../shared/utils/logger');
+const config = require('../../shared/utils/config');
 
 class MusicServiceInterface {
   constructor() {
-    this.service = MusicGenService;
+    logger.info('Initializing MusicServiceInterface');
+    this.service = new MusicGenService();
+    logger.info('MusicGenService instance created');
   }
 
   async initialize() {
-    // No initialization needed for MusicGenService
-    return;
+    logger.info('MusicServiceInterface initializing');
+    // Add any necessary initialization logic here
+    logger.info('MusicServiceInterface initialized');
   }
 
-  async generateMusic(musicData, options) {
-    return await this.service.generateMusic(musicData, options);
+  async generateContent(musicData, sceneIndex, isTest = false) {
+    logger.info('Generating music content', { musicData, sceneIndex, isTest });
+    return await this.service.generateMusic(musicData, sceneIndex, isTest);
   }
 
-  async getMusicInfo(id) {
-    return await this.service.getMusicInfo(id);
-  }
-
-  async waitForMusicGeneration(id, maxAttempts, interval) {
-    return await this.service.waitForMusicGeneration(id, maxAttempts, interval);
-  }
-
-  async downloadMusic(audioUrl, outputPath) {
-    return await this.service.downloadMusic(audioUrl, outputPath);
+  async process(musicData, sceneIndex, isTest = false) {
+    logger.info('Processing music generation request', { musicData, sceneIndex, isTest });
+    return await this.generateContent(musicData, sceneIndex, isTest);
   }
 
   async getQuotaInfo() {
@@ -35,9 +35,32 @@ class MusicServiceInterface {
   }
 
   async cleanup() {
-    // No cleanup needed for MusicGenService
-    return;
+    logger.info('Cleaning up MusicServiceInterface');
+    // Add any cleanup logic here if needed
   }
 }
 
-module.exports = new MusicServiceInterface();
+async function startServer() {
+  try {
+    logger.info('Starting Music Service');
+    const musicServiceInterface = new MusicServiceInterface();
+    await musicServiceInterface.initialize();
+
+    const PORT = process.env.MUSIC_SERVICE_PORT || 3004;
+    const app = createServer(musicServiceInterface);
+
+    app.listen(PORT, () => {
+      logger.info(`Music Service running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start Music Service:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server if this file is run directly
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { MusicServiceInterface, startServer };

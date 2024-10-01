@@ -69,6 +69,22 @@ app.post('/api/image/generate', async (req, res) => {
   }
 });
 
+// Music Service route
+app.post('/api/music/generate', async (req, res) => {
+  try {
+    logger.info('Forwarding request to Music service');
+    const response = await axios.post(`${config.services.music.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 600000  // 10 minutes timeout
+    });
+    logger.info(`Received response from Music service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Music request error: ${error.message}`);
+    res.status(500).json({ error: 'Music request failed', details: error.message });
+  }
+});
+
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {
   logger.warn(`Received unhandled request: ${req.method} ${req.originalUrl}`);
@@ -85,8 +101,9 @@ app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
   logger.info('Configured routes:');
   logger.info(`  /api/llm/generate -> ${config.services.llm.url}/generate`);
-  logger.info(`  /api/voice/generate -> ${config.services.voice.url}/generate`);
   logger.info(`  /api/image/generate -> ${config.services.image.url}/generate`);
+  logger.info(`  /api/voice/generate -> ${config.services.voice.url}/generate`);
+  logger.info(`  /api/music/generate -> ${config.services.music.url}/generate`);
 });
 
 module.exports = app;
