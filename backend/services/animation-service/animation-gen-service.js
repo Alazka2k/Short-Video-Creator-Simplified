@@ -15,6 +15,7 @@ class AnimationGenService {
     this.clientSecret = config.animationGen.clientSecret;
     this.animationLength = config.animationGen.animationLength;
     this.accessToken = null;
+    this.patternGenerator = new AnimationPatternGenerator();
     logger.info('AnimationGenService constructed');
   }
 
@@ -133,44 +134,27 @@ class AnimationGenService {
     }
   }
 
-  // Generate animation pattern separately to validate it before generating the animation
-  async generateAnimationPattern(animationPrompt) {
-    try {
-      logger.info(`Generating animation pattern for visual prompt: ${animationPrompt}`);
-      const generatedPattern = await AnimationPatternGenerator.generatePattern(animationPrompt);
+  getOutputPaths(testFolder, sceneIndex, isTest) {
+    let animationFilePath, metadataPath;
   
-      // Validate the generated pattern
-      const pattern = generatedPattern.pattern;
-      const values = pattern.slice(1, -1).split(',').map(Number);
-  
-      if (values.length < 702 || values.length > 825 || values.length % 3 !== 0) {
-        logger.warn(`Invalid animation pattern: ${values.length} values. Adjusting...`);
-        // Ensure at least 702 values
-        while (values.length < 702) {
-          values.push(...values.slice(0, 3));
-        }
-        // Truncate to 825 values if too long
-        if (values.length > 825) {
-          values.length = 825;
-        }
-        // Ensure the length is a multiple of 3
-        while (values.length % 3 !== 0) {
-          values.pop();
-        }
-        generatedPattern.pattern = `{${values.join(',')}}`;
-      }
-  
-      logger.info(`Generated and validated animation pattern: ${generatedPattern.pattern}`);
-      return generatedPattern;
-    } catch (error) {
-      logger.error('Error generating or validating animation pattern:', error);
-      throw error;
+    if (isTest) {
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'animation', testFolder);
+      animationFilePath = path.join(testOutputDir, `scene_${sceneIndex}_animation.mp4`);
+      metadataPath = path.join(testOutputDir, 'metadata.json');
+    } else {
+      const currentDate = new Date();
+      const dateString = currentDate.toISOString().split('T')[0];
+      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+      const promptDir = path.join(config.output.directory, 'animation', `${dateString}_${timeString}`, `prompt_1`);
+      animationFilePath = path.join(promptDir, `scene_${sceneIndex}_animation.mp4`);
+      metadataPath = path.join(promptDir, 'metadata.json');
     }
+  
+    return { animationFilePath, metadataPath };
   }
 
-  // Main function to generate the animation
-  async generateAnimation(imagePath, outputPath, options = {}) {
-    logger.info('generateAnimation called with:', { imagePath, outputPath, options });
+  async generateAnimation(imagePath, testFolder, sceneIndex, options = {}, isTest = false) {
+    logger.info('generateAnimation called with:', { imagePath, testFolder, sceneIndex, options, isTest });
     
     if (!this.accessToken) {
       throw new Error('Animation Generation Service not initialized. Call init() first.');
@@ -180,22 +164,21 @@ class AnimationGenService {
       throw new Error('Image path is undefined or empty');
     }
   
-    if (!options.animationPattern) {
-      throw new Error('Animation pattern is required to generate the animation');
-    }
-
     logger.info(`Starting animation generation for image: ${imagePath}`);
     
     const jpegPath = path.join(path.dirname(imagePath), 'converted.jpg');
     await this.convertToJpeg(imagePath, jpegPath);
     
     const animationLength = options.animationLength || this.animationLength;
-    const animationPattern = options.animationPattern;
+    const videoPrompt = options.animationPrompt || '';
 
     const endpoint = `${this.baseUrl}/api/v1/animation`;
   
     try {
-      logger.info(`Generating animation with the provided pattern`);
+      logger.info(`Generating animation pattern`);
+      const patternData = await this.patternGenerator.generatePattern(videoPrompt);
+      const originalPattern = patternData.pattern;
+      logger.info(`Generated animation pattern: ${originalPattern}`);
 
       const { disparityUrl, inputImageUrl } = await this.generateDisparityMap(jpegPath);
       
@@ -203,7 +186,7 @@ class AnimationGenService {
         inputImageUrl,
         inputDisparityUrl: disparityUrl,
         animationLength,
-        pattern: animationPattern
+        pattern: originalPattern
       };
       logger.info(`Request body for animation generation: ${JSON.stringify(requestBody, null, 2)}`);
   
@@ -225,10 +208,21 @@ class AnimationGenService {
         throw new Error('No download URL provided in the response');
       }
   
+      const { animationFilePath, metadataPath } = this.getOutputPaths(testFolder, sceneIndex, isTest);
+
       logger.info(`Downloading animation from URL: ${downloadUrl}`);
-      await this.downloadAnimation(downloadUrl, outputPath);
-      logger.info(`Animation generated and saved to ${outputPath}`);
-      return outputPath;
+      await this.downloadAnimation(downloadUrl, animationFilePath);
+      logger.info(`Animation generated and saved to ${animationFilePath}`);
+
+      await this.saveAnimationMetadata(metadataPath, sceneIndex, {
+        originalPattern,
+        fileName: path.basename(animationFilePath)
+      });
+
+      return {
+        filePath: animationFilePath,
+        fileName: path.basename(animationFilePath)
+      };
     } catch (error) {
       logger.error(`Error generating animation:`, error);
       throw error;
@@ -248,17 +242,43 @@ class AnimationGenService {
       const response = await axios({
         method: 'get',
         url: url,
-        responseType: 'arraybuffer'  // Changed from 'stream' to 'arraybuffer'
+        responseType: 'arraybuffer'
       });
-
-      await fs.writeFile(outputPath, Buffer.from(response.data));  // Write the file using fs.promises
-
+  
+      const dir = path.dirname(outputPath);
+      logger.info(`Ensuring directory exists: ${dir}`);
+      await fs.mkdir(dir, { recursive: true });
+  
+      await fs.writeFile(outputPath, Buffer.from(response.data));
+  
       logger.info(`Animation downloaded successfully to: ${outputPath}`);
       return outputPath;
     } catch (error) {
       logger.error('Error downloading animation:', error);
-      throw new Error('Failed to download animation');
+      if (error.code === 'ENOENT') {
+        logger.error(`Failed to create directory: ${path.dirname(outputPath)}`);
+      }
+      throw new Error('Failed to download animation: ' + error.message);
     }
+  }
+
+  async saveAnimationMetadata(metadataPath, sceneIndex, data) {
+    let metadata = {};
+
+    try {
+      const existingData = await fs.readFile(metadataPath, 'utf8');
+      metadata = JSON.parse(existingData);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        logger.error('Error reading metadata:', error);
+      }
+    }
+
+    metadata[`scene_${sceneIndex}`] = data;
+
+    await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    logger.info(`Metadata saved to ${metadataPath}`);
   }
 
   async cleanup() {
@@ -268,4 +288,4 @@ class AnimationGenService {
   }
 }
 
-module.exports = new AnimationGenService();
+module.exports = AnimationGenService;

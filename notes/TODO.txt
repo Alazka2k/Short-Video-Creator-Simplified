@@ -1,0 +1,51 @@
+# Improvements:
+
+- Improve and parametrize the initial Prompt
+    - Tone of the narrator
+    - Vibe
+    - Perspective
+    - Realistic / Fantastic
+    - Language Option
+
+LLM Generation Improvements:
+    - Enrich the output json / output structure for image generation to seperate all parameters and store them independently in the database
+    - Output for Description is always the same (with three ...)
+    - Image Pattern can not be empty (e.g. Emtpy String for "shotStyle":"",) is not working as expected - LLM still outputs something
+
+Animation Generation Improvements:
+    - The metadata.json should store the originalPattern and the finalPattern (currently only originalPattern)
+    - The generated pattern adds padding zeros what makes the animation look unnatural. We need to add a check if the length of the animation pattern is equal to the voice animation.
+      If the pattern is to short, we need to send it to the LLM with the request to prolong it to the needed length.
+
+Voice Generation Improvements:
+    - Enrich the API request for generate to have 1. a object for voiceData
+
+Image Generation Improvements:
+    - Enrich the API request for generate to have 1. a object for imageData, where we seperate and define the additional parameters of the prompt (after integration of the database)
+
+Music Generation Improvements
+    - The music needs to be cutted in the length of the total of all video before the complete video is created.
+      Or alternatively we need to find a way to shorten the music in the request before creation.
+ 
+# Features:
+
+Prio 1:
+- Finalize Routing Logic to direct requests to every microservice
+  - Animation Service: Test Animation & Animation Endpoint
+  - Integrate Video Service
+
+- Introduce Cutting Service with JSON2VIDEO (https://json2video.com/docs/)
+    - Upload assets?
+
+- Design Database Architecture and Introduce Database Integration
+
+- Introduce Job Service (Content Pipeline)
+- Auth service
+- Billing service
+- Frontend
+
+
+
+
+
+

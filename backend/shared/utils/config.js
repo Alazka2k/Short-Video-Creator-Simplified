@@ -94,6 +94,11 @@ function loadConfig() {
     ...config.voiceGen,
     outputDirectory: path.join(config.basePaths.output, 'voice')
   };
+
+  config.animationGen = {
+    ...config.animationGen,
+    outputDirectory: path.join(config.basePaths.output, 'animation')
+  };
   
   logger.info('LLM configuration:', JSON.stringify(config.llm, null, 2));
   logger.info('Voice configuration:', JSON.stringify(config.voiceGen, null, 2));
@@ -144,6 +149,8 @@ const requiredConfigs = [
   'initialPrompt.txtPath',
   'output.directory',
   'test.outputDirectory',
+  'voiceGen.outputDirectory',
+  'animationGen.outputDirectory',
   'parameters.musicGen.make_instrumental',
   'services.voice.url',
   'services.llm.url'

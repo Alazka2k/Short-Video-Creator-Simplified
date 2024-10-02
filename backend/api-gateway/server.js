@@ -85,6 +85,38 @@ app.post('/api/music/generate', async (req, res) => {
   }
 });
 
+// Animation Service route
+app.post('/api/animation/generate', async (req, res) => {
+  try {
+    logger.info('Forwarding request to Animation service');
+    const response = await axios.post(`${config.services.animation.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 300000  // 5 minutes timeout
+    });
+    logger.info(`Received response from Animation service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Animation request error: ${error.message}`);
+    res.status(500).json({ error: 'Animation request failed', details: error.message });
+  }
+});
+
+// Video Service route
+app.post('/api/video/generate', async (req, res) => {
+  try {
+    logger.info('Forwarding request to Video service');
+    const response = await axios.post(`${config.services.video.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 600000  // 10 minutes timeout
+    });
+    logger.info(`Received response from Video service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Video request error: ${error.message}`);
+    res.status(500).json({ error: 'Video request failed', details: error.message });
+  }
+});
+
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {
   logger.warn(`Received unhandled request: ${req.method} ${req.originalUrl}`);
@@ -104,6 +136,8 @@ app.listen(PORT, () => {
   logger.info(`  /api/image/generate -> ${config.services.image.url}/generate`);
   logger.info(`  /api/voice/generate -> ${config.services.voice.url}/generate`);
   logger.info(`  /api/music/generate -> ${config.services.music.url}/generate`);
+  logger.info(`  /api/animation/generate -> ${config.services.animation.url}/generate`);
+  logger.info(`  /api/video/generate -> ${config.services.video.url}/generate`);
 });
 
 module.exports = app;

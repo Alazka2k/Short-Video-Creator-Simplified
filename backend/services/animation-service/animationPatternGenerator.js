@@ -109,4 +109,4 @@ class AnimationPatternGenerator {
   }
 }
 
-module.exports = new AnimationPatternGenerator();
+module.exports = AnimationPatternGenerator;

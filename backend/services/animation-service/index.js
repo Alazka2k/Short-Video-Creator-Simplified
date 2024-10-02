@@ -1,21 +1,18 @@
 const AnimationGenService = require('./animation-gen-service');
+const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
-const path = require('path');
+const config = require('../../shared/utils/config');
 
 class AnimationServiceInterface {
   constructor() {
-    logger.info('Constructing AnimationServiceInterface');
-    this.service = AnimationGenService;
-    logger.info('AnimationGenService assigned to this.service');
-    logger.info('AnimationServiceInterface constructed');
+    logger.info('Initializing AnimationServiceInterface');
+    this.service = new AnimationGenService();
+    logger.info('AnimationGenService instance created');
   }
 
   async initialize() {
     try {
       logger.info('Initializing AnimationServiceInterface...');
-      if (!this.service || typeof this.service.init !== 'function') {
-        throw new Error('AnimationGenService is not properly initialized or lacks init method');
-      }
       await this.service.init();
       logger.info('AnimationServiceInterface initialized successfully');
     } catch (error) {
@@ -24,38 +21,22 @@ class AnimationServiceInterface {
     }
   }
 
-  async process(imagePath, outputDir, sceneNumber, options = {}) {
+  async process(imagePath, testFolder, sceneNumber, options = {}, isTest = false) {
     try {
       logger.info(`Processing animation request for scene ${sceneNumber}`);
       logger.info(`Image path: ${imagePath}`);
-      logger.info(`Output directory: ${outputDir}`);
+      logger.info(`Test folder: ${testFolder}`);
       logger.info('Animation options:', JSON.stringify(options));
 
       if (!options.animationPrompt) {
-        throw new Error('Visual prompt is required for animation generation');
+        throw new Error('Video prompt is required for animation generation');
       }
 
-      // Generate animation pattern first
-      logger.info('Generating animation pattern');
-      const patternData = await this.service.generateAnimationPattern(options.animationPrompt);
-      if (!patternData || !patternData.pattern) {
-        throw new Error('Failed to generate valid animation pattern');
-      }
-      const animationPattern = patternData.pattern;
-      logger.info('Animation pattern generated successfully');
-
-      // Construct the output path for the animation
-      const outputFileName = `scene_${sceneNumber}_animation.mp4`;
-      const outputPath = path.join(outputDir, outputFileName);
-
-      // Proceed with animation generation using the generated pattern
+      // The pattern generation is now handled internally by AnimationGenService
       logger.info('Starting animation generation');
-      const result = await this.service.generateAnimation(imagePath, outputPath, {
-        animationLength: options.animationLength,
-        animationPattern: animationPattern
-      });
+      const result = await this.service.generateAnimation(imagePath, testFolder, sceneNumber, options, isTest);
       logger.info('Animation generation completed successfully');
-      logger.info(`Animation saved to: ${result}`);
+      logger.info(`Animation saved to: ${result.filePath}`);
       return result;
     } catch (error) {
       logger.error('Error processing animation:', error);
@@ -66,12 +47,8 @@ class AnimationServiceInterface {
   async cleanup() {
     try {
       logger.info('Cleaning up AnimationServiceInterface...');
-      if (this.service && typeof this.service.cleanup === 'function') {
-        await this.service.cleanup();
-        logger.info('AnimationServiceInterface cleanup completed');
-      } else {
-        logger.warn('AnimationGenService cleanup method not available');
-      }
+      await this.service.cleanup();
+      logger.info('AnimationServiceInterface cleanup completed');
     } catch (error) {
       logger.error('Error during AnimationServiceInterface cleanup:', error);
       throw error;
@@ -79,8 +56,22 @@ class AnimationServiceInterface {
   }
 }
 
-logger.info('Creating new instance of AnimationServiceInterface');
-const animationServiceInterface = new AnimationServiceInterface();
-logger.info('AnimationServiceInterface instance created');
+async function startServer() {
+  try {
+    logger.info('Starting Animation Service');
+    const animationServiceInterface = new AnimationServiceInterface();
+    await animationServiceInterface.initialize();
 
-module.exports = animationServiceInterface;
+    const PORT = process.env.ANIMATION_SERVICE_PORT || 3005;
+    const app = createServer(animationServiceInterface);
+
+    app.listen(PORT, () => {
+      logger.info(`Animation Service running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start Animation Service:', error);
+    process.exit(1);
+  }
+}
+
+module.exports = { AnimationServiceInterface, startServer };
