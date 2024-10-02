@@ -134,27 +134,27 @@ class AnimationGenService {
     }
   }
 
-  getOutputPaths(testFolder, sceneIndex, isTest) {
-    let animationFilePath, metadataPath;
-  
+  getOutputPaths(promptOrTestFolder, sceneIndex, isTest) {
     if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'animation', testFolder);
-      animationFilePath = path.join(testOutputDir, `scene_${sceneIndex}_animation.mp4`);
-      metadataPath = path.join(testOutputDir, 'metadata.json');
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'animation', promptOrTestFolder);
+      const animationFilePath = path.join(testOutputDir, `scene_${sceneIndex}_animation.mp4`);
+      const metadataPath = path.join(testOutputDir, 'metadata.json');
+      return { animationFilePath, metadataPath };
     } else {
       const currentDate = new Date();
       const dateString = currentDate.toISOString().split('T')[0];
       const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const promptDir = path.join(config.output.directory, 'animation', `${dateString}_${timeString}`, `prompt_1`);
-      animationFilePath = path.join(promptDir, `scene_${sceneIndex}_animation.mp4`);
-      metadataPath = path.join(promptDir, 'metadata.json');
+      const promptSlug = promptOrTestFolder.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30);
+      
+      const outputDir = path.join(config.output.directory, 'animation', `${dateString}_${timeString}`, promptSlug);
+      const animationFilePath = path.join(outputDir, `scene_${sceneIndex}_animation.mp4`);
+      const metadataPath = path.join(outputDir, 'metadata.json');
+      return { animationFilePath, metadataPath };
     }
-  
-    return { animationFilePath, metadataPath };
   }
 
-  async generateAnimation(imagePath, testFolder, sceneIndex, options = {}, isTest = false) {
-    logger.info('generateAnimation called with:', { imagePath, testFolder, sceneIndex, options, isTest });
+  async generateAnimation(imagePath, promptOrTestFolder, sceneIndex, options = {}, isTest = false) {
+    logger.info('generateAnimation called with:', { imagePath, promptOrTestFolder, sceneIndex, options, isTest });
     
     if (!this.accessToken) {
       throw new Error('Animation Generation Service not initialized. Call init() first.');
@@ -171,7 +171,14 @@ class AnimationGenService {
     
     const animationLength = options.animationLength || this.animationLength;
     const videoPrompt = options.animationPrompt || '';
-
+  
+    let animationFilePath, metadataPath;
+    if (isTest) {
+      ({ animationFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest));
+    } else {
+      ({ animationFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest));
+    }
+  
     const endpoint = `${this.baseUrl}/api/v1/animation`;
   
     try {
@@ -208,7 +215,7 @@ class AnimationGenService {
         throw new Error('No download URL provided in the response');
       }
   
-      const { animationFilePath, metadataPath } = this.getOutputPaths(testFolder, sceneIndex, isTest);
+      const { animationFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest);
 
       logger.info(`Downloading animation from URL: ${downloadUrl}`);
       await this.downloadAnimation(downloadUrl, animationFilePath);

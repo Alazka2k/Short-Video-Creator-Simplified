@@ -21,35 +21,35 @@ function createServer(animationServiceInterface) {
 
     // Generate animation endpoint
     app.post('/generate', async (req, res) => {
-      logger.info('Animation Service: Handling /generate request');
-      const requestTimeout = setTimeout(() => {
-        logger.error('Animation Service: Request timed out');
-        res.status(504).json({ error: 'Request timed out' });
-      }, 300000); // 5 minutes timeout
-
-      try {
-        const { imagePath, outputDir, sceneNumber, options } = req.body;
-        logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
-        
-        if (!imagePath || !outputDir || sceneNumber === undefined) {
-          throw new Error('Missing required parameters');
+        logger.info('Animation Service: Handling /generate request');
+        const requestTimeout = setTimeout(() => {
+          logger.error('Animation Service: Request timed out');
+          res.status(504).json({ error: 'Request timed out' });
+        }, 300000); // 5 minutes timeout
+      
+        try {
+          const { imagePath, prompt, sceneIndex, options } = req.body;
+          logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
+          
+          if (!imagePath || !prompt || sceneIndex === undefined) {
+            throw new Error('Missing required parameters');
+          }
+      
+          logger.info(`Animation Service: Generating animation for prompt "${prompt}", scene ${sceneIndex}`);
+          
+          const result = await animationServiceInterface.process(imagePath, prompt, sceneIndex, options, false); // false for production
+          
+          clearTimeout(requestTimeout);
+          logger.info('Animation Service: Animation generated successfully');
+          res.json({ 
+            message: 'Animation generated successfully',
+            result: result
+          });
+        } catch (error) {
+          clearTimeout(requestTimeout);
+          logger.error('Animation Service: Error generating animation:', error);
+          res.status(500).json({ error: 'Internal server error', details: error.message });
         }
-  
-        logger.info(`Animation Service: Generating animation for scene ${sceneNumber}`);
-        
-        const result = await animationServiceInterface.process(imagePath, outputDir, sceneNumber, options);
-        
-        clearTimeout(requestTimeout);
-        logger.info('Animation Service: Animation generated successfully');
-        res.json({ 
-          message: 'Animation generated successfully',
-          result: result
-        });
-      } catch (error) {
-        clearTimeout(requestTimeout);
-        logger.error('Animation Service: Error generating animation:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
-      }
     });
 
     // Catch-all route for unhandled requests

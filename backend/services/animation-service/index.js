@@ -21,20 +21,19 @@ class AnimationServiceInterface {
     }
   }
 
-  async process(imagePath, testFolder, sceneNumber, options = {}, isTest = false) {
+  async process(imagePath, promptOrTestFolder, sceneIndex, options = {}, isTest = false) {
     try {
-      logger.info(`Processing animation request for scene ${sceneNumber}`);
+      logger.info(`Processing animation request for ${isTest ? 'test' : 'production'}`);
+      logger.info(`Prompt or TestFolder: "${promptOrTestFolder}", scene: ${sceneIndex}`);
       logger.info(`Image path: ${imagePath}`);
-      logger.info(`Test folder: ${testFolder}`);
       logger.info('Animation options:', JSON.stringify(options));
 
       if (!options.animationPrompt) {
-        throw new Error('Video prompt is required for animation generation');
+        throw new Error('Animation prompt is required for animation generation');
       }
 
-      // The pattern generation is now handled internally by AnimationGenService
       logger.info('Starting animation generation');
-      const result = await this.service.generateAnimation(imagePath, testFolder, sceneNumber, options, isTest);
+      const result = await this.service.generateAnimation(imagePath, promptOrTestFolder, sceneIndex, options, isTest);
       logger.info('Animation generation completed successfully');
       logger.info(`Animation saved to: ${result.filePath}`);
       return result;
@@ -67,11 +66,17 @@ async function startServer() {
 
     app.listen(PORT, () => {
       logger.info(`Animation Service running on port ${PORT}`);
+      logger.info(`http://localhost:${PORT}`);
     });
   } catch (error) {
     logger.error('Failed to start Animation Service:', error);
     process.exit(1);
   }
+}
+
+// Start the server if this file is run directly
+if (require.main === module) {
+  startServer();
 }
 
 module.exports = { AnimationServiceInterface, startServer };
