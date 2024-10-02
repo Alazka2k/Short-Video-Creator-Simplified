@@ -16,6 +16,7 @@ function checkInternetConnectivity() {
 }
 
 async function runImageGenTest() {
+  let imageService;
   try {
     logger.info('Starting image generation test');
     logger.info('Image Generation Config:', JSON.stringify(config.imageGen, null, 2));
@@ -27,14 +28,16 @@ async function runImageGenTest() {
     }
 
     logger.info('Internet connectivity confirmed. Initializing Image Generation Service...');
-    const imageService = new ImageServiceInterface();
+    imageService = new ImageServiceInterface();
     await imageService.initialize();
 
     const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
     const imageOutputDir = path.join(__dirname, 'test_output', 'image');
 
+    // Ensure voice output directory exists
     await fs.mkdir(imageOutputDir, { recursive: true });
 
+    // Get all LLM output files
     const llmOutputFiles = await fs.readdir(llmOutputDir);
 
     for (const llmOutputFile of llmOutputFiles) {
@@ -44,8 +47,7 @@ async function runImageGenTest() {
 
         logger.info(`Processing LLM output: ${llmOutputFile}`);
 
-        const testFolder = path.basename(llmOutputFile, '.json');
-        const promptOutputDir = path.join(imageOutputDir, testFolder);
+        const promptOutputDir = path.join(imageOutputDir, path.basename(llmOutputFile, '.json'));
         await fs.mkdir(promptOutputDir, { recursive: true });
 
         for (const [index, scene] of llmOutput.scenes.entries()) {
@@ -56,10 +58,13 @@ async function runImageGenTest() {
               scene.visual_prompt,
               index,
               true,  // isTest parameter
-              testFolder
             );
 
-            logger.info(`Image generated successfully: ${result.filePath}`);
+            // Move the generated file to the correct output directory
+            const finalOutputPath = path.join(promptOutputDir, `image_scene_${index}.png`);
+            await fs.rename(result.filePath, finalOutputPath);
+
+            logger.info(`Image generated successfully: ${finalOutputPath}`);
             logger.info(`Original URL: ${result.originalUrl}`);
             logger.info(`Selected variation URL: ${result.imageUrl}`);
 
@@ -100,7 +105,9 @@ async function runImageGenTest() {
       logger.error('Stack trace:', error.stack);
     }
   } finally {
-    await imageService.cleanup();
+    if (imageService) {
+      await imageService.cleanup();
+    }
   }
 }
 

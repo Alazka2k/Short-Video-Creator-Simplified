@@ -30,7 +30,7 @@ class ImageGenService {
     }
   }
 
-  async generateImage(prompt, sceneIndex, isTest = false) {
+  async generateImage(prompt, sceneIndex, isTest = false, testFolder = '') {
     if (!this.initialized) {
       throw new Error('ImageGenService not initialized. Call init() first.');
     }
@@ -70,11 +70,11 @@ class ImageGenService {
     }
   }
 
-  getOutputPaths(sceneIndex, isTest, testFolder = '') {
+  getOutputPaths(sceneIndex, isTest) {
     let imageFilePath, metadataPath;
 
     if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image', testFolder);
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image');
       imageFilePath = path.join(testOutputDir, `image_scene_${sceneIndex}.png`);
       metadataPath = path.join(testOutputDir, 'metadata.json');
     } else {
@@ -110,7 +110,6 @@ class ImageGenService {
       await page.waitForSelector('img');
       const viewSource = await page.goto(url);
       const buffer = await viewSource.buffer();
-      await fs.mkdir(path.dirname(outputPath), { recursive: true });
       await fs.writeFile(outputPath, buffer);
       logger.info(`Image downloaded successfully to ${outputPath}`);
     } catch (error) {
@@ -123,9 +122,8 @@ class ImageGenService {
 
   async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName) {
     let metadata = {};
-
     try {
-      const data = await fs.readFile(metadataPath, 'utf8');
+      const data = await fsPromises.readFile(metadataPath, 'utf8');
       metadata = JSON.parse(data);
     } catch (error) {
       if (error.code !== 'ENOENT') {
@@ -139,8 +137,8 @@ class ImageGenService {
       fileName
     };
 
-    await fs.mkdir(path.dirname(metadataPath), { recursive: true });
-    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    await fsPromises.mkdir(path.dirname(metadataPath), { recursive: true });
+    await fsPromises.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
     logger.info(`Metadata saved to ${metadataPath}`);
   }
 
