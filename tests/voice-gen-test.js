@@ -34,27 +34,29 @@ async function runVoiceGenTest() {
 
         for (const [index, scene] of llmOutput.scenes.entries()) {
           try {
-            // Use config.parameters.voiceGen.defaultVoiceId if available, otherwise use a default value
             const voiceId = config.parameters?.voiceGen?.defaultVoiceId || '21m00Tcm4TlvDq8ikWAM';
             
             logger.info(`Generating voice for scene ${index + 1} with voice ID: ${voiceId}`);
             
             const result = await voiceService.process(
               scene.description,
-              promptOutputDir,
               index,
               voiceId,
               true  // isTest parameter
             );
 
+            // Move the generated file to the correct output directory
+            const finalOutputPath = path.join(promptOutputDir, `voice_scene_${index}.mp3`);
+            await fs.rename(result.filePath, finalOutputPath);
+
             // Check if the file exists and has content
-            const stats = await fs.stat(result.outputPath);
+            const stats = await fs.stat(finalOutputPath);
             if (stats.size > 0) {
-              logger.info(`Voice file generated successfully: ${result.outputPath}`);
+              logger.info(`Voice file generated successfully: ${finalOutputPath}`);
               logger.info(`File size: ${stats.size} bytes`);
 
               // Read the first few bytes of the file to verify it's a valid MP3
-              const fileHandle = await fs.open(result.outputPath, 'r');
+              const fileHandle = await fs.open(finalOutputPath, 'r');
               const buffer = Buffer.alloc(4);
               await fileHandle.read(buffer, 0, 4, 0);
               await fileHandle.close();
@@ -65,7 +67,7 @@ async function runVoiceGenTest() {
                 logger.warn('File does not start with a valid MP3 header');
               }
             } else {
-              logger.warn(`Generated voice file is empty: ${result.outputPath}`);
+              logger.warn(`Generated voice file is empty: ${finalOutputPath}`);
             }
           } catch (error) {
             logger.error(`Error generating voice for scene ${index + 1}:`, error);

@@ -13,9 +13,11 @@ class VoiceGenService {
       timeoutMs: 120000 // 2 minutes timeout
     });
     this.defaultModelId = config.voiceGen.modelId || 'eleven_multilingual_v2';
+    this.defaultVoiceId = config.voiceGen.defaultVoiceId || '21m00Tcm4TlvDq8ikWAM';
     logger.info(`Voice Generation Provider: ElevenLabs`);
     logger.info(`ElevenLabs API Key: ${config.voiceGen.apiKey ? 'Loaded' : 'Missing'}`);
     logger.info(`Default Model ID: ${this.defaultModelId}`);
+    logger.info(`Default Voice ID: ${this.defaultVoiceId}`);
   }
 
   async generateVoice(text, sceneIndex, voiceId, isTest = false) {
@@ -23,7 +25,7 @@ class VoiceGenService {
       logger.info(`Generating voice for text: "${text.substring(0, 50)}..."`);
       logger.debug('Voice generation parameters:', { sceneIndex, voiceId, isTest });
       
-      const finalVoiceId = voiceId || config.voiceGen.defaultVoiceId || '21m00Tcm4TlvDq8ikWAM';
+      const finalVoiceId = voiceId || this.defaultVoiceId;
       
       if (!finalVoiceId) {
         throw new Error('No valid voice ID provided or found in config');
@@ -41,7 +43,7 @@ class VoiceGenService {
       const { outputPath, metadataPath } = this.getOutputPaths(sceneIndex, isTest);
 
       await fsPromises.mkdir(path.dirname(outputPath), { recursive: true });
-      const writeStream = fs.createWriteStream(outputPath, { highWaterMark: 1024 * 1024 }); // 1MB buffer
+      const writeStream = fs.createWriteStream(outputPath);
 
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
@@ -125,9 +127,8 @@ class VoiceGenService {
     try {
       logger.info('Fetching list of available voices');
       const voices = await this.client.voices.getAll();
-      const voicesCount = voices && voices.length ? voices.length : 'unknown number of';
-      logger.info(`Retrieved ${voicesCount} voices`);
-      return voices || [];
+      logger.info(`Retrieved ${voices.length} voices`);
+      return voices;
     } catch (error) {
       logger.error('Error listing voices:', error);
       throw error;
