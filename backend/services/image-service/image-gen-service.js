@@ -51,8 +51,9 @@ class ImageGenService {
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, isTest);
+      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, isTest, testFolder);
 
+      await fs.mkdir(path.dirname(imageFilePath), { recursive: true });
       await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
       
       await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath));
@@ -69,11 +70,11 @@ class ImageGenService {
     }
   }
 
-  getOutputPaths(sceneIndex, isTest) {
+  getOutputPaths(sceneIndex, isTest, testFolder = '') {
     let imageFilePath, metadataPath;
 
     if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image');
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image', testFolder);
       imageFilePath = path.join(testOutputDir, `image_scene_${sceneIndex}.png`);
       metadataPath = path.join(testOutputDir, 'metadata.json');
     } else {

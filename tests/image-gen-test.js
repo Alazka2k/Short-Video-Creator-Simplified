@@ -44,7 +44,8 @@ async function runImageGenTest() {
 
         logger.info(`Processing LLM output: ${llmOutputFile}`);
 
-        const promptOutputDir = path.join(imageOutputDir, path.basename(llmOutputFile, '.json'));
+        const testFolder = path.basename(llmOutputFile, '.json');
+        const promptOutputDir = path.join(imageOutputDir, testFolder);
         await fs.mkdir(promptOutputDir, { recursive: true });
 
         for (const [index, scene] of llmOutput.scenes.entries()) {
@@ -53,9 +54,9 @@ async function runImageGenTest() {
             
             const result = await imageService.process(
               scene.visual_prompt,
-              promptOutputDir,
               index,
-              true  // isTest parameter
+              true,  // isTest parameter
+              testFolder
             );
 
             logger.info(`Image generated successfully: ${result.filePath}`);
@@ -74,15 +75,19 @@ async function runImageGenTest() {
 
             // Verify metadata
             const metadataPath = path.join(promptOutputDir, 'metadata.json');
-            const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
-            if (metadata[`scene_${index + 1}`]) {
-              logger.info(`Metadata verified for scene ${index + 1}`);
-            } else {
-              logger.warn(`Metadata missing for scene ${index + 1}`);
+            try {
+              const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+              if (metadata[`scene_${index}`]) {
+                logger.info(`Metadata verified for scene ${index + 1}`);
+              } else {
+                logger.warn(`Metadata missing for scene ${index + 1}`);
+              }
+            } catch (error) {
+              logger.error(`Error reading metadata for scene ${index + 1}:`, error);
             }
 
           } catch (error) {
-            logger.error(`Error generating image for scene ${index + 1}:`, error.message);
+            logger.error(`Error generating image for scene ${index + 1}:`, error);
           }
         }
       }
@@ -90,7 +95,7 @@ async function runImageGenTest() {
 
     logger.info('Image generation test completed successfully');
   } catch (error) {
-    logger.error('Error in image generation test:', error.message);
+    logger.error('Error in image generation test:', error);
     if (error.stack) {
       logger.error('Stack trace:', error.stack);
     }
@@ -100,5 +105,5 @@ async function runImageGenTest() {
 }
 
 runImageGenTest().catch(error => {
-  logger.error('Unhandled error in image generation test:', error.message);
+  logger.error('Unhandled error in image generation test:', error);
 });
