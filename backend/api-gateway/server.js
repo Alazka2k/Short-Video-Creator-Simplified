@@ -2,9 +2,12 @@ const express = require('express');
 const axios = require('axios');
 const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
+const authController = require('../services/auth-service/auth-controller');
+const authMiddleware = require('../services/auth-service/auth-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -115,6 +118,16 @@ app.post('/api/video/generate', async (req, res) => {
     logger.error(`Video request error: ${error.message}`);
     res.status(500).json({ error: 'Video request failed', details: error.message });
   }
+});
+
+// Auth Service route
+app.post('/api/auth/register', authController.register);
+app.post('/api/auth/login', authController.login);
+app.post('/api/auth/social', authController.loginWithSocial);
+
+// Example of a protected route
+app.get('/api/protected', authMiddleware, (req, res) => {
+  res.json({ message: 'This is a protected route', user: req.user });
 });
 
 // Catch-all route for unhandled requests
