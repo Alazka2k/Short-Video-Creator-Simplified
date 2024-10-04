@@ -1,0 +1,92 @@
+Example UI and UX Guide
+3.30 KB • 89 extracted lines
+Formatting may be inconsistent from source.
+# UI and UX Guide: Pokemon Trading Card Price Comparison Website
+
+## 1. Design Principles
+- Simplicity: Keep the interface clean and uncluttered
+- Efficiency: Prioritize quick access to price comparisons
+- Consistency: Maintain uniform design elements throughout the application
+- Responsiveness: Ensure usability across different desktop screen sizes
+
+## 2. Color Palette
+- Primary: #3D7DCA (Pokemon Blue)
+- Secondary: #FFCB05 (Pokemon Yellow)
+- Background: #F5F5F5 (Light Gray)
+- Text: #333333 (Dark Gray)
+- Accent: #FF5350 (Soft Red for alerts and important information)
+
+## 3. Typography
+- Main Font: Roboto
+- Headings: Roboto Bold
+- Body Text: Roboto Regular
+- Font Sizes:
+  - H1: 28px
+  - H2: 24px
+  - H3: 20px
+  - Body: 16px
+  - Small Text: 14px
+
+## 4. Layout
+- Use a grid system for consistent spacing and alignment
+- Implement a responsive design with breakpoints at 768px, 992px, and 1200px
+- Maintain adequate white space to prevent cluttered appearance
+
+## 5. Navigation
+- Implement a clear, persistent top navigation bar
+- Include search bar prominently in the header
+- Use breadcrumbs for easy navigation on product detail pages
+
+## 6. Components
+- Buttons:
+  - Primary: Filled, rounded corners, Pokemon Blue
+  - Secondary: Outlined, rounded corners, Pokemon Yellow
+- Cards: Use for displaying product information, with subtle shadows
+- Forms: Clear labels, inline validation, and helpful error messages
+- Modals: Use for login/signup and quick information display
+
+## 7. Product Listings
+- Display products in a grid layout
+- Show key information: Image, name, current lowest price, and price trend indicator
+- Use consistent image sizes and aspect ratios
+
+## 8. Price Comparison
+- Use clear, easy-to-read tables for price comparisons
+- Highlight the lowest price
+- Use icons or colors to indicate price trends
+
+## 9. Search Functionality
+- Implement auto-suggest for search queries
+- Provide clear filters and sorting options
+- Show number of results and current applied filters
+
+## 10. User Dashboard
+- Use a clean, card-based layout for displaying user's tracked products
+- Implement easy-to-read charts for price history
+- Provide clear calls-to-action for setting up alerts and accessing premium features
+
+## 11. Accessibility
+- Ensure sufficient color contrast for readability
+- Provide alternative text for images
+- Make sure the site is navigable via keyboard
+- Use ARIA labels where appropriate
+
+## 12. Loading States
+- Implement skeleton screens for content loading
+- Use subtle animations for loading indicators
+
+## 13. Error Handling
+- Display clear, friendly error messages
+- Provide helpful suggestions for resolving errors or alternate actions
+
+## 14. Responsive Design Considerations
+- Use a fluid grid that adapts to different screen sizes
+- Adjust font sizes and spacing for smaller screens
+- Optimize touch targets for better usability on tablets
+
+## 15. Feedback and Interactions
+- Implement subtle hover effects on interactive elements
+- Provide visual feedback for user actions (e.g., button press states)
+- Use micro-animations to enhance the feel of interactivity
+
+By following these UI and UX guidelines, we aim to create a cohesive, user-friendly interface for the Pokemon Trading Card Price Comparison Website. This guide should be referred to throughout the development process to ensure consistency and quality in the user experience.

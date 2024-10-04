@@ -12,16 +12,19 @@ LLM Generation Improvements:
     - Output for Description is always the same (with three ...)
     - Image Pattern can not be empty (e.g. Emtpy String for "shotStyle":"",) is not working as expected - LLM still outputs something
 
-Animation Generation Improvements:
-    - The metadata.json should store the originalPattern and the finalPattern (currently only originalPattern)
-    - The generated pattern adds padding zeros what makes the animation look unnatural. We need to add a check if the length of the animation pattern is equal to the voice animation.
-      If the pattern is to short, we need to send it to the LLM with the request to prolong it to the needed length.
-
 Voice Generation Improvements:
+    - New endpoint for batch generation for every scene in one llm output
     - Enrich the API request for generate to have 1. a object for voiceData
 
 Image Generation Improvements:
+    - New endpoint for batch generation for every scene in one llm output
     - Enrich the API request for generate to have 1. a object for imageData, where we seperate and define the additional parameters of the prompt (after integration of the database)
+
+Animation Generation Improvements:
+    - Animation Pattern Generator needs to check the length of the audio
+    - The metadata.json should store the originalPattern and the finalPattern (currently only originalPattern)
+    - The generated pattern adds padding zeros what makes the animation look unnatural. We need to add a check if the length of the animation pattern is equal to the voice animation.
+      If the pattern is to short, we need to send it to the LLM with the request to prolong it to the needed length.
 
 Music Generation Improvements
     - The music needs to be cutted in the length of the total of all video before the complete video is created.
@@ -31,7 +34,6 @@ Music Generation Improvements
 
 Prio 1:
 - Finalize Routing Logic to direct requests to every microservice
-  - Animation Service: Test Animation & Animation Endpoint
   - Integrate Video Service
 
 - Introduce Cutting Service with JSON2VIDEO (https://json2video.com/docs/)

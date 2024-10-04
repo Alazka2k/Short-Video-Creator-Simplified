@@ -67,14 +67,34 @@ class VideoGenService {
     }
   }
 
-  async generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, outputPath) {
+  getOutputPaths(sceneIndex, isTest) {
+    let videoFilePath, metadataPath;
+
+    if (isTest) {
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'video');
+      videoFilePath = path.join(testOutputDir, `video_scene_${sceneIndex}.mp4`);
+      metadataPath = path.join(testOutputDir, 'metadata.json');
+    } else {
+      const currentDate = new Date();
+      const dateString = currentDate.toISOString().split('T')[0];
+      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
+      const promptDir = path.join(config.output.directory, 'video', `${dateString}_${timeString}`, `prompt_1`);
+      videoFilePath = path.join(promptDir, `video_scene_${sceneIndex}.mp4`);
+      metadataPath = path.join(promptDir, 'metadata.json');
+    }
+
+    return { videoFilePath, metadataPath };
+  }
+
+  async generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, isTest = false) {
     try {
       logger.info(`Generating video with the following parameters:`);
       logger.info(`Image Path: ${imagePath}`);
       logger.info(`Video Prompt: ${videoPrompt}`);
       logger.info(`Camera Movement: ${cameraMovement}`);
       logger.info(`Aspect Ratio: ${aspectRatio}`);
-      logger.info(`Output Path: ${outputPath}`);
+      logger.info(`Scene Index: ${sceneIndex}`);
+      logger.info(`Is Test: ${isTest}`);
 
       const imageUrl = await this.uploadImageToPicsur(imagePath);
 
@@ -111,9 +131,19 @@ class VideoGenService {
 
         if (videoGeneration.state === 'completed') {
           logger.info(`Video generation completed. Full response: ${JSON.stringify(videoGeneration, null, 2)}`);
-          await this.downloadVideo(videoGeneration.assets.video, outputPath);
-          logger.info(`Video downloaded successfully: ${outputPath}`);
-          return outputPath;
+          const { videoFilePath, metadataPath } = this.getOutputPaths(sceneIndex, isTest);
+          await this.downloadVideo(videoGeneration.assets.video, videoFilePath);
+          await this.saveVideoMetadata(metadataPath, sceneIndex, {
+            videoPrompt,
+            cameraMovement,
+            aspectRatio,
+            fileName: path.basename(videoFilePath)
+          });
+          logger.info(`Video downloaded successfully: ${videoFilePath}`);
+          return {
+            filePath: videoFilePath,
+            fileName: path.basename(videoFilePath)
+          };
         } else if (videoGeneration.state === 'failed') {
           throw new Error(`Video generation failed: ${videoGeneration.failure_reason}`);
         }
@@ -136,6 +166,7 @@ class VideoGenService {
         responseType: 'stream'
       });
 
+      await fs.mkdir(path.dirname(outputPath), { recursive: true });
       const writer = fsSync.createWriteStream(outputPath);
       response.data.pipe(writer);
 
@@ -155,10 +186,28 @@ class VideoGenService {
     }
   }
 
+  async saveVideoMetadata(metadataPath, sceneIndex, data) {
+    let metadata = {};
+    try {
+      const existingData = await fs.readFile(metadataPath, 'utf8');
+      metadata = JSON.parse(existingData);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        logger.error('Error reading metadata:', error);
+      }
+    }
+
+    metadata[`scene_${sceneIndex}`] = data;
+
+    await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    logger.info(`Metadata saved to ${metadataPath}`);
+  }
+
   async cleanup() {
     // Add any cleanup logic if needed
     logger.info('Video Generation Service cleanup completed');
   }
 }
 
-module.exports = new VideoGenService();
+module.exports = VideoGenService;

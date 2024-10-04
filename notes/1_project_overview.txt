@@ -1,0 +1,68 @@
+Example Project Overview
+# Project Overview: Pokemon Trading Card Price Comparison Website
+
+## Project Description
+Develop a web application that provides price comparisons for Pokemon trading card products across various German online shops. The application will offer both free and premium features, implementing a freemium SaaS model with user accounts and subscriptions. The focus is on creating a Minimum Viable Product (MVP) that can be launched quickly while providing value to users and establishing a foundation for future enhancements.
+
+## Key Features (MVP)
+
+### Core Functionality
+1. Automated product discovery and price tracking from specified German online shops (initially Pokeviert and Games Island)
+2. Price comparison across tracked shops
+3. User account system with basic dashboard for favorite products
+4. Simple freemium model with essential premium features
+5. Product search functionality
+
+### Product Management
+1. Automatic addition of new products found in tracked shops
+2. Basic product categorization system
+3. Admin section for manual review and management of products
+4. Simple system for product matching and deduplication
+
+### Data Collection and Display
+1. Twice-daily price updates for all tracked products
+2. Display of product details including image, description, and content
+3. Direct links to product pages on source shops
+4. Basic integration with Cardmarket API for price comparisons (premium feature)
+
+### User Features
+1. User accounts with simple customizable dashboards
+2. Favorite product tracking
+3. Basic price alerts for tracked products
+4. Product search with filtering options
+
+### Premium Features
+1. Simple historical price charts for individual shops and average prices
+2. Basic comparison with Cardmarket prices
+3. Simple price evaluation markers (good/not good) based on market comparison
+
+### Admin Features
+1. Basic shop management system
+2. Simple product review and categorization tools
+
+## Technical Considerations
+1. Web application development (desktop focus)
+2. German language interface
+3. Secure user authentication and data protection
+4. Efficient web scraping and data management systems
+5. Basic integration with Cardmarket API
+6. Scalable architecture to support future growth
+
+## Development Priorities
+1. Focus on creating a functional MVP
+2. Prioritize core features and basic premium functionality
+3. Emphasize speed of development and deployment
+4. Design for ease of future expansion and feature addition
+
+## Target Audience
+1. Pokemon trading card enthusiasts in Germany
+2. Price-conscious collectors and resellers
+3. Casual buyers looking for the best deals
+
+## Success Metrics
+1. User acquisition and retention rates
+2. Conversion rate from free to premium users
+3. User engagement (e.g., frequency of visits, time spent on site)
+4. Accuracy and freshness of price data
+
+This MVP project aims to quickly deliver a functional price comparison tool for Pokemon trading card products in the German market, with a clear path for future enhancements and expans

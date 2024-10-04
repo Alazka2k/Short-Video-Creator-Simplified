@@ -59,3 +59,6 @@ but should look like:
     "tags": "Epic orchestral, adventurous theme, dynamic rhythm, nostalgic undertones, Pokémon atmosphere"
   }
 }
+
+## Image Test Generation:
+- Metadata.json is not generated in the correct folder / not created at all

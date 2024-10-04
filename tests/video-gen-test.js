@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs').promises;
 const readline = require('readline');
-const videoService = require('../backend/services/video-service');
+const { VideoServiceInterface } = require('../backend/services/video-service');
 const logger = require('../backend/shared/utils/logger');
 const config = require('../backend/shared/utils/config');
 
@@ -19,11 +19,13 @@ async function promptToContinue() {
 }
 
 async function runVideoGenTest() {
+  let videoService;
   try {
     logger.info('Starting video generation test with Luma AI');
     logger.info('Video Generation Config:', JSON.stringify(config.videoGen, null, 2));
     logger.info('LLM Gen Config:', JSON.stringify(config.parameters.llmGen, null, 2));
 
+    videoService = new VideoServiceInterface();
     await videoService.initialize();
     logger.info('Video service initialized successfully');
 
@@ -54,39 +56,40 @@ async function runVideoGenTest() {
         const llmOutputContent = await fs.readFile(llmOutputPath, 'utf8');
         const llmOutput = JSON.parse(llmOutputContent);
 
-        // Process only the first scene
-        const firstScene = llmOutput.scenes[0];
-        const imagePath = path.join(imageFolderPath, 'scene_1_image.png');
-        const outputPath = path.join(folderOutputDir, 'scene_1_video.mp4');
+        // Process all scenes
+        for (let sceneIndex = 0; sceneIndex < llmOutput.scenes.length; sceneIndex++) {
+          const scene = llmOutput.scenes[sceneIndex];
+          const imagePath = path.join(imageFolderPath, `image_scene_${sceneIndex}.png`);
 
-        logger.info(`Processing first scene`);
-        logger.info(`Image path: ${imagePath}`);
-        logger.info(`Video output path: ${outputPath}`);
+          logger.info(`Processing scene ${sceneIndex + 1}`);
+          logger.info(`Image path: ${imagePath}`);
 
-        // Check if image file exists
-        try {
-          await fs.access(imagePath);
-        } catch (error) {
-          logger.error(`Image file not found: ${imagePath}`);
-          continue;
-        }
+          // Check if image file exists
+          try {
+            await fs.access(imagePath);
+          } catch (error) {
+            logger.error(`Image file not found: ${imagePath}`);
+            continue;
+          }
 
-        await videoService.generateVideo(
-          imagePath,
-          firstScene.video_prompt,
-          firstScene.camera_movement,
-          config.parameters.llmGen.aspectRatio,
-          outputPath
-        );
+          const result = await videoService.process(
+            imagePath,
+            scene.video_prompt,
+            scene.camera_movement,
+            config.parameters.llmGen.aspectRatio,
+            sceneIndex,
+            true  // isTest
+          );
 
-        logger.info(`Video generated successfully: ${outputPath}`);
+          logger.info(`Video generated successfully: ${result.filePath}`);
 
-        const stats = await fs.stat(outputPath);
-        logger.info(`Generated video file size: ${stats.size} bytes`);
-        if (stats.size > 0) {
-          logger.info('Video file verified successfully');
-        } else {
-          logger.warn('Generated video file is empty');
+          const stats = await fs.stat(result.filePath);
+          logger.info(`Generated video file size: ${stats.size} bytes`);
+          if (stats.size > 0) {
+            logger.info('Video file verified successfully');
+          } else {
+            logger.warn('Generated video file is empty');
+          }
         }
 
       } catch (error) {
@@ -108,7 +111,9 @@ async function runVideoGenTest() {
     logger.error('Error in video generation test:', error);
     logger.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
   } finally {
-    await videoService.cleanup();
+    if (videoService) {
+      await videoService.cleanup();
+    }
     rl.close();
   }
 }

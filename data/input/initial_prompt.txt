@@ -46,6 +46,8 @@ Example:
 # Visual Prompt Guidelines:
 - Picture description: {{ llmGen.pictureDescription }}
 - Shot details: {{ llmGen.shotDetails }}
+
+## Visual Prompt Parameters
 - Artist style: {{ llmGen.artistStyle }}
 - Shot style: {{ llmGen.shotStyle }}
 - Aspect ratio: {{ llmGen.aspectRatio }}
@@ -98,22 +100,21 @@ visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, p
 video_prompt: A visual of a ruined cityscape, ash drifting softly, as the camera pans slowly across the destroyed infrastructure, capturing the haunted remnants of civilization. The gray sky thickens ominously, setting a chilling tone.
 camera_movement: Pull Out
 
-Attention: Please construct the new content visual prompts exactly in the same way as in the given example after the semicolon. The structure has to be consistent for follow up services.
-E.g. for the values:     
-    "artistStyle":"by Jakub Rozalski.",
-    "shotStyle":"Photorealistic, cinematic",
-    "aspectRatioPrompt":"--ar",
-    "aspectRatio":"9:16",
-    "stylePrompt":"--style",
-    "style":"raw",
-    "sPrompt":"--s",
-    "sValue":"500",
-    "versionPrompt":"--v",
-    "version":"6.1",
-    the second part of visual_prompt must look like:
-; by Jakub Rozalski. Photorealistic, cinematic --ar 9:16 --style raw --s 500 --v 6.1
+Attention: Please ouztput the content visual prompt for each scene in the same structure as in the given example after the semicolon. The structure has to be consistent for follow up services.
 
-The pattern is always the same. Artist (if given) Shot Style (if given) --ar [given aspect ratio] --style [given style] --s [given style value] --version [given version]
+E.g. for the values:     
+    "artistStyle":"{{ llmGen.artistStyle }}",
+    "shotStyle":"{{ llmGen.shotStyle }}",
+    "aspectRatio":"{{ llmGen.aspectRatio }}",
+    "style":"{{ llmGen.style }}",
+    "sValue":"{{ llmGen.sValue }}",
+    "version":"{{ llmGen.version }}",
+    
+The second part of visual_prompt must look like:
+; {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
+
+The pattern is always the same:
+Artist Style (if given) Shot Style (if given) --ar [given aspect ratio] --style [given style] --s [given style value] --version [given version]
 
 # Example for Music Schema:
 title: Silent Battlefield

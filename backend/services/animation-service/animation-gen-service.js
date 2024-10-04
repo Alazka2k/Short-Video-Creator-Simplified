@@ -137,7 +137,7 @@ class AnimationGenService {
   getOutputPaths(promptOrTestFolder, sceneIndex, isTest) {
     if (isTest) {
       const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'animation', promptOrTestFolder);
-      const animationFilePath = path.join(testOutputDir, `scene_${sceneIndex}_animation.mp4`);
+      const animationFilePath = path.join(testOutputDir, `animation_scene_${sceneIndex}.mp4`);
       const metadataPath = path.join(testOutputDir, 'metadata.json');
       return { animationFilePath, metadataPath };
     } else {
@@ -147,7 +147,7 @@ class AnimationGenService {
       const promptSlug = promptOrTestFolder.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 30);
       
       const outputDir = path.join(config.output.directory, 'animation', `${dateString}_${timeString}`, promptSlug);
-      const animationFilePath = path.join(outputDir, `scene_${sceneIndex}_animation.mp4`);
+      const animationFilePath = path.join(outputDir, `animation_scene_${sceneIndex}.mp4`);
       const metadataPath = path.join(outputDir, 'metadata.json');
       return { animationFilePath, metadataPath };
     }

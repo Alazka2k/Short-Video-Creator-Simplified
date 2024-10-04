@@ -1,0 +1,20 @@
+Example Architecture Overview
+
+graph TD
+    A[Client Browser] -->|HTTP/HTTPS| B[Load Balancer]
+    B --> C[Web Server]
+    C --> D[Application Server]
+    D --> E[Database]
+    D --> F[Caching Layer]
+    D --> G[Search Engine]
+    D --> H[User Authentication Service]
+    D --> I[Payment Service]
+    J[Admin Interface] --> D
+    K[Scheduled Jobs] --> L[Web Scraper]
+    L --> M[Data Processor]
+    M --> E
+    D --> N[Cardmarket API Client]
+    O[Monitoring & Logging] --> D
+    O --> C
+    O --> B
+    O --> L
