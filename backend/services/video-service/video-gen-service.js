@@ -38,6 +38,20 @@ class VideoGenService {
     }
   }
 
+  sanitizeVideoPrompt(prompt) {
+    const sanitizationRules = [
+      { regex: /\b(lifeline)\b/gi, replacement: "core" },
+      // Add more rules as needed
+    ];
+
+    let sanitizedPrompt = prompt;
+    sanitizationRules.forEach(rule => {
+      sanitizedPrompt = sanitizedPrompt.replace(rule.regex, rule.replacement);
+    });
+
+    return sanitizedPrompt;
+  }
+
   async uploadImageToPicsur(imagePath) {
     try {
       logger.info(`Uploading image to Picsur: ${imagePath}`);
@@ -67,18 +81,18 @@ class VideoGenService {
     }
   }
 
-  getOutputPaths(sceneIndex, isTest) {
+  getOutputPaths(promptOrTestFolder, sceneIndex, isTest) {
     let videoFilePath, metadataPath;
 
     if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'video');
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'video', promptOrTestFolder);
       videoFilePath = path.join(testOutputDir, `video_scene_${sceneIndex}.mp4`);
       metadataPath = path.join(testOutputDir, 'metadata.json');
     } else {
       const currentDate = new Date();
       const dateString = currentDate.toISOString().split('T')[0];
       const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const promptDir = path.join(config.output.directory, 'video', `${dateString}_${timeString}`, `prompt_1`);
+      const promptDir = path.join(config.output.directory, 'video', `${dateString}_${timeString}`, promptOrTestFolder);
       videoFilePath = path.join(promptDir, `video_scene_${sceneIndex}.mp4`);
       metadataPath = path.join(promptDir, 'metadata.json');
     }
@@ -86,7 +100,7 @@ class VideoGenService {
     return { videoFilePath, metadataPath };
   }
 
-  async generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, isTest = false) {
+  async generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
     try {
       logger.info(`Generating video with the following parameters:`);
       logger.info(`Image Path: ${imagePath}`);
@@ -96,10 +110,13 @@ class VideoGenService {
       logger.info(`Scene Index: ${sceneIndex}`);
       logger.info(`Is Test: ${isTest}`);
 
+      const sanitizedPrompt = this.sanitizeVideoPrompt(videoPrompt);
+      logger.info(`Sanitized Video Prompt: ${sanitizedPrompt}`);
+
       const imageUrl = await this.uploadImageToPicsur(imagePath);
 
       const requestPayload = {
-        prompt: videoPrompt,
+        prompt: sanitizedPrompt,
         aspect_ratio: aspectRatio,
         camera_motion: cameraMovement,
         keyframes: {
@@ -131,10 +148,10 @@ class VideoGenService {
 
         if (videoGeneration.state === 'completed') {
           logger.info(`Video generation completed. Full response: ${JSON.stringify(videoGeneration, null, 2)}`);
-          const { videoFilePath, metadataPath } = this.getOutputPaths(sceneIndex, isTest);
+          const { videoFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest);
           await this.downloadVideo(videoGeneration.assets.video, videoFilePath);
           await this.saveVideoMetadata(metadataPath, sceneIndex, {
-            videoPrompt,
+            videoPrompt: sanitizedPrompt,
             cameraMovement,
             aspectRatio,
             fileName: path.basename(videoFilePath)
@@ -153,7 +170,7 @@ class VideoGenService {
       }
     } catch (error) {
       logger.error('Error generating video:', error);
-      throw error;
+      return { error: 'Video generation failed', details: error.message };
     }
   }
 

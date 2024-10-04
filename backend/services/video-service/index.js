@@ -15,9 +15,9 @@ class VideoServiceInterface {
     logger.info('VideoServiceInterface initialized');
   }
 
-  async process(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, isTest = false) {
-    logger.info('Processing video generation request', { imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, isTest });
-    return await this.service.generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, isTest);
+  async process(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
+    logger.info('Processing video generation request', { imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest });
+    return await this.service.generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest);
   }
 
   async cleanup() {

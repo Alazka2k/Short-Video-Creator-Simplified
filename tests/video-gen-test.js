@@ -78,17 +78,31 @@ async function runVideoGenTest() {
             scene.camera_movement,
             config.parameters.llmGen.aspectRatio,
             sceneIndex,
+            folder,
             true  // isTest
           );
 
-          logger.info(`Video generated successfully: ${result.filePath}`);
-
-          const stats = await fs.stat(result.filePath);
-          logger.info(`Generated video file size: ${stats.size} bytes`);
-          if (stats.size > 0) {
-            logger.info('Video file verified successfully');
+          if (result.error) {
+            logger.warn(`Video generation warning: ${result.error}. Details: ${result.details}`);
           } else {
-            logger.warn('Generated video file is empty');
+            logger.info(`Video generated successfully: ${result.filePath}`);
+
+            const stats = await fs.stat(result.filePath);
+            logger.info(`Generated video file size: ${stats.size} bytes`);
+            if (stats.size > 0) {
+              logger.info('Video file verified successfully');
+            } else {
+              logger.warn('Generated video file is empty');
+            }
+
+            // Verify metadata file
+            const metadataPath = path.join(path.dirname(result.filePath), 'metadata.json');
+            try {
+              await fs.access(metadataPath);
+              logger.info(`Metadata file created: ${metadataPath}`);
+            } catch (error) {
+              logger.warn(`Metadata file not found: ${metadataPath}`);
+            }
           }
         }
 

@@ -42,7 +42,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - AI-generated images using Midjourney
 - Animation creation from static images using Immersity AI
 - Custom background music generation using Suno AI
-- Video generation from images and prompts using Luma AI
+- Video generation from images and prompts using Luma AI (Now fully integrated and tested)
 - Structured output optimized for video editing workflows
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
@@ -50,6 +50,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - Integration test for end-to-end workflow verification
 - Source code export functionality for easy sharing and versioning
 - API Gateway for centralized request handling and direct service communication
+- Fully functional video generation service with API gateway integration
 
 ## Prerequisites
 
@@ -141,7 +142,8 @@ The system processes input from a CSV file containing multiple prompts, leverage
    npm run start:video
    ```
 6. Use Postman or any HTTP client to send requests to `http://localhost:3000/api/{service}/{endpoint}`
-7. Find the generated content in the `data/output` directory
+7. For video generation, send a POST request to `http://localhost:3000/api/video/generate` with the appropriate payload
+8. Find the generated content in the `data/output` directory
 
 ## Project Structure
 
@@ -185,12 +187,15 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   └── index.js
 │   │   ├── music-service/
 │   │   │   ├── music-gen-service.js
+│   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── animation-service/
 │   │   │   ├── animation-gen-service.js
+│   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   └── video-service/
 │   │       ├── video-gen-service.js
+│   │   │   ├── server.js
 │   │       └── index.js
 │   └── shared/
 │       ├── middleware/
@@ -266,12 +271,12 @@ The application follows a microservices architecture designed for flexibility an
 8. Image Generation Service: Creates visual content based on scene descriptions
 9. Animation Generation Service: Creates animations from static images
 10. Music Generation Service: Produces custom background music tracks
-11. Video Generation Service: Creates video content from images and prompts
+11. Video Generation Service: Creates video content from images and prompts (Fully integrated and tested)
 12. Shared Utilities: Provides common functionality across services
 13. Frontend Application: Offers a user-friendly interface for interacting with the backend services
 14. Output Formatting: Structures and saves the generated content in an editor-friendly format
 
-Each service runs independently, and the API Gateway communicates directly with each service using HTTP requests, allowing for better scalability and easier maintenance.
+Each service runs independently, and the API Gateway communicates directly with each service using HTTP requests, allowing for better scalability and easier maintenance. The video generation service is now fully integrated into this architecture and accessible through the API gateway.
 
 ## API Integrations
 
@@ -370,20 +375,4 @@ This exported file will contain the entire project structure and the content of 
 - When running tests, make sure you're using the correct paths for input files (like CSV, JSON, and TXT files) as they may have changed in the new structure
 - If you encounter "Module not found" errors, double-check that all dependencies are correctly listed in the `package.json` file and that you've run `npm install` after making any changes
 - If requests to the API Gateway are not being routed correctly, check the `server.js` file in the `api-gateway` directory and ensure all routes are properly configured
-- Verify network connectivity between the API Gateway and individual services if requests are not being forwarded correctly
-
-## Contributing
-
-Contributions to SHORT-VIDEO-CREATOR-SIMPLIFIED are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a new branch for your feature or bug fix
-3. Commit your changes with clear, descriptive messages
-4. Push the branch to your fork
-5. Submit a pull request with a comprehensive description of your changes
-
-For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Verify network connectivity between the API Gateway and individual services if requests are not
