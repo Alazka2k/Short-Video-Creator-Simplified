@@ -20,21 +20,9 @@
 - Describe the images in detail, including the style to be used.
 - Add a music description to the video, which you think would fit very well as underlying music.
 
-# Scenario and Structure:
-- {{ llmGen.generalDescription }}
-- {{ llmGen.lengthDescription }}
+# Scene Options
 - Number of scenes: {{ llmGen.sceneAmount }}
-
-# Script Tone and Style:
-- {{ llmGen.scriptTone }}
-- {{ llmGen.vocabulary }}
-- {{ llmGen.pacingStructure }}
-- Imagine to speak out load the script as narrator. 
-- The length of each scene as narration should not be longer then 5 seconds.
-
-Example: 
-1. "Gasp. The air feels thin. You check your phone. This is how it begins..." - good 
-2. "The last warmth of a nearby fire fades as the horizon reveals a sunless dawn. A figure stands solitary, wrapped in layers of hope and despair." - too long
+- Imagine to speak the script description as narrator. The length of each scene as narration should not be longer then 5 seconds.
 
 # Content Guidelines:
 - {{ llmGen.providedInformation }}
@@ -42,6 +30,15 @@ Example:
 - {{ llmGen.additionalTask }}
 - {{ llmGen.sensoryThematicElements }}
 - {{ llmGen.characterPerspective }}
+
+# Scenario and Structure:
+- {{ llmGen.generalDescription }}
+- {{ llmGen.lengthDescription }}
+
+# Script Tone and Style:
+- {{ llmGen.scriptTone }}
+- {{ llmGen.vocabulary }}
+- {{ llmGen.pacingStructure }}
 
 # Visual Prompt Guidelines:
 - Picture description: {{ llmGen.pictureDescription }}

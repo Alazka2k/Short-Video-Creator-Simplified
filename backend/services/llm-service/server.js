@@ -32,28 +32,28 @@ function createServer(llmServiceInterface) {
         logger.error('LLM Service: Request timed out');
         res.status(504).json({ error: 'Request timed out' });
       }, 300000); // 5 minutes timeout
-
+    
       try {
-        const { inputPrompt } = req.body;
+        const { inputPrompt, llmGenParams } = req.body;
         logger.info(`LLM Service: Request body: ${JSON.stringify(req.body)}`);
         
-        if (!inputPrompt) {
-          throw new Error('Missing required parameter: inputPrompt');
+        if (!inputPrompt || !llmGenParams) {
+          throw new Error('Missing required parameters: inputPrompt or llmGenParams');
         }
-  
+    
         logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
         
-        const initialPromptPath = path.join(config.llm.basePath, 'initial_prompt.txt');
-        const parametersPath = path.join(config.llm.basePath, 'parameters.json');
+        const initialPromptFile = 'initial_prompt.txt';
         
-        const result = await llmServiceInterface.generateContent(initialPromptPath, parametersPath, inputPrompt);
+        const result = await llmServiceInterface.process(initialPromptFile, llmGenParams, inputPrompt);
         
         clearTimeout(requestTimeout);
         logger.info('LLM Service: Content generated successfully');
         res.json({
           message: 'Content generated successfully',
           result: result.content,
-          outputPath: result.outputPath
+          outputPath: result.outputPath,
+          jobId: result.jobId
         });
       } catch (error) {
         clearTimeout(requestTimeout);
@@ -74,6 +74,34 @@ function createServer(llmServiceInterface) {
         res.json(content);
       } catch (error) {
         logger.error('LLM Service: Error generating doc content:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    // New endpoint for processing all prompts from a CSV file
+    app.post('/process-all', async (req, res) => {
+      logger.info('LLM Service: Handling /process-all request');
+      try {
+        const { csvPath, llmGenParams } = req.body;
+        
+        if (!csvPath) {
+          throw new Error('Missing required parameter: csvPath');
+        }
+
+        if (!llmGenParams) {
+          throw new Error('Missing required parameter: llmGenParams');
+        }
+
+        const initialPromptFile = 'initial_prompt.txt';
+        const results = await llmServiceInterface.processAllPrompts(csvPath, initialPromptFile, llmGenParams);
+        
+        logger.info('LLM Service: All prompts processed successfully');
+        res.json({
+          message: 'All prompts processed successfully',
+          results: results
+        });
+      } catch (error) {
+        logger.error('LLM Service: Error processing all prompts:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
       }
     });

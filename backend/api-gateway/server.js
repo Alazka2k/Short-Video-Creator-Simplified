@@ -2,12 +2,12 @@ const express = require('express');
 const axios = require('axios');
 const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
-const authController = require('../services/auth-service/auth-controller');
-const authMiddleware = require('../services/auth-service/auth-middleware');
+// Commented out auth-related imports
+// const authController = require('../services/auth-service/auth-controller');
+// const authMiddleware = require('../services/auth-service/auth-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -28,9 +28,20 @@ app.get('/health', (req, res) => {
 app.post('/api/llm/generate', async (req, res) => {
   try {
     logger.info('Forwarding request to LLM service');
-    const response = await axios.post(`${config.services.llm.url}/generate`, req.body, {
+    const { inputPrompt, llmGenParams, jobId } = req.body;
+
+    // Basic validation
+    if (!inputPrompt || !llmGenParams || !jobId) {
+      throw new Error('Missing required parameters: inputPrompt, llmGenParams, or jobId');
+    }
+
+    const response = await axios.post(`${config.services.llm.url}/generate`, {
+      inputPrompt,
+      llmGenParams,
+      jobId
+    }, {
       headers: { 'Content-Type': 'application/json' },
-      timeout: 120000  // 2 minutes timeout
+      timeout: 300000  // 5 minutes timeout
     });
     logger.info(`Received response from LLM service: ${JSON.stringify(response.data)}`);
     res.json(response.data);
@@ -120,15 +131,15 @@ app.post('/api/video/generate', async (req, res) => {
   }
 });
 
-// Auth Service route
-app.post('/api/auth/register', authController.register);
-app.post('/api/auth/login', authController.login);
-app.post('/api/auth/social', authController.loginWithSocial);
+// Commented out Auth Service routes
+// app.post('/api/auth/register', authController.register);
+// app.post('/api/auth/login', authController.login);
+// app.post('/api/auth/social', authController.loginWithSocial);
 
-// Example of a protected route
-app.get('/api/protected', authMiddleware, (req, res) => {
-  res.json({ message: 'This is a protected route', user: req.user });
-});
+// Commented out example of a protected route
+// app.get('/api/protected', authMiddleware, (req, res) => {
+//   res.json({ message: 'This is a protected route', user: req.user });
+// });
 
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {

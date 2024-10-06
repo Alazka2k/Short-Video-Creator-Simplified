@@ -23,9 +23,18 @@ class LLMServiceInterface {
     return await this.service.loadPromptsFromCsv(csvPath);
   }
 
-  async generateContent(initialPromptPath, parametersPath, inputPrompt) {
-    logger.info('Generating content', { initialPromptPath, parametersPath, inputPrompt });
-    const content = await this.service.generateContent(initialPromptPath, parametersPath, inputPrompt);
+  async generateContent(initialPromptPath, llmGenParams, inputPrompt, jobId) {
+    logger.info('Generating content', { initialPromptPath, llmGenParams, inputPrompt, jobId });
+    
+    try {
+      // Check if the file exists before proceeding
+      await fs.access(initialPromptPath);
+    } catch (error) {
+      logger.error(`Initial prompt file not found: ${initialPromptPath}`);
+      throw new Error(`Initial prompt file not found: ${initialPromptPath}`);
+    }
+
+    const content = await this.service.generateContent(initialPromptPath, llmGenParams, inputPrompt, jobId);
     
     // Create output directory
     const currentDate = new Date();
@@ -46,16 +55,23 @@ class LLMServiceInterface {
     };
   }
 
-  async process(initialPromptFile, parametersFile, inputPrompt) {
-    logger.info('Processing LLM request', { initialPromptFile, parametersFile, inputPrompt });
+  async process(initialPromptFile, llmGenParams, inputPrompt, jobId) {
+    logger.info('Processing LLM request', { initialPromptFile, llmGenParams, inputPrompt, jobId });
     logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
 
     const initialPromptPath = path.join(config.llm.basePath, initialPromptFile);
-    const parametersPath = path.join(config.llm.basePath, parametersFile);
+    logger.info('Constructed initial prompt path:', initialPromptPath);
 
-    logger.info('Paths for processing:', { initialPromptPath, parametersPath });
+    try {
+      // Check if the file exists before proceeding
+      await fs.access(initialPromptPath);
+      logger.info('Initial prompt file found');
+    } catch (error) {
+      logger.error(`Initial prompt file not found: ${initialPromptPath}`);
+      throw new Error(`Initial prompt file not found: ${initialPromptPath}`);
+    }
 
-    return await this.generateContent(initialPromptPath, parametersPath, inputPrompt);
+    return await this.generateContent(initialPromptPath, llmGenParams, inputPrompt, jobId);
   }
 
   async generateDocContent(prompt) {
@@ -73,13 +89,13 @@ class LLMServiceInterface {
     // Add any cleanup logic here if needed
   }
 
-  async processAllPrompts(csvPath, initialPromptFile, parametersFile) {
-    logger.info('Processing all prompts', { csvPath, initialPromptFile, parametersFile });
+  async processAllPrompts(csvPath, initialPromptFile, llmGenParams) {
+    logger.info('Processing all prompts', { csvPath, initialPromptFile, llmGenParams });
     const prompts = await this.loadPromptsFromCsv(csvPath);
     const results = [];
 
     for (const prompt of prompts) {
-      const result = await this.process(initialPromptFile, parametersFile, prompt);
+      const result = await this.process(initialPromptFile, llmGenParams, prompt);
       results.push(result);
     }
 

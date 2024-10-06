@@ -1,0 +1,25 @@
+{"initialPromptPath":"C:\\Code\\Short-Video-Creator-Simplified\\data\\input\\initial_prompt.txt",
+"inputPrompt":"Artificial Intelligence",
+"jobId":"test_job_1",
+"llmGenParams":
+    {   "additionalTask":"Use sophisticated, atmospheric writing when telling what will happen. Incorporate elements from each stage of the storytelling circle shown in the image, ensuring a complete narrative arc.",
+        "artistStyle":"by Jakub Rozalski",
+        "aspectRatio":"9:16",
+        "characterPerspective":"Consider introducing a relatable character or perspective to humanize the story and increase emotional investment.",
+        "generalDescription":"End of the world scenarios and step-by-step progression, focusing on both global impact and personal stories within the chaos",
+        "lengthDescription":"Your task is to write a 45 seconds video",
+        "pacingStructure":"Vary the pacing throughout the script to create tension and maintain viewer interest. Use shorter, punchier sentences for intense moments and longer, more descriptive ones for scene-setting. End each scene with a mini-cliffhanger or a question to maintain viewer engagement.",
+        "pictureDescription":"An image which describes the corresponding scene. Add information about the scene and details about the time period",
+        "providedInformation":"I will provide you with a scenario title, and you have to write the story following the hero's journey structure as shown in the image",
+        "sValue":"500",
+        "sceneAmount":"2",
+        "scriptTone":"A dramatic, urgent tone that balances between panic and authoritative narration, mimicking a documentary-style voice-over",
+        "sensoryThematicElements":"Incorporate vivid sensory details (sights, sounds, smells, textures) to make the scenes more immersive and engaging. Weave in recurring symbols or motifs throughout the scenes to create a cohesive narrative thread.",
+        "shotDetails":"Describe also the lighting effects, the time of the day, and the camera angles",
+        "shotStyle":"Photorealistic, cinematic",
+        "style":"raw",
+        "task":"Be detailed and explicit, keeping it realistic or close to reality. Focus on the cause-and-effect relationship between events to create a logical progression.",
+        "version":"6.1",
+        "vocabulary":"Use a simple vocabulary, with relatively short sentences. The vocabulary should be easy to understand and follow. Include some technical or scientific terms related to the scenario, but explain them in simple terms to maintain accessibility."
+    }
+}

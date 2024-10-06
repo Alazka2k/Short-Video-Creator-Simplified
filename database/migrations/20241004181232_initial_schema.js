@@ -38,17 +38,9 @@ exports.up = function (knex) {
       // 2. Jobs Table
       .createTable('jobs', function (table) {
         table.increments('job_id').primary();
-        table
-          .integer('user_id')
-          .unsigned()
-          .references('user_id')
-          .inTable('users')
-          .onDelete('CASCADE');
+        table.integer('user_id').unsigned().references('user_id').inTable('users').onDelete('CASCADE');
         table.timestamps(true, true);
-        table
-          .string('status', 20)
-          .notNullable()
-          .checkIn(['pending', 'in_progress', 'completed', 'failed']);
+        table.string('status', 20).notNullable().checkIn(['pending', 'in_progress', 'completed', 'failed']);
         table.jsonb('service_sequence');
         table.jsonb('metadata');
       })
@@ -156,9 +148,14 @@ exports.up = function (knex) {
         table
           .integer('llm_input_id')
           .unsigned()
-          .unique()
           .references('llm_input_id')
           .inTable('llm_inputs')
+          .onDelete('CASCADE');
+        table
+          .integer('job_id')
+          .unsigned()
+          .references('job_id')
+          .inTable('jobs')
           .onDelete('CASCADE');
         table.string('title', 255);
         table.text('description');
