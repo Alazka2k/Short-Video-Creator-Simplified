@@ -14,6 +14,7 @@ class LLMService {
     this.openai = new OpenAI({
       apiKey: config.llm.apiKey,
     });
+    this.dataAccess = LLMDataAccess;
 
     logger.info(`LLM Provider: ${config.llm.provider}`);
     logger.info(`OpenAI API Key: ${config.llm.apiKey ? 'Loaded' : 'Missing'}`);
@@ -21,22 +22,21 @@ class LLMService {
   }
 
   async generateContent(inputPrompt, llmGenParams, isTest = false) {
+    let jobId;
     try {
-      const jobId = uuidv4();
+      jobId = uuidv4();
       logger.debug('generateContent called with:', { jobId, inputPrompt, llmGenParams, isTest });
+
+      if (!isTest) {
+        // Create job in database
+        await this.dataAccess.createJob(jobId, 'pending', ['llm'], { inputPrompt });
+        logger.info(`Job created in database. ID: ${jobId}`);
+      }
 
       const initialPrompt = await PromptUtils.loadInitialPrompt(path.join(config.basePaths.input, 'initial_prompt.txt'));
       logger.debug('Initial prompt loaded:', initialPrompt);
 
-      let params;
-      if (isTest) {
-        // For tests, load parameters from parameters.json
-        params = await PromptUtils.loadParameters(path.join(config.basePaths.input, 'parameters.json'));
-        params = params.llmGen;
-      } else {
-        // For endpoint calls, use the provided llmGenParams
-        params = llmGenParams;
-      }
+      let params = isTest ? (await PromptUtils.loadParameters(path.join(config.basePaths.input, 'parameters.json'))).llmGen : llmGenParams;
 
       const dynamicPrompt = PromptUtils.replacePlaceholders(initialPrompt, { llmGen: params });
       logger.debug('Dynamic prompt after placeholder replacement:', dynamicPrompt);
@@ -67,11 +67,11 @@ class LLMService {
       if (!isTest) {
         try {
           // Create LLM input in database
-          const llmInputId = await LLMDataAccess.createInput(jobId, inputPrompt, params);
+          const llmInputId = await this.dataAccess.createInput(jobId, inputPrompt, params);
           logger.info(`LLM input created in database. ID: ${llmInputId}`);
 
           // Create LLM output in database
-          const llmOutputId = await LLMDataAccess.createOutput(
+          const llmOutputId = await this.dataAccess.createOutput(
             jobId,
             llmInputId,
             video_script.title,
@@ -86,7 +86,7 @@ class LLMService {
           // Create scenes in database
           for (let i = 0; i < video_script.scenes.length; i++) {
             const scene = video_script.scenes[i];
-            const sceneId = await LLMDataAccess.createScene(
+            const sceneId = await this.dataAccess.createScene(
               llmOutputId,
               i + 1,
               scene.description,
@@ -96,9 +96,15 @@ class LLMService {
             );
             logger.info(`Scene ${i + 1} created in database. ID: ${sceneId}`);
           }
+
+          // Update job status to 'completed'
+          await this.dataAccess.updateJobStatus(jobId, 'completed');
+          logger.info(`Job status updated to 'completed'. ID: ${jobId}`);
         } catch (dbError) {
           logger.error('Error saving LLM data to database:', dbError);
-          // You might want to handle this error specifically, e.g., by setting a flag in the return object
+          // Update job status to 'failed' if there's an error
+          await this.dataAccess.updateJobStatus(jobId, 'failed');
+          logger.info(`Job status updated to 'failed'. ID: ${jobId}`);
         }
       }
 
@@ -111,6 +117,10 @@ class LLMService {
         stack: error.stack,
         details: error.cause ? error.cause.toString() : 'No additional details'
       });
+      if (!isTest && jobId) {
+        await this.dataAccess.updateJobStatus(jobId, 'failed');
+        logger.info(`Job status updated to 'failed'. ID: ${jobId}`);
+      }
       throw error;
     }
   }
