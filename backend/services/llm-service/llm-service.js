@@ -53,33 +53,41 @@ class LLMService {
       video_script.prompt = inputPrompt;
 
       if (!isTest) {
-        // Create LLM input in database
-        const llmInputId = await LLMDataAccess.createInput(jobId, inputPrompt, llmGenParams);
+        try {
+          // Create LLM input in database
+          const llmInputId = await LLMDataAccess.createInput(jobId, inputPrompt, llmGenParams);
+          logger.info(`LLM input created in database. ID: ${llmInputId}`);
 
-        // Create LLM output in database
-        const llmOutputId = await LLMDataAccess.createOutput(
-          jobId,
-          llmInputId,
-          video_script.prompt,
-          video_script.title,
-          video_script.description,
-          video_script.hashtags,
-          video_script.music.title,
-          video_script.music.lyrics,
-          video_script.music.tags
-        );
-
-        // Create scenes in database
-        for (let i = 0; i < video_script.scenes.length; i++) {
-          const scene = video_script.scenes[i];
-          await LLMDataAccess.createScene(
-            llmOutputId,
-            i + 1,
-            scene.description,
-            scene.visual_prompt,
-            scene.video_prompt,
-            scene.camera_movement
+          // Create LLM output in database
+          const llmOutputId = await LLMDataAccess.createOutput(
+            jobId,
+            llmInputId,
+            video_script.prompt,
+            video_script.title,
+            video_script.description,
+            video_script.hashtags,
+            video_script.music.title,
+            video_script.music.lyrics,
+            video_script.music.tags
           );
+          logger.info(`LLM output created in database. ID: ${llmOutputId}`);
+
+          // Create scenes in database
+          for (let i = 0; i < video_script.scenes.length; i++) {
+            const scene = video_script.scenes[i];
+            const sceneId = await LLMDataAccess.createScene(
+              llmOutputId,
+              i + 1,
+              scene.description,
+              scene.visual_prompt,
+              scene.video_prompt,
+              scene.camera_movement
+            );
+            logger.info(`Scene ${i + 1} created in database. ID: ${sceneId}`);
+          }
+        } catch (dbError) {
+          logger.error('Error saving LLM data to database:', dbError);
+          // You might want to handle this error specifically, e.g., by setting a flag in the return object
         }
       }
 

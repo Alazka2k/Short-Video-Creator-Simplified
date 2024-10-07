@@ -1,5 +1,7 @@
 // File: database/seeds/initial_data.js
 
+const { v4: uuidv4 } = require('uuid');
+
 exports.seed = async function (knex) {
   // Deletes ALL existing entries in reverse order of dependencies
   await knex('video_outputs').del();
@@ -95,12 +97,14 @@ exports.seed = async function (knex) {
   // Insert jobs
   const [job1, job2] = await knex('jobs').insert([
     {
+      job_id: uuidv4(),
       user_id: alice.user_id,
       status: 'pending',
       service_sequence: JSON.stringify(['llm', 'image', 'voice']),
       metadata: JSON.stringify({ priority: 'high' }),
     },
     {
+      job_id: uuidv4(),
       user_id: bob.user_id,
       status: 'in_progress',
       service_sequence: JSON.stringify(['llm', 'voice']),
@@ -160,6 +164,7 @@ exports.seed = async function (knex) {
   const [llmOutput1, llmOutput2] = await knex('llm_outputs').insert([
     {
       llm_input_id: llmInput1.llm_input_id,
+      job_id: job1.job_id,
       title: 'AI in Healthcare: Revolutionizing Patient Care',
       description: 'Explore how AI is transforming healthcare...',
       hashtags: '#AIinHealthcare #MedTech #FutureMedicine',
@@ -169,6 +174,7 @@ exports.seed = async function (knex) {
     },
     {
       llm_input_id: llmInput2.llm_input_id,
+      job_id: job2.job_id,
       title: 'Introducing EcoClean: The Future of Green Cleaning',
       description: 'Discover EcoClean, the revolutionary eco-friendly cleaning solution...',
       hashtags: '#EcoClean #GreenLiving #SustainableCleaning',

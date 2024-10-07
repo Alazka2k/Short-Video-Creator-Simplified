@@ -27,26 +27,25 @@ function createServer(llmServiceInterface) {
       logger.error('LLM Service: Request timed out');
       res.status(504).json({ error: 'Request timed out' });
     }, 300000); // 5 minutes timeout
-
+  
     try {
-      const { inputPrompt, llmGenParams, jobId } = req.body;
+      const { inputPrompt, llmGenParams } = req.body;
       logger.info(`LLM Service: Request body: ${JSON.stringify(req.body)}`);
       
       if (!inputPrompt || !llmGenParams) {
         throw new Error('Missing required parameters: inputPrompt or llmGenParams');
       }
-
+  
       logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
       
-      const result = await llmServiceInterface.process(llmGenParams, inputPrompt, jobId, false);
+      const result = await llmServiceInterface.process(inputPrompt, llmGenParams, false);
       
       clearTimeout(requestTimeout);
       logger.info('LLM Service: Content generated successfully');
       res.json({
         message: 'Content generated successfully',
-        result: result.content,
-        outputPath: result.outputPath,
-        jobId: result.jobId
+        jobId: result.jobId,
+        result: result.content
       });
     } catch (error) {
       clearTimeout(requestTimeout);
