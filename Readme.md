@@ -11,12 +11,10 @@
 8. [Project Structure](#project-structure)
 9. [Architecture](#architecture)
 10. [API Integrations](#api-integrations)
-11. [Output Format](#output-format)
-12. [Testing](#testing)
-13. [Source Code Export](#source-code-export)
-14. [Troubleshooting](#troubleshooting)
-15. [Contributing](#contributing)
-16. [License](#license)
+11. [Database Architecture and Design](#database-architecture-and-design)
+12. [Output Format](#output-format)
+13. [Testing](#testing)
+14. [Source Code Export](#source-code-export)
 
 ## Introduction
 
@@ -42,7 +40,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - AI-generated images using Midjourney
 - Animation creation from static images using Immersity AI
 - Custom background music generation using Suno AI
-- Video generation from images and prompts using Luma AI (Now fully integrated and tested)
+- Video generation from images and prompts using Luma AI
 - Structured output optimized for video editing workflows
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
@@ -51,11 +49,14 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - Source code export functionality for easy sharing and versioning
 - API Gateway for centralized request handling and direct service communication
 - Fully functional video generation service with API gateway integration
+- Database integration for persistent storage of job and content data
+- Planned external file storage system for generated media files
 
 ## Prerequisites
 
 - Node.js (v14.0.0 or later)
 - npm (v6.0.0 or later)
+- PostgreSQL database
 - API keys and authentication for the following services:
   - OpenAI (GPT) for script generation
   - Elevenlabs for voice synthesis
@@ -76,6 +77,10 @@ The system processes input from a CSV file containing multiple prompts, leverage
    ```
    npm install
    ```
+
+3. Set up the PostgreSQL database:
+   - Create a new database for the project
+   - Run the migration scripts in the `database/migrations/` directory
 
 ## Configuration
 
@@ -119,6 +124,13 @@ The system processes input from a CSV file containing multiple prompts, leverage
      },
      "output": {
        "directory": "./data/output"
+     },
+     "database": {
+       "host": "YOUR_DB_HOST",
+       "port": "YOUR_DB_PORT",
+       "username": "YOUR_DB_USERNAME",
+       "password": "YOUR_DB_PASSWORD",
+       "database": "YOUR_DB_NAME"
      }
    }
    ```
@@ -143,7 +155,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
    ```
 6. Use Postman or any HTTP client to send requests to `http://localhost:3000/api/{service}/{endpoint}`
 7. For video generation, send a POST request to `http://localhost:3000/api/video/generate` with the appropriate payload
-8. Find the generated content in the `data/output` directory
+8. Find the generated content in the `data/output` directory and the database
 
 ## Project Structure
 
@@ -178,8 +190,11 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── llm-service.js
 │   │   │   ├── server.js
 │   │   │   └── index.js
+│   │   │   └── data/
+│   │   │       └── llmDataAccess.js
 │   │   ├── image-service/
 │   │   │   ├── image-gen-service.js
+│   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── voice-service/
 │   │   │   ├── voice-gen-service.js
@@ -188,14 +203,16 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   ├── music-service/
 │   │   │   ├── music-gen-service.js
 │   │   │   ├── server.js
-│   │   │   └── index.js
+│   │   │   ├── index.js
+│   │   │   └── suno_auth.js
 │   │   ├── animation-service/
 │   │   │   ├── animation-gen-service.js
 │   │   │   ├── server.js
-│   │   │   └── index.js
+│   │   │   ├── index.js
+│   │   │   └── animationPatternGenerator.js
 │   │   └── video-service/
 │   │       ├── video-gen-service.js
-│   │   │   ├── server.js
+│   │       ├── server.js
 │   │       └── index.js
 │   └── shared/
 │       ├── middleware/
@@ -227,8 +244,10 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │       └── App.js
 ├── database/
 │   ├── migrations/
-│   │   └── initial-schema.sql
-│   └── seeds/
+│   │   └── 20241004181232_initial_schema.js
+│   ├── seeds/
+│   │   └── initial_data.js
+│   └── resetDatabase.js
 ├── infrastructure/
 │   ├── docker/
 │   └── kubernetes/
@@ -243,6 +262,9 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   ├── video-gen-test.js
 │   ├── voice-gen-test.js
 │   ├── animation-gen-test.js
+│   ├── animation-pattern-generator-test.js
+│   ├── database/
+│   │   └── test_db_connection.js
 │   └── test_output/
 │       ├── llm/
 │       ├── voice/
@@ -254,6 +276,7 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 ├── .gitignore
 ├── package.json
 ├── package-lock.json
+├── knexfile.js
 └── README.md
 ```
 
@@ -271,12 +294,13 @@ The application follows a microservices architecture designed for flexibility an
 8. Image Generation Service: Creates visual content based on scene descriptions
 9. Animation Generation Service: Creates animations from static images
 10. Music Generation Service: Produces custom background music tracks
-11. Video Generation Service: Creates video content from images and prompts (Fully integrated and tested)
+11. Video Generation Service: Creates video content from images and prompts
 12. Shared Utilities: Provides common functionality across services
 13. Frontend Application: Offers a user-friendly interface for interacting with the backend services
-14. Output Formatting: Structures and saves the generated content in an editor-friendly format
+14. Database: Stores persistent data for jobs, inputs, outputs, and service-specific information
+15. External File Storage: (Planned) Will store generated media files
 
-Each service runs independently, and the API Gateway communicates directly with each service using HTTP requests, allowing for better scalability and easier maintenance. The video generation service is now fully integrated into this architecture and accessible through the API gateway.
+Each service runs independently, and the API Gateway communicates directly with each service using HTTP requests, allowing for better scalability and easier maintenance.
 
 ## API Integrations
 
@@ -288,6 +312,50 @@ Each service runs independently, and the API Gateway communicates directly with 
 - Video Generation: Utilizes Luma AI for generating videos from images and prompts
 
 Detailed documentation for each service integration can be found in the respective files within the `backend/services/` directory.
+
+## Database Architecture and Design
+
+The project uses a PostgreSQL database to store persistent data. The database schema is designed to support the microservices architecture and efficiently store data for all aspects of the content creation process.
+
+### Key Tables:
+
+1. **users**: Stores user account information.
+2. **roles**: Defines different user roles in the system.
+3. **user_roles**: Junction table linking users to their roles.
+4. **jobs**: Central table for tracking content creation jobs.
+5. **plans**: Defines subscription plans available to users.
+6. **user_subscriptions**: Links users to their chosen subscription plans.
+7. **tokens**: Tracks token balances for each user.
+8. **token_transactions**: Records token usage for jobs.
+9. **payments**: Stores payment information for users.
+10. **llm_inputs**: Stores input prompts for the LLM service.
+11. **llm_outputs**: Contains the generated output from the LLM service.
+12. **llm_scenes**: Breaks down LLM outputs into individual scenes.
+13. **image_outputs**: Stores information about generated images.
+14. **voice_outputs**: Contains data related to voice generation.
+15. **music_outputs**: Stores information about generated music.
+16. **animation_outputs**: Contains data about created animations.
+17. **video_outputs**: Stores information about generated videos.
+
+### Key Features:
+
+- Use of UUID for `job_id` in the `jobs` table for improved scalability and security.
+- Direct linking between `llm_scenes` and `jobs` tables for efficient querying.
+- Comprehensive metadata storage for each service output.
+- Flexible JSON storage for service-specific parameters and metadata.
+
+### Data Flow:
+
+1. User creates an account (stored in `users`).
+2. User subscribes to a plan (recorded in `user_subscriptions`).
+3. When a job is created, it's stored in the `jobs` table.
+4. LLM service processes the job, storing inputs in `llm_inputs` and outputs in `llm_outputs`.
+5. Individual scenes are stored in `llm_scenes`, linked directly to the job.
+6. As each subsequent service (image, voice, animation, music, video) processes the job, outputs are stored in respective tables.
+7. Token usage for the job is recorded in `token_transactions`.
+8. Payments for subscriptions or token purchases are stored in the `payments` table.
+
+This database design allows for efficient tracking of the entire content creation process, from job initiation to final output, while also supporting user management, billing, and analytics.
 
 ## Output Format
 
