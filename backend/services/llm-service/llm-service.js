@@ -28,8 +28,8 @@ class LLMService {
       logger.debug('generateContent called with:', { jobId, inputPrompt, llmGenParams, isTest });
 
       if (!isTest) {
-        // Create job in database
-        await this.dataAccess.createJob(jobId, 'pending', ['llm'], { inputPrompt });
+        // Create job in database with the new prompt column
+        await this.dataAccess.createJob(jobId, inputPrompt, 'pending', ['llm']);
         logger.info(`Job created in database. ID: ${jobId}`);
       }
 
@@ -66,8 +66,8 @@ class LLMService {
 
       if (!isTest) {
         try {
-          // Create LLM input in database
-          const llmInputId = await this.dataAccess.createInput(jobId, inputPrompt, params);
+          // Create LLM input in database (note: prompt is now stored in the job table)
+          const llmInputId = await this.dataAccess.createInput(jobId, params);
           logger.info(`LLM input created in database. ID: ${llmInputId}`);
 
           // Create LLM output in database
@@ -87,6 +87,7 @@ class LLMService {
           for (let i = 0; i < video_script.scenes.length; i++) {
             const scene = video_script.scenes[i];
             const sceneId = await this.dataAccess.createScene(
+              jobId,  // Pass jobId here
               llmOutputId,
               i + 1,
               scene.description,

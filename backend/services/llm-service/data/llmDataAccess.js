@@ -2,10 +2,11 @@ const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_EN
 const logger = require('../../../shared/utils/logger');
 
 class LLMDataAccess {
-    async createJob(jobId, status = 'pending', serviceSequence = [], metadata = {}) {
+    async createJob(jobId, prompt, status = 'pending', serviceSequence = [], metadata = {}) {
       try {
         const [job] = await knex('jobs').insert({
           job_id: jobId,
+          prompt: prompt, // Store prompt in the new column
           status: status,
           service_sequence: JSON.stringify(serviceSequence),
           metadata: JSON.stringify(metadata)
@@ -14,7 +15,8 @@ class LLMDataAccess {
         logger.info('Job created in database:', {
           table: 'jobs',
           jobId: job.job_id,
-          status: job.status
+          status: job.status,
+          prompt: prompt.substring(0, 50) + '...' // Log only the first 50 characters of the prompt
         });
         
         return job.job_id;
@@ -39,11 +41,17 @@ class LLMDataAccess {
       }
     }
   
-    async createInput(jobId, prompt, parameters) {
+    async createInput(jobId, parameters) {
       try {
+        const [job] = await knex('jobs').where('job_id', jobId).select('prompt');
+        
+        if (!job) {
+          throw new Error(`Job with id ${jobId} not found`);
+        }
+
         const [llmInput] = await knex('llm_inputs').insert({
           job_id: jobId,
-          prompt: prompt,
+          prompt: job.prompt,
           parameters: JSON.stringify(parameters)
         }).returning('*');
         
@@ -51,7 +59,7 @@ class LLMDataAccess {
           table: 'llm_inputs',
           jobId: jobId,
           llmInputId: llmInput.llm_input_id,
-          prompt: prompt.substring(0, 50) + '...' // Log only the first 50 characters of the prompt
+          prompt: job.prompt.substring(0, 50) + '...' // Log only the first 50 characters of the prompt
         });
         
         return llmInput.llm_input_id;
@@ -81,10 +89,8 @@ class LLMDataAccess {
                 title: title,
                 description: description,
                 hashtags: hashtags,
-                music_title: musicTitle,
-                music_lyrics: musicLyrics,
-                music_tags: musicTags
-              });
+                music_title: musicTitle
+            });
 
             return llmOutput.llm_output_id;
         } catch (error) {
@@ -93,9 +99,10 @@ class LLMDataAccess {
         }
     }
 
-    async createScene(llmOutputId, sceneNumber, description, visualPrompt, videoPrompt, cameraMovement) {
+    async createScene(jobId, llmOutputId, sceneNumber, description, visualPrompt, videoPrompt, cameraMovement) {
         try {
             const [scene] = await knex('llm_scenes').insert({
+                job_id: jobId, // Include job_id when creating a scene
                 llm_output_id: llmOutputId,
                 scene_number: sceneNumber,
                 description: description,
@@ -106,18 +113,38 @@ class LLMDataAccess {
             
             logger.info('LLM scene created in database:', {
                 table: 'llm_scenes',
+                jobId: jobId,
                 llm_output_id: llmOutputId,
                 scene_number: sceneNumber,
                 description: description,
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
                 camera_movement: cameraMovement
-              });
+            });
 
             return scene.scene_id;
         } catch (error) {
             logger.error('Error creating LLM scene:', error);
             throw new Error(`Failed to create LLM scene: ${error.message}`);
+        }
+    }
+
+    async getScenesForJob(jobId) {
+        try {
+            const scenes = await knex('llm_scenes')
+                .where('job_id', jobId)
+                .orderBy('scene_number')
+                .select('*');
+
+            logger.info(`Retrieved ${scenes.length} scenes for job:`, {
+                table: 'llm_scenes',
+                jobId: jobId
+            });
+
+            return scenes;
+        } catch (error) {
+            logger.error('Error retrieving scenes for job:', error);
+            throw new Error(`Failed to retrieve scenes for job: ${error.message}`);
         }
     }
 }

@@ -10,12 +10,10 @@ async function runLLMTest() {
 
     const inputCsvPath = config.input.csvPath;
     const parametersJsonPath = path.join(__dirname, '..', 'data', 'input', 'parameters.json');
-    const initialPromptPath = path.join(__dirname, '..', 'data', 'input', 'initial_prompt.txt');
     const outputDir = path.join(__dirname, 'test_output', 'llm');
 
     logger.info('Input CSV Path:', inputCsvPath);
     logger.info('Parameters JSON Path:', parametersJsonPath);
-    logger.info('Initial Prompt Path:', initialPromptPath);
     logger.info('Output Directory:', outputDir);
 
     // Ensure output directory exists
@@ -32,28 +30,23 @@ async function runLLMTest() {
 
     for (const [index, promptToTest] of prompts.entries()) {
       logger.info(`Generating content for prompt ${index + 1}:`, promptToTest);
-      
-      // Generate a dummy jobId for testing purposes
-      const dummyJobId = `test_job_${index + 1}`;
 
-      // Use a modified version of the process method that doesn't interact with the database
-      const content = await llmServiceInterface.generateContent(
-        initialPromptPath,
-        llmGenParams,
-        promptToTest,
-        dummyJobId
-      );
+      // Use the process method from LLMServiceInterface with isTest set to true
+      const result = await llmServiceInterface.process(llmGenParams, promptToTest, true);
 
-      logger.info(`Generated content structure for prompt ${index + 1}:`, JSON.stringify(content, null, 2));
+      logger.info(`Generated content structure for prompt ${index + 1}:`, JSON.stringify(result, null, 2));
 
       // Save the output to a JSON file
       const outputFileName = `output_test_${index + 1}.json`;
       const outputPath = path.join(outputDir, outputFileName);
-      await fs.writeFile(outputPath, JSON.stringify(content, null, 2));
+      await llmServiceInterface.saveOutput(result, outputFileName, true);
       logger.info(`Output for prompt ${index + 1} saved to ${outputPath}`);
     }
 
     logger.info('LLM test run completed successfully');
+
+    // Cleanup
+    await llmServiceInterface.cleanup();
   } catch (error) {
     logger.error('Error in LLM test run:', error);
     throw error;
