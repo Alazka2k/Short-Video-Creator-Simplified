@@ -28,17 +28,16 @@ app.get('/health', (req, res) => {
 app.post('/api/llm/generate', async (req, res) => {
   try {
     logger.info('Forwarding request to LLM service');
-    const { inputPrompt, llmGenParams, jobId } = req.body;
+    const { inputPrompt, llmGenParams } = req.body;
 
     // Basic validation
-    if (!inputPrompt || !llmGenParams || !jobId) {
-      throw new Error('Missing required parameters: inputPrompt, llmGenParams, or jobId');
+    if (!inputPrompt || !llmGenParams) {
+      throw new Error('Missing required parameters: inputPrompt, llmGenParams');
     }
 
     const response = await axios.post(`${config.services.llm.url}/generate`, {
       inputPrompt,
       llmGenParams,
-      jobId
     }, {
       headers: { 'Content-Type': 'application/json' },
       timeout: 300000  // 5 minutes timeout

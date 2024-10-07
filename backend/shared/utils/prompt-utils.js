@@ -4,6 +4,17 @@ const { parse } = require('csv-parse/sync');
 const logger = require('./logger');
 
 class PromptUtils {
+  static async loadInitialPrompt(filePath) {
+    try {
+      const content = await fs.readFile(filePath, 'utf8');
+      logger.info(`Initial prompt loaded from ${filePath}`);
+      return content;
+    } catch (error) {
+      logger.error(`Error loading initial prompt from ${filePath}:`, error);
+      throw error;
+    }
+  }
+
   static async loadParameters(filePath) {
     try {
       const rawData = await fs.readFile(filePath, 'utf8');

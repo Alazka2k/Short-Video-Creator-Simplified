@@ -18,52 +18,16 @@ class LLMServiceInterface {
     logger.info('LLMServiceInterface initialized');
   }
 
-  async generateContent(inputPrompt, llmGenParams, jobId, isTest = false) {
-    logger.info('Generating content', { inputPrompt, llmGenParams, jobId, isTest });
-    
-    try {
-      const content = await this.service.generateContent(jobId, inputPrompt, llmGenParams, isTest);
-      
-      // Create output directory and save content to JSON file
-      const currentDate = new Date();
-      const dateString = currentDate.toISOString().split('T')[0];
-      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const outputDir = path.join(config.output.directory, 'llm', `${dateString}_${timeString}`, 'prompt_1');
-      await fs.mkdir(outputDir, { recursive: true });
-
-      const outputPath = path.join(outputDir, 'llm_output.json');
-      await fs.writeFile(outputPath, JSON.stringify(content, null, 2));
-      
-      logger.info(`LLM output saved to ${outputPath}`);
-
-      return {
-        content: content,
-        outputPath: outputPath,
-        jobId: jobId
-      };
-    } catch (error) {
-      logger.error('Error in generateContent:', error);
-      throw error;
-    }
-  }
-
-  async process(llmGenParams, inputPrompt, jobId, isTest = false) {
-    logger.info('Processing LLM request', { llmGenParams, inputPrompt, jobId, isTest });
+  async process(llmGenParams, inputPrompt, isTest = false) {
+    logger.info('Processing LLM request', { llmGenParams, inputPrompt, isTest });
     logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
-
-    return await this.generateContent(inputPrompt, llmGenParams, jobId, isTest);
-  }
   
+    return await this.service.generateContent(inputPrompt, llmGenParams, isTest);
+  }
+
   async loadPromptsFromCsv(csvPath) {
     logger.info(`Loading prompts from CSV: ${csvPath}`);
     return await this.service.loadPromptsFromCsv(csvPath);
-  }
-
-  async process(llmGenParams, inputPrompt) {
-    logger.info('Processing LLM request', { llmGenParams, inputPrompt });
-    logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
-  
-    return await this.generateContent(inputPrompt, llmGenParams);
   }
 
   async generateDocContent(prompt) {

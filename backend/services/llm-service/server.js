@@ -38,14 +38,14 @@ function createServer(llmServiceInterface) {
   
       logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
       
-      const result = await llmServiceInterface.process(inputPrompt, llmGenParams, false);
+      const result = await llmServiceInterface.process(req.body.llmGenParams, req.body.inputPrompt, false);
       
       clearTimeout(requestTimeout);
       logger.info('LLM Service: Content generated successfully');
       res.json({
         message: 'Content generated successfully',
-        jobId: result.jobId,
-        result: result.content
+        result: result.content,
+        outputPath: result.outputPath,
       });
     } catch (error) {
       clearTimeout(requestTimeout);

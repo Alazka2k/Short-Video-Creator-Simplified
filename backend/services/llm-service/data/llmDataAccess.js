@@ -29,8 +29,7 @@ class LLMDataAccess {
             table: 'llm_inputs',
             jobId: jobId,
             llmInputId: llmInput.llm_input_id,
-            prompt: prompt.substring(0, 50) + '...', // Log only the first 50 characters of the prompt
-            parameters: JSON.stringify(parameters)
+            prompt: prompt.substring(0, 50) + '...' // Log only the first 50 characters of the prompt
           });
           
           return llmInput.llm_input_id;
@@ -40,12 +39,11 @@ class LLMDataAccess {
         }
       }
 
-    async createOutput(jobId, llmInputId, prompt, title, description, hashtags, musicTitle, musicLyrics, musicTags) {
+    async createOutput(jobId, llmInputId, title, description, hashtags, musicTitle, musicLyrics, musicTags) {
         try {
             const [llmOutput] = await knex('llm_outputs').insert({
                 job_id: jobId,
                 llm_input_id: llmInputId,
-                prompt: prompt,
                 title: title,
                 description: description,
                 hashtags: hashtags,
@@ -58,7 +56,6 @@ class LLMDataAccess {
                 table: 'llm_outputs',
                 jobId: jobId,
                 llm_input_id: llmInputId,
-                prompt: prompt.substring(0, 50) + '...', // Log only the first 50 characters of the prompt
                 title: title,
                 description: description,
                 hashtags: hashtags,

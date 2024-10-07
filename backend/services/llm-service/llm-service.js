@@ -2,9 +2,10 @@ const OpenAI = require("openai");
 const { zodResponseFormat } = require("openai/helpers/zod");
 const fs = require('fs').promises;
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const { loadInitialPrompt } = require('../../shared/utils/input-loader');
+const PromptUtils = require('../../shared/utils/prompt-utils');
 const { VideoScriptSchema } = require('../../shared/config/models');
 const LLMDataAccess = require('./data/llmDataAccess');
 
@@ -19,14 +20,25 @@ class LLMService {
     logger.info(`OpenAI Model: ${config.llm.model}`);
   }
 
-  async generateContent(jobId, inputPrompt, llmGenParams, isTest = false) {
+  async generateContent(inputPrompt, llmGenParams, isTest = false) {
     try {
+      const jobId = uuidv4();
       logger.debug('generateContent called with:', { jobId, inputPrompt, llmGenParams, isTest });
 
-      const initialPrompt = await loadInitialPrompt();
+      const initialPrompt = await PromptUtils.loadInitialPrompt(path.join(config.basePaths.input, 'initial_prompt.txt'));
       logger.debug('Initial prompt loaded:', initialPrompt);
 
-      const dynamicPrompt = this.replacePlaceholders(initialPrompt, llmGenParams);
+      let params;
+      if (isTest) {
+        // For tests, load parameters from parameters.json
+        params = await PromptUtils.loadParameters(path.join(config.basePaths.input, 'parameters.json'));
+        params = params.llmGen;
+      } else {
+        // For endpoint calls, use the provided llmGenParams
+        params = llmGenParams;
+      }
+
+      const dynamicPrompt = PromptUtils.replacePlaceholders(initialPrompt, { llmGen: params });
       logger.debug('Dynamic prompt after placeholder replacement:', dynamicPrompt);
 
       const combined_prompt = `${dynamicPrompt}\n\nCreate a video script about the following topic: ${inputPrompt}`;
@@ -37,13 +49,13 @@ class LLMService {
       logger.info('Sending request to OpenAI API...');
       
       const completion = await this.openai.beta.chat.completions.parse({
-        model: llmGenParams.model || config.llm.model,
+        model: params.model || config.llm.model,
         messages: [
           { role: "system", content: "Extract the video script information according to the provided schema, including a music section with title, lyrics, and style. For each scene, include a description, visual prompt, camera movement (as a JSON string), and negative prompt." },
           { role: "user", content: combined_prompt },
         ],
         response_format: zodResponseFormat(VideoScriptSchema, "video_script"),
-        temperature: llmGenParams.temperature || 0.7
+        temperature: params.temperature || 0.7
       });
 
       logger.info('Received response from OpenAI API');
@@ -55,14 +67,13 @@ class LLMService {
       if (!isTest) {
         try {
           // Create LLM input in database
-          const llmInputId = await LLMDataAccess.createInput(jobId, inputPrompt, llmGenParams);
+          const llmInputId = await LLMDataAccess.createInput(jobId, inputPrompt, params);
           logger.info(`LLM input created in database. ID: ${llmInputId}`);
 
           // Create LLM output in database
           const llmOutputId = await LLMDataAccess.createOutput(
             jobId,
             llmInputId,
-            video_script.prompt,
             video_script.title,
             video_script.description,
             video_script.hashtags,
@@ -93,7 +104,7 @@ class LLMService {
 
       logger.info('Generated content structure:', { video_script });
 
-      return video_script;
+      return { jobId, video_script };
     } catch (error) {
       logger.error('Error generating content with LLM:', { 
         error: error.toString(), 
@@ -104,29 +115,8 @@ class LLMService {
     }
   }
 
-  replacePlaceholders(prompt, params) {
-    logger.info('Replacing placeholders in prompt');
-    for (const [key, value] of Object.entries(params)) {
-      const placeholder = `{{ llmGen.${key} }}`;
-      if (prompt.includes(placeholder)) {
-        prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
-        logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
-      } else {
-        logger.debug(`Placeholder ${placeholder} not found in the prompt.`);
-      }
-    }
-    return prompt;
-  }
-
   async loadPromptsFromCsv(csvPath) {
-    try {
-      const content = await fs.readFile(csvPath, 'utf8');
-      const records = csv.parse(content, { columns: true, skip_empty_lines: true });
-      return records.map(record => record.Prompt);
-    } catch (error) {
-      logger.error('Error loading prompts from CSV:', error);
-      throw error;
-    }
+    return PromptUtils.readCsvFile(csvPath);
   }
 
   async generateDocContent(prompt) {
@@ -169,9 +159,7 @@ class LLMService {
       await fs.mkdir(outputDir, { recursive: true });
       outputPath = path.join(outputDir, 'llm_output.json');
     }
-    await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
-    logger.info(`Output saved to ${outputPath}`);
-    return outputPath;
+    return PromptUtils.saveOutputToJson(output, outputPath);
   }
 }
 
