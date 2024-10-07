@@ -32,11 +32,12 @@ class LLMDataAccess {
         }
       }
     
-      async createOutput(jobId, llmInputId, title, description, hashtags, musicTitle, musicLyrics, musicTags) {
+      async createOutput(jobId, llmInputId, prompt, title, description, hashtags, musicTitle, musicLyrics, musicTags) {
         try {
           const [llmOutput] = await knex('llm_outputs').insert({
             job_id: jobId,
             llm_input_id: llmInputId,
+            prompt: prompt,
             title: title,
             description: description,
             hashtags: hashtags,

@@ -4,63 +4,56 @@ const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 
 function createServer(llmServiceInterface) {
-    const app = express();
-    app.use(express.json({ limit: '50mb' }));
-    app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-  
-    app.use((req, res, next) => {
-      logger.info(`LLM Service: Received ${req.method} request for ${req.url}`);
-      logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-      logger.info(`Request body: ${JSON.stringify(req.body)}`);
-      next();
-    });
-  
-    // Health check endpoint
-    app.get('/health', (req, res) => {
-      res.json({ status: 'LLM Service is healthy' });
-    });
+  const app = express();
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-    // Test endpoint
-    app.get('/test', (req, res) => {
-      logger.info('LLM Service: Test endpoint hit');
-      res.json({ message: 'LLM Service is running' });
-    });
+  app.use((req, res, next) => {
+    logger.info(`LLM Service: Received ${req.method} request for ${req.url}`);
+    logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+    logger.info(`Request body: ${JSON.stringify(req.body)}`);
+    next();
+  });
 
-    app.post('/generate', async (req, res) => {
-      logger.info('LLM Service: Handling /generate request');
-      const requestTimeout = setTimeout(() => {
-        logger.error('LLM Service: Request timed out');
-        res.status(504).json({ error: 'Request timed out' });
-      }, 300000); // 5 minutes timeout
-    
-      try {
-        const { inputPrompt, llmGenParams } = req.body;
-        logger.info(`LLM Service: Request body: ${JSON.stringify(req.body)}`);
-        
-        if (!inputPrompt || !llmGenParams) {
-          throw new Error('Missing required parameters: inputPrompt or llmGenParams');
-        }
-    
-        logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
-        
-        const initialPromptFile = 'initial_prompt.txt';
-        
-        const result = await llmServiceInterface.process(initialPromptFile, llmGenParams, inputPrompt);
-        
-        clearTimeout(requestTimeout);
-        logger.info('LLM Service: Content generated successfully');
-        res.json({
-          message: 'Content generated successfully',
-          result: result.content,
-          outputPath: result.outputPath,
-          jobId: result.jobId
-        });
-      } catch (error) {
-        clearTimeout(requestTimeout);
-        logger.error('LLM Service: Error generating content:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({ status: 'LLM Service is healthy' });
+  });
+
+  // Generate endpoint
+  app.post('/generate', async (req, res) => {
+    logger.info('LLM Service: Handling /generate request');
+    const requestTimeout = setTimeout(() => {
+      logger.error('LLM Service: Request timed out');
+      res.status(504).json({ error: 'Request timed out' });
+    }, 300000); // 5 minutes timeout
+
+    try {
+      const { inputPrompt, llmGenParams, jobId } = req.body;
+      logger.info(`LLM Service: Request body: ${JSON.stringify(req.body)}`);
+      
+      if (!inputPrompt || !llmGenParams) {
+        throw new Error('Missing required parameters: inputPrompt or llmGenParams');
       }
-    });
+
+      logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
+      
+      const result = await llmServiceInterface.process(llmGenParams, inputPrompt, jobId, false);
+      
+      clearTimeout(requestTimeout);
+      logger.info('LLM Service: Content generated successfully');
+      res.json({
+        message: 'Content generated successfully',
+        result: result.content,
+        outputPath: result.outputPath,
+        jobId: result.jobId
+      });
+    } catch (error) {
+      clearTimeout(requestTimeout);
+      logger.error('LLM Service: Error generating content:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
 
     app.post('/generate-doc', async (req, res) => {
       logger.info('LLM Service: Handling /generate-doc request');

@@ -13,19 +13,18 @@ const MusicSchema = z.object({
   tags: z.string(),
 });
 
+const VideoScriptSchema = z.object({
+  prompt: z.string(),
+  title: z.string(),
+  description: z.string(),
+  hashtags: z.string(),
+  scenes: z.array(SceneSchema),
+  music: MusicSchema,
+});
+
 const AnimationPatternSchema = z.object({
   pattern: z.string(),
   description: z.string()
 });
 
-const VideoScriptSchema = z.object({
-  prompt: z.string().optional(), // Make this optional as it's added after the API call
-  title: z.string(),
-  description: z.string(),
-  hashtags: z.string(),
-  scenes: z.array(SceneSchema),
-  music: MusicSchema, // Use MusicSchema directly here
-});
-
-
-module.exports = { SceneSchema, VideoScriptSchema, MusicSchema, AnimationPatternSchema};
+module.exports = { SceneSchema, VideoScriptSchema, MusicSchema, AnimationPatternSchema };

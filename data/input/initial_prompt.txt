@@ -93,7 +93,7 @@ hashtags: #NuclearWinter #SurvivalSaga #ChillofWar #SilentBattlefield #Apocalyps
 
 # Example for a Scene Schema:
 description: Gasp. The air feels thin. You check your phone. This is how it begins...
-visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, patches of ash falling like snow. Skyscrapers, once proud, now skeletal remains shrouded in dense fog. Low-angle view, evening bluish glow, shadows long and stark; by  {{ artistStyle }}. {{ shotStyle }} {{ aspectRatioPrompt }} {{ aspectRatioPrompt }} {{ stylePrompt }} {{ style }} {{ sPrompt }} {{ sValue }} {{ versionPrompt }} {{ version }}
+visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, patches of ash falling like snow. Skyscrapers, once proud, now skeletal remains shrouded in dense fog. Low-angle view, evening bluish glow, shadows long and stark; {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
 video_prompt: A visual of a ruined cityscape, ash drifting softly, as the camera pans slowly across the destroyed infrastructure, capturing the haunted remnants of civilization. The gray sky thickens ominously, setting a chilling tone.
 camera_movement: Pull Out
 

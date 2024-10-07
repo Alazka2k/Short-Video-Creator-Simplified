@@ -4,10 +4,9 @@ const fs = require('fs').promises;
 const path = require('path');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const PromptUtils = require('../../shared/utils/prompt-utils');
+const { loadInitialPrompt } = require('../../shared/utils/input-loader');
 const { VideoScriptSchema } = require('../../shared/config/models');
 const LLMDataAccess = require('./data/llmDataAccess');
-const csv = require('csv-parse/sync');
 
 class LLMService {
   constructor() {
@@ -18,30 +17,25 @@ class LLMService {
     logger.info(`LLM Provider: ${config.llm.provider}`);
     logger.info(`OpenAI API Key: ${config.llm.apiKey ? 'Loaded' : 'Missing'}`);
     logger.info(`OpenAI Model: ${config.llm.model}`);
-    logger.info(`LLM Base Path: ${config.llm.basePath}`);
   }
 
-  async generateContent(initialPromptPath, llmGenParams, inputPrompt, isTest = false) {
+  async generateContent(jobId, inputPrompt, llmGenParams, isTest = false) {
     try {
-      logger.debug('generateContent called with:', { initialPromptPath, llmGenParams, inputPrompt, isTest });
-      logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
+      logger.debug('generateContent called with:', { jobId, inputPrompt, llmGenParams, isTest });
 
-      await fs.access(initialPromptPath);
+      const initialPrompt = await loadInitialPrompt();
+      logger.debug('Initial prompt loaded:', initialPrompt);
 
-      const initialPrompt = await fs.readFile(initialPromptPath, 'utf8');
-      const dynamicPrompt = PromptUtils.replacePlaceholders(initialPrompt, llmGenParams);
+      const dynamicPrompt = this.replacePlaceholders(initialPrompt, llmGenParams);
+      logger.debug('Dynamic prompt after placeholder replacement:', dynamicPrompt);
+
       const combined_prompt = `${dynamicPrompt}\n\nCreate a video script about the following topic: ${inputPrompt}`;
+
+      logger.info('Constructed prompt for OpenAI:');
+      logger.info(combined_prompt);
 
       logger.info('Sending request to OpenAI API...');
       
-      let jobId, llmInputId;
-      if (!isTest) {
-        // Create a new job and get the job ID
-        jobId = await LLMDataAccess.createJob();
-        // Create LLM input in database
-        llmInputId = await LLMDataAccess.createInput(jobId, combined_prompt, llmGenParams);
-      }
-
       const completion = await this.openai.beta.chat.completions.parse({
         model: llmGenParams.model || config.llm.model,
         messages: [
@@ -49,8 +43,7 @@ class LLMService {
           { role: "user", content: combined_prompt },
         ],
         response_format: zodResponseFormat(VideoScriptSchema, "video_script"),
-        temperature: llmGenParams.temperature || 0.7,
-        max_tokens: llmGenParams.max_tokens || 1000,
+        temperature: llmGenParams.temperature || 0.7
       });
 
       logger.info('Received response from OpenAI API');
@@ -60,10 +53,14 @@ class LLMService {
       video_script.prompt = inputPrompt;
 
       if (!isTest) {
+        // Create LLM input in database
+        const llmInputId = await LLMDataAccess.createInput(jobId, inputPrompt, llmGenParams);
+
         // Create LLM output in database
         const llmOutputId = await LLMDataAccess.createOutput(
           jobId,
           llmInputId,
+          video_script.prompt,
           video_script.title,
           video_script.description,
           video_script.hashtags,
@@ -88,7 +85,7 @@ class LLMService {
 
       logger.info('Generated content structure:', { video_script });
 
-      return { video_script, jobId };
+      return video_script;
     } catch (error) {
       logger.error('Error generating content with LLM:', { 
         error: error.toString(), 
@@ -97,6 +94,20 @@ class LLMService {
       });
       throw error;
     }
+  }
+
+  replacePlaceholders(prompt, params) {
+    logger.info('Replacing placeholders in prompt');
+    for (const [key, value] of Object.entries(params)) {
+      const placeholder = `{{ llmGen.${key} }}`;
+      if (prompt.includes(placeholder)) {
+        prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
+        logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+      } else {
+        logger.debug(`Placeholder ${placeholder} not found in the prompt.`);
+      }
+    }
+    return prompt;
   }
 
   async loadPromptsFromCsv(csvPath) {
