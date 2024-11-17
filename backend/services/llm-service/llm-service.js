@@ -22,55 +22,54 @@ class LLMService {
   }
 
   async generateContent(inputPrompt, llmGenParams, isTest = false) {
-    let jobId;
+    let jobId = uuidv4();
     try {
-      jobId = uuidv4();
-      logger.debug('generateContent called with:', { jobId, inputPrompt, llmGenParams, isTest });
+      logger.info('Starting content generation:', { jobId, inputPrompt });
+      logger.debug('Generation parameters:', { llmGenParams, isTest });
 
+      // Create initial job record
       if (!isTest) {
-        // Create job in database with the new prompt column
-        await this.dataAccess.createJob(jobId, inputPrompt, 'pending', ['llm']);
-        logger.info(`Job created in database. ID: ${jobId}`);
+        await this.dataAccess.createJob(jobId, inputPrompt, 'pending', ['llm'], {
+          startTime: new Date().toISOString()
+        });
+        logger.info(`Created job record with ID: ${jobId}`);
       }
 
-      const initialPrompt = await PromptUtils.loadInitialPrompt(path.join(config.basePaths.input, 'initial_prompt.txt'));
-      logger.debug('Initial prompt loaded:', initialPrompt);
-
-      let params = isTest ? (await PromptUtils.loadParameters(path.join(config.basePaths.input, 'parameters.json'))).llmGen : llmGenParams;
+      // Load and prepare prompts
+      const initialPrompt = await PromptUtils.loadInitialPrompt(
+        path.join(config.basePaths.input, 'initial_prompt.txt')
+      );
+      const params = isTest 
+        ? (await PromptUtils.loadParameters(path.join(config.basePaths.input, 'parameters.json'))).llmGen 
+        : llmGenParams;
 
       const dynamicPrompt = PromptUtils.replacePlaceholders(initialPrompt, { llmGen: params });
-      logger.debug('Dynamic prompt after placeholder replacement:', dynamicPrompt);
-
       const combined_prompt = `${dynamicPrompt}\n\nCreate a video script about the following topic: ${inputPrompt}`;
 
-      logger.info('Constructed prompt for OpenAI:');
-      logger.info(combined_prompt);
-
-      logger.info('Sending request to OpenAI API...');
-      
+      logger.info('Sending request to OpenAI');
       const completion = await this.openai.beta.chat.completions.parse({
         model: params.model || config.llm.model,
         messages: [
-          { role: "system", content: "Extract the video script information according to the provided schema, including a music section with title, lyrics, and style. For each scene, include a description, visual prompt, camera movement (as a JSON string), and negative prompt." },
+          { 
+            role: "system", 
+            content: "Extract the video script information according to the provided schema, including a music section with title, lyrics, and style. For each scene, include a description, visual prompt, camera movement (as a JSON string), and negative prompt." 
+          },
           { role: "user", content: combined_prompt },
         ],
         response_format: zodResponseFormat(VideoScriptSchema, "video_script"),
         temperature: params.temperature || 0.7
       });
 
-      logger.info('Received response from OpenAI API');
-      logger.debug('Raw API Response:', JSON.stringify(completion, null, 2));
-
+      logger.info('Processing OpenAI response');
       const video_script = completion.choices[0].message.parsed;
-      video_script.prompt = inputPrompt;
 
       if (!isTest) {
         try {
-          // Create LLM input in database (note: prompt is now stored in the job table)
+          // Store LLM input
           const llmInputId = await this.dataAccess.createInput(jobId, params);
-          logger.info(`LLM input created in database. ID: ${llmInputId}`);
+          logger.info(`Created LLM input record: ${llmInputId}`);
 
-          // Create LLM output in database
+          // Store LLM output
           const llmOutputId = await this.dataAccess.createOutput(
             jobId,
             llmInputId,
@@ -81,13 +80,13 @@ class LLMService {
             video_script.music.lyrics,
             video_script.music.tags
           );
-          logger.info(`LLM output created in database. ID: ${llmOutputId}`);
+          logger.info(`Created LLM output record: ${llmOutputId}`);
 
-          // Create scenes in database
+          // Store scenes
           for (let i = 0; i < video_script.scenes.length; i++) {
             const scene = video_script.scenes[i];
             const sceneId = await this.dataAccess.createScene(
-              jobId,  // Pass jobId here
+              jobId, // Added jobId parameter
               llmOutputId,
               i + 1,
               scene.description,
@@ -95,32 +94,45 @@ class LLMService {
               scene.video_prompt,
               scene.camera_movement
             );
-            logger.info(`Scene ${i + 1} created in database. ID: ${sceneId}`);
+            logger.info(`Created scene record ${i + 1}: ${sceneId}`);
           }
 
-          // Update job status to 'completed'
           await this.dataAccess.updateJobStatus(jobId, 'completed');
-          logger.info(`Job status updated to 'completed'. ID: ${jobId}`);
+          logger.info(`Updated job status to completed: ${jobId}`);
         } catch (dbError) {
-          logger.error('Error saving LLM data to database:', dbError);
-          // Update job status to 'failed' if there's an error
+          logger.error('Database error during content generation:', dbError);
           await this.dataAccess.updateJobStatus(jobId, 'failed');
-          logger.info(`Job status updated to 'failed'. ID: ${jobId}`);
+          throw dbError;
         }
       }
 
-      logger.info('Generated content structure:', { video_script });
+      logger.info('Content generation completed successfully');
+      return {
+        message: "Content generated successfully",
+        jobId: jobId,
+        content: {
+          prompt: inputPrompt,
+          title: video_script.title,
+          description: video_script.description,
+          hashtags: video_script.hashtags,
+          scenes: video_script.scenes.map(scene => ({
+            description: scene.description,
+            visual_prompt: scene.visual_prompt,
+            video_prompt: scene.video_prompt,
+            camera_movement: scene.camera_movement
+          })),
+          music: {
+            title: video_script.music.title,
+            lyrics: video_script.music.lyrics,
+            tags: video_script.music.tags
+          }
+        }
+      };
 
-      return { jobId, video_script };
     } catch (error) {
-      logger.error('Error generating content with LLM:', { 
-        error: error.toString(), 
-        stack: error.stack,
-        details: error.cause ? error.cause.toString() : 'No additional details'
-      });
-      if (!isTest && jobId) {
+      logger.error('Error in content generation:', error);
+      if (!isTest) {
         await this.dataAccess.updateJobStatus(jobId, 'failed');
-        logger.info(`Job status updated to 'failed'. ID: ${jobId}`);
       }
       throw error;
     }
@@ -132,8 +144,7 @@ class LLMService {
 
   async generateDocContent(prompt) {
     try {
-      logger.info('Sending request to OpenAI API for documentation content...');
-      
+      logger.info('Generating documentation content');
       const completion = await this.openai.chat.completions.create({
         model: config.llm.model,
         messages: [
@@ -141,36 +152,24 @@ class LLMService {
           { role: "user", content: prompt },
         ],
       });
-
-      logger.info('Received response from OpenAI API');
-      
-      return {
-        description: completion.choices[0].message.content
-      };
+      return { description: completion.choices[0].message.content };
     } catch (error) {
-      logger.error('Error generating documentation content with LLM:', { 
-        error: error.toString(), 
-        stack: error.stack,
-        details: error.cause ? error.cause.toString() : 'No additional details'
-      });
+      logger.error('Error generating documentation:', error);
       throw error;
     }
   }
 
-  async saveOutputToJson(output, fileName, isTest = false) {
-    let outputPath;
-    if (isTest) {
-      outputPath = path.join(config.basePaths.test, 'llm', fileName);
-    } else {
-      const currentDate = new Date();
-      const dateString = currentDate.toISOString().split('T')[0];
-      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      
-      const outputDir = path.join(config.output.directory, 'llm', `${dateString}_${timeString}`, `prompt_1`);
-      await fs.mkdir(outputDir, { recursive: true });
-      outputPath = path.join(outputDir, 'llm_output.json');
+  async saveOutputToJson(output, outputPath) {
+    try {
+      const dir = path.dirname(outputPath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
+      logger.info(`Saved output to ${outputPath}`);
+      return outputPath;
+    } catch (error) {
+      logger.error('Error saving output:', error);
+      throw error;
     }
-    return PromptUtils.saveOutputToJson(output, outputPath);
   }
 }
 

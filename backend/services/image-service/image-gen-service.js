@@ -1,7 +1,7 @@
 const { Midjourney } = require('midjourney');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const fs = require('fs').promises;
+const fs = require('fs').promises;  // Changed from fsPromises
 const path = require('path');
 const puppeteer = require('puppeteer');
 
@@ -30,7 +30,7 @@ class ImageGenService {
     }
   }
 
-  async generateImage(prompt, sceneIndex, isTest = false, testFolder = '') {
+  async generateImage(prompt, sceneIndex, testFolder = '', isTest = false) {
     if (!this.initialized) {
       throw new Error('ImageGenService not initialized. Call init() first.');
     }
@@ -51,7 +51,8 @@ class ImageGenService {
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, isTest, testFolder);
+      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, testFolder, isTest);
+      logger.info(`Will save image to: ${imageFilePath}`);
 
       await fs.mkdir(path.dirname(imageFilePath), { recursive: true });
       await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
@@ -70,14 +71,16 @@ class ImageGenService {
     }
   }
 
-  getOutputPaths(sceneIndex, isTest) {
+  getOutputPaths(sceneIndex, testFolder, isTest) {
     let imageFilePath, metadataPath;
 
     if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image');
+      // For test environment
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image', testFolder);
       imageFilePath = path.join(testOutputDir, `image_scene_${sceneIndex}.png`);
       metadataPath = path.join(testOutputDir, 'metadata.json');
     } else {
+      // For production environment
       const currentDate = new Date();
       const dateString = currentDate.toISOString().split('T')[0];
       const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
@@ -123,23 +126,28 @@ class ImageGenService {
   async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName) {
     let metadata = {};
     try {
-      const data = await fsPromises.readFile(metadataPath, 'utf8');
-      metadata = JSON.parse(data);
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        logger.error('Error reading metadata:', error);
+      try {
+        const data = await fs.readFile(metadataPath, 'utf8');
+        metadata = JSON.parse(data);
+      } catch (error) {
+        if (error.code !== 'ENOENT') {
+          logger.error('Error reading metadata:', error);
+        }
       }
+
+      metadata[`scene_${sceneIndex}`] = { 
+        originalUrl, 
+        imageUrl,
+        fileName
+      };
+
+      await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+      logger.info(`Metadata saved to ${metadataPath}`);
+    } catch (error) {
+      logger.error('Error saving metadata:', error);
+      throw error;
     }
-
-    metadata[`scene_${sceneIndex}`] = { 
-      originalUrl, 
-      imageUrl,
-      fileName
-    };
-
-    await fsPromises.mkdir(path.dirname(metadataPath), { recursive: true });
-    await fsPromises.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-    logger.info(`Metadata saved to ${metadataPath}`);
   }
 
   async close() {

@@ -18,6 +18,35 @@ async function promptToContinue() {
   });
 }
 
+async function checkImageExists(imagePath) {
+  try {
+    await fs.access(imagePath);
+    const stats = await fs.stat(imagePath);
+    return stats.size > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function findImagePath(baseDir, sceneNumber) {
+  const patterns = [
+    `image_scene_${sceneNumber}.png`,
+    `scene_${sceneNumber}_image.png`,
+    `image_${sceneNumber}.png`
+  ];
+
+  for (const pattern of patterns) {
+    const testPath = path.join(baseDir, pattern);
+    if (await checkImageExists(testPath)) {
+      logger.info(`Found image at: ${testPath}`);
+      return testPath;
+    }
+    logger.debug(`Image not found at: ${testPath}`);
+  }
+
+  return null;
+}
+
 async function runVideoGenTest() {
   let videoService;
   try {
@@ -57,27 +86,28 @@ async function runVideoGenTest() {
         const llmOutput = JSON.parse(llmOutputContent);
 
         // Process all scenes
-        for (let sceneIndex = 0; sceneIndex < llmOutput.scenes.length; sceneIndex++) {
-          const scene = llmOutput.scenes[sceneIndex];
-          const imagePath = path.join(imageFolderPath, `image_scene_${sceneIndex}.png`);
+        for (let index = 0; index < llmOutput.scenes.length; index++) {
+          const sceneNumber = index + 1; // Convert to 1-based indexing
+          const scene = llmOutput.scenes[index];
 
-          logger.info(`Processing scene ${sceneIndex + 1}`);
-          logger.info(`Image path: ${imagePath}`);
+          logger.info(`Processing scene ${sceneNumber}`);
 
-          // Check if image file exists
-          try {
-            await fs.access(imagePath);
-          } catch (error) {
-            logger.error(`Image file not found: ${imagePath}`);
+          const imagePath = await findImagePath(imageFolderPath, sceneNumber);
+          
+          if (!imagePath) {
+            logger.error(`No valid image found for scene ${sceneNumber}`);
+            logger.error(`Checked in directory: ${imageFolderPath}`);
             continue;
           }
+
+          logger.info(`Using image: ${imagePath}`);
 
           const result = await videoService.process(
             imagePath,
             scene.video_prompt,
             scene.camera_movement,
             config.parameters.llmGen.aspectRatio,
-            sceneIndex,
+            sceneNumber, // Using 1-based scene number
             folder,
             true  // isTest
           );
@@ -89,19 +119,24 @@ async function runVideoGenTest() {
 
             const stats = await fs.stat(result.filePath);
             logger.info(`Generated video file size: ${stats.size} bytes`);
+            
             if (stats.size > 0) {
               logger.info('Video file verified successfully');
+              
+              // Verify metadata file
+              const metadataPath = path.join(path.dirname(result.filePath), 'metadata.json');
+              try {
+                await fs.access(metadataPath);
+                logger.info(`Metadata file created: ${metadataPath}`);
+                
+                // Read and log metadata content
+                const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+                logger.info(`Metadata content for scene ${sceneNumber}:`, JSON.stringify(metadata[`scene_${sceneNumber}`], null, 2));
+              } catch (error) {
+                logger.warn(`Metadata file not found or invalid: ${metadataPath}`);
+              }
             } else {
               logger.warn('Generated video file is empty');
-            }
-
-            // Verify metadata file
-            const metadataPath = path.join(path.dirname(result.filePath), 'metadata.json');
-            try {
-              await fs.access(metadataPath);
-              logger.info(`Metadata file created: ${metadataPath}`);
-            } catch (error) {
-              logger.warn(`Metadata file not found: ${metadataPath}`);
             }
           }
         }
@@ -132,8 +167,12 @@ async function runVideoGenTest() {
   }
 }
 
-runVideoGenTest().catch(error => {
-  logger.error('Unhandled error in video generation test:', error);
-  logger.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-  rl.close();
-});
+module.exports = runVideoGenTest;
+
+if (require.main === module) {
+  runVideoGenTest().catch(error => {
+    logger.error('Unhandled error in video generation test:', error);
+    logger.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    rl.close();
+  });
+}

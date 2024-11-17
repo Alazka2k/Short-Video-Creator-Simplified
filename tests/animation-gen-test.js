@@ -4,107 +4,151 @@ const { AnimationServiceInterface } = require('../backend/services/animation-ser
 const config = require('../backend/shared/utils/config');
 const logger = require('../backend/shared/utils/logger');
 
+async function checkImageExists(imagePath) {
+  try {
+    await fs.access(imagePath);
+    const stats = await fs.stat(imagePath);
+    return stats.size > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function findImagePath(baseDir, folderName, sceneIndex) {
+  // Define all possible image naming patterns - now using 1-based indexing
+  const patterns = [
+    `scene_${sceneIndex + 1}_image.png`,
+    `image_scene_${sceneIndex + 1}.png`, // Changed from sceneIndex to sceneIndex + 1
+    `image_${sceneIndex + 1}.png`
+  ];
+
+  // Check in potential subdirectories
+  const searchDirs = [
+    baseDir,
+    path.join(baseDir, folderName),
+    path.join(baseDir, 'output_test_1'),
+    path.join(baseDir, 'output_test_2')
+  ];
+
+  logger.info(`Looking for scene ${sceneIndex + 1} images with patterns:`, patterns);
+
+  for (const dir of searchDirs) {
+    for (const pattern of patterns) {
+      const testPath = path.join(dir, pattern);
+      logger.debug(`Checking for image at: ${testPath}`);
+      if (await checkImageExists(testPath)) {
+        logger.info(`Found image at: ${testPath}`);
+        return testPath;
+      }
+    }
+  }
+
+  return null;
+}
+
 async function runAnimationGenTest() {
   let animationService;
   try {
     logger.info('Starting animation generation test');
-    logger.info('Animation Generation Config:', JSON.stringify(config.animationGen, null, 2));
-
-    logger.info('Initializing Animation Generation Service...');
+    
+    // Initialize the animation service
     animationService = new AnimationServiceInterface();
     await animationService.initialize();
 
-    const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
-    const imageOutputDir = path.join(__dirname, 'test_output', 'image');
-    const animationOutputDir = path.join(__dirname, 'test_output', 'animation');
+    // Set up paths
+    const testOutputDir = path.join(__dirname, 'test_output');
+    const llmOutputDir = path.join(testOutputDir, 'llm');
+    const imageOutputDir = path.join(testOutputDir, 'image');
+    const animationOutputDir = path.join(testOutputDir, 'animation');
 
+    // Ensure animation output directory exists
     await fs.mkdir(animationOutputDir, { recursive: true });
 
-    const llmOutputFiles = await fs.readdir(llmOutputDir);
+    // Process each LLM output file
+    const llmFiles = await fs.readdir(llmOutputDir);
+    for (const llmFile of llmFiles) {
+      if (!llmFile.startsWith('output_test_') || !llmFile.endsWith('.json')) continue;
 
-    for (const llmOutputFile of llmOutputFiles) {
-      if (llmOutputFile.startsWith('output_test_') && llmOutputFile.endsWith('.json')) {
-        const llmOutputPath = path.join(llmOutputDir, llmOutputFile);
-        const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
+      logger.info(`Processing LLM output file: ${llmFile}`);
+      
+      const llmOutputPath = path.join(llmOutputDir, llmFile);
+      const rawContent = await fs.readFile(llmOutputPath, 'utf8');
+      const llmOutput = JSON.parse(rawContent);
 
-        logger.info(`Processing LLM output: ${llmOutputFile}`);
+      if (!llmOutput.scenes || !Array.isArray(llmOutput.scenes)) {
+        logger.error(`Invalid LLM output structure in ${llmFile}`);
+        continue;
+      }
 
-        const promptOutputDir = path.join(animationOutputDir, path.basename(llmOutputFile, '.json'));
-        await fs.mkdir(promptOutputDir, { recursive: true });
+      const testFolderName = path.basename(llmFile, '.json');
+      const animationTestOutputDir = path.join(animationOutputDir, testFolderName);
+      await fs.mkdir(animationTestOutputDir, { recursive: true });
 
-        for (const [index, scene] of llmOutput.scenes.entries()) {
-          try {
-            logger.info(`Generating animation for scene ${index + 1}`);
+      logger.info(`Found ${llmOutput.scenes.length} scenes to process`);
 
-            const imagePath = path.join(imageOutputDir, path.basename(llmOutputFile, '.json'), `scene_${index + 1}_image.png`);
+      // Process each scene
+      for (const [index, scene] of llmOutput.scenes.entries()) {
+        try {
+          const sceneNumber = index + 1;
+          logger.info(`Processing scene ${sceneNumber}`);
 
-            // Ensure image file exists
-            try {
-              await fs.access(imagePath);
-            } catch (error) {
-              logger.error(`Image file not found: ${imagePath}`);
-              continue;
-            }
-
-            const result = await animationService.process(
-              imagePath,
-              path.basename(llmOutputFile, '.json'), // Pass the test folder name
-              index + 1,
-              {
-                animationLength: config.animationGen.animationLength,
-                animationPrompt: scene.video_prompt
-              },
-              true  // isTest parameter
-            );
-
-            logger.info(`Animation generated successfully: ${result.filePath}`);
-
-            const stats = await fs.stat(result.filePath);
-            logger.info(`File size: ${stats.size} bytes`);
-
-            // Verify the animation file
-            if (stats.size > 0) {
-              logger.info(`Animation file verified: ${result.filePath}`);
-            } else {
-              logger.warn(`Generated animation file is empty: ${result.filePath}`);
-            }
-
-            // Verify metadata
-            const metadataPath = path.join(promptOutputDir, 'metadata.json');
-            try {
-              const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
-              if (metadata[`scene_${index + 1}`]) {
-                logger.info(`Metadata verified for scene ${index + 1}`);
-              } else {
-                logger.warn(`Metadata missing for scene ${index + 1}`);
-              }
-            } catch (error) {
-              logger.error(`Error reading or parsing metadata for scene ${index + 1}:`, error.message);
-            }
-          } catch (error) {
-            logger.error(`Error generating animation for scene ${index + 1}:`, error.message);
-            logger.error('Error details:', error);
+          // Find the image file
+          const imagePath = await findImagePath(imageOutputDir, testFolderName, index);
+          
+          if (!imagePath) {
+            logger.error(`Could not find image for scene ${sceneNumber}`);
+            logger.error(`Looked in directory: ${imageOutputDir}`);
+            continue;
           }
+
+          logger.info(`Generating animation for scene ${sceneNumber} using image: ${imagePath}`);
+
+          const result = await animationService.process(
+            imagePath,
+            testFolderName,
+            sceneNumber, // Using 1-based scene number
+            {
+              animationLength: config.animationGen?.animationLength || 5,
+              animationPrompt: scene.video_prompt
+            },
+            true // isTest
+          );
+
+          if (!result) {
+            throw new Error('Animation generation returned no result');
+          }
+
+          logger.info(`Animation generated successfully: ${result.filePath}`);
+
+          // Verify the generated file
+          const stats = await fs.stat(result.filePath);
+          logger.info(`Generated animation file size: ${stats.size} bytes`);
+
+          if (stats.size === 0) {
+            throw new Error('Generated animation file is empty');
+          }
+
+        } catch (error) {
+          logger.error(`Error processing scene ${index + 1}:`, error);
         }
       }
     }
 
     logger.info('Animation generation test completed successfully');
   } catch (error) {
-    logger.error('Error in animation generation test:', error.message);
-    logger.error('Error details:', error);
+    logger.error('Error in animation generation test:', error);
   } finally {
     if (animationService) {
-      try {
-        await animationService.cleanup();
-      } catch (cleanupError) {
-        logger.error('Error during animation service cleanup:', cleanupError);
-      }
+      await animationService.cleanup();
     }
   }
 }
 
-runAnimationGenTest().catch(error => {
-  logger.error('Unhandled error in animation generation test:', error.message);
-  logger.error('Error details:', error);
-});
+module.exports = runAnimationGenTest;
+
+if (require.main === module) {
+  runAnimationGenTest().catch(error => {
+    logger.error('Unhandled error in animation generation test:', error);
+    process.exit(1);
+  });
+}

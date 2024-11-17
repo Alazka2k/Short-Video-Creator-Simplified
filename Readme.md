@@ -190,8 +190,6 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── llm-service.js
 │   │   │   ├── server.js
 │   │   │   └── index.js
-│   │   │   └── data/
-│   │   │       └── llmDataAccess.js
 │   │   ├── image-service/
 │   │   │   ├── image-gen-service.js
 │   │   │   ├── server.js
@@ -387,7 +385,7 @@ output/
     └── ...
 ```
 
-This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization.
+This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization. In the future, file paths will be stored in the database, pointing to the external file storage system.
 
 ## Testing
 
@@ -410,13 +408,53 @@ npm run test:integration
 npm run test:discord
 npm run test:midjourney
 npm run test:image-download
+npm run test:animation-pattern
+npm run test:db-connection
 ```
 
-Test outputs are stored in the `tests/test_output/` directory. The integration test processes all scenes for each prompt in the input CSV, exercising all components of the pipeline.
+Test outputs are stored in the `tests/test_output/` directory. The tests are organized as follows:
+
+### Service Tests
+- **llm-test.js**: Tests LLM service functionality and database integration
+- **voice-gen-test.js**: Tests voice generation service
+- **image-gen-test.js**: Tests image generation service
+- **music-gen-test.js**: Tests music generation service
+- **animation-gen-test.js**: Tests animation generation service
+- **video-gen-test.js**: Tests video generation service
+
+### Integration Tests
+- **integration-test.js**: Tests the complete workflow across all services
+- **discord-websocket-test.js**: Tests Discord WebSocket connection for Midjourney
+- **midjourney-test.js**: Tests Midjourney integration
+- **image-download-test.js**: Tests image downloading functionality
+- **animation-pattern-generator-test.js**: Tests animation pattern generation
+
+### Database Tests
+- **test_db_connection.js**: Tests database connectivity and configuration
+
+Each test creates its own output in the following structure:
+```
+tests/test_output/
+├── llm/
+├── voice/
+├── image/
+├── music/
+├── video/
+├── animation/
+└── integration/
+```
 
 ## Source Code Export
 
-The project includes a utility for exporting the full source code, which can be useful for version control, sharing, or backup purposes. To use this feature:
+The project includes a utility for exporting the full source code, which can be useful for version control, sharing, or backup purposes. The export functionality captures the complete project structure, including:
+
+- Service implementations
+- Database schemas and migrations
+- Configuration files
+- Test files
+- Documentation
+
+To use this feature:
 
 1. Navigate to the project root directory
 2. Run the following command:
@@ -425,22 +463,23 @@ The project includes a utility for exporting the full source code, which can be 
    ```
 3. The exported source code will be saved as `full_source_code.txt` in the project root directory
 
-This exported file will contain the entire project structure and the content of all source files, making it easy to review or share the complete codebase.
+The exported file includes:
+- Complete file structure
+- Source code for all components
+- Database schema definitions
+- Configuration templates
+- Test implementations
+- Documentation files
 
-## Troubleshooting
+This export feature is particularly useful for:
+- Code review sessions
+- Documentation purposes
+- Sharing the codebase with new team members
+- Creating backups of the current implementation
+- Tracking changes across versions
 
-- Review the `logs/app.log` file for detailed error messages and execution logs
-- Ensure all API keys and authentication details are correctly set in the `config/default.json` file
-- Verify that the input CSV, parameters JSON, and initial prompt TXT files are correctly formatted and located in the `data/input/` directory
-- Check that all required npm packages are installed
-- For Midjourney-specific issues, ensure your Discord bot has the necessary permissions and that the server and channel IDs are correct
-- For Suno-specific issues, ensure your cookie and session ID are up-to-date and valid
-- For Immersity AI-specific issues, verify that the client ID and client secret are correct
-- For Luma AI-specific issues, ensure your API key is valid and has the necessary permissions
-- If the integration test fails, check individual component tests to isolate the issue
-- For frontend-related issues, check the browser console for error messages and ensure that the API Gateway is correctly configured to handle frontend requests
-- If you encounter issues with the microservices architecture, ensure that all services are running and that the API Gateway can communicate with them
-- When running tests, make sure you're using the correct paths for input files (like CSV, JSON, and TXT files) as they may have changed in the new structure
-- If you encounter "Module not found" errors, double-check that all dependencies are correctly listed in the `package.json` file and that you've run `npm install` after making any changes
-- If requests to the API Gateway are not being routed correctly, check the `server.js` file in the `api-gateway` directory and ensure all routes are properly configured
-- Verify network connectivity between the API Gateway and individual services if requests are not
+The export excludes sensitive information such as:
+- API keys and credentials
+- Personal configuration files
+- Environment-specific settings
+- Generated content and test outputs

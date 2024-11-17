@@ -27,12 +27,17 @@ async function checkAuthValidity(musicService) {
   }
 }
 
-async function getLLMOutputFiles() {
-  const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
-  const files = await fs.readdir(llmOutputDir);
-  return files
-    .filter(file => file.startsWith('output_test_') && file.endsWith('.json'))
-    .map(file => path.join(llmOutputDir, file));
+async function validateLLMOutput(llmOutput) {
+  if (!llmOutput || typeof llmOutput !== 'object') {
+    throw new Error('Invalid LLM output: not an object');
+  }
+
+  const music = llmOutput.music;
+  if (!music) {
+    throw new Error('Invalid LLM output: no music data found');
+  }
+
+  return music;
 }
 
 async function runMusicGenTest() {
@@ -42,98 +47,140 @@ async function runMusicGenTest() {
 
     const musicService = new MusicGenService();
 
+    // Validate authentication
     const isAuthValid = await checkAuthValidity(musicService);
     if (!isAuthValid) {
-      logger.error('Authentication is not valid. Aborting test.');
-      return;
+      throw new Error('Authentication is not valid');
     }
 
     const quotaInfo = await musicService.getQuotaInfo();
     logger.info('Quota information:', JSON.stringify(quotaInfo, null, 2));
 
     if (quotaInfo.credits_left < 10) {
-      logger.warn('Not enough credits to generate music. Aborting test.');
-      return;
+      throw new Error('Not enough credits to generate music');
     }
 
-    const testOutputDir = path.join(__dirname, 'test_output', 'music');
-    await fs.mkdir(testOutputDir, { recursive: true });
+    // Set up directories
+    const testOutputDir = path.join(__dirname, 'test_output');
+    const llmOutputDir = path.join(testOutputDir, 'llm');
+    const musicOutputDir = path.join(testOutputDir, 'music');
 
-    const llmOutputFiles = await getLLMOutputFiles();
-    logger.info(`Found ${llmOutputFiles.length} LLM output files`);
+    await fs.mkdir(musicOutputDir, { recursive: true });
+
+    // Get and process LLM output files
+    const llmFiles = await fs.readdir(llmOutputDir);
+    const llmOutputFiles = llmFiles.filter(file => file.startsWith('output_test_') && file.endsWith('.json'));
+    
+    logger.info(`Found ${llmOutputFiles.length} LLM output files to process`);
 
     let successfulGenerations = 0;
-    const totalFiles = llmOutputFiles.length;
 
-    for (const [index, llmOutputFile] of llmOutputFiles.entries()) {
-      logger.info(`Processing LLM output file ${index + 1}: ${llmOutputFile}`);
-
-      const llmOutput = JSON.parse(await fs.readFile(llmOutputFile, 'utf8'));
-      const musicData = llmOutput.music;
-
-      if (!musicData) {
-        logger.warn(`No music data found in LLM output file: ${llmOutputFile}`);
-        continue;
-      }
-
-      logger.info(`Generating music for prompt: "${llmOutput.prompt}"`);
-      logger.info(`Music data:`, JSON.stringify(musicData, null, 2));
-      
+    for (const llmFile of llmOutputFiles) {
       try {
+        const sceneNumber = parseInt(llmFile.match(/output_test_(\d+)\.json/)[1]);
+        logger.info(`Processing LLM output ${sceneNumber}: ${llmFile}`);
+
+        // Read and validate LLM output
+        const llmOutputPath = path.join(llmOutputDir, llmFile);
+        const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
+        const musicData = await validateLLMOutput(llmOutput);
+
+        // Set up output paths
+        const outputFolder = path.join(musicOutputDir, `output_test_${sceneNumber}`);
+        await fs.mkdir(outputFolder, { recursive: true });
+        
+        const musicFileName = `background_music_${sceneNumber}.mp3`;
+        const finalOutputPath = path.join(outputFolder, musicFileName);
+
+        logger.info(`Generating music for test ${sceneNumber}`);
+        logger.info('Music data:', JSON.stringify(musicData, null, 2));
+
+        // Generate music
         const result = await musicService.generateMusic({
           ...musicData,
           instrumental: config.parameters?.musicGen?.make_instrumental === "true"
         }, true);
 
-        logger.info('Music generation completed. Result:', JSON.stringify(result, null, 2));
+        // Move the file to its final location
+        await fs.rename(result.filePath, finalOutputPath);
 
-        const stats = await fs.stat(result.filePath);
+        // Verify the generated file
+        const stats = await fs.stat(finalOutputPath);
         if (stats.size > 0) {
-          logger.info(`Music file generated successfully: ${result.filePath}`);
+          const musicDuration = await getAudioDuration(finalOutputPath);
+          logger.info(`Music file generated successfully: ${finalOutputPath}`);
           logger.info(`File size: ${stats.size} bytes`);
+          logger.info(`Duration: ${musicDuration.toFixed(2)} seconds`);
 
-          const musicDuration = await getAudioDuration(result.filePath);
-          logger.info(`Generated music duration: ${musicDuration.toFixed(2)} seconds`);
-          
+          // Save metadata
+          const metadataPath = path.join(outputFolder, 'metadata.json');
+          await fs.writeFile(metadataPath, JSON.stringify({
+            fileName: musicFileName,
+            fileSize: stats.size,
+            duration: musicDuration,
+            title: musicData.title,
+            tags: musicData.tags,
+            instrumental: config.parameters?.musicGen?.make_instrumental === "true"
+          }, null, 2));
+
           successfulGenerations++;
         } else {
-          logger.warn(`Generated music file is empty: ${result.filePath}`);
+          throw new Error('Generated music file is empty');
         }
+
+        // Add delay between generations
+        if (sceneNumber < llmOutputFiles.length) {
+          logger.info('Waiting 5 seconds before next generation...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+
       } catch (error) {
-        logger.error('Error in music generation:', {
+        logger.error(`Error processing file ${llmFile}:`, {
           message: error.message,
           name: error.name,
           stack: error.stack
         });
       }
-
-      // Add a delay between requests (5 seconds)
-      await new Promise(resolve => setTimeout(resolve, 5000));
     }
 
+    // Log final results
+    const totalFiles = llmOutputFiles.length;
     if (successfulGenerations === totalFiles) {
-      logger.info('Suno music generation test completed successfully');
+      logger.info('Music generation test completed successfully');
     } else {
-      logger.warn(`Suno music generation test completed with issues. Successful generations: ${successfulGenerations}/${totalFiles}`);
+      logger.warn(`Music generation test completed with issues. Success rate: ${successfulGenerations}/${totalFiles}`);
     }
+
   } catch (error) {
-    logger.error('Error in Suno music generation test:', {
+    logger.error('Error in music generation test:', {
       message: error.message,
       name: error.name,
       stack: error.stack
     });
+    throw error;
   }
 }
 
-// Set a timeout to forcibly end the test after 15 minutes
-const testTimeout = setTimeout(() => {
-  logger.error('Test timed out after 15 minutes. Forcibly ending the process.');
-  process.exit(1);
-}, 900000);
+async function runTestWithTimeout() {
+  return Promise.race([
+    runMusicGenTest(),
+    new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Test timed out after 15 minutes'));
+      }, 900000); // 15 minutes
+    })
+  ]);
+}
 
-runMusicGenTest().catch(error => {
-  logger.error('Suno music generation test failed:', error.message);
-}).finally(() => {
-  clearTimeout(testTimeout);
-  process.exit(0);
-});
+module.exports = runMusicGenTest;
+
+if (require.main === module) {
+  runTestWithTimeout()
+    .catch(error => {
+      logger.error('Music generation test failed:', error);
+      process.exit(1);
+    })
+    .finally(() => {
+      process.exit(0);
+    });
+}

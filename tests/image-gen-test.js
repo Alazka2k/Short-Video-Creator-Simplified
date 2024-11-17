@@ -15,6 +15,20 @@ function checkInternetConnectivity() {
   });
 }
 
+async function validateLLMOutput(llmOutput) {
+  if (!llmOutput || typeof llmOutput !== 'object') {
+    throw new Error('Invalid LLM output: not an object');
+  }
+  
+  const scenes = llmOutput.scenes || (llmOutput.content && llmOutput.content.video_script && llmOutput.content.video_script.scenes);
+  
+  if (!scenes || !Array.isArray(scenes)) {
+    throw new Error('Invalid LLM output: no scenes array found');
+  }
+  
+  return scenes;
+}
+
 async function runImageGenTest() {
   let imageService;
   try {
@@ -34,7 +48,7 @@ async function runImageGenTest() {
     const llmOutputDir = path.join(__dirname, 'test_output', 'llm');
     const imageOutputDir = path.join(__dirname, 'test_output', 'image');
 
-    // Ensure voice output directory exists
+    // Ensure image output directory exists
     await fs.mkdir(imageOutputDir, { recursive: true });
 
     // Get all LLM output files
@@ -42,58 +56,69 @@ async function runImageGenTest() {
 
     for (const llmOutputFile of llmOutputFiles) {
       if (llmOutputFile.startsWith('output_test_') && llmOutputFile.endsWith('.json')) {
-        const llmOutputPath = path.join(llmOutputDir, llmOutputFile);
-        const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
+        try {
+          const llmOutputPath = path.join(llmOutputDir, llmOutputFile);
+          const llmOutput = JSON.parse(await fs.readFile(llmOutputPath, 'utf8'));
 
-        logger.info(`Processing LLM output: ${llmOutputFile}`);
+          logger.info(`Processing LLM output: ${llmOutputFile}`);
 
-        const promptOutputDir = path.join(imageOutputDir, path.basename(llmOutputFile, '.json'));
-        await fs.mkdir(promptOutputDir, { recursive: true });
+          // Get test number from filename
+          const testNumber = parseInt(llmOutputFile.match(/output_test_(\d+)\.json/)[1]);
+          const outputFolder = `output_test_${testNumber}`;
+          const promptOutputDir = path.join(imageOutputDir, outputFolder);
+          await fs.mkdir(promptOutputDir, { recursive: true });
 
-        for (const [index, scene] of llmOutput.scenes.entries()) {
-          try {
-            logger.info(`Generating image for scene ${index + 1}`);
-            
-            const result = await imageService.process(
-              scene.visual_prompt,
-              index,
-              true,  // isTest parameter
-            );
+          // Validate and get scenes
+          const scenes = await validateLLMOutput(llmOutput);
+          logger.info(`Found ${scenes.length} scenes to process`);
 
-            // Move the generated file to the correct output directory
-            const finalOutputPath = path.join(promptOutputDir, `image_scene_${index}.png`);
-            await fs.rename(result.filePath, finalOutputPath);
-
-            logger.info(`Image generated successfully: ${finalOutputPath}`);
-            logger.info(`Original URL: ${result.originalUrl}`);
-            logger.info(`Selected variation URL: ${result.imageUrl}`);
-
-            const stats = await fs.stat(result.filePath);
-            logger.info(`File size: ${stats.size} bytes`);
-
-            // Verify the image file
-            if (stats.size > 0) {
-              logger.info(`Image file verified: ${result.filePath}`);
-            } else {
-              logger.warn(`Generated image file is empty: ${result.filePath}`);
-            }
-
-            // Verify metadata
-            const metadataPath = path.join(promptOutputDir, 'metadata.json');
+          for (let index = 0; index < scenes.length; index++) {
             try {
-              const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
-              if (metadata[`scene_${index}`]) {
-                logger.info(`Metadata verified for scene ${index + 1}`);
-              } else {
-                logger.warn(`Metadata missing for scene ${index + 1}`);
-              }
-            } catch (error) {
-              logger.error(`Error reading metadata for scene ${index + 1}:`, error);
-            }
+              const sceneNumber = index + 1;
+              const scene = scenes[index];
+              
+              logger.info(`Generating image for scene ${sceneNumber}`);
+              
+              const result = await imageService.process(
+                scene.visual_prompt,
+                sceneNumber,
+                outputFolder,
+                true  // isTest parameter
+              );
 
-          } catch (error) {
-            logger.error(`Error generating image for scene ${index + 1}:`, error);
+              const stats = await fs.stat(result.filePath);
+              if (stats.size > 0) {
+                logger.info(`Image generated successfully: ${result.filePath}`);
+                logger.info(`Original URL: ${result.originalUrl}`);
+                logger.info(`Selected variation URL: ${result.imageUrl}`);
+                logger.info(`File size: ${stats.size} bytes`);
+
+                // Verify metadata file
+                const metadataPath = path.join(promptOutputDir, 'metadata.json');
+                try {
+                  const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+                  if (metadata[`scene_${sceneNumber}`]) {
+                    logger.info(`Metadata verified for scene ${sceneNumber}`);
+                  } else {
+                    logger.warn(`Metadata missing for scene ${sceneNumber}`);
+                  }
+                } catch (error) {
+                  if (error.code !== 'ENOENT') {
+                    logger.error(`Error reading metadata for scene ${sceneNumber}:`, error);
+                  }
+                }
+              } else {
+                logger.warn(`Generated image file is empty: ${result.filePath}`);
+              }
+
+            } catch (error) {
+              logger.error(`Error generating image for scene ${sceneNumber}:`, error);
+              continue; // Continue with next scene
+            }
           }
+        } catch (error) {
+          logger.error(`Error processing LLM output file ${llmOutputFile}:`, error);
+          continue; // Continue with next file
         }
       }
     }
@@ -111,6 +136,11 @@ async function runImageGenTest() {
   }
 }
 
-runImageGenTest().catch(error => {
-  logger.error('Unhandled error in image generation test:', error);
-});
+module.exports = runImageGenTest;
+
+if (require.main === module) {
+  runImageGenTest().catch(error => {
+    logger.error('Unhandled error in image generation test:', error);
+    process.exit(1);
+  });
+}

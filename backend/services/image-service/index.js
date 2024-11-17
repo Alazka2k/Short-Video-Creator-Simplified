@@ -16,14 +16,14 @@ class ImageServiceInterface {
     logger.info('ImageServiceInterface initialized');
   }
 
-  async generateContent(prompt, sceneIndex, isTest = false) {
+  async generateContent(prompt, sceneNumber, testFolder = '', isTest = false) {
     logger.info(`Generating image content: ${prompt}`);
-    return await this.service.generateImage(prompt, sceneIndex, isTest);
+    return await this.service.generateImage(prompt, sceneNumber, testFolder, isTest);
   }
 
-  async process(prompt, sceneIndex, isTest = false) {
+  async process(prompt, sceneNumber, testFolder = '', isTest = false) {
     logger.info(`Processing image generation request: ${prompt}`);
-    return await this.generateContent(prompt, sceneIndex, isTest);
+    return await this.generateContent(prompt, sceneNumber, testFolder, isTest);
   }
 
   async cleanup() {

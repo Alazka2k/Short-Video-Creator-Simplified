@@ -38,15 +38,13 @@ function createServer(llmServiceInterface) {
   
       logger.info(`LLM Service: Generating content with input: ${inputPrompt}`);
       
-      const result = await llmServiceInterface.process(req.body.llmGenParams, req.body.inputPrompt, false);
+      const result = await llmServiceInterface.process(llmGenParams, inputPrompt, false);
       
       clearTimeout(requestTimeout);
       logger.info('LLM Service: Content generated successfully');
-      res.json({
-        message: 'Content generated successfully',
-        result: result.content,
-        outputPath: result.outputPath,
-      });
+      
+      // Pass through the result directly
+      res.json(result);
     } catch (error) {
       clearTimeout(requestTimeout);
       logger.error('LLM Service: Error generating content:', error);
@@ -54,63 +52,63 @@ function createServer(llmServiceInterface) {
     }
   });
 
-    app.post('/generate-doc', async (req, res) => {
-      logger.info('LLM Service: Handling /generate-doc request');
-      try {
-        const { prompt } = req.body;
-        logger.info(`LLM Service: Generating doc content with prompt: ${prompt}`);
-        
-        const content = await llmServiceInterface.generateDocContent(prompt);
-        
-        logger.info('LLM Service: Doc content generated successfully');
-        res.json(content);
-      } catch (error) {
-        logger.error('LLM Service: Error generating doc content:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+  // Generate documentation endpoint
+  app.post('/generate-doc', async (req, res) => {
+    logger.info('LLM Service: Handling /generate-doc request');
+    try {
+      const { prompt } = req.body;
+      logger.info(`LLM Service: Generating doc content with prompt: ${prompt}`);
+      
+      const content = await llmServiceInterface.generateDocContent(prompt);
+      
+      logger.info('LLM Service: Doc content generated successfully');
+      res.json(content);
+    } catch (error) {
+      logger.error('LLM Service: Error generating doc content:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Process all prompts from CSV endpoint
+  app.post('/process-all', async (req, res) => {
+    logger.info('LLM Service: Handling /process-all request');
+    try {
+      const { csvPath, llmGenParams } = req.body;
+      
+      if (!csvPath) {
+        throw new Error('Missing required parameter: csvPath');
       }
-    });
 
-    // New endpoint for processing all prompts from a CSV file
-    app.post('/process-all', async (req, res) => {
-      logger.info('LLM Service: Handling /process-all request');
-      try {
-        const { csvPath, llmGenParams } = req.body;
-        
-        if (!csvPath) {
-          throw new Error('Missing required parameter: csvPath');
-        }
-
-        if (!llmGenParams) {
-          throw new Error('Missing required parameter: llmGenParams');
-        }
-
-        const initialPromptFile = 'initial_prompt.txt';
-        const results = await llmServiceInterface.processAllPrompts(csvPath, initialPromptFile, llmGenParams);
-        
-        logger.info('LLM Service: All prompts processed successfully');
-        res.json({
-          message: 'All prompts processed successfully',
-          results: results
-        });
-      } catch (error) {
-        logger.error('LLM Service: Error processing all prompts:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+      if (!llmGenParams) {
+        throw new Error('Missing required parameter: llmGenParams');
       }
-    });
 
-    // Catch-all route for unhandled requests
-    app.use('*', (req, res) => {
-      logger.warn(`LLM Service: Received unhandled request: ${req.method} ${req.originalUrl}`);
-      res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
-    });
+      const results = await llmServiceInterface.processAllPrompts(csvPath, llmGenParams);
+      
+      logger.info('LLM Service: All prompts processed successfully');
+      res.json({
+        message: 'All prompts processed successfully',
+        results: results
+      });
+    } catch (error) {
+      logger.error('LLM Service: Error processing all prompts:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
 
-    // Error handling middleware
-    app.use((err, req, res, next) => {
-      logger.error(`LLM Service: Unhandled error: ${err.stack}`);
-      res.status(500).json({ error: 'Internal server error', details: err.message });
-    });
+  // Catch-all route for unhandled requests
+  app.use('*', (req, res) => {
+    logger.warn(`LLM Service: Received unhandled request: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
+  });
 
-    return app;
+  // Error handling middleware
+  app.use((err, req, res, next) => {
+    logger.error(`LLM Service: Unhandled error: ${err.stack}`);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  });
+
+  return app;
 }
 
 module.exports = createServer;

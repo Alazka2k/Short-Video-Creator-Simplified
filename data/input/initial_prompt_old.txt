@@ -92,16 +92,10 @@ description: An intense depiction of the aftermath of nuclear war, as survivors 
 hashtags: #NuclearWinter #SurvivalSaga #ChillofWar #SilentBattlefield #ApocalypseNow
 
 # Example for a Scene Schema:
-description: [here should be the text of the narrator for each scene]
+description: Gasp. The air feels thin. You check your phone. This is how it begins...
 visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, patches of ash falling like snow. Skyscrapers, once proud, now skeletal remains shrouded in dense fog. Low-angle view, evening bluish glow, shadows long and stark; {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
 video_prompt: A visual of a ruined cityscape, ash drifting softly, as the camera pans slowly across the destroyed infrastructure, capturing the haunted remnants of civilization. The gray sky thickens ominously, setting a chilling tone.
 camera_movement: Pull Out
-
-Script Description Outline:
-Scene 1: “A cosmic explosion. Neon lights ignite in the void of space. What could have caused this?”
-Scene 2: “They say the Neon Haven was born from pure energy, a mystical fusion of light and digital dreams. But who or what created it?”
-Scene 3: “Some believe it’s a sanctuary for intergalactic explorers. Others think it’s a refuge for ancient digital souls. What’s the truth? Dive into the Neon Haven’s origin story.”
-
 
 Attention: Please ouztput the content visual prompt for each scene in the same structure as in the given example after the semicolon. The structure has to be consistent for follow up services.
 
