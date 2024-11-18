@@ -187,10 +187,14 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── billing-controller.js
 │   │   │   └── billing-model.js
 │   │   ├── llm-service/
+│   │   │   ├── data/
+│   │   │   │   └── llmDataAccess.js
 │   │   │   ├── llm-service.js
 │   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── image-service/
+│   │   │   ├── data/
+│   │   │   │   └── imageDataAccess.js
 │   │   │   ├── image-gen-service.js
 │   │   │   ├── server.js
 │   │   │   └── index.js

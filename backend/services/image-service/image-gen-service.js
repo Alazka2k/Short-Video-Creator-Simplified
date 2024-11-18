@@ -1,9 +1,10 @@
 const { Midjourney } = require('midjourney');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const fs = require('fs').promises;  // Changed from fsPromises
+const fs = require('fs').promises;
 const path = require('path');
 const puppeteer = require('puppeteer');
+const ImageDataAccess = require('./data/imageDataAccess');
 
 class ImageGenService {
   constructor() {
@@ -15,6 +16,7 @@ class ImageGenService {
       Debug: false,
       Ws: config.imageGen.ws
     });
+    this.imageDataAccess = ImageDataAccess;
     this.initialized = false;
   }
 
@@ -30,7 +32,7 @@ class ImageGenService {
     }
   }
 
-  async generateImage(prompt, sceneIndex, testFolder = '', isTest = false) {
+  async generateImage(prompt, sceneIndex = null, jobId = null) {
     if (!this.initialized) {
       throw new Error('ImageGenService not initialized. Call init() first.');
     }
@@ -40,30 +42,52 @@ class ImageGenService {
       const result = await this.client.Imagine(prompt, (uri, progress) => {
         logger.info(`Image generation progress: ${progress}%`);
       });
-      
+
       if (!result) {
         throw new Error('No image generated');
       }
 
       logger.info('Image generated successfully');
       const originalImageUrl = result.uri;
-      
+
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
-      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, testFolder, isTest);
-      logger.info(`Will save image to: ${imageFilePath}`);
+      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, jobId);
 
+      // Ensure the directory exists
       await fs.mkdir(path.dirname(imageFilePath), { recursive: true });
-      await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-      
-      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath));
 
-      return {
+      try {
+        await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
+      } catch (error) {
+        logger.error('Error downloading image:', error);
+        throw error;
+      }
+
+      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath), {
+        prompt,
+        size: '512x512',
+        // Add any other relevant metadata
+      });
+
+      // Store the image output in the database
+      const imageData = {
+        tempFilePath: imageFilePath,
         originalUrl: originalImageUrl,
         imageUrl: selectedVariationUrl,
-        filePath: imageFilePath,
-        fileName: path.basename(imageFilePath)
+        metadata: {
+          prompt,
+          size: '512x512',
+          // Add any other relevant metadata
+        }
+      };
+
+      const imageRecord = await this.imageDataAccess.createImageOutput(jobId, sceneIndex, imageData);
+
+      return {
+        imageUrl: imageRecord.image_url,
+        metadata: JSON.parse(imageRecord.metadata)
       };
     } catch (error) {
       logger.error('Error generating image:', error);
@@ -71,23 +95,12 @@ class ImageGenService {
     }
   }
 
-  getOutputPaths(sceneIndex, testFolder, isTest) {
-    let imageFilePath, metadataPath;
-
-    if (isTest) {
-      // For test environment
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image', testFolder);
-      imageFilePath = path.join(testOutputDir, `image_scene_${sceneIndex}.png`);
-      metadataPath = path.join(testOutputDir, 'metadata.json');
-    } else {
-      // For production environment
-      const currentDate = new Date();
-      const dateString = currentDate.toISOString().split('T')[0];
-      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const promptDir = path.join(config.output.directory, 'image', `${dateString}_${timeString}`, `prompt_1`);
-      imageFilePath = path.join(promptDir, `image_scene_${sceneIndex}.png`);
-      metadataPath = path.join(promptDir, 'metadata.json');
-    }
+  getOutputPaths(sceneIndex, jobId) {
+    const currentDate = new Date();
+    const dateString = currentDate.toISOString().split('T')[0];
+    const folderPath = path.join(config.output.directory, 'image', dateString, jobId, `scene_${sceneIndex}`);
+    const imageFilePath = path.join(folderPath, `image_scene_${sceneIndex}.png`);
+    const metadataPath = path.join(folderPath, 'metadata.json');
 
     return { imageFilePath, metadataPath };
   }
@@ -107,7 +120,7 @@ class ImageGenService {
   async downloadImageWithPuppeteer(url, outputPath) {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
-    
+
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
       await page.waitForSelector('img');
@@ -123,31 +136,31 @@ class ImageGenService {
     }
   }
 
-  async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName) {
-    let metadata = {};
+  async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName, metadata) {
     try {
-      try {
-        const data = await fs.readFile(metadataPath, 'utf8');
-        metadata = JSON.parse(data);
-      } catch (error) {
-        if (error.code !== 'ENOENT') {
-          logger.error('Error reading metadata:', error);
-        }
-      }
-
-      metadata[`scene_${sceneIndex}`] = { 
-        originalUrl, 
-        imageUrl,
-        fileName
-      };
-
       await fs.mkdir(path.dirname(metadataPath), { recursive: true });
-      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+      await fs.writeFile(metadataPath, JSON.stringify({ [`scene_${sceneIndex}`]: { originalUrl, imageUrl, fileName, ...metadata } }, null, 2));
       logger.info(`Metadata saved to ${metadataPath}`);
     } catch (error) {
       logger.error('Error saving metadata:', error);
       throw error;
     }
+  }
+
+  async getImageOutputsForJob(jobId) {
+    return await this.imageDataAccess.getImagesByJobId(jobId);
+  }
+
+  async getImageOutputForScene(sceneId) {
+    return await this.imageDataAccess.getImageBySceneId(sceneId);
+  }
+
+  async updateImageMetadata(imageId, metadata) {
+    return await this.imageDataAccess.updateImageMetadata(imageId, metadata);
+  }
+
+  async deleteImage(imageId) {
+    return await this.imageDataAccess.deleteImage(imageId);
   }
 
   async close() {

@@ -1,8 +1,8 @@
-const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV || 'development']);
-const logger = require('../../shared/utils/logger');
+const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
+const logger = require('../../../shared/utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
-const config = require('../../shared/utils/config');
+const config = require('../../../shared/utils/config');
 
 class ImageDataAccess {
   constructor() {
@@ -13,18 +13,22 @@ class ImageDataAccess {
     try {
       // Save physical file
       const dateFolder = new Date().toISOString().split('T')[0];
-      const relativePath = path.join(dateFolder, `job_${jobId}`, `scene_${sceneId}`);
+      const relativePath = path.join(dateFolder, jobId, `scene_${sceneId}`);
       const fullPath = path.join(this.storageBasePath, relativePath);
-      
+
       // Ensure directory exists
       await fs.mkdir(fullPath, { recursive: true });
-      
+
       // Save the image file
       const fileName = `image_scene_${sceneId}.png`;
       const filePath = path.join(fullPath, fileName);
       await fs.copyFile(imageData.tempFilePath, filePath);
 
       // Create database record
+      if (typeof jobId !== 'string' || !isValidUUID(jobId)) {
+        throw new Error(`Invalid jobId: ${jobId}`);
+      }
+
       const [imageRecord] = await knex('image_outputs').insert({
         job_id: jobId,
         scene_id: sceneId,
@@ -109,6 +113,12 @@ class ImageDataAccess {
       throw error;
     }
   }
+}
+
+function isValidUUID(uuid) {
+  // Regex to check if the string is a valid UUID
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
 }
 
 module.exports = new ImageDataAccess();
