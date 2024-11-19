@@ -138,7 +138,7 @@ class AnimationPatternManager {
   calculateCreationProbability() {
     const totalPatterns = this.patterns.size;
     // Higher probability of new patterns when we have fewer patterns
-    const probability = Math.max(0.2, Math.min(0.8, 1 - (totalPatterns / 100)));
+    const probability = Math.max(0.2, Math.min(0.1, 1 - (totalPatterns / 100)));
     logger.info(`Pattern creation probability: ${probability.toFixed(2)} (Total patterns: ${totalPatterns})`);
     return probability;
   }

@@ -1,88 +1,228 @@
-// backend/services/animation-service/data/animationDataAccess.js
-
-const { pool } = require('../../../shared/config/database');
+const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../../shared/utils/logger');
+const path = require('path');
+const fs = require('fs').promises;
+const config = require('../../../shared/utils/config');
 
 class AnimationDataAccess {
+  constructor() {
+    this.storageBasePath = path.join(config.output.directory, 'animation');
+  }
+
   async createAnimationOutput(jobId, sceneId, animationData) {
     try {
-      logger.info(`Creating animation output record for job ${jobId}, scene ${sceneId}`);
-      
-      const query = `
-        INSERT INTO animation_outputs 
-        (job_id, scene_id, original_pattern, animation_file_url, metadata)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-      `;
+      // Validate jobId
+      if (!jobId || typeof jobId !== 'string' || !this.isValidUUID(jobId)) {
+        throw new Error(`Invalid jobId: ${jobId}`);
+      }
 
-      const values = [
-        jobId,
-        sceneId,
-        animationData.originalPattern,
-        animationData.tempFilePath,
-        JSON.stringify({
-          fileName: animationData.fileName,
-          duration: animationData.duration,
-          generatedAt: new Date().toISOString()
-        })
-      ];
+      // Create relative and full paths
+      const dateFolder = new Date().toISOString().split('T')[0];
+      const relativePath = path.join(dateFolder, jobId, `scene_${sceneId}`);
+      const fullPath = path.join(this.storageBasePath, relativePath);
 
-      const result = await pool.query(query, values);
-      logger.info(`Animation output record created successfully: ${result.rows[0].animation_id}`);
-      return result.rows[0];
+      // Ensure directory exists
+      await fs.mkdir(fullPath, { recursive: true });
+
+      // Define file name and path
+      const fileName = `animation_scene_${sceneId}.mp4`;
+      const filePath = path.join(fullPath, fileName);
+
+      try {
+        // Copy the temporary file to its final location
+        await fs.copyFile(animationData.tempFilePath, filePath);
+        logger.info(`Copied animation file to: ${filePath}`);
+      } catch (copyError) {
+        logger.error('Error copying animation file:', copyError);
+        throw new Error(`Failed to copy animation file: ${copyError.message}`);
+      }
+
+      // Prepare metadata with simplified format
+      const fullMetadata = {
+        ...animationData.metadata,
+        relativePath,
+        fullPath: filePath,
+        fileName,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        // Create database record
+        const [animationRecord] = await knex('animation_outputs')
+          .insert({
+            job_id: jobId,
+            scene_id: sceneId,
+            original_pattern: animationData.originalPattern, // Now just storing pattern ID
+            animation_file_url: filePath,
+            metadata: JSON.stringify(fullMetadata),
+            created_at: knex.fn.now()
+          })
+          .returning('*');
+
+        logger.info(`Created animation output record: ${animationRecord.animation_id}`);
+
+        // Parse metadata before returning
+        const result = {
+          ...animationRecord,
+          metadata: typeof animationRecord.metadata === 'string' 
+            ? JSON.parse(animationRecord.metadata)
+            : animationRecord.metadata
+        };
+
+        return result;
+      } catch (dbError) {
+        logger.error('Database error creating animation record:', dbError);
+        // Clean up the copied file if database insertion fails
+        try {
+          await fs.unlink(filePath);
+          logger.info(`Cleaned up file after database error: ${filePath}`);
+        } catch (unlinkError) {
+          logger.warn(`Failed to clean up file after database error: ${filePath}`, unlinkError);
+        }
+        throw dbError;
+      }
+
     } catch (error) {
-      logger.error('Error creating animation output record:', error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      };
+      logger.error('Error creating animation output:', errorInfo);
       throw error;
     }
   }
 
   async getAnimationsByJobId(jobId) {
     try {
-      const query = 'SELECT * FROM animation_outputs WHERE job_id = $1 ORDER BY scene_id';
-      const result = await pool.query(query, [jobId]);
-      return result.rows;
+      if (!this.isValidUUID(jobId)) {
+        throw new Error(`Invalid jobId: ${jobId}`);
+      }
+
+      const animations = await knex('animation_outputs')
+        .where('job_id', jobId)
+        .orderBy('created_at');
+
+      return animations.map(animation => ({
+        ...animation,
+        metadata: typeof animation.metadata === 'string' 
+          ? JSON.parse(animation.metadata)
+          : animation.metadata
+      }));
     } catch (error) {
-      logger.error(`Error getting animations for job ${jobId}:`, error);
+      logger.error('Error getting animations by job ID:', error);
       throw error;
     }
   }
 
   async getAnimationBySceneId(sceneId) {
     try {
-      const query = 'SELECT * FROM animation_outputs WHERE scene_id = $1';
-      const result = await pool.query(query, [sceneId]);
-      return result.rows[0];
+      const animation = await knex('animation_outputs')
+        .where('scene_id', sceneId)
+        .first();
+
+      if (!animation) {
+        return null;
+      }
+
+      return {
+        ...animation,
+        metadata: typeof animation.metadata === 'string' 
+          ? JSON.parse(animation.metadata)
+          : animation.metadata
+      };
     } catch (error) {
-      logger.error(`Error getting animation for scene ${sceneId}:`, error);
+      logger.error('Error getting animation by scene ID:', error);
       throw error;
     }
   }
 
   async updateAnimationMetadata(animationId, metadata) {
     try {
-      const query = `
-        UPDATE animation_outputs 
-        SET metadata = $1
-        WHERE animation_id = $2
-        RETURNING *
-      `;
-      const result = await pool.query(query, [JSON.stringify(metadata), animationId]);
-      return result.rows[0];
+      // Get existing record
+      const existingAnimation = await knex('animation_outputs')
+        .where('animation_id', animationId)
+        .first();
+
+      if (!existingAnimation) {
+        throw new Error(`Animation not found with ID: ${animationId}`);
+      }
+
+      // Parse existing metadata if it's a string
+      const existingMetadata = typeof existingAnimation.metadata === 'string'
+        ? JSON.parse(existingAnimation.metadata)
+        : existingAnimation.metadata;
+
+      // Merge existing metadata with new metadata
+      const updatedMetadata = {
+        ...existingMetadata,
+        ...metadata,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update record
+      const [updated] = await knex('animation_outputs')
+        .where('animation_id', animationId)
+        .update({
+          metadata: JSON.stringify(updatedMetadata)
+        })
+        .returning('*');
+
+      return {
+        ...updated,
+        metadata: typeof updated.metadata === 'string'
+          ? JSON.parse(updated.metadata)
+          : updated.metadata
+      };
     } catch (error) {
-      logger.error(`Error updating animation metadata for ID ${animationId}:`, error);
+      logger.error('Error updating animation metadata:', error);
       throw error;
     }
   }
 
   async deleteAnimation(animationId) {
     try {
-      const query = 'DELETE FROM animation_outputs WHERE animation_id = $1';
-      await pool.query(query, [animationId]);
+      // Get animation record
+      const animation = await knex('animation_outputs')
+        .where('animation_id', animationId)
+        .first();
+
+      if (!animation) {
+        throw new Error(`Animation not found with ID: ${animationId}`);
+      }
+
+      // Delete physical file if metadata contains path
+      if (animation.metadata) {
+        const metadata = typeof animation.metadata === 'string'
+          ? JSON.parse(animation.metadata)
+          : animation.metadata;
+
+        if (metadata.fullPath) {
+          try {
+            await fs.unlink(metadata.fullPath);
+            logger.info(`Deleted physical file: ${metadata.fullPath}`);
+          } catch (fileError) {
+            logger.warn(`Could not delete physical file: ${metadata.fullPath}`, fileError);
+          }
+        }
+      }
+
+      // Delete database record
+      await knex('animation_outputs')
+        .where('animation_id', animationId)
+        .del();
+
+      logger.info(`Deleted animation record with ID: ${animationId}`);
       return true;
     } catch (error) {
-      logger.error(`Error deleting animation ${animationId}:`, error);
+      logger.error('Error deleting animation:', error);
       throw error;
     }
+  }
+
+  isValidUUID(uuid) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   }
 }
 

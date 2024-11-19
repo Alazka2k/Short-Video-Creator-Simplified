@@ -28,8 +28,8 @@ class AnimationServiceInterface {
       logger.info(`Image path: ${imagePath}`);
       logger.info('Animation options:', JSON.stringify(options));
 
-      if (!options.animationPrompt) {
-        throw new Error('Animation prompt is required for animation generation');
+      if (!options.videoPrompt) {
+        throw new Error('Video prompt is required for animation generation');
       }
 
       if (!isTest && !jobId) {

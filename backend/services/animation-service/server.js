@@ -28,18 +28,18 @@ function createServer(animationServiceInterface) {
         }, 300000); // 5 minutes timeout
       
         try {
-          const { imagePath, prompt, sceneIndex, jobId, options } = req.body;
+          const { imagePath, description, sceneIndex, jobId, options } = req.body;
           logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
           
-          if (!imagePath || !prompt || sceneIndex === undefined || !jobId) {
-            throw new Error('Missing required parameters: imagePath, prompt, sceneIndex, or jobId');
+          if (!imagePath || !description || sceneIndex === undefined || !jobId) {
+            throw new Error('Missing required parameters: imagePath, description, sceneIndex, or jobId');
           }
       
-          logger.info(`Animation Service: Generating animation for prompt "${prompt}", scene ${sceneIndex}, jobId ${jobId}`);
+          logger.info(`Animation Service: Generating animation for description "${description}", scene ${sceneIndex}, jobId ${jobId}`);
           
           const result = await animationServiceInterface.process(
             imagePath, 
-            prompt, 
+            description, 
             sceneIndex, 
             jobId,
             options, 

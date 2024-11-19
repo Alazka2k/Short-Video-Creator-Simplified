@@ -28,7 +28,16 @@ class AnimationGenService {
       await this.patternGenerator.patternManager.initialize();
       logger.info('Immersity AI service initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Animation Generation Service:', error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : undefined
+      };
+      logger.error('Failed to initialize Animation Generation Service:', errorInfo);
       throw error;
     }
   }
@@ -49,7 +58,16 @@ class AnimationGenService {
       this.accessToken = response.data.access_token;
       logger.info('Immersity AI Login AccessToken acquired successfully');
     } catch (error) {
-      logger.error('Error acquiring access token:', error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : undefined
+      };
+      logger.error('Error acquiring access token:', errorInfo);
       throw error;
     }
   }
@@ -62,7 +80,7 @@ class AnimationGenService {
         .toFile(outputPath);
       logger.info(`Image converted to JPEG successfully: ${outputPath}`);
     } catch (error) {
-      logger.error('Error converting image to JPEG:', error);
+      logger.error('Error converting image to JPEG:', error.message);
       throw error;
     }
   }
@@ -88,7 +106,16 @@ class AnimationGenService {
         throw new Error('Image upload failed');
       }
     } catch (error) {
-      logger.error('Error uploading image to Picsur:', error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : undefined
+      };
+      logger.error('Error uploading image to Picsur:', errorInfo);
       throw error;
     }
   }
@@ -126,13 +153,26 @@ class AnimationGenService {
         }
       });
 
+      const responseData = {
+        correlationId: response.data.correlationId,
+        resultPresignedUrl: response.data.resultPresignedUrl
+      };
       logger.info(`Disparity map generation response received`);
       logger.info(`Response status: ${response.status}`);
-      logger.info(`Response data: ${JSON.stringify(response.data, null, 2)}`);
+      logger.info(`Response data: ${JSON.stringify(responseData, null, 2)}`);
 
       return { disparityUrl: response.data.resultPresignedUrl, inputImageUrl };
     } catch (error) {
-      logger.error(`Error generating disparity map:`, error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : undefined
+      };
+      logger.error(`Error generating disparity map: ${JSON.stringify(errorInfo, null, 2)}`);
       throw error;
     }
   }
@@ -140,15 +180,17 @@ class AnimationGenService {
   getOutputPaths(promptOrTestFolder, sceneIndex, isTest) {
     if (isTest) {
       const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'animation', promptOrTestFolder);
-      const animationFilePath = path.join(testOutputDir, `animation_scene_${sceneIndex}.mp4`);
-      const metadataPath = path.join(testOutputDir, 'metadata.json');
+      const scenePath = path.join(testOutputDir, `scene_${sceneIndex}`);
+      const animationFilePath = path.join(scenePath, `animation_scene_${sceneIndex}.mp4`);
+      const metadataPath = path.join(scenePath, 'metadata.json');
       return { animationFilePath, metadataPath };
     } else {
       const currentDate = new Date();
       const dateString = currentDate.toISOString().split('T')[0];
-      const outputDir = path.join(config.output.directory, 'animation', dateString, promptOrTestFolder);
-      const animationFilePath = path.join(outputDir, `animation_scene_${sceneIndex}.mp4`);
-      const metadataPath = path.join(outputDir, 'metadata.json');
+      const jobPath = path.join(config.output.directory, 'animation', dateString, promptOrTestFolder);
+      const scenePath = path.join(jobPath, `scene_${sceneIndex}`);
+      const animationFilePath = path.join(scenePath, `animation_scene_${sceneIndex}.mp4`);
+      const metadataPath = path.join(scenePath, 'metadata.json');
       return { animationFilePath, metadataPath };
     }
   }
@@ -174,7 +216,7 @@ class AnimationGenService {
     await this.convertToJpeg(imagePath, jpegPath);
     
     const animationLength = options.animationLength || this.animationLength;
-    const videoPrompt = options.animationPrompt || '';
+    const videoPrompt = options.videoPrompt || '';
 
     let animationFilePath, metadataPath;
     if (isTest) {
@@ -188,8 +230,7 @@ class AnimationGenService {
     try {
       // Generate or select pattern
       const patternResult = await this.patternGenerator.generatePattern(videoPrompt);
-      const originalPattern = patternResult.pattern;
-      logger.info(`Using animation pattern: ${originalPattern}`);
+      logger.info(`Using pattern: ${patternResult.id}`);
 
       const { disparityUrl, inputImageUrl } = await this.generateDisparityMap(jpegPath);
       
@@ -197,7 +238,7 @@ class AnimationGenService {
         inputImageUrl,
         inputDisparityUrl: disparityUrl,
         animationLength,
-        pattern: originalPattern
+        pattern: patternResult.pattern
       };
       logger.info(`Request body for animation generation: ${JSON.stringify(requestBody, null, 2)}`);
 
@@ -210,9 +251,13 @@ class AnimationGenService {
         timeout: 3 * 60 * 1000 // 3 minutes timeout
       });
 
+      const responseData = {
+        correlationId: response.data.correlationId,
+        resultPresignedUrl: response.data.resultPresignedUrl
+      };
       logger.info(`Animation generation response received`);
       logger.info(`Response status: ${response.status}`);
-      logger.info(`Response data: ${JSON.stringify(response.data, null, 2)}`);
+      logger.info(`Response data: ${JSON.stringify(responseData, null, 2)}`);
 
       const downloadUrl = response.data.resultPresignedUrl;
       if (!downloadUrl) {
@@ -223,19 +268,32 @@ class AnimationGenService {
       await this.downloadAnimation(downloadUrl, animationFilePath);
       logger.info(`Animation generated and saved to ${animationFilePath}`);
 
-      // Save metadata without categories
-      await this.saveAnimationMetadata(metadataPath, sceneIndex, {
-        originalPattern,
-        fileName: path.basename(animationFilePath)
+      // Save metadata
+      await this.saveAnimationMetadata(metadataPath, {
+        patternId: patternResult.id,
+        fileName: path.basename(animationFilePath),
+        generatedAt: new Date().toISOString()
       });
 
       if (!isTest) {
         const animationData = {
-          originalPattern,
+          originalPattern: patternResult.id,
           tempFilePath: animationFilePath,
           fileName: path.basename(animationFilePath),
-          duration: animationLength
+          metadata: {
+            prompt: videoPrompt,
+            duration: animationLength,
+            generatedAt: new Date().toISOString(),
+            patternId: patternResult.id,
+            animationParameters: {
+              inputImageUrl,
+              animationLength
+            }
+          }
         };
+
+        logger.info('Creating animation output record with data:', 
+          JSON.stringify(animationData, null, 2));
 
         const animationRecord = await this.dataAccess.createAnimationOutput(
           jobId,
@@ -246,9 +304,7 @@ class AnimationGenService {
         return {
           filePath: animationFilePath,
           fileName: path.basename(animationFilePath),
-          metadata: typeof animationRecord.metadata === 'string'
-            ? JSON.parse(animationRecord.metadata)
-            : animationRecord.metadata
+          metadata: animationRecord.metadata
         };
       }
 
@@ -258,7 +314,16 @@ class AnimationGenService {
       };
 
     } catch (error) {
-      logger.error(`Error generating animation:`, error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : undefined
+      };
+      logger.error(`Error generating animation: ${JSON.stringify(errorInfo, null, 2)}`);
       throw error;
     } finally {
       try {
@@ -288,7 +353,15 @@ class AnimationGenService {
       logger.info(`Animation downloaded successfully to: ${outputPath}`);
       return outputPath;
     } catch (error) {
-      logger.error('Error downloading animation:', error);
+      const errorInfo = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          data: 'Binary data not shown'
+        } : undefined
+      };
+      logger.error('Error downloading animation:', errorInfo);
       if (error.code === 'ENOENT') {
         logger.error(`Failed to create directory: ${path.dirname(outputPath)}`);
       }
@@ -296,23 +369,15 @@ class AnimationGenService {
     }
   }
 
-  async saveAnimationMetadata(metadataPath, sceneIndex, data) {
-    let metadata = {};
-
+  async saveAnimationMetadata(metadataPath, data) {
     try {
-      const existingData = await fs.readFile(metadataPath, 'utf8');
-      metadata = JSON.parse(existingData);
+      await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+      await fs.writeFile(metadataPath, JSON.stringify(data, null, 2));
+      logger.info(`Metadata saved to ${metadataPath}`);
     } catch (error) {
-      if (error.code !== 'ENOENT') {
-        logger.error('Error reading metadata:', error);
-      }
+      logger.error('Error saving metadata:', error);
+      throw error;
     }
-
-    metadata[`scene_${sceneIndex}`] = data;
-
-    await fs.mkdir(path.dirname(metadataPath), { recursive: true });
-    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-    logger.info(`Metadata saved to ${metadataPath}`);
   }
 
   async getAnimationsForJob(jobId) {
