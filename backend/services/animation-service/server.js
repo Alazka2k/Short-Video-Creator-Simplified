@@ -28,16 +28,23 @@ function createServer(animationServiceInterface) {
         }, 300000); // 5 minutes timeout
       
         try {
-          const { imagePath, prompt, sceneIndex, options } = req.body;
+          const { imagePath, prompt, sceneIndex, jobId, options } = req.body;
           logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
           
-          if (!imagePath || !prompt || sceneIndex === undefined) {
-            throw new Error('Missing required parameters');
+          if (!imagePath || !prompt || sceneIndex === undefined || !jobId) {
+            throw new Error('Missing required parameters: imagePath, prompt, sceneIndex, or jobId');
           }
       
-          logger.info(`Animation Service: Generating animation for prompt "${prompt}", scene ${sceneIndex}`);
+          logger.info(`Animation Service: Generating animation for prompt "${prompt}", scene ${sceneIndex}, jobId ${jobId}`);
           
-          const result = await animationServiceInterface.process(imagePath, prompt, sceneIndex, options, false); // false for production
+          const result = await animationServiceInterface.process(
+            imagePath, 
+            prompt, 
+            sceneIndex, 
+            jobId,
+            options, 
+            false // false for production
+          );
           
           clearTimeout(requestTimeout);
           logger.info('Animation Service: Animation generated successfully');
@@ -50,6 +57,32 @@ function createServer(animationServiceInterface) {
           logger.error('Animation Service: Error generating animation:', error);
           res.status(500).json({ error: 'Internal server error', details: error.message });
         }
+    });
+
+    // Database query endpoints
+    app.get('/animations/job/:jobId', async (req, res) => {
+      try {
+        const { jobId } = req.params;
+        const animations = await animationServiceInterface.getAnimationsForJob(jobId);
+        res.json(animations);
+      } catch (error) {
+        logger.error('Error fetching animations for job:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    app.get('/animations/scene/:sceneId', async (req, res) => {
+      try {
+        const { sceneId } = req.params;
+        const animation = await animationServiceInterface.getAnimationForScene(sceneId);
+        if (!animation) {
+          return res.status(404).json({ error: 'Animation not found' });
+        }
+        res.json(animation);
+      } catch (error) {
+        logger.error('Error fetching animation for scene:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
     });
 
     // Catch-all route for unhandled requests

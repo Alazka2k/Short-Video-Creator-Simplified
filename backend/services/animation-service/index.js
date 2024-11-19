@@ -21,10 +21,10 @@ class AnimationServiceInterface {
     }
   }
 
-  async process(imagePath, promptOrTestFolder, sceneIndex, options = {}, isTest = false) {
+  async process(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {
     try {
       logger.info(`Processing animation request for ${isTest ? 'test' : 'production'}`);
-      logger.info(`Prompt or TestFolder: "${promptOrTestFolder}", scene: ${sceneIndex}`);
+      logger.info(`Prompt or TestFolder: "${promptOrTestFolder}", scene: ${sceneIndex}, jobId: ${jobId}`);
       logger.info(`Image path: ${imagePath}`);
       logger.info('Animation options:', JSON.stringify(options));
 
@@ -32,8 +32,20 @@ class AnimationServiceInterface {
         throw new Error('Animation prompt is required for animation generation');
       }
 
+      if (!isTest && !jobId) {
+        throw new Error('jobId is required for production mode');
+      }
+
       logger.info('Starting animation generation');
-      const result = await this.service.generateAnimation(imagePath, promptOrTestFolder, sceneIndex, options, isTest);
+      const result = await this.service.generateAnimation(
+        imagePath,
+        promptOrTestFolder,
+        sceneIndex,
+        jobId,
+        options,
+        isTest
+      );
+
       logger.info('Animation generation completed successfully');
       logger.info(`Animation saved to: ${result.filePath}`);
       return result;
@@ -41,6 +53,23 @@ class AnimationServiceInterface {
       logger.error('Error processing animation:', error);
       throw error;
     }
+  }
+
+  // Database access methods
+  async getAnimationsForJob(jobId) {
+    return await this.service.getAnimationsForJob(jobId);
+  }
+
+  async getAnimationForScene(sceneId) {
+    return await this.service.getAnimationForScene(sceneId);
+  }
+
+  async updateAnimationMetadata(animationId, metadata) {
+    return await this.service.updateAnimationMetadata(animationId, metadata);
+  }
+
+  async deleteAnimation(animationId) {
+    return await this.service.deleteAnimation(animationId);
   }
 
   async cleanup() {
@@ -74,7 +103,6 @@ async function startServer() {
   }
 }
 
-// Start the server if this file is run directly
 if (require.main === module) {
   startServer();
 }

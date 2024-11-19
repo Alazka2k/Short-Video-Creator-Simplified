@@ -16,14 +16,43 @@ class VoiceServiceInterface {
     logger.info('VoiceServiceInterface initialized');
   }
 
-  async process(text, sceneIndex, voiceId, isTest = false) {
-    logger.info('Processing voice generation request', { textLength: text.length, sceneIndex, voiceId, isTest });
-    return await this.service.generateVoice(text, sceneIndex, voiceId, isTest);
+  async process(text, sceneIndex, jobId, voiceId = null, isTest = false) {
+    logger.info('Processing voice generation request', {
+      textLength: text.length,
+      sceneIndex,
+      jobId,
+      voiceId,
+      isTest
+    });
+    
+    return await this.service.generateVoice(
+      text,
+      sceneIndex,
+      jobId,
+      voiceId,
+      isTest
+    );
   }
 
   async listVoices() {
     logger.info('Listing available voices');
     return await this.service.listVoices();
+  }
+
+  async getVoiceOutputsForJob(jobId) {
+    return await this.service.getVoiceOutputsForJob(jobId);
+  }
+
+  async getVoiceOutputForScene(sceneId) {
+    return await this.service.getVoiceOutputForScene(sceneId);
+  }
+
+  async updateVoiceMetadata(voiceId, metadata) {
+    return await this.service.updateVoiceMetadata(voiceId, metadata);
+  }
+
+  async deleteVoice(voiceId) {
+    return await this.service.deleteVoice(voiceId);
   }
 
   async cleanup() {

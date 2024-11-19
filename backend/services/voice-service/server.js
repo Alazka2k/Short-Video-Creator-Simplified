@@ -6,14 +6,14 @@ function createServer(voiceServiceInterface) {
     const app = express();
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-  
+    
     app.use((req, res, next) => {
         logger.info(`Voice Service: Received ${req.method} request for ${req.url}`);
         logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
         logger.info(`Request body: ${JSON.stringify(req.body)}`);
         next();
     });
-  
+    
     // Health check endpoint
     app.get('/health', (req, res) => {
       res.json({ status: 'Voice Service is healthy' });
@@ -28,16 +28,25 @@ function createServer(voiceServiceInterface) {
       }, 300000); // 5 minutes timeout
 
       try {
-        const { text, sceneIndex, voiceId } = req.body;
+        const { text, sceneIndex, jobId, voiceId } = req.body;
         logger.info(`Voice Service: Request body: ${JSON.stringify(req.body)}`);
         
         if (!text) {
           throw new Error('text is missing or undefined');
         }
-  
+
+        if (!jobId) {
+          throw new Error('jobId is missing or undefined');
+        }
+
         logger.info(`Voice Service: Generating voice with input text length: ${text.length}`);
         
-        const result = await voiceServiceInterface.process(text, sceneIndex || 0, voiceId);
+        const result = await voiceServiceInterface.process(
+          text,
+          sceneIndex || 1,  // Use 1-based indexing for consistency
+          jobId,
+          voiceId
+        );
         
         clearTimeout(requestTimeout);
         logger.info('Voice Service: Voice generated successfully');

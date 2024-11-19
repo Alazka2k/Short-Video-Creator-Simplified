@@ -49,29 +49,20 @@ class ImageGenService {
 
       logger.info('Image generated successfully');
       const originalImageUrl = result.uri;
-
       const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
       logger.info(`Selected variation URL: ${selectedVariationUrl}`);
 
       const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, jobId);
-
-      // Ensure the directory exists
       await fs.mkdir(path.dirname(imageFilePath), { recursive: true });
 
-      try {
-        await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-      } catch (error) {
-        logger.error('Error downloading image:', error);
-        throw error;
-      }
+      await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
 
       await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath), {
         prompt,
         size: '512x512',
-        // Add any other relevant metadata
+        generatedAt: new Date().toISOString()
       });
 
-      // Store the image output in the database
       const imageData = {
         tempFilePath: imageFilePath,
         originalUrl: originalImageUrl,
@@ -79,16 +70,22 @@ class ImageGenService {
         metadata: {
           prompt,
           size: '512x512',
-          // Add any other relevant metadata
+          generatedAt: new Date().toISOString()
         }
       };
 
       const imageRecord = await this.imageDataAccess.createImageOutput(jobId, sceneIndex, imageData);
 
       return {
-        imageUrl: imageRecord.image_url,
-        metadata: JSON.parse(imageRecord.metadata)
+        filePath: imageFilePath,
+        fileName: path.basename(imageFilePath),
+        originalUrl: originalImageUrl,
+        imageUrl: selectedVariationUrl,
+        metadata: typeof imageRecord.metadata === 'string' 
+          ? JSON.parse(imageRecord.metadata) 
+          : imageRecord.metadata
       };
+
     } catch (error) {
       logger.error('Error generating image:', error);
       throw error;
@@ -120,7 +117,7 @@ class ImageGenService {
   async downloadImageWithPuppeteer(url, outputPath) {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
-
+  
     try {
       await page.goto(url, { waitUntil: 'networkidle2' });
       await page.waitForSelector('img');
@@ -139,7 +136,15 @@ class ImageGenService {
   async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName, metadata) {
     try {
       await fs.mkdir(path.dirname(metadataPath), { recursive: true });
-      await fs.writeFile(metadataPath, JSON.stringify({ [`scene_${sceneIndex}`]: { originalUrl, imageUrl, fileName, ...metadata } }, null, 2));
+      const metadataContent = {
+        [`scene_${sceneIndex}`]: {
+          originalUrl,
+          imageUrl,
+          fileName,
+          ...metadata
+        }
+      };
+      await fs.writeFile(metadataPath, JSON.stringify(metadataContent, null, 2));
       logger.info(`Metadata saved to ${metadataPath}`);
     } catch (error) {
       logger.error('Error saving metadata:', error);

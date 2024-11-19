@@ -1,13 +1,11 @@
-const fs = require('fs').promises;
-const path = require('path');
 const OpenAI = require("openai");
 const { zodResponseFormat } = require("openai/helpers/zod");
 const { z } = require('zod');
-
-// Resolve paths relative to project root
-const projectRoot = path.resolve(__dirname, '..', '..', '..');
-const config = require(path.join(projectRoot, 'backend', 'shared', 'utils', 'config'));
-const logger = require(path.join(projectRoot, 'backend', 'shared', 'utils', 'logger'));
+const fs = require('fs').promises;
+const path = require('path');
+const logger = require('../logger');
+const config = require('../config');
+const AnimationPatternManager = require('./animation-pattern-manager');
 
 const AnimationPatternSchema = z.object({
   pattern: z.string(),
@@ -19,16 +17,31 @@ class AnimationPatternGenerator {
     this.openai = new OpenAI({
       apiKey: config.llm.apiKey,
     });
-    this.promptPath = path.join(projectRoot, 'data', 'input', 'animation_prompt.txt');
-    logger.info(`AnimationPatternGenerator initialized with prompt path: ${this.promptPath}`);
+    this.promptPath = path.join(config.basePaths.input, 'animation_prompt.txt');
+    this.patternManager = new AnimationPatternManager();
+    logger.info('AnimationPatternGenerator initialized');
   }
 
   async generatePattern(animationPrompt) {
     try {
       logger.info(`Generating animation pattern for visual prompt: ${animationPrompt}`);
+
+      // Initialize pattern manager if not already done
+      if (!this.patternManager.initialized) {
+        await this.patternManager.initialize();
+      }
+
+      // Try to select existing pattern
+      const existingPattern = await this.patternManager.selectPattern(animationPrompt);
+      if (existingPattern) {
+        logger.info(`Using existing pattern: ${existingPattern.id}`);
+        return existingPattern;
+      }
+
+      // Generate new pattern
       const prompt = await this.loadPrompt(animationPrompt);
-      
       logger.info('Sending request to OpenAI API...');
+      
       const completion = await this.openai.beta.chat.completions.parse({
         model: config.llm.model,
         messages: [
@@ -42,14 +55,23 @@ class AnimationPatternGenerator {
       const result = completion.choices[0].message.parsed;
       logger.info(`Raw generated pattern: ${result.pattern}`);
 
-      // Validate and reconstruct the pattern if necessary
+      // Validate and reconstruct the pattern
       result.pattern = this.validateAndReconstructPattern(result.pattern);
       logger.info(`Validated and reconstructed pattern: ${result.pattern}`);
+
+      // Save the new pattern
+      await this.patternManager.savePattern(result, animationPrompt);
 
       return result;
     } catch (error) {
       logger.error('Error generating animation pattern:', error);
-      throw error;
+      
+      // Attempt to get a fallback pattern
+      const fallbackPattern = await this.patternManager.selectPattern(animationPrompt) 
+        || this.patternManager.getDefaultPattern();
+      
+      logger.info(`Using fallback pattern: ${fallbackPattern.id}`);
+      return fallbackPattern;
     }
   }
 
@@ -63,12 +85,6 @@ class AnimationPatternGenerator {
       });
       
       logger.info(`Extracted ${values.length} values from pattern`);
-  
-      // Ensure we have at least 702 values (234 triplets) and it's a multiple of 3
-      while (values.length < 702 || values.length % 3 !== 0) {
-        values.push(0);
-        logger.info(`Added padding zero. New length: ${values.length}`);
-      }
       
       // Limit to 250 triplets (750 values)
       const maxValues = 750;
@@ -85,13 +101,11 @@ class AnimationPatternGenerator {
       
       // Reconstruct the pattern string
       const reconstructedPattern = `{${values.join(',')}}`;
-      logger.info(`Reconstructed pattern with ${values.length} values: ${reconstructedPattern}`);
+      logger.info(`Reconstructed pattern with ${values.length} values`);
       return reconstructedPattern;
     } catch (error) {
       logger.error('Error validating and reconstructing pattern:', error);
-      logger.warn('Returning default pattern with 702 values');
-      // Return a default pattern with 702 values (234 triplets of 0,0,0)
-      return '{' + '0,0,0,'.repeat(233) + '0,0,0}';
+      return this.patternManager.getDefaultPattern().pattern;
     }
   }
 
