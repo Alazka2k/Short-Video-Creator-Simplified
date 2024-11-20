@@ -6,6 +6,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const FormData = require('form-data');
 const path = require('path');
+const VideoDataAccess = require('./data/videoDataAccess');
 
 class VideoGenService {
   constructor() {
@@ -13,6 +14,7 @@ class VideoGenService {
       authToken: config.videoGen.apiKey,
     });
     this.supportedCameraMotions = [];
+    this.dataAccess = VideoDataAccess;
   }
 
   async initialize() {
@@ -91,8 +93,7 @@ class VideoGenService {
     } else {
       const currentDate = new Date();
       const dateString = currentDate.toISOString().split('T')[0];
-      const timeString = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
-      const promptDir = path.join(config.output.directory, 'video', `${dateString}_${timeString}`, promptOrTestFolder);
+      const promptDir = path.join(config.output.directory, 'video', dateString, promptOrTestFolder, `scene_${sceneIndex}`);
       videoFilePath = path.join(promptDir, `video_scene_${sceneIndex}.mp4`);
       metadataPath = path.join(promptDir, 'metadata.json');
     }
@@ -130,7 +131,6 @@ class VideoGenService {
       logger.info(`Luma AI request payload: ${JSON.stringify(requestPayload, null, 2)}`);
 
       const generation = await this.client.generations.create(requestPayload);
-
       logger.info(`Video generation started. Full response: ${JSON.stringify(generation, null, 2)}`);
 
       const maxWaitTime = 15 * 60 * 1000; // 15 minutes
@@ -148,14 +148,39 @@ class VideoGenService {
 
         if (videoGeneration.state === 'completed') {
           logger.info(`Video generation completed. Full response: ${JSON.stringify(videoGeneration, null, 2)}`);
+          
           const { videoFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest);
           await this.downloadVideo(videoGeneration.assets.video, videoFilePath);
-          await this.saveVideoMetadata(metadataPath, sceneIndex, {
-            videoPrompt: sanitizedPrompt,
-            cameraMovement,
-            aspectRatio,
-            fileName: path.basename(videoFilePath)
-          });
+
+          if (isTest) {
+            // For test mode, save metadata directly to file
+            await this.saveVideoMetadata(metadataPath, sceneIndex, {
+              videoPrompt: sanitizedPrompt,
+              cameraMovement,
+              aspectRatio,
+              fileName: path.basename(videoFilePath)
+            });
+          } else {
+            // For production mode, use database
+            await this.dataAccess.createVideoOutput(
+              promptOrTestFolder, // Using promptOrTestFolder as jobId in production
+              sceneIndex,
+              {
+                fileName: path.basename(videoFilePath),
+                tempFilePath: videoFilePath,
+                videoPrompt: sanitizedPrompt,
+                cameraMovement,
+                aspectRatio,
+                metadata: {
+                  generationId: generation.id,
+                  sourceImageUrl: imageUrl,
+                  generationDuration: elapsedTime,
+                  generatedAt: new Date().toISOString()
+                }
+              }
+            );
+          }
+
           logger.info(`Video downloaded successfully: ${videoFilePath}`);
           return {
             filePath: videoFilePath,
@@ -219,6 +244,23 @@ class VideoGenService {
     await fs.mkdir(path.dirname(metadataPath), { recursive: true });
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
     logger.info(`Metadata saved to ${metadataPath}`);
+  }
+
+  // Database access methods (only used in production mode)
+  async getVideosByJobId(jobId) {
+    return await this.dataAccess.getVideosByJobId(jobId);
+  }
+
+  async getVideoBySceneId(sceneId) {
+    return await this.dataAccess.getVideoBySceneId(sceneId);
+  }
+
+  async updateVideoMetadata(videoId, metadata) {
+    return await this.dataAccess.updateVideoMetadata(videoId, metadata);
+  }
+
+  async deleteVideo(videoId) {
+    return await this.dataAccess.deleteVideo(videoId);
   }
 
   async cleanup() {

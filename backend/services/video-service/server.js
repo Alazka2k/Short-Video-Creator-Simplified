@@ -28,16 +28,32 @@ function createServer(videoServiceInterface) {
       }, 900000); // 15 minutes timeout
 
       try {
-        const { imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex } = req.body;
+        const { 
+          imagePath, 
+          videoPrompt, 
+          cameraMovement, 
+          aspectRatio, 
+          sceneIndex,
+          jobId 
+        } = req.body;
+
         logger.info(`Video Service: Request body: ${JSON.stringify(req.body)}`);
         
-        if (!imagePath || !videoPrompt || !cameraMovement || !aspectRatio || sceneIndex === undefined) {
-          throw new Error('Missing required parameters');
+        if (!imagePath || !videoPrompt || !cameraMovement || !aspectRatio || !jobId || sceneIndex === undefined) {
+          throw new Error('Missing required parameters: imagePath, videoPrompt, cameraMovement, aspectRatio, jobId, or sceneIndex');
         }
   
-        logger.info(`Video Service: Generating video for scene ${sceneIndex}`);
+        logger.info(`Video Service: Generating video for scene ${sceneIndex}, job ${jobId}`);
         
-        const result = await videoServiceInterface.process(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, false);
+        const result = await videoServiceInterface.process(
+          imagePath,
+          videoPrompt,
+          cameraMovement,
+          aspectRatio,
+          sceneIndex,
+          jobId,
+          false  // isTest = false for production
+        );
         
         clearTimeout(requestTimeout);
         logger.info('Video Service: Video generated successfully');
@@ -48,6 +64,63 @@ function createServer(videoServiceInterface) {
       } catch (error) {
         clearTimeout(requestTimeout);
         logger.error('Video Service: Error generating video:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    // Get videos by job ID
+    app.get('/videos/job/:jobId', async (req, res) => {
+      try {
+        const { jobId } = req.params;
+        const videos = await videoServiceInterface.getVideosByJobId(jobId);
+        res.json(videos);
+      } catch (error) {
+        logger.error('Error fetching videos for job:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    // Get video by scene ID
+    app.get('/videos/scene/:sceneId', async (req, res) => {
+      try {
+        const { sceneId } = req.params;
+        const video = await videoServiceInterface.getVideoBySceneId(sceneId);
+        if (!video) {
+          return res.status(404).json({ error: 'Video not found' });
+        }
+        res.json(video);
+      } catch (error) {
+        logger.error('Error fetching video for scene:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    // Update video metadata
+    app.patch('/videos/:videoId/metadata', async (req, res) => {
+      try {
+        const { videoId } = req.params;
+        const { metadata } = req.body;
+        
+        if (!metadata) {
+          return res.status(400).json({ error: 'Metadata is required' });
+        }
+
+        const updatedVideo = await videoServiceInterface.updateVideoMetadata(videoId, metadata);
+        res.json(updatedVideo);
+      } catch (error) {
+        logger.error('Error updating video metadata:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+      }
+    });
+
+    // Delete video
+    app.delete('/videos/:videoId', async (req, res) => {
+      try {
+        const { videoId } = req.params;
+        await videoServiceInterface.deleteVideo(videoId);
+        res.json({ message: 'Video deleted successfully' });
+      } catch (error) {
+        logger.error('Error deleting video:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
       }
     });

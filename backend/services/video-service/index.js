@@ -15,9 +15,43 @@ class VideoServiceInterface {
     logger.info('VideoServiceInterface initialized');
   }
 
-  async process(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
-    logger.info('Processing video generation request', { imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest });
-    return await this.service.generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest);
+  async process(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, jobId, isTest = false) {
+    logger.info('Processing video generation request', {
+      imagePath,
+      videoPrompt,
+      cameraMovement,
+      aspectRatio,
+      sceneIndex,
+      jobId,
+      isTest
+    });
+
+    return await this.service.generateVideo(
+      imagePath,
+      videoPrompt,
+      cameraMovement,
+      aspectRatio,
+      sceneIndex,
+      jobId,
+      isTest
+    );
+  }
+
+  // Database access methods
+  async getVideosByJobId(jobId) {
+    return await this.service.getVideosByJobId(jobId);
+  }
+
+  async getVideoBySceneId(sceneId) {
+    return await this.service.getVideoBySceneId(sceneId);
+  }
+
+  async updateVideoMetadata(videoId, metadata) {
+    return await this.service.updateVideoMetadata(videoId, metadata);
+  }
+
+  async deleteVideo(videoId) {
+    return await this.service.deleteVideo(videoId);
   }
 
   async cleanup() {
@@ -37,6 +71,7 @@ async function startServer() {
 
     app.listen(PORT, () => {
       logger.info(`Video Service running on port ${PORT}`);
+      logger.info(`http://localhost:${PORT}`);
     });
   } catch (error) {
     logger.error('Failed to start Video Service:', error);
