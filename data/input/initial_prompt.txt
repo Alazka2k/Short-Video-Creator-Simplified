@@ -93,7 +93,7 @@ hashtags: #NuclearWinter #SurvivalSaga #ChillofWar #SilentBattlefield #Apocalyps
 
 # Example for a Scene Schema:
 description: [here should be the text of the narrator for each scene]
-visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, patches of ash falling like snow. Skyscrapers, once proud, now skeletal remains shrouded in dense fog. Low-angle view, evening bluish glow, shadows long and stark; {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
+visual_prompt: A desolate city skyline enveloped in an eerie grayish twilight, patches of ash falling like snow. Skyscrapers, once proud, now skeletal remains shrouded in dense fog. Low-angle view, evening bluish glow, shadows long and stark; in the style of {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
 video_prompt: A visual of a ruined cityscape, ash drifting softly, as the camera pans slowly across the destroyed infrastructure, capturing the haunted remnants of civilization. The gray sky thickens ominously, setting a chilling tone.
 camera_movement: Pull Out
 
@@ -114,7 +114,7 @@ E.g. for the values:
     "version":"{{ llmGen.version }}",
     
 The second part of visual_prompt must look like:
-; {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
+; in the style of {{ llmGen.artistStyle }}. {{ llmGen.shotStyle }} --ar {{ llmGen.aspectRatio }} --style {{ llmGen.style }} --s {{ llmGen.sValue }} --v {{ llmGen.version }}
 
 The pattern is always the same:
 Artist Style (if given) Shot Style (if given) --ar [given aspect ratio] --style [given style] --s [given style value] --version [given version]

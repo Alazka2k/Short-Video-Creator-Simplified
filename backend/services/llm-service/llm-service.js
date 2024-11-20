@@ -30,7 +30,8 @@ class LLMService {
       // Create initial job record
       if (!isTest) {
         await this.dataAccess.createJob(jobId, inputPrompt, 'pending', ['llm'], {
-          startTime: new Date().toISOString()
+          startTime: new Date().toISOString(),
+          parameters: llmGenParams
         });
         logger.info(`Created job record with ID: ${jobId}`);
       }
@@ -65,7 +66,7 @@ class LLMService {
 
       if (!isTest) {
         try {
-          // Store LLM input
+          // Store LLM input with parameters
           const llmInputId = await this.dataAccess.createInput(jobId, params);
           logger.info(`Created LLM input record: ${llmInputId}`);
 
@@ -82,17 +83,28 @@ class LLMService {
           );
           logger.info(`Created LLM output record: ${llmOutputId}`);
 
-          // Store scenes
+          // Extract visual metadata from parameters
+          const visualMetadata = {
+            artistStyle: params.artistStyle,
+            shotStyle: params.shotStyle,
+            aspectRatio: params.aspectRatio,
+            style: params.style,
+            sValue: params.sValue,
+            version: params.version
+          };
+
+          // Store scenes with visual metadata
           for (let i = 0; i < video_script.scenes.length; i++) {
             const scene = video_script.scenes[i];
             const sceneId = await this.dataAccess.createScene(
-              jobId, // Added jobId parameter
+              jobId,
               llmOutputId,
               i + 1,
               scene.description,
               scene.visual_prompt,
               scene.video_prompt,
-              scene.camera_movement
+              scene.camera_movement,
+              visualMetadata  // Added visual metadata
             );
             logger.info(`Created scene record ${i + 1}: ${sceneId}`);
           }
@@ -119,7 +131,15 @@ class LLMService {
             description: scene.description,
             visual_prompt: scene.visual_prompt,
             video_prompt: scene.video_prompt,
-            camera_movement: scene.camera_movement
+            camera_movement: scene.camera_movement,
+            visual_metadata: {  // Added to response
+              artistStyle: params.artistStyle,
+              shotStyle: params.shotStyle,
+              aspectRatio: params.aspectRatio,
+              style: params.style,
+              sValue: params.sValue,
+              version: params.version
+            }
           })),
           music: {
             title: video_script.music.title,
@@ -155,19 +175,6 @@ class LLMService {
       return { description: completion.choices[0].message.content };
     } catch (error) {
       logger.error('Error generating documentation:', error);
-      throw error;
-    }
-  }
-
-  async saveOutputToJson(output, outputPath) {
-    try {
-      const dir = path.dirname(outputPath);
-      await fs.mkdir(dir, { recursive: true });
-      await fs.writeFile(outputPath, JSON.stringify(output, null, 2));
-      logger.info(`Saved output to ${outputPath}`);
-      return outputPath;
-    } catch (error) {
-      logger.error('Error saving output:', error);
       throw error;
     }
   }

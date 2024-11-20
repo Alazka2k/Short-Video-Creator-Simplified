@@ -1,22 +1,31 @@
 const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../../shared/utils/logger');
+const llmFileHandler = require('../../../shared/utils/llmFileHandler');
 
 class LLMDataAccess {
     async createJob(jobId, prompt, status = 'pending', serviceSequence = [], metadata = {}) {
       try {
         const [job] = await knex('jobs').insert({
           job_id: jobId,
-          prompt: prompt, // Store prompt in the new column
+          prompt: prompt,
           status: status,
           service_sequence: JSON.stringify(serviceSequence),
           metadata: JSON.stringify(metadata)
         }).returning('*');
         
-        logger.info('Job created in database:', {
+        // Create initial output file
+        await llmFileHandler.saveOutputFile(jobId, {
+          prompt,
+          status,
+          metadata,
+          parameters: {}  // Will be updated when input is created
+        });
+        
+        logger.info('Job created:', {
           table: 'jobs',
           jobId: job.job_id,
           status: job.status,
-          prompt: prompt.substring(0, 50) + '...' // Log only the first 50 characters of the prompt
+          prompt: prompt.substring(0, 50) + '...'
         });
         
         return job.job_id;
@@ -29,10 +38,11 @@ class LLMDataAccess {
     async updateJobStatus(jobId, status) {
       try {
         await knex('jobs').where('job_id', jobId).update({ status });
+        await llmFileHandler.updateJobStatus(jobId, status);
         
         logger.info('Job status updated:', {
           table: 'jobs',
-          jobId: jobId,
+          jobId,
           newStatus: status
         });
       } catch (error) {
@@ -55,11 +65,18 @@ class LLMDataAccess {
           parameters: JSON.stringify(parameters)
         }).returning('*');
         
-        logger.info('LLM input created in database:', {
+        // Update file with input parameters
+        const existingData = await llmFileHandler.readOutputFile(jobId);
+        await llmFileHandler.saveOutputFile(jobId, {
+          ...existingData,
+          parameters
+        });
+        
+        logger.info('LLM input created:', {
           table: 'llm_inputs',
-          jobId: jobId,
+          jobId,
           llmInputId: llmInput.llm_input_id,
-          prompt: job.prompt.substring(0, 50) + '...' // Log only the first 50 characters of the prompt
+          prompt: job.prompt.substring(0, 50) + '...'
         });
         
         return llmInput.llm_input_id;
@@ -74,58 +91,74 @@ class LLMDataAccess {
             const [llmOutput] = await knex('llm_outputs').insert({
                 job_id: jobId,
                 llm_input_id: llmInputId,
-                title: title,
-                description: description,
-                hashtags: hashtags,
+                title,
+                description,
+                hashtags,
                 music_title: musicTitle,
                 music_lyrics: musicLyrics,
                 music_tags: musicTags
             }).returning('*');
 
-            logger.info('LLM output created in database:', {
+            // Update output file with generated content
+            await llmFileHandler.saveOutputFile(jobId, {
+                ...(await llmFileHandler.readOutputFile(jobId)),
+                title,
+                description,
+                hashtags,
+                music_title: musicTitle,
+                music_lyrics: musicLyrics,
+                music_tags: musicTags
+            });
+
+            logger.info('LLM output created:', {
                 table: 'llm_outputs',
-                jobId: jobId,
-                llm_input_id: llmInputId,
-                title: title,
-                description: description,
-                hashtags: hashtags,
-                music_title: musicTitle
+                jobId,
+                llmInputId,
+                title
             });
 
             return llmOutput.llm_output_id;
         } catch (error) {
             logger.error('Error creating LLM output:', error);
-            throw new Error(`Failed to create LLM output: ${error.message}`);
+            throw error;
         }
     }
 
-    async createScene(jobId, llmOutputId, sceneNumber, description, visualPrompt, videoPrompt, cameraMovement) {
+    async createScene(jobId, llmOutputId, sceneNumber, description, visualPrompt, videoPrompt, cameraMovement, visualMetadata = {}) {
         try {
             const [scene] = await knex('llm_scenes').insert({
-                job_id: jobId, // Include job_id when creating a scene
+                job_id: jobId,
                 llm_output_id: llmOutputId,
                 scene_number: sceneNumber,
-                description: description,
+                description,
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
-                camera_movement: cameraMovement
+                camera_movement: cameraMovement,
+                visual_metadata: JSON.stringify(visualMetadata)
             }).returning('*');
             
-            logger.info('LLM scene created in database:', {
-                table: 'llm_scenes',
-                jobId: jobId,
-                llm_output_id: llmOutputId,
+            // Update output file with scene data
+            await llmFileHandler.updateSceneData(jobId, {
+                scene_id: scene.scene_id,
                 scene_number: sceneNumber,
-                description: description,
+                description,
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
-                camera_movement: cameraMovement
+                camera_movement: cameraMovement,
+                visual_metadata: visualMetadata
+            });
+
+            logger.info('LLM scene created:', {
+                table: 'llm_scenes',
+                jobId,
+                llmOutputId,
+                sceneNumber
             });
 
             return scene.scene_id;
         } catch (error) {
             logger.error('Error creating LLM scene:', error);
-            throw new Error(`Failed to create LLM scene: ${error.message}`);
+            throw error;
         }
     }
 
@@ -136,15 +169,28 @@ class LLMDataAccess {
                 .orderBy('scene_number')
                 .select('*');
 
-            logger.info(`Retrieved ${scenes.length} scenes for job:`, {
-                table: 'llm_scenes',
-                jobId: jobId
-            });
-
+            logger.info(`Retrieved ${scenes.length} scenes for job ${jobId}`);
             return scenes;
         } catch (error) {
-            logger.error('Error retrieving scenes for job:', error);
-            throw new Error(`Failed to retrieve scenes for job: ${error.message}`);
+            logger.error('Error retrieving scenes:', error);
+            throw error;
+        }
+    }
+
+    async getInputById(inputId) {
+        try {
+            const input = await knex('llm_inputs')
+                .where('llm_input_id', inputId)
+                .first();
+
+            if (!input) {
+                throw new Error(`LLM input with id ${inputId} not found`);
+            }
+
+            return input;
+        } catch (error) {
+            logger.error('Error retrieving LLM input:', error);
+            throw error;
         }
     }
 }
