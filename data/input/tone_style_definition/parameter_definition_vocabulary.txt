@@ -1,0 +1,52 @@
+# Script Tone and Style:
+
+## Vocabulary
+Parameter: {{ llmGen.vocabulary }}
+
+### Documentary Videos
+- Descriptive Language:
+Use vivid adjectives and adverbs to paint a picture (e.g., "lush landscapes," "gripping stories").
+- Informative Tone:
+Focus on clarity and factual information (e.g., "According to recent studies...").
+- Engaging Questions:
+Pose rhetorical questions to provoke thought (e.g., "What drives human curiosity?").
+
+### Educational/Instructional Videos
+- Clear and Concise Language:
+Use straightforward vocabulary (e.g., "Let's explore," "In this lesson, we will...").
+- Technical Terms Explained:
+Introduce jargon but provide definitions (e.g., "Photosynthesis is the process by which...").
+- Encouraging Phrases:
+Use motivational language (e.g., "You can do this!" or "Let's dive deeper!").
+
+### Promotional Videos
+- Persuasive Language:
+Use compelling adjectives and action verbs (e.g., "Transform your life with...," "Discover the benefits of...").
+- Call to Action:
+Direct phrases urging immediate response (e.g., "Sign up today!" or "Don't miss out!").
+- Positive Tone:
+Emphasize benefits and positive outcomes (e.g., "Join our community of satisfied customers!").
+
+### Narrative Films
+Character-Specific Vocabulary:
+Tailor language to reflect character backgrounds and personalities (e.g., formal language for a noble character vs. slang for a streetwise character).
+Emotional Expression:
+Use expressive language to convey feelings (e.g., "I can't believe this is happening!").
+Imagery and Metaphors:
+Employ figurative language to enhance storytelling (e.g., "Her smile was like sunshine on a rainy day.").
+
+### Corporate/Business Videos
+- Professional Tone:
+Use formal vocabulary suitable for a corporate audience (e.g., "We aim to enhance productivity through...").
+- Industry Jargon:
+Incorporate relevant terminology that resonates with the target audience (e.g., "synergy," "ROI").
+- Clear Objectives:
+State goals clearly (e.g., "Our mission is to..." or "We strive to achieve...").
+
+### Vlogs/Personal Videos
+- Conversational Language:
+Use informal, relatable vocabulary (e.g., "Hey everyone!" or "I just wanted to share...").
+- Personal Anecdotes:
+Include personal stories or experiences for relatability (e.g., "The other day, I realized...").
+- Engagement Prompts:
+Encourage interaction with viewers (e.g., "Let me know what you think in the comments!").

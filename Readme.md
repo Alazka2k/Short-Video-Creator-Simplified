@@ -170,6 +170,20 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   ├── input.csv
 │   │   └── parameters.json
 │   └── output/
+│       ├── job/
+|       │   └── [jobID]
+│       ├── animation/
+|       │   └── [jobID]
+│       ├── music/
+|       │   └── [jobID]
+│       ├── voice/
+|       │   └── [jobID]
+│       ├── video/
+|       │   └── [jobID]
+│       ├── llm/
+|       │   └── [jobID]
+│       └── image/
+|           └── [jobID]
 ├── docs/
 ├── logs/
 ├── node_modules/
@@ -199,20 +213,28 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── voice-service/
+│   │   │   ├── data/
+│   │   │   │   └── voiceDataAccess.js
 │   │   │   ├── voice-gen-service.js
 │   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   ├── music-service/
+│   │   │   ├── data/
+│   │   │   │   └── musicDataAccess.js
 │   │   │   ├── music-gen-service.js
 │   │   │   ├── server.js
 │   │   │   ├── index.js
 │   │   │   └── suno_auth.js
 │   │   ├── animation-service/
+│   │   │   ├── data/
+│   │   │   │   └── animationDataAccess.js
 │   │   │   ├── animation-gen-service.js
 │   │   │   ├── server.js
 │   │   │   ├── index.js
 │   │   │   └── animationPatternGenerator.js
 │   │   └── video-service/
+│   │       ├── data/
+│   │       │   └── videoDataAccess.js
 │   │       ├── video-gen-service.js
 │   │       ├── server.js
 │   │       └── index.js
@@ -221,9 +243,13 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │       │   ├── auth-middleware.js
 │       │   └── error-handler.js
 │       ├── utils/
+│       │   ├── pattern/
+│       │   │   ├── animation-pattern-manager.js
+│       │   │   └── animation-pattern-generator.js
 │       │   ├── config.js
 │       │   ├── logger.js
 │       │   ├── prompt-utils.js
+│       │   ├── llmFileHandler.js
 │       │   ├── audio-utils.js
 │       │   └── export-source-code.js
 │       └── config/
@@ -359,9 +385,153 @@ The project uses a PostgreSQL database to store persistent data. The database sc
 
 This database design allows for efficient tracking of the entire content creation process, from job initiation to final output, while also supporting user management, billing, and analytics.
 
+# SHORT-VIDEO-CREATOR-SIMPLIFIED
+
+[Previous Introduction, Project Overview, Features, Prerequisites, Installation, Configuration, Usage, Project Structure sections remain exactly the same until API Integrations]
+
+### Standardized API Requests:
+Each service follows a consistent request format through the API Gateway:
+
+1. **LLM Service** (`POST /api/llm/generate`):
+```json
+{
+    "jobId": "uuid",
+    "inputPrompt": "prompt text",
+    "llmGenParams": {
+        // LLM generation parameters
+    }
+}
+```
+
+2. **Image Service** (`POST /api/image/generate`):
+```json
+{
+    "jobId": "uuid",
+    "prompt": "image prompt",
+    "sceneIndex": 1
+}
+```
+
+3. **Voice Service** (`POST /api/voice/generate`):
+```json
+{
+    "jobId": "uuid",
+    "text": "text to convert to speech",
+    "sceneIndex": 1,
+    "voiceId": "optional-voice-id"
+}
+```
+
+4. **Music Service** (`POST /api/music/generate`):
+```json
+{
+    "jobId": "uuid",
+    "title": "music title",
+    "lyrics": "optional lyrics",
+    "tags": "music style tags",
+    "instrumental": true
+}
+```
+
+5. **Animation Service** (`POST /api/animation/generate`):
+```json
+{
+    "jobId": "uuid",
+    "imagePath": "path to source image",
+    "videoPrompt": "animation description",
+    "sceneIndex": 1,
+    "options": {
+        "animationLength": 5,
+        "animationPrompt": "optional animation prompt"
+    }
+}
+```
+
+6. **Video Service** (`POST /api/video/generate`):
+```json
+{
+    "jobId": "uuid",
+    "imagePath": "path to source image",
+    "videoPrompt": "video scene description",
+    "cameraMovement": "pan/zoom/etc",
+    "aspectRatio": "9:16",
+    "sceneIndex": 1
+}
+```
+
 ## Output Format
 
-The generated content is structured as follows for each video:
+The system maintains a structured output format for each service, organized by date and job ID:
+
+### LLM Service Output
+```
+data/output/llm/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        └── llm_output.json
+```
+
+### Image Service Output
+```
+data/output/image/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        └── scene_1/
+            ├── image_scene_1.png
+            └── metadata.json
+```
+
+### Voice Service Output
+```
+data/output/voice/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        └── scene_1/
+            ├── voice_scene_1.mp3
+            └── metadata.json
+```
+
+### Music Service Output
+```
+data/output/music/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        ├── background_music.mp3
+        └── metadata.json
+```
+
+### Animation Service Output
+```
+data/output/animation/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        └── scene_1/
+            ├── animation_scene_1.mp4
+            └── metadata.json
+```
+
+### Video Service Output
+```
+data/output/video/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        └── scene_1/
+            ├── video_scene_1.mp4
+            └── metadata.json
+```
+
+Each service maintains its own directory structure with consistent patterns:
+- Date-based organization (YYYY-MM-DD)
+- Job ID-based subdirectories
+- Scene-specific folders where applicable
+- Metadata JSON files alongside generated content
+- Consistent naming conventions for output files
+
+The file paths are stored in the database, enabling efficient data management and retrieval. This structure supports both individual service operation and future integration into a complete video generation pipeline.
+
+## Output Format for Integration Job
+
+The generated content is structured as follows for a complete video with integration of all services:
 
 ```
 output/
@@ -390,6 +560,56 @@ output/
 ```
 
 This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization. In the future, file paths will be stored in the database, pointing to the external file storage system.
+
+## Database Integration Status
+
+The project has completed database integration for all services, establishing a consistent pattern for data storage and retrieval:
+
+### Completed Services:
+1. **LLM Service**: 
+   - Full database integration with `llm_inputs`, `llm_outputs`, and `llm_scenes` tables
+   - File structure: `data/output/llm/YYYY-MM-DD/[jobId]/llm_output.json`
+
+2. **Image Service**:
+   - Integrated with `image_outputs` table
+   - File structure: `data/output/image/YYYY-MM-DD/[jobId]/scene_[X]/image_scene_[X].png`
+   - Metadata storage: `data/output/image/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+
+3. **Voice Service**:
+   - Integrated with `voice_outputs` table
+   - File structure: `data/output/voice/YYYY-MM-DD/[jobId]/scene_[X]/voice_scene_[X].mp3`
+   - Metadata storage: `data/output/voice/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+
+4. **Music Service**:
+   - Integrated with `music_outputs` table
+   - File structure: `data/output/music/YYYY-MM-DD/[jobId]/background_music.mp3`
+   - Metadata storage: `data/output/music/YYYY-MM-DD/[jobId]/metadata.json`
+   - Includes retry logic for API calls with exponential backoff
+
+5. **Animation Service**:
+   - Integrated with `animation_outputs` table
+   - File structure: `data/output/animation/YYYY-MM-DD/[jobId]/scene_[X]/animation_scene_[X].mp4`
+   - Metadata storage: `data/output/animation/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+
+6. **Video Service**:
+   - Integrated with `video_outputs` table
+   - File structure: `data/output/video/YYYY-MM-DD/[jobId]/scene_[X]/video_scene_[X].mp4`
+   - Metadata storage: `data/output/video/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+
+### Database Operations for Each Service:
+All services provide standard database operations:
+- Create output records with file management
+- Retrieve outputs by job ID
+- Update metadata
+- Delete outputs with file cleanup
+
+### Common Features Across Services:
+- Consistent file structure pattern: `data/output/[service]/YYYY-MM-DD/[jobId]/`
+- Metadata JSON files alongside generated content
+- Error handling with retry logic for external API calls
+- Temporary file management for processing
+- Database transaction support
+- Clean separation of test and production paths
 
 ## Testing
 

@@ -130,6 +130,54 @@ app.post('/api/video/generate', async (req, res) => {
   }
 });
 
+// Job Service routes
+app.post('/api/job/generate', async (req, res) => {
+  try {
+    logger.info('Forwarding request to Job service');
+    const response = await axios.post(`${config.services.job.url}/generate`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 1800000  // 30 minutes timeout
+    });
+    logger.info(`Received response from Job service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Job request error: ${error.message}`);
+    res.status(500).json({ error: 'Job request failed', details: error.message });
+  }
+});
+
+app.get('/api/job/jobs/:jobId', async (req, res) => {
+  try {
+    logger.info(`Forwarding job status request for jobId: ${req.params.jobId}`);
+    const response = await axios.get(`${config.services.job.url}/jobs/${req.params.jobId}`, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000  // 30 seconds timeout
+    });
+    logger.info(`Received job status response: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Job status request error: ${error.message}`);
+    res.status(500).json({ error: 'Job status request failed', details: error.message });
+  }
+});
+
+app.get('/api/job/jobs', async (req, res) => {
+  try {
+    logger.info('Forwarding request to get all jobs');
+    const response = await axios.get(`${config.services.job.url}/jobs`, {
+      params: req.query,  // Forward any query parameters
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000  // 30 seconds timeout
+    });
+    logger.info(`Received jobs list response: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Jobs list request error: ${error.message}`);
+    res.status(500).json({ error: 'Jobs list request failed', details: error.message });
+  }
+});
+
+
 // Commented out Auth Service routes
 // app.post('/api/auth/register', authController.register);
 // app.post('/api/auth/login', authController.login);
@@ -161,6 +209,8 @@ app.listen(PORT, () => {
   logger.info(`  /api/music/generate -> ${config.services.music.url}/generate`);
   logger.info(`  /api/animation/generate -> ${config.services.animation.url}/generate`);
   logger.info(`  /api/video/generate -> ${config.services.video.url}/generate`);
+  logger.info(`  /api/job/generate -> ${config.services.job.url}/generate`);
+  logger.info(`  /api/job/jobs -> ${config.services.job.url}/jobs`);
 });
 
 module.exports = app;

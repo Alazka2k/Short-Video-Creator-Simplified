@@ -1,0 +1,52 @@
+# Script Tone and Style:
+
+## Vocabulary
+Parameter: {{ llmGen.characterPerspective }}
+
+### Documentary Videos
+- Expert:
+Provides authoritative insights and analysis (e.g., scientists, historians, industry leaders).
+- Eyewitness:
+Offers first-hand accounts of events (e.g., participants in historical events, local residents).
+- Affected Individual:
+Shares personal experiences related to the topic (e.g., patients in medical documentaries, environmental impact victims).
+
+### Educational/Instructional Videos
+- Instructor:
+Guides learners through concepts and skills (e.g., teachers, trainers, coaches).
+- Student/Learner:
+Demonstrates the learning process, asks questions (e.g., on-screen learner, relatable character).
+- Practitioner:
+Shows real-world application of knowledge (e.g., professionals in their field, experienced craftspeople).
+
+### Promotional Videos
+- Satisfied Customer:
+Provides testimonials and success stories (e.g., product users, service beneficiaries).
+- Brand Ambassador:
+Represents and embodies the brand's values (e.g., celebrities, influencers, company representatives).
+- Problem Solver:
+Demonstrates how the product/service addresses needs (e.g., fictional characters facing common issues).
+
+### Narrative Films
+- Protagonist:
+Drives the main story and undergoes character development (e.g., hero, main character).
+- Antagonist:
+Provides conflict and challenges for the protagonist (e.g., villain, opposing force).
+- Supporting Character:
+Adds depth and context to the story (e.g., sidekick, mentor, love interest).
+
+### Corporate/Business Videos
+- CEO/Executive:
+Provides vision and leadership perspective (e.g., company founders, top management).
+- Employee:
+Offers insights into company culture and operations (e.g., team members, department heads).
+- Client/Partner:
+Shares experiences of working with the company (e.g., business partners, long-term clients).
+
+### Vlogs/Personal Videos
+- Content Creator:
+Shares personal experiences and opinions (e.g., vlogger, influencer).
+- Guest:
+Provides additional perspectives or expertise (e.g., friends, collaborators, interviewees).
+- Audience Stand-in:
+Represents the viewer's perspective (e.g., character asking questions viewers might have).

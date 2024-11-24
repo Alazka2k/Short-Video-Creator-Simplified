@@ -1,0 +1,52 @@
+# Script Tone and Style:
+
+## Script Tone
+Parameter: {{ llmGen.scriptTone }}
+
+### Documentary Videos
+- Authoritative:
+Convey expertise and credibility (e.g., confident statements, well-researched facts).
+- Objective:
+Present information impartially, avoiding bias (e.g., balanced perspectives, neutral language).
+- Inquisitive:
+Foster curiosity and critical thinking (e.g., thought-provoking questions, exploratory language).
+
+### Educational/Instructional Videos
+- Encouraging:
+Motivate and support learners (e.g., positive reinforcement, empathetic language).
+- Patient:
+Explain concepts thoroughly without rushing (e.g., step-by-step instructions, repeated key points).
+- Enthusiastic:
+Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest).
+
+### Promotional Videos
+- Exciting:
+Generate enthusiasm and interest (e.g., upbeat language, dynamic pacing).
+- Persuasive:
+Convince the audience to take action (e.g., emphasizing benefits, creating urgency).
+- Confident:
+Project assurance in the product or service (e.g., authoritative statements, positive predictions).
+
+### Narrative Films
+- Emotive:
+Convey and evoke emotions (e.g., dramatic language, expressive dialogue).
+- Atmospheric:
+Create mood and ambiance (e.g., descriptive narration, tone-setting dialogue).
+- Character-driven:
+Reflect individual personalities (e.g., unique speech patterns, character-specific attitudes).
+
+### Corporate/Business Videos
+- Professional:
+Maintain a polished, business-appropriate tone (e.g., formal language, respectful address).
+- Informative:
+Focus on clear communication of facts and data (e.g., concise explanations, relevant statistics).
+- Aspirational:
+Inspire confidence and ambition (e.g., future-oriented language, success-focused narrative).
+
+### Vlogs/Personal Videos
+- Casual:
+Create a relaxed, friendly atmosphere (e.g., conversational language, personal anecdotes).
+- Authentic:
+Project genuineness and relatability (e.g., honest reflections, sharing real experiences).
+- Interactive:
+Engage directly with the audience (e.g., asking for opinions, responding to comments).

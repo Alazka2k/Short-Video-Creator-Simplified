@@ -89,8 +89,7 @@ class LLMService {
             shotStyle: params.shotStyle,
             aspectRatio: params.aspectRatio,
             style: params.style,
-            sValue: params.sValue,
-            version: params.version
+            sValue: params.sValue
           };
 
           // Store scenes with visual metadata
@@ -137,8 +136,7 @@ class LLMService {
               shotStyle: params.shotStyle,
               aspectRatio: params.aspectRatio,
               style: params.style,
-              sValue: params.sValue,
-              version: params.version
+              sValue: params.sValue
             }
           })),
           music: {
