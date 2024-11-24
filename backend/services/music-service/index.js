@@ -16,14 +16,36 @@ class MusicServiceInterface {
     logger.info('MusicServiceInterface initialized');
   }
 
-  async generateContent(musicData, sceneIndex, isTest = false) {
-    logger.info('Generating music content', { musicData, sceneIndex, isTest });
-    return await this.service.generateMusic(musicData, sceneIndex, isTest);
+  async generateContent(jobId, musicData, isTest = false) {
+    logger.info('Generating music content', { jobId, musicData, isTest });
+    return await this.service.generateMusic(jobId, musicData, isTest);
   }
 
-  async process(musicData, sceneIndex, isTest = false) {
-    logger.info('Processing music generation request', { musicData, sceneIndex, isTest });
-    return await this.generateContent(musicData, sceneIndex, isTest);
+  async process(jobId, musicData, isTest = false) {
+    logger.info('Processing music generation request', { jobId, musicData, isTest });
+    
+    // Validate required fields
+    if (!jobId && !isTest) {
+      throw new Error('jobId is required for production mode');
+    }
+
+    if (!musicData.title || !musicData.tags) {
+      throw new Error('title and tags are required');
+    }
+
+    return await this.generateContent(jobId, musicData, isTest);
+  }
+
+  async getMusicByJobId(jobId) {
+    return await this.service.getMusicByJobId(jobId);
+  }
+
+  async updateMusicMetadata(musicId, metadata) {
+    return await this.service.updateMusicMetadata(musicId, metadata);
+  }
+
+  async deleteMusic(musicId) {
+    return await this.service.deleteMusic(musicId);
   }
 
   async getQuotaInfo() {
@@ -58,7 +80,6 @@ async function startServer() {
   }
 }
 
-// Start the server if this file is run directly
 if (require.main === module) {
   startServer();
 }
