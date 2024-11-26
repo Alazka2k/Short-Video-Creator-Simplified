@@ -3,6 +3,7 @@
 ## Pacing Structure:
 Parameter: {{ llmGen.pacingStructure }}
 
+## Explaination and Definition
 ### Narrative Films
 - Three-Act Structure: 
 Slow build-up in Act 1, increasing tension in Act 2, and rapid climax in Act 3.

@@ -1,5 +1,3 @@
-// backend/services/job-service/job-pipeline-service.js
-
 const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
@@ -11,11 +9,38 @@ class JobPipelineService {
   constructor(services) {
     this.services = services;
     this.jobDataAccess = jobDataAccess;
+    this.baseOutputPath = path.join(config.output.directory, 'integration');
     logger.info('JobPipelineService initialized with JobDataAccess');
+  }
+
+  getJobOutputPath(jobId, date = new Date()) {
+    const dateString = date.toISOString().split('T')[0];
+    return path.join(this.baseOutputPath, dateString, jobId);
+  }
+
+  getSceneOutputPath(jobOutputDir, sceneIndex) {
+    return path.join(jobOutputDir, `scene_${sceneIndex}`);
+  }
+
+  async ensureOutputDirectories(jobOutputDir, scenesCount) {
+    try {
+      // Create base job directory
+      await fs.mkdir(jobOutputDir, { recursive: true });
+
+      // Create scene directories
+      for (let i = 1; i <= scenesCount; i++) {
+        await fs.mkdir(this.getSceneOutputPath(jobOutputDir, i), { recursive: true });
+      }
+      logger.info(`Created output directories in ${jobOutputDir}`);
+    } catch (error) {
+      logger.error('Error creating output directories:', error);
+      throw error;
+    }
   }
 
   async generateContent(prompt, parameters = {}, visualizationType = 'animation') {
     const jobId = uuidv4();
+    const jobOutputDir = this.getJobOutputPath(jobId);
     
     try {
       logger.info(`Starting content generation job ${jobId} for prompt: ${prompt}`);
@@ -29,29 +54,30 @@ class JobPipelineService {
         visualizationType,
         startTime: new Date().toISOString()
       });
-
       logger.info(`Created job record with ID: ${jobId}`);
-      logger.info('Starting LLM content generation...');
 
       // Step 1: Generate LLM content
+      logger.info('Starting LLM content generation...');
       const llmResult = await this.services.llm.process(
         parameters.llmGenParams,
         prompt,
         false
       );
 
-      // Create base output directory
-      const currentDate = new Date().toISOString().split('T')[0];
-      const jobOutputDir = path.join(config.output.directory, currentDate, jobId);
-      await fs.mkdir(jobOutputDir, { recursive: true });
+      // Ensure we have scenes to process
+      if (!llmResult?.content?.scenes?.length) {
+        throw new Error('LLM service did not generate any scenes');
+      }
+
+      // Create output directories
+      await this.ensureOutputDirectories(jobOutputDir, llmResult.content.scenes.length);
 
       // Process each scene
       const sceneResults = [];
       for (let i = 0; i < llmResult.content.scenes.length; i++) {
         const sceneIndex = i + 1;
         const scene = llmResult.content.scenes[i];
-        const sceneDir = path.join(jobOutputDir, `scene_${sceneIndex}`);
-        await fs.mkdir(sceneDir, { recursive: true });
+        const sceneDir = this.getSceneOutputPath(jobOutputDir, sceneIndex);
 
         try {
           logger.info(`Processing scene ${sceneIndex}...`);
@@ -115,15 +141,15 @@ class JobPipelineService {
             });
           }
 
-          // Save scene results
-          sceneResults.push({
+          // Save scene results and metadata
+          const sceneResult = {
             sceneIndex,
             voice: voiceResult,
             image: imageResult,
             [visualizationType]: visualResult
-          });
+          };
+          sceneResults.push(sceneResult);
 
-          // Save scene metadata
           await fs.writeFile(
             path.join(sceneDir, 'metadata.json'),
             JSON.stringify({
@@ -174,24 +200,29 @@ class JobPipelineService {
       */
 
       // Save project metadata
+      const projectMetadata = {
+        jobId,
+        prompt,
+        status: 'completed',
+        parameters,
+        visualizationType,
+        llmResult: llmResult.content,
+        scenes: sceneResults,
+        // music: musicResult
+      };
+
       await fs.writeFile(
         path.join(jobOutputDir, 'project_metadata.json'),
-        JSON.stringify({
-          jobId,
-          prompt,
-          status: 'completed',
-          parameters,
-          visualizationType,
-          llmResult: llmResult.content,
-          scenes: sceneResults,
-          // music: musicResult
-        }, null, 2)
+        JSON.stringify(projectMetadata, null, 2)
       );
 
       // Update job status to completed
       await this.jobDataAccess.updateJob(jobId, {
         status: 'completed',
-        endTime: new Date().toISOString()
+        metadata: JSON.stringify({
+          ...projectMetadata,
+          endTime: new Date().toISOString()
+        })
       });
 
       logger.info(`Job ${jobId} completed successfully`);
@@ -209,11 +240,15 @@ class JobPipelineService {
       logger.error(`Error in job ${jobId}:`, error);
       
       try {
-        await this.jobDataAccess.updateJob(jobId, {
+        const errorData = {
           status: 'failed',
-          error: error.message,
-          endTime: new Date().toISOString()
-        });
+          metadata: JSON.stringify({
+            error: error.message,
+            errorStack: error.stack,
+            endTime: new Date().toISOString()
+          })
+        };
+        await this.jobDataAccess.updateJob(jobId, errorData);
       } catch (updateError) {
         logger.error('Error updating job status:', updateError);
       }
@@ -223,19 +258,43 @@ class JobPipelineService {
   }
 
   async getJobStatus(jobId) {
-    return await this.jobDataAccess.getJob(jobId);
+    try {
+      const job = await this.jobDataAccess.getJob(jobId);
+      if (!job) {
+        throw new Error(`Job not found: ${jobId}`);
+      }
+      return job;
+    } catch (error) {
+      logger.error(`Error getting job status for ${jobId}:`, error);
+      throw error;
+    }
   }
 
   async getAllJobs(filters = {}) {
-    return await this.jobDataAccess.getAllJobs(filters);
+    try {
+      return await this.jobDataAccess.getAllJobs(filters);
+    } catch (error) {
+      logger.error('Error getting all jobs:', error);
+      throw error;
+    }
   }
 
   async deleteJob(jobId) {
-    return await this.jobDataAccess.deleteJob(jobId);
+    try {
+      return await this.jobDataAccess.deleteJob(jobId);
+    } catch (error) {
+      logger.error(`Error deleting job ${jobId}:`, error);
+      throw error;
+    }
   }
 
   async getJobsStats() {
-    return await this.jobDataAccess.getJobsStats();
+    try {
+      return await this.jobDataAccess.getJobsStats();
+    } catch (error) {
+      logger.error('Error getting jobs stats:', error);
+      throw error;
+    }
   }
 }
 

@@ -3,3 +3,4 @@
 ## Artist Style:
 Parameter: {{ llmGen.image.artistStyle }}
 
+## Explaination and Definition

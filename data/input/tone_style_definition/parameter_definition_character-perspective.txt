@@ -3,6 +3,7 @@
 ## Vocabulary
 Parameter: {{ llmGen.characterPerspective }}
 
+## Explaination and Definition
 ### Documentary Videos
 - Expert:
 Provides authoritative insights and analysis (e.g., scientists, historians, industry leaders).

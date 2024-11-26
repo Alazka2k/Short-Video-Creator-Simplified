@@ -1,0 +1,6 @@
+# Image Parameters:
+
+## Style Reference:
+Parameter: {{ llmGen.image.aspectRatio }}
+
+## Explaination and Definition

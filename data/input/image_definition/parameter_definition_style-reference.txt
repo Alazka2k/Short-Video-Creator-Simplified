@@ -1,0 +1,6 @@
+# Image Parameters:
+
+## Style Reference (not defined yet):
+Parameter: {{ llmGen.image.styleReference }}
+
+## Explaination and Definition

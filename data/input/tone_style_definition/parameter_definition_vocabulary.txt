@@ -3,6 +3,7 @@
 ## Vocabulary
 Parameter: {{ llmGen.vocabulary }}
 
+## Explaination and Definition
 ### Documentary Videos
 - Descriptive Language:
 Use vivid adjectives and adverbs to paint a picture (e.g., "lush landscapes," "gripping stories").

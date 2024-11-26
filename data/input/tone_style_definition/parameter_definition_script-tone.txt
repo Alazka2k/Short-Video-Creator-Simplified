@@ -3,6 +3,7 @@
 ## Script Tone
 Parameter: {{ llmGen.scriptTone }}
 
+## Explaination and Definition
 ### Documentary Videos
 - Authoritative:
 Convey expertise and credibility (e.g., confident statements, well-researched facts).
