@@ -30,6 +30,10 @@
     "provider":"lumalabsAI",
     "apiKey": "YOUR_LUMALABS_API_KEY"
   },
+  "assembly": {
+    "provider":"JSON2Video",
+    "apiKey": "YOUR_JSON2VIDEO_API_KEY"
+  },
   "input": {
     "csvPath": "./data/input/input.csv"
   },

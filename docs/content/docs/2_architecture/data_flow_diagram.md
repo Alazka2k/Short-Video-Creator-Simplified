@@ -1,220 +1,261 @@
----
-title: "System Architecture and Data Flow"
-linkTitle: "Architecture"
-weight: 2
-description: >
-  A comprehensive overview of the SHORT-VIDEO-CREATOR-SIMPLIFIED system architecture and data flow.
----
+# Comprehensive Architecture Overview - SHORT-VIDEO-CREATOR-SIMPLIFIED
 
-## Overview
+## System Overview
 
-This document provides a detailed look at the current architecture of the SHORT-VIDEO-CREATOR-SIMPLIFIED system, including implemented services, planned improvements, and future developments.
+SHORT-VIDEO-CREATOR-SIMPLIFIED is a microservices-based application that automates the creation of short-form videos through AI services integration. The system processes user inputs through a streamlined interface to generate scripts, voice narrations, images, animations, and final videos.
 
-## System Architecture Diagram
+## System Architecture
 
-The following diagram illustrates the data flow and components of our system:
-
-{{< mermaid >}}
+```mermaid
 graph TD
     A[Client] -->|HTTP Request| B(API Gateway :3000)
-    B -->|/api/llm/generate| C[LLM Service :3001]
-    B -->|/api/image/generate| D[Image Service :3002]
-    B -->|/api/voice/generate| E[Voice Service :3003]
-    B -->|/api/animation/generate| F[Animation Service :3004]
-    B -->|/api/music/generate| G[Music Service :3005]
-    B -->|/api/video/generate| H[Video Service :3006]
-    B -->|/api/auth| I[Auth Service :3007]
-    B -->|/api/job| J[Job Service :3008]
-    B -->|/api/billing| K[Billing Service :3009]
     
-    C -->|Response| B
-    D -->|Response| B
-    E -->|Response| B
-    F -->|Response| B
-    G -->|Response| B
-    H -->|Response| B
-    I -->|Response| B
-    J -->|Response| B
-    K -->|Response| B
+    subgraph "Frontend Layer"
+        AA[Landing/Marketing]
+        AB[Auth Pages]
+        AC[Creation Wizard]
+        AD[Workspace/Library]
+    end
     
-    B -->|HTTP Response| A
-
-    subgraph API Gateway
-        L[Express.js Server]
-        M[Axios HTTP Client]
+    subgraph "API Gateway Layer :3000"
+        B -->|Route| BA[Request Validation]
+        BA -->|Forward| BB[Service Routing]
+        BB -->|Response| BC[Response Handling]
     end
-
-    subgraph "Core Services"
-        C
-        D
-        E
-        F
-        G
-        H
+    
+    subgraph "Service Layer"
+        B -->|/api/llm/generate| C[LLM Service :3001]
+        B -->|/api/image/generate| D[Image Service :3002]
+        B -->|/api/voice/generate| E[Voice Service :3003]
+        B -->|/api/animation/generate| F[Animation Service :3004]
+        B -->|/api/video/generate| H[Video Service :3006]
+        B -->|/api/auth| I[Auth Service :3007]
+        B -->|/api/job| J[Job Service :3008]
+        B -->|/api/billing| K[Billing Service :3009]
+        B -->|/api/assembly| L[Video Assembly :3010]
     end
-
-    subgraph "Support Services"
-        I
-        J
-        K
+    
+    J -->|Orchestration| C
+    J -->|Orchestration| D
+    J -->|Orchestration| E
+    J -->|Orchestration| F
+    J -->|Orchestration| H
+    J -->|Final Assembly| L
+    
+    L -->|JSON2Video API| M[JSON2Video Service]
+    
+    subgraph "Storage Layer"
+        N[(PostgreSQL DB)]
+        O[Local File Storage]
     end
-
-    L -->|Forward Request| M
-    M -->|Direct HTTP Request| C
-    M -->|Direct HTTP Request| D
-    M -->|Direct HTTP Request| E
-    M -->|Direct HTTP Request| F
-    M -->|Direct HTTP Request| G
-    M -->|Direct HTTP Request| H
-    M -->|Direct HTTP Request| I
-    M -->|Direct HTTP Request| J
-    M -->|Direct HTTP Request| K
-
-    N[(Database)]
-    O[External File Storage]
 
     C -->|Read/Write| N
-    D -.->|Future Read/Write| N
-    E -.->|Future Read/Write| N
-    F -.->|Future Read/Write| N
-    G -.->|Future Read/Write| N
-    H -.->|Future Read/Write| N
-    I -.->|Future Read/Write| N
-    J -.->|Future Read/Write| N
-    K -.->|Future Read/Write| N
+    D -->|Read/Write| N
+    E -->|Read/Write| N
+    F -->|Read/Write| N
+    H -->|Read/Write| N
+    I -->|Read/Write| N
+    J -->|Read/Write| N
+    K -->|Read/Write| N
+    L -->|Read/Write| N
 
-    D -.->|Future File Storage| O
-    E -.->|Future File Storage| O
-    F -.->|Future File Storage| O
-    G -.->|Future File Storage| O
-    H -.->|Future File Storage| O
+    D -->|Files| O
+    E -->|Files| O
+    F -->|Files| O
+    H -->|Files| O
+    L -->|Final Video| O
 
     classDef implemented fill:#90EE90,stroke:#333,stroke-width:2px;
-    classDef implementedEndpoint fill:#FFFF00,stroke:#333,stroke-width:2px;
+    classDef endpoint fill:#FFFF00,stroke:#333,stroke-width:2px;
     classDef planned fill:#FFB6C1,stroke:#333,stroke-width:2px;
+    classDef new fill:#FF69B4,stroke:#333,stroke-width:2px;
     
-    class C implemented;
-    class D,E,F,G,H implementedEndpoint;
-    class I,J,K,O planned;
-    class N implemented;
-{{< /mermaid >}}
+    class B,C,J,N implemented;
+    class D,E,F,H endpoint;
+    class I,K,AA,AB,AC,AD planned;
+    class L,M new;
+```
 
-## Component Descriptions
+## Component Specifications
 
-### Client
-- External application or user interface that sends requests to our system.
+### 1. Frontend Layer
 
-### API Gateway (Port 3000)
-- Central entry point for all client requests.
-- Implemented using Express.js for handling incoming HTTP requests.
-- Uses Axios to forward requests directly to the appropriate service.
+#### Public Pages
+- Landing page with service explanation
+- Pricing comparison
+- Features showcase with mouseover details
+- FAQ section
+- Use cases showcase
+- Authentication pages
 
-### Core Services
+#### Protected Pages
+- Creation Wizard
+  - Basic Mode:
+    - Video prompt input
+    - Scene count selection (max 6 for free tier)
+    - Video length selection (max 30s for free tier)
+    - Voice selection
+    - Aspect ratio selection
+  - Advanced Mode:
+    - Script style customization
+    - Shot style selection
+    - Animation type selection
+    - Style value adjustment (0-1000)
+- Scene Editor
+- Workspace/Library
 
-#### LLM Service (Port 3001)
-- **Status: Fully Implemented (including database integration)**
-- Handles language model processing tasks.
-- Generates video scripts and scene descriptions.
-- Stores data directly in the database.
+### 2. API Gateway (Port 3000)
+Implementation Status: Complete
+- Request routing and validation
+- Service coordination
+- Error handling
+- Health monitoring
+- Response formatting
 
-#### Image Service (Port 3002)
-- **Status: Implemented (endpoint only)**
-- Responsible for image generation based on scene descriptions.
-- Currently stores metadata and files locally.
+### 3. Service Layer
 
-#### Voice Service (Port 3003)
-- **Status: Implemented (endpoint only)**
-- Manages voice generation tasks for narration.
-- Currently stores metadata and audio files locally.
+#### Implemented Services:
+1. **LLM Service** (Port 3001)
+   - Script generation
+   - Scene structuring
+   - Full database integration
+   - OpenAI integration
 
-#### Animation Service (Port 3004)
-- **Status: Implemented (endpoint only)**
-- Handles creation of animations from static images.
-- Currently stores metadata and animation files locally.
+2. **Image Service** (Port 3002)
+   - Midjourney integration
+   - Image generation endpoints
+   - Local file storage
+   - Metadata management
 
-#### Music Service (Port 3005)
-- **Status: Implemented (endpoint only)**
-- Generates background music for video content.
-- Currently stores metadata and music files locally.
+3. **Voice Service** (Port 3003)
+   - ElevenLabs integration
+   - Voice synthesis endpoints
+   - Local file storage
+   - Metadata management
 
-#### Video Service (Port 3006)
-- **Status: Implemented (endpoint only)**
-- Responsible for video creation and processing.
-- Currently stores metadata and video files locally.
+4. **Animation Service** (Port 3004)
+   - ImmersityAI integration
+   - Animation endpoints
+   - Local file storage
+   - Metadata management
 
-### Support Services
+5. **Video Service** (Port 3006)
+   - LumaAI integration
+   - Video creation endpoints
+   - Local file storage
+   - Metadata management
 
-#### Auth Service (Port 3007)
-- **Status: Planned**
-- Will handle authentication and authorization.
+6. **Job Service** (Port 3008)
+   - Job orchestration
+   - Status tracking
+   - Resource management
+   - Service coordination
 
-#### Job Service (Port 3008)
-- **Status: Planned**
-- Will manage and track content creation jobs.
+#### New Service:
+7. **Video Assembly Service** (Port 3010)
+   - JSON2Video API integration
+   - Final video compilation
+   - Asset management
+   - Quality control
 
-#### Billing Service (Port 3009)
-- **Status: Planned**
-- Will handle payments and subscriptions.
+#### Planned Services:
+8. **Auth Service** (Port 3007)
+   - Social login (Google, Apple)
+   - Email/password authentication
+   - JWT token management
+   - Session handling
 
-### Database
-- **Status: Implemented**
-- PostgreSQL database storing all persistent data.
-- Currently fully integrated with LLM Service.
-- Includes tables for users, jobs, LLM inputs/outputs, and service-specific outputs.
+9. **Billing Service** (Port 3009)
+   - Credit system management
+   - Premium feature access
+   - Transaction tracking
+   - Usage monitoring
 
-### External File Storage
-- **Status: Planned**
-- Will store files generated by various services (images, audio, animations, music, videos).
-- Will be integrated with the database to link files with corresponding jobs and scenes.
+### 4. Storage Layer
 
-## Current Data Flow
+#### Database (PostgreSQL)
+Implementation Status: Complete
+- Users and authentication
+- Content management
+- Job tracking
+- Service outputs
+- Billing and credits
 
-1. The client sends an HTTP request to the API Gateway.
-2. The API Gateway forwards the request to the appropriate service.
-3. For the LLM Service:
-   - Processes the request and interacts with the database.
-   - Stores job, input, output, and scene data in the database.
-4. For other services (Image, Voice, Animation, Music, Video):
-   - Process the request and generate content.
-   - Store metadata and files locally in the output directory.
-5. The service sends a response back to the API Gateway.
-6. The API Gateway forwards the response back to the client.
+#### File Storage
+Implementation Status: Complete (Local)
+```plaintext
+data/output/
+├── llm/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+├── image/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+├── voice/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+├── animation/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+├── video/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+└── final/
+    └── YYYY-MM-DD/
+        └── [jobId]/
+```
 
-## Planned Improvements
 
-1. Database Integration for All Services:
-   - Implement database operations for Image, Voice, Animation, Music, and Video services.
-   - Store metadata and file references in respective database tables.
+## Data Flow
 
-2. External File Storage System:
-   - Set up a centralized file storage system (e.g., AWS S3, Google Cloud Storage).
-   - Modify services to upload generated files to the external storage.
-   - Update database schemas to store file references (URLs or paths) instead of local paths.
+### 1. Content Creation Flow
+1. User submits creation request
+2. Job Service creates new job
+3. Services execute in parallel per scene:
+   - LLM generates script
+   - Image Service creates visuals
+   - Voice Service generates narration
+   - Animation Service processes animations
+4. Video Assembly Service compiles final video
+5. Result delivered to user
 
-3. File-to-Database Linking:
-   - Implement a system to link stored files with corresponding database records.
-   - For job-level files (e.g., music), link directly to the job ID.
-   - For scene-specific files (e.g., voice, images), link to both job ID and scene ID.
+### 2. File Management Flow
+1. Services generate content
+2. Files stored in local filesystem
+3. Metadata stored in database
+4. Paths tracked in job records
+5. Cleanup handled by Job Service
 
-4. Service-Specific Improvements:
-   - Image Service: Store image metadata and URLs in the `image_outputs` table.
-   - Voice Service: Store voice metadata and URLs in the `voice_outputs` table, linked to scenes.
-   - Animation Service: Store animation metadata and URLs in the `animation_outputs` table, linked to scenes.
-   - Music Service: Store music metadata and URLs in the `music_outputs` table, linked to jobs.
-   - Video Service: Store video metadata and URLs in the `video_outputs` table, linked to scenes.
+## Implementation Status
 
-## Next Steps
+### Complete
+- API Gateway
+- LLM Service with database
+- Service endpoints
+- Basic job orchestration
+- Local file storage
+- Database structure
 
-1. Implement database integration for all services, starting with Image and Voice services.
-2. Set up the external file storage system and integrate it with the services.
-3. Update database schemas to accommodate file storage references.
-4. Modify services to use the new database and file storage system.
-5. Implement comprehensive error handling and logging for the new integrations.
-6. Develop and implement the planned support services (Auth, Job, Billing).
-7. Create admin interfaces for monitoring job statuses and system health.
-8. Develop comprehensive testing suites for all services, including integration tests with the new storage system.
-9. Implement monitoring and alerting solutions for the entire system, including file storage.
-10. Optimize database queries and implement caching where appropriate to improve performance.
-11. Develop a strategy for scaling services and file storage as demand increases.
+### In Development
+- Video Assembly Service
+- JSON2Video integration
+- Final video compilation
 
-This updated architecture provides a clear path for improving the system's data persistence and file management while maintaining the modular approach to content generation.
+### Planned
+- Frontend application
+- Authentication system
+- Billing system
+- Premium features
+- Advanced error handling
+
+## Deployment Strategy
+- Development: Local environment
+- Testing: Test environment
+- Production: Hetzner Cloud
+- No containerization currently planned
+
+## Performance Requirements
+- Initial capacity: 10 users/hour
+- API response time < 200ms
+- Job updates < 500ms
+- File operations < 1s

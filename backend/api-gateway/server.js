@@ -2,6 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
+const assemblyRoutes = require('../services/assembly-service/server');
+const path = require('path');
 // Commented out auth-related imports
 // const authController = require('../services/auth-service/auth-controller');
 // const authMiddleware = require('../services/auth-service/auth-middleware');
@@ -177,6 +179,8 @@ app.get('/api/job/jobs', async (req, res) => {
   }
 });
 
+// Add assembly routes
+app.use('/api/assembly', assemblyRoutes);
 
 // Commented out Auth Service routes
 // app.post('/api/auth/register', authController.register);
@@ -187,6 +191,9 @@ app.get('/api/job/jobs', async (req, res) => {
 // app.get('/api/protected', authMiddleware, (req, res) => {
 //   res.json({ message: 'This is a protected route', user: req.user });
 // });
+
+// Add media serving endpoint
+app.use('/media', express.static(path.join(__dirname, '../../data/output')));
 
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {
@@ -211,6 +218,7 @@ app.listen(PORT, () => {
   logger.info(`  /api/video/generate -> ${config.services.video.url}/generate`);
   logger.info(`  /api/job/generate -> ${config.services.job.url}/generate`);
   logger.info(`  /api/job/jobs -> ${config.services.job.url}/jobs`);
+  logger.info(`  /api/assembly -> /api/assembly`);
 });
 
 module.exports = app;

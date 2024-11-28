@@ -195,8 +195,11 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── auth-controller.js
 │   │   │   └── auth-model.js
 │   │   ├── job-service/
-│   │   │   ├── job-controller.js
-│   │   │   └── job-model.js
+│   │   │   ├── data/
+│   │   │   │   └── jobDataAccess.js
+│   │   │   ├── job-pipeline-service.js
+│   │   │   ├── server.js
+│   │   │   └── index.js
 │   │   ├── billing-service/
 │   │   │   ├── billing-controller.js
 │   │   │   └── billing-model.js
@@ -459,6 +462,44 @@ Each service follows a consistent request format through the API Gateway:
 }
 ```
 
+6. **Job Service** (`POST /api/job/generate`):
+```json
+{
+  "prompt": "prompt text",
+  "parameters": {
+    "llmGenParams": {
+      "general": {
+        "sceneAmount": "1-n",
+        "lengthDescription": "Your task is to write a 1-n seconds video",
+        "generalDescription": "Additional information"
+      },
+      "script": {
+        "characterPerspective": "E.g. Content Creator: Shares personal experiences and opinions",
+        "pacingStructure": "E.g. Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+        "scriptTone": "E.g. Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+        "vocabulary": "E.g. Engaging Questions: Pose rhetorical questions to provoke thought"
+      },
+      "image": {
+        "artistStyle": "E.g. Jakub Rozalski",
+        "shotStyle": "E.g. Photorealistic, cinematic",
+        "aspectRatio": "E.g. 9:16",
+        "style": "E.g. raw",
+        "sValue": "E.g. 500"
+      }
+    },
+    "voiceGenParams": {
+      "voiceId": "E.g. 21m00Tcm4TlvDq8ikWAM"
+    },
+    "imageGenParams": {},
+    "animationGenParams": {},
+    "videoGenParams": {
+      "aspectRatio": "E.g. 16:9"
+    }
+  },
+  "visualizationType": "E.g.video"
+}
+```
+
 ## Output Format
 
 The system maintains a structured output format for each service, organized by date and job ID:
@@ -529,37 +570,22 @@ Each service maintains its own directory structure with consistent patterns:
 
 The file paths are stored in the database, enabling efficient data management and retrieval. This structure supports both individual service operation and future integration into a complete video generation pipeline.
 
-## Output Format for Integration Job
+The integration job will be a single job that will generate a complete video from start to finish.
 
-The generated content is structured as follows for a complete video with integration of all services:
+## Outlook: Output Format for Final Video
+
+The final generated video is structured as follows for a complete video with integration of all services:
 
 ```
 output/
 └── YYYY-MM-DD_HH-MM-SS/
-    ├── prompt_1/
-    │   ├── llm_output.json
-    │   ├── background_music.mp3
-    │   ├── project_metadata.json
-    │   └── scene_1/
-    │       ├── voice.mp3
-    │       ├── image.png
-    │       ├── animation.mp4
-    │       ├── video.mp4
-    │       └── metadata.json
-    ├── prompt_2/
-    │   ├── llm_output.json
-    │   ├── background_music.mp3
-    │   ├── project_metadata.json
-    │   └── scene_1/
-    │       ├── voice.mp3
-    │       ├── image.png
-    │       ├── animation.mp4
-    │       ├── video.mp4
-    │       └── metadata.json
+    ├── [jobId]/
+    │   ├── final_video.mp4
+    │   └── project_metadata.json
     └── ...
 ```
 
-This structure is optimized for seamless import into video editing software, allowing for efficient post-processing and finalization. In the future, file paths will be stored in the database, pointing to the external file storage system.
+This structure is optimized for seamless import into video editing software or create the complete content at once, allowing for efficient post-processing and finalization and rapid video creation. In the future, file paths will be stored in the database, pointing to the external file storage system.
 
 ## Database Integration Status
 
@@ -595,6 +621,32 @@ The project has completed database integration for all services, establishing a 
    - Integrated with `video_outputs` table
    - File structure: `data/output/video/YYYY-MM-DD/[jobId]/scene_[X]/video_scene_[X].mp4`
    - Metadata storage: `data/output/video/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+
+7. **Job Service**:
+   - Integrated with `jobs` table
+   - File structure:
+      - Final video:
+          - `data/output/integration/YYYY-MM-DD/[jobId]/final_video.mp4`
+          - `data/output/integration/YYYY-MM-DD/[jobId]/project_metadata.json`
+        - Content pieces:
+          - LLM:
+            - File structure: `data/output/llm/YYYY-MM-DD/[jobId]/llm_output.json`
+          - Image:
+            - File structure: `data/output/image/YYYY-MM-DD/[jobId]/scene_[X]/image_scene_[X].png`
+            - Metadata storage: `data/output/image/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`  
+          - Voice:
+            - File structure: `data/output/voice/YYYY-MM-DD/[jobId]/scene_[X]/voice_scene_[X].mp3`
+            - Metadata storage: `data/output/voice/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`  
+          - Animation:
+            - File structure: `data/output/animation/YYYY-MM-DD/[jobId]/scene_[X]/animation_scene_[X].mp4`
+            - Metadata storage: `data/output/animation/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+          - Video:
+            - File structure: `data/output/video/YYYY-MM-DD/[jobId]/scene_[X]/video_scene_[X].mp4`
+            - Metadata storage: `data/output/video/YYYY-MM-DD/[jobId]/scene_[X]/metadata.json`
+          - Music:
+            - File structure: `data/output/music/YYYY-MM-DD/[jobId]/background_music.mp3`
+            - Metadata storage: `data/output/music/YYYY-MM-DD/[jobId]/metadata.json`
+
 
 ### Database Operations for Each Service:
 All services provide standard database operations:
