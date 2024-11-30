@@ -8,72 +8,90 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED is a microservices-based application that automat
 
 ```mermaid
 graph TD
+    %% Client and Gateway
     A[Client] -->|HTTP Request| B(API Gateway :3000)
-    
-    subgraph "Frontend Layer"
-        AA[Landing/Marketing]
-        AB[Auth Pages]
-        AC[Creation Wizard]
-        AD[Workspace/Library]
-    end
-    
-    subgraph "API Gateway Layer :3000"
-        B -->|Route| BA[Request Validation]
-        BA -->|Forward| BB[Service Routing]
-        BB -->|Response| BC[Response Handling]
-    end
-    
-    subgraph "Service Layer"
-        B -->|/api/llm/generate| C[LLM Service :3001]
-        B -->|/api/image/generate| D[Image Service :3002]
-        B -->|/api/voice/generate| E[Voice Service :3003]
-        B -->|/api/animation/generate| F[Animation Service :3004]
-        B -->|/api/video/generate| H[Video Service :3006]
-        B -->|/api/auth| I[Auth Service :3007]
-        B -->|/api/job| J[Job Service :3008]
-        B -->|/api/billing| K[Billing Service :3009]
-        B -->|/api/assembly| L[Video Assembly :3010]
-    end
-    
-    J -->|Orchestration| C
-    J -->|Orchestration| D
-    J -->|Orchestration| E
-    J -->|Orchestration| F
-    J -->|Orchestration| H
-    J -->|Final Assembly| L
-    
-    L -->|JSON2Video API| M[JSON2Video Service]
-    
-    subgraph "Storage Layer"
-        N[(PostgreSQL DB)]
-        O[Local File Storage]
+    B -->|HTTP Response| A
+
+    %% Core Content Generation Services
+    B -->|/api/llm/generate| C[LLM Service :3001]
+    B -->|/api/image/generate| D[Image Service :3002]
+    B -->|/api/voice/generate| E[Voice Service :3003]
+    B -->|/api/animation/generate| F[Animation Service :3004]
+    B -->|/api/video/generate| H[Video Service :3005]
+    B -->|/api/music/generate| G[Music Service :3006]
+    B -->|/api/assembly/assemble| V[Assembly Service :3007]
+
+    %% Support Services
+    B -->|/api/job| J[Job Service :3008]
+    B -->|/api/auth| I[Auth Service :3009]
+    B -->|/api/billing| K[Billing Service :3010]
+
+    %% Service Responses
+    C -->|LLM Response| B
+    D -->|Image Response| B
+    E -->|Voice Response| B
+    F -->|Animation Response| B
+    G -->|Music Response| B
+    H -->|Video Response| B
+    V -->|Assembly Response| B
+    I -->|Auth Response| B
+    J -->|Job Response| B
+    K -->|Billing Response| B
+
+    %% API Gateway Components
+    subgraph Gateway
+        L[Express.js Server]
+        M[Axios HTTP Client]
+        N[Media Server]
     end
 
-    C -->|Read/Write| N
-    D -->|Read/Write| N
-    E -->|Read/Write| N
-    F -->|Read/Write| N
-    H -->|Read/Write| N
-    I -->|Read/Write| N
-    J -->|Read/Write| N
-    K -->|Read/Write| N
-    L -->|Read/Write| N
+    %% Service Groups
+    subgraph "Content Generation Services"
+        C
+        D
+        E
+        F
+        H
+        G
+        V
+    end
 
-    D -->|Files| O
-    E -->|Files| O
-    F -->|Files| O
-    H -->|Files| O
-    L -->|Final Video| O
+    subgraph "Support Services"
+        J
+        I
+        K
+    end
 
+    %% Database Connections
+    DB[(PostgreSQL)]
+    C -->|Store Data| DB
+    D -->|Store Data| DB
+    E -->|Store Data| DB
+    F -->|Store Data| DB
+    G -->|Store Data| DB
+    H -->|Store Data| DB
+    V -->|Store Data| DB
+    J -->|Store/Query Data| DB
+
+    %% Internal Gateway Flow
+    L -->|Forward Request| M
+    M -->|Direct Request| C & D & E & F & G & H & V & I & J & K
+    N -->|Serve Media| B
+
+    %% Media Storage
+    FS[File Storage]
+    D & E & F & G & H & V -->|Store Media| FS
+    N -->|Read Media| FS
+
+    %% Style Definitions
     classDef implemented fill:#90EE90,stroke:#333,stroke-width:2px;
-    classDef endpoint fill:#FFFF00,stroke:#333,stroke-width:2px;
+    classDef inProgress fill:#FFA500,stroke:#333,stroke-width:2px;
     classDef planned fill:#FFB6C1,stroke:#333,stroke-width:2px;
-    classDef new fill:#FF69B4,stroke:#333,stroke-width:2px;
-    
-    class B,C,J,N implemented;
-    class D,E,F,H endpoint;
-    class I,K,AA,AB,AC,AD planned;
-    class L,M new;
+
+    %% Apply Styles
+    class C,E implemented;
+    class D,F,H,G,V,N,FS inProgress;
+    class I,J,K planned;
 ```
 
 ## Component Specifications
@@ -139,33 +157,32 @@ Implementation Status: Complete
    - Local file storage
    - Metadata management
 
-5. **Video Service** (Port 3006)
+5. **Video Service** (Port 3005)
    - LumaAI integration
    - Video creation endpoints
    - Local file storage
    - Metadata management
 
-6. **Job Service** (Port 3008)
-   - Job orchestration
-   - Status tracking
-   - Resource management
-   - Service coordination
-
-#### New Service:
-7. **Video Assembly Service** (Port 3010)
+6. **Video Assembly Service** (Port 3006)
    - JSON2Video API integration
    - Final video compilation
    - Asset management
    - Quality control
 
+7. **Job Service** (Port 3007)
+   - Job orchestration
+   - Status tracking
+   - Resource management
+   - Service coordination
+
 #### Planned Services:
-8. **Auth Service** (Port 3007)
+8. **Auth Service** (Port 3009)
    - Social login (Google, Apple)
    - Email/password authentication
    - JWT token management
    - Session handling
 
-9. **Billing Service** (Port 3009)
+9. **Billing Service** (Port 3010)
    - Credit system management
    - Premium feature access
    - Transaction tracking
@@ -174,12 +191,6 @@ Implementation Status: Complete
 ### 4. Storage Layer
 
 #### Database (PostgreSQL)
-Implementation Status: Complete
-- Users and authentication
-- Content management
-- Job tracking
-- Service outputs
-- Billing and credits
 
 #### File Storage
 Implementation Status: Complete (Local)
@@ -200,7 +211,13 @@ data/output/
 ├── video/
 │   └── YYYY-MM-DD/
 │       └── [jobId]/
-└── final/
+├── music/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+├── assembly/
+│   └── YYYY-MM-DD/
+│       └── [jobId]/
+└── job/
     └── YYYY-MM-DD/
         └── [jobId]/
 ```

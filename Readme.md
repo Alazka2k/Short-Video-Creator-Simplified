@@ -29,8 +29,7 @@ This project aims to streamline the content creation pipeline by integrating sev
 - Animation Generation (Immersity AI) for creating animations from static images
 - Music Generation (Suno) for custom background tracks
 - Video Generation (Luma AI) for creating video content from images and prompts
-
-The system processes input from a CSV file containing multiple prompts, leverages these AI services, and outputs a structured set of files primed for import into video editing software such as Capcut, significantly reducing the time and effort required in the content creation process.
+- Video Assembly (JSON2Video) for final video compilation with transitions
 
 ## Features
 
@@ -51,6 +50,11 @@ The system processes input from a CSV file containing multiple prompts, leverage
 - Fully functional video generation service with API gateway integration
 - Database integration for persistent storage of job and content data
 - Planned external file storage system for generated media files
+- Automated video assembly with JSON2Video integration
+- Support for scene transitions and layered media
+- Background music integration
+- Local media serving through API gateway
+- Structured video project configuration
 
 ## Prerequisites
 
@@ -64,6 +68,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
   - Immersity AI for animation generation
   - Suno for music generation
   - Luma AI for video generation
+- JSON2Video API key for video assembly
 
 ## Installation
 
@@ -90,7 +95,7 @@ The system processes input from a CSV file containing multiple prompts, leverage
    {
      "llm": {
        "provider": "openai",
-       "model": "gpt-4o-2024-08-06",
+       "model": "gpt-4-turbo-preview",
        "apiKey": "YOUR_OPENAI_API_KEY"
      },
      "voiceGen": {
@@ -118,6 +123,10 @@ The system processes input from a CSV file containing multiple prompts, leverage
      "videoGen": {
        "provider": "lumaAI",
        "apiKey": "YOUR_LUMA_AI_API_KEY"
+     },
+     "assembly": {
+       "provider":"JSON2Video",
+       "apiKey": "YOUR_JSON2VIDEO_API_KEY"
      },
      "input": {
        "csvPath": "./data/input/input.csv"
@@ -182,7 +191,9 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 |       │   └── [jobID]
 │       ├── llm/
 |       │   └── [jobID]
-│       └── image/
+│       ├── image/
+|       │   └── [jobID]
+│       └── assembly/
 |           └── [jobID]
 ├── docs/
 ├── logs/
@@ -235,6 +246,12 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── server.js
 │   │   │   ├── index.js
 │   │   │   └── animationPatternGenerator.js
+│   │   ├── assembly-service/
+│   │   │   ├── data/
+│   │   │   │   └── assemblyDataAccess.js
+│   │   │   ├── assembly-service.js
+│   │   │   ├── server.js
+│   │   │   └── index.js
 │   │   └── video-service/
 │   │       ├── data/
 │   │       │   └── videoDataAccess.js
@@ -341,6 +358,8 @@ Each service runs independently, and the API Gateway communicates directly with 
 - Animation Generation: Employs Immersity AI for creating animations from static images
 - Music Generation: Uses Suno AI for custom background music creation
 - Video Generation: Utilizes Luma AI for generating videos from images and prompts
+- Job Service: Orchestrates the content generation process and manages job statuses, runs LLM, Voice, Image, Animation, Music, Video at once
+- Video Assembly: Utilizes JSON2Video for final video compilation with transitions and layered media
 
 Detailed documentation for each service integration can be found in the respective files within the `backend/services/` directory.
 
@@ -367,6 +386,14 @@ The project uses a PostgreSQL database to store persistent data. The database sc
 15. **music_outputs**: Stores information about generated music.
 16. **animation_outputs**: Contains data about created animations.
 17. **video_outputs**: Stores information about generated videos.
+18. **assembly_outputs**: Stores information about assembled videos
+    - Assembly ID
+    - Job ID
+    - Project ID (JSON2Video)
+    - Status
+    - Video file URL
+    - Assembly configuration
+    - Metadata
 
 ### Key Features:
 
@@ -559,6 +586,15 @@ data/output/video/
         └── scene_1/
             ├── video_scene_1.mp4
             └── metadata.json
+```
+
+### Assembly Service Output
+```
+data/output/assembly/
+└── YYYY-MM-DD/
+    └── [jobId]/
+        ├── final_video.mp4
+        └── metadata.json
 ```
 
 Each service maintains its own directory structure with consistent patterns:

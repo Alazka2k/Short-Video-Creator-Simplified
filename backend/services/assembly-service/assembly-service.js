@@ -1,4 +1,4 @@
-const { JSON2Video } = require('json2video');
+const Json2Video = require('json2video-sdk');
 const assemblyDataAccess = require('./data/assemblyDataAccess');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
@@ -10,8 +10,13 @@ class AssemblyService {
       throw new Error('Assembly API key not found in configuration');
     }
     
-    this.json2video = new JSON2Video(config.assembly.apiKey);
+    this.json2video = Json2Video({
+      apiKey: config.assembly.apiKey
+    });
     this.mediaBaseUrl = process.env.MEDIA_BASE_URL || config.services.gateway?.url || 'http://localhost:3000/media';
+    
+    logger.info(`Assembly Provider: ${config.assembly.provider}`);
+    logger.info(`Assembly API Key: ${config.assembly.apiKey ? 'Loaded' : 'Missing'}`);
   }
 
   async init() {

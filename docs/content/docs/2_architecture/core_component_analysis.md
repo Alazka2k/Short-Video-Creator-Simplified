@@ -140,7 +140,7 @@ description: >
 - Format management
 - Quality control
 
-## 6. Final Video Creation Service
+## 6. Assembly Service (Full Video Creation)
 **Technology**: Node.js with Express
 **Integration**: JSON2Video API
 **Primary Responsibilities**:
@@ -188,7 +188,7 @@ description: >
 | Image | Midjourney, Database | Job Service |
 | Animation | ImmersityAI, Database | Job Service |
 | Video | LumaAI, Database | Job Service |
-| Final Video | JSON2Video, Database | All Services |
+| Assembly (Final Video) | JSON2Video, Database | All Services |
 
 ## Performance Requirements
 - API response time < 200ms

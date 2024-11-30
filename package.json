@@ -37,7 +37,8 @@
     "start:music": "node backend/services/music-service/index.js",
     "start:animation": "node backend/services/animation-service/index.js",
     "start:video": "node backend/services/video-service/index.js",
-    "start:jobs": "node backend/services/job-service/index.js"
+    "start:jobs": "node backend/services/job-service/index.js",
+    "start:assembly": "node backend/services/assembly-service/index.js"
   },
   "keywords": [
     "AI",

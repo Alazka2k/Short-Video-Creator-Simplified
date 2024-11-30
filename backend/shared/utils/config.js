@@ -108,12 +108,13 @@ function loadConfig() {
     llm: { url: process.env.LLM_SERVICE_URL || 'http://localhost:3001' },
     image: { url: process.env.IMAGE_SERVICE_URL || 'http://localhost:3002' },
     voice: { url: process.env.VOICE_SERVICE_URL || 'http://localhost:3003' },
-    music: { url: process.env.MUSIC_SERVICE_URL || 'http://localhost:3004' },
-    animation: { url: process.env.ANIMATION_SERVICE_URL || 'http://localhost:3005' },
-    video: { url: process.env.VIDEO_SERVICE_URL || 'http://localhost:3006' },
-    auth: { url: process.env.AUTH_SERVICE_URL || 'http://localhost:3007' },
+    animation: { url: process.env.ANIMATION_SERVICE_URL || 'http://localhost:3004' },
+    video: { url: process.env.VIDEO_SERVICE_URL || 'http://localhost:3005' },
+    music: { url: process.env.MUSIC_SERVICE_URL || 'http://localhost:3006' },
+    assembly: { url: process.env.ASSEMBLY_SERVICE_URL || 'http://localhost:3007' },
     job: { url: process.env.JOB_SERVICE_URL || 'http://localhost:3008' },
-    billing: { url: process.env.BILLING_SERVICE_URL || 'http://localhost:3009' }
+    auth: { url: process.env.AUTH_SERVICE_URL || 'http://localhost:3009' },
+    billing: { url: process.env.BILLING_SERVICE_URL || 'http://localhost:3010' }
   };
 
   // Log the merged configuration
