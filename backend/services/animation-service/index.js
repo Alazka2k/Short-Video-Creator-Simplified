@@ -90,7 +90,7 @@ async function startServer() {
     const animationServiceInterface = new AnimationServiceInterface();
     await animationServiceInterface.initialize();
 
-    const PORT = process.env.ANIMATION_SERVICE_PORT || 3005;
+    const PORT = process.env.ANIMATION_SERVICE_PORT || 3004;
     const app = createServer(animationServiceInterface);
 
     app.listen(PORT, () => {

@@ -66,7 +66,7 @@ async function startServer() {
     const videoServiceInterface = new VideoServiceInterface();
     await videoServiceInterface.initialize();
 
-    const PORT = process.env.VIDEO_SERVICE_PORT || 3006;
+    const PORT = process.env.VIDEO_SERVICE_PORT || 3005;
     const app = createServer(videoServiceInterface);
 
     app.listen(PORT, () => {

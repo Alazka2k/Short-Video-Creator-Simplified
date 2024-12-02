@@ -33,9 +33,26 @@ app.post('/api/llm/generate', async (req, res) => {
     const { inputPrompt, llmGenParams } = req.body;
 
     // Basic validation
-    if (!inputPrompt || !llmGenParams) {
-      throw new Error('Missing required parameters: inputPrompt, llmGenParams');
+    if (!inputPrompt) {
+      throw new Error('Missing required parameter: inputPrompt');
     }
+
+    if (!llmGenParams || !llmGenParams.general) {
+      throw new Error('Missing required llmGenParams structure: must include general section');
+    }
+
+    // Validate only the truly required general parameters
+    const requiredGeneralParams = ['sceneAmount', 'lengthDescription'];
+    for (const param of requiredGeneralParams) {
+      if (!llmGenParams.general[param]) {
+        throw new Error(`Missing required parameter: general.${param}`);
+      }
+    }
+
+    // Ensure all optional objects exist even if empty
+    llmGenParams.script = llmGenParams.script || {};
+    llmGenParams.image = llmGenParams.image || {};
+    llmGenParams.general.generalDescription = llmGenParams.general.generalDescription || '';
 
     const response = await axios.post(`${config.services.llm.url}/generate`, {
       inputPrompt,
@@ -48,7 +65,10 @@ app.post('/api/llm/generate', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     logger.error(`LLM request error: ${error.message}`);
-    res.status(500).json({ error: 'LLM request failed', details: error.message });
+    res.status(error.response?.status || 500).json({
+      error: 'LLM request failed',
+      details: error.response?.data?.details || error.message
+    });
   }
 });
 
@@ -132,6 +152,61 @@ app.post('/api/video/generate', async (req, res) => {
   }
 });
 
+// Assembly Service routes
+app.post('/api/assembly/assemble', async (req, res) => {
+  try {
+    logger.info('Forwarding request to Assembly service');
+    const response = await axios.post(`${config.services.assembly.url}/assemble`, req.body, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 600000  // 10 minutes timeout
+    });
+    logger.info(`Received response from Assembly service: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Assembly request error: ${error.message}`);
+    res.status(error.response?.status || 500).json({
+      error: 'Assembly request failed',
+      details: error.response?.data?.details || error.message
+    });
+  }
+});
+
+app.get('/api/assembly/status/:jobId', async (req, res) => {
+  try {
+    logger.info(`Forwarding assembly status request for jobId: ${req.params.jobId}`);
+    const response = await axios.get(`${config.services.assembly.url}/status/${req.params.jobId}`, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000  // 30 seconds timeout
+    });
+    logger.info(`Received assembly status response: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Assembly status request error: ${error.message}`);
+    res.status(error.response?.status || 500).json({
+      error: 'Assembly status request failed',
+      details: error.response?.data?.details || error.message
+    });
+  }
+});
+
+app.get('/api/assembly/validate/:jobId', async (req, res) => {
+  try {
+    logger.info(`Forwarding assembly validation request for jobId: ${req.params.jobId}`);
+    const response = await axios.get(`${config.services.assembly.url}/validate/${req.params.jobId}`, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000  // 30 seconds timeout
+    });
+    logger.info(`Received assembly validation response: ${JSON.stringify(response.data)}`);
+    res.json(response.data);
+  } catch (error) {
+    logger.error(`Assembly validation request error: ${error.message}`);
+    res.status(error.response?.status || 500).json({
+      error: 'Assembly validation request failed',
+      details: error.response?.data?.details || error.message
+    });
+  }
+});
+
 // Job Service routes
 app.post('/api/job/generate', async (req, res) => {
   try {
@@ -179,9 +254,6 @@ app.get('/api/job/jobs', async (req, res) => {
   }
 });
 
-// Add assembly routes
-app.use('/api/assembly', assemblyRoutes);
-
 // Commented out Auth Service routes
 // app.post('/api/auth/register', authController.register);
 // app.post('/api/auth/login', authController.login);
@@ -210,15 +282,37 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
   logger.info('Configured routes:');
+  
+  // LLM Service
   logger.info(`  /api/llm/generate -> ${config.services.llm.url}/generate`);
+  
+  // Image Service
   logger.info(`  /api/image/generate -> ${config.services.image.url}/generate`);
+  
+  // Voice Service
   logger.info(`  /api/voice/generate -> ${config.services.voice.url}/generate`);
-  logger.info(`  /api/music/generate -> ${config.services.music.url}/generate`);
+  
+  // Animation Service
   logger.info(`  /api/animation/generate -> ${config.services.animation.url}/generate`);
+  
+  // Video Service
   logger.info(`  /api/video/generate -> ${config.services.video.url}/generate`);
+  
+  // Music Service
+  logger.info(`  /api/music/generate -> ${config.services.music.url}/generate`);
+  
+  // Assembly Service
+  logger.info(`  /api/assembly/assemble -> ${config.services.assembly.url}/assemble`);
+  logger.info(`  /api/assembly/status/:jobId -> ${config.services.assembly.url}/status`);
+  logger.info(`  /api/assembly/validate/:jobId -> ${config.services.assembly.url}/validate`);
+  
+  // Job Service
   logger.info(`  /api/job/generate -> ${config.services.job.url}/generate`);
   logger.info(`  /api/job/jobs -> ${config.services.job.url}/jobs`);
-  logger.info(`  /api/assembly -> /api/assembly`);
+  logger.info(`  /api/job/jobs/:jobId -> ${config.services.job.url}/jobs/:jobId`);
+  
+  // Media Service
+  logger.info(`  /media/* -> Serving static files from ${path.join(__dirname, '../../data/output')}`);
 });
 
 module.exports = app;

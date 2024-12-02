@@ -68,7 +68,7 @@ async function startServer() {
     const musicServiceInterface = new MusicServiceInterface();
     await musicServiceInterface.initialize();
 
-    const PORT = process.env.MUSIC_SERVICE_PORT || 3004;
+    const PORT = process.env.MUSIC_SERVICE_PORT || 3006;
     const app = createServer(musicServiceInterface);
 
     app.listen(PORT, () => {

@@ -44,6 +44,17 @@ class LLMService {
         ? (await PromptUtils.loadParameters(path.join(config.basePaths.input, 'parameters.json'))).llmGen 
         : llmGenParams;
 
+      // Extract visual metadata from parameters
+      const visualMetadata = {};
+      if (params.image) {
+        // Only include parameters that were provided
+        if (params.image.style) visualMetadata.style = params.image.style;
+        if (params.image.sValue) visualMetadata.sValue = params.image.sValue;
+        if (params.image.shotStyle) visualMetadata.shotStyle = params.image.shotStyle;
+        if (params.image.artistStyle) visualMetadata.artistStyle = params.image.artistStyle;
+        if (params.image.aspectRatio) visualMetadata.aspectRatio = params.image.aspectRatio;
+      }
+
       const dynamicPrompt = PromptUtils.replacePlaceholders(initialPrompt, { llmGen: params });
       const combined_prompt = `${dynamicPrompt}\n\nCreate a video script about the following topic: ${inputPrompt}`;
 
@@ -83,18 +94,15 @@ class LLMService {
           );
           logger.info(`Created LLM output record: ${llmOutputId}`);
 
-          // Extract visual metadata from parameters
-          const visualMetadata = {
-            artistStyle: params.artistStyle,
-            shotStyle: params.shotStyle,
-            aspectRatio: params.aspectRatio,
-            style: params.style,
-            sValue: params.sValue
-          };
+          // Update the scenes with visual metadata
+          const scenesWithMetadata = video_script.scenes.map(scene => ({
+            ...scene,
+            visual_metadata: visualMetadata
+          }));
 
           // Store scenes with visual metadata
-          for (let i = 0; i < video_script.scenes.length; i++) {
-            const scene = video_script.scenes[i];
+          for (let i = 0; i < scenesWithMetadata.length; i++) {
+            const scene = scenesWithMetadata[i];
             const sceneId = await this.dataAccess.createScene(
               jobId,
               llmOutputId,
@@ -103,7 +111,7 @@ class LLMService {
               scene.visual_prompt,
               scene.video_prompt,
               scene.camera_movement,
-              visualMetadata  // Added visual metadata
+              scene.visual_metadata
             );
             logger.info(`Created scene record ${i + 1}: ${sceneId}`);
           }
@@ -131,13 +139,7 @@ class LLMService {
             visual_prompt: scene.visual_prompt,
             video_prompt: scene.video_prompt,
             camera_movement: scene.camera_movement,
-            visual_metadata: {  // Added to response
-              artistStyle: params.artistStyle,
-              shotStyle: params.shotStyle,
-              aspectRatio: params.aspectRatio,
-              style: params.style,
-              sValue: params.sValue
-            }
+            visual_metadata: { ...visualMetadata }
           })),
           music: {
             title: video_script.music.title,

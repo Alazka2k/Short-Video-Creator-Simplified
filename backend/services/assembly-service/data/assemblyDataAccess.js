@@ -11,24 +11,19 @@ class AssemblyDataAccess {
 
   async createAssemblyOutput(jobId, assemblyData) {
     try {
-      // Validate jobId
-      if (!jobId || typeof jobId !== 'string' || !this.isValidUUID(jobId)) {
+      if (!this.isValidUUID(jobId)) {
         throw new Error(`Invalid jobId: ${jobId}`);
       }
 
-      // Create relative and full paths
       const dateFolder = new Date().toISOString().split('T')[0];
       const relativePath = path.join(dateFolder, jobId);
       const fullPath = path.join(this.storageBasePath, relativePath);
 
-      // Ensure directory exists
       await fs.mkdir(fullPath, { recursive: true });
 
-      // Define file name and path
       const fileName = 'final_video.mp4';
       const filePath = path.join(fullPath, fileName);
 
-      // Prepare metadata
       const fullMetadata = {
         ...assemblyData.metadata,
         relativePath,
@@ -37,7 +32,6 @@ class AssemblyDataAccess {
         createdAt: new Date().toISOString()
       };
 
-      // Create database record
       const [assemblyRecord] = await knex('assembly_outputs')
         .insert({
           job_id: jobId,
@@ -52,6 +46,50 @@ class AssemblyDataAccess {
       return assemblyRecord;
     } catch (error) {
       logger.error('Error creating assembly output:', error);
+      throw error;
+    }
+  }
+
+  async getSceneAssets(jobId, sceneId) {
+    try {
+      const assets = await knex.transaction(async (trx) => {
+        // Get video asset
+        const video = await trx('video_outputs')
+          .where({ job_id: jobId, scene_id: sceneId })
+          .first();
+        
+        // Get voice asset
+        const voice = await trx('voice_outputs')
+          .where({ job_id: jobId, scene_id: sceneId })
+          .first();
+
+        // Get scene details
+        const scene = await trx('llm_scenes')
+          .where({ job_id: jobId, scene_id: sceneId })
+          .first();
+          
+        if (!video || !voice || !scene) {
+          throw new Error(`Missing required assets for scene ${sceneId}`);
+        }
+
+        return { video, voice, scene };
+      });
+
+      return assets;
+    } catch (error) {
+      logger.error(`Error fetching scene assets for job ${jobId}, scene ${sceneId}:`, error);
+      throw error;
+    }
+  }
+
+  async getMusicAsset(jobId) {
+    try {
+      const music = await knex('music_outputs')
+        .where({ job_id: jobId })
+        .first();
+      return music;
+    } catch (error) {
+      logger.error(`Error fetching music asset for job ${jobId}:`, error);
       throw error;
     }
   }
@@ -76,6 +114,18 @@ class AssemblyDataAccess {
       };
     } catch (error) {
       logger.error('Error getting assembly by job ID:', error);
+      throw error;
+    }
+  }
+
+  async getAllScenes(jobId) {
+    try {
+      const scenes = await knex('llm_scenes')
+        .where('job_id', jobId)
+        .orderBy('scene_number', 'asc');
+      return scenes;
+    } catch (error) {
+      logger.error(`Error fetching all scenes for job ${jobId}:`, error);
       throw error;
     }
   }
@@ -134,10 +184,48 @@ class AssemblyDataAccess {
     }
   }
 
+  async validateAssemblyAssets(jobId) {
+    try {
+      const scenes = await this.getAllScenes(jobId);
+      const results = await Promise.all(scenes.map(async (scene) => {
+        try {
+          const assets = await this.getSceneAssets(jobId, scene.scene_id);
+          return {
+            sceneId: scene.scene_id,
+            sceneNumber: scene.scene_number,
+            status: 'valid',
+            assets: {
+              video: !!assets.video,
+              voice: !!assets.voice
+            }
+          };
+        } catch (error) {
+          return {
+            sceneId: scene.scene_id,
+            sceneNumber: scene.scene_number,
+            status: 'invalid',
+            error: error.message
+          };
+        }
+      }));
+
+      const music = await this.getMusicAsset(jobId);
+      
+      return {
+        scenes: results,
+        music: !!music,
+        isValid: results.every(result => result.status === 'valid') && !!music
+      };
+    } catch (error) {
+      logger.error(`Error validating assembly assets for job ${jobId}:`, error);
+      throw error;
+    }
+  }
+
   isValidUUID(uuid) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 }
 
-module.exports = new AssemblyDataAccess(); 
+module.exports = new AssemblyDataAccess();

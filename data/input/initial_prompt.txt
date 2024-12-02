@@ -26,13 +26,14 @@
 # Scenario and Structure:
 - Number of scenes: {{ llmGen.general.sceneAmount }}
 Imagine to speak the script description as narrator. The length of each scene as narration should not be longer then 5 seconds.
-- {{ llmGen.general.generalDescription }}
 - {{ llmGen.general.lengthDescription }}
+- {{ llmGen.general.generalDescription }}
 
 # Script Tone and Style:
+- {{ llmGen.script.characterPerspective }}
+- {{ llmGen.script.pacingStructure }}
 - {{ llmGen.script.scriptTone }}
 - {{ llmGen.script.vocabulary }}
-- {{ llmGen.script.pacingStructure }}
 
 # Visual Prompt Guidelines:
 - Picture description: An image which describes the corresponding scene. Add information about the scene and details about the time period
@@ -106,7 +107,7 @@ E.g. for the values:
     "sValue":"{{ llmGen.image.sValue }}"
     
 The second part of visual_prompt must look like:
-; in the style of {{ llmGen.image.artistStyle }}. {{ llmGen.image.shotStyle }} --ar {{ llmGen.image.aspectRatio }} --style {{ llmGen.image.style }} --s {{ llmGen.iamge.sValue }}
+; in the style of {{ llmGen.image.artistStyle }}. {{ llmGen.image.shotStyle }} --ar {{ llmGen.image.aspectRatio }} --style {{ llmGen.image.style }} --s {{ llmGen.image.sValue }}
 
 The pattern is always the same:
 Artist Style (if given) Shot Style (if given) --ar [given aspect ratio] --style [given style] --s [given style value]

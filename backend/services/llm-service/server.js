@@ -21,47 +21,41 @@ function createServer(llmServiceInterface) {
   });
 
   // Generate endpoint
-  app.post('/api/llm/generate', async (req, res) => {
+  app.post('/generate', async (req, res) => {
     try {
-      logger.info('Forwarding request to LLM service');
+      logger.info('Processing LLM generation request');
       const { inputPrompt, llmGenParams } = req.body;
   
-      // Enhanced validation
+      // Basic validation
       if (!inputPrompt) {
         throw new Error('Missing required parameter: inputPrompt');
       }
   
-      if (!llmGenParams || !llmGenParams.general || !llmGenParams.script || !llmGenParams.image) {
-        throw new Error('Missing required llmGenParams structure: must include general, script, and image sections');
+      if (!llmGenParams || !llmGenParams.general) {
+        throw new Error('Missing required llmGenParams structure: must include general section');
       }
   
-      // Validate required nested parameters
-      const requiredParams = {
-        general: ['sceneAmount', 'lengthDescription', 'generalDescription'],
-        script: ['scriptTone', 'vocabulary', 'pacingStructure', 'characterPerspective'],
-        image: ['artistStyle', 'shotStyle', 'aspectRatio', 'style', 'sValue']
-      };
-  
-      for (const [section, params] of Object.entries(requiredParams)) {
-        for (const param of params) {
-          if (!llmGenParams[section][param]) {
-            throw new Error(`Missing required parameter: ${section}.${param}`);
-          }
+      // Validate only the truly required general parameters
+      const requiredGeneralParams = ['sceneAmount', 'lengthDescription'];
+      for (const param of requiredGeneralParams) {
+        if (!llmGenParams.general[param]) {
+          throw new Error(`Missing required parameter: general.${param}`);
         }
       }
   
-      const response = await axios.post(`${config.services.llm.url}/generate`, {
-        inputPrompt,
-        llmGenParams,
-      }, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 300000  // 5 minutes timeout
-      });
-      logger.info(`Received response from LLM service: ${JSON.stringify(response.data)}`);
-      res.json(response.data);
+      // Ensure all optional objects exist even if empty
+      llmGenParams.script = llmGenParams.script || {};
+      llmGenParams.image = llmGenParams.image || {};
+      llmGenParams.general.generalDescription = llmGenParams.general.generalDescription || '';
+  
+      // Use the service interface directly instead of making an HTTP request
+      const result = await llmServiceInterface.process(llmGenParams, inputPrompt);
+      
+      logger.info('LLM generation completed successfully');
+      res.json(result);
     } catch (error) {
-      logger.error(`LLM request error: ${error.message}`);
-      res.status(500).json({ error: 'LLM request failed', details: error.message });
+      logger.error('LLM Service: Error generating content:', error);
+      res.status(500).json({ error: 'LLM generation failed', details: error.message });
     }
   });
 

@@ -126,6 +126,11 @@ class LLMDataAccess {
 
     async createScene(jobId, llmOutputId, sceneNumber, description, visualPrompt, videoPrompt, cameraMovement, visualMetadata = {}) {
         try {
+            // First, ensure visualMetadata is a proper object
+            const metadata = typeof visualMetadata === 'string' 
+                ? JSON.parse(visualMetadata) 
+                : visualMetadata;
+
             const [scene] = await knex('llm_scenes').insert({
                 job_id: jobId,
                 llm_output_id: llmOutputId,
@@ -134,7 +139,7 @@ class LLMDataAccess {
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
                 camera_movement: cameraMovement,
-                visual_metadata: JSON.stringify(visualMetadata)
+                visual_metadata: JSON.stringify(metadata)  // Ensure proper JSON stringification
             }).returning('*');
             
             // Update output file with scene data
@@ -145,14 +150,15 @@ class LLMDataAccess {
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
                 camera_movement: cameraMovement,
-                visual_metadata: visualMetadata
+                visual_metadata: metadata  // Pass the metadata object
             });
 
             logger.info('LLM scene created:', {
                 table: 'llm_scenes',
                 jobId,
                 llmOutputId,
-                sceneNumber
+                sceneNumber,
+                visualMetadata: metadata  // Log the metadata
             });
 
             return scene.scene_id;
@@ -169,8 +175,14 @@ class LLMDataAccess {
                 .orderBy('scene_number')
                 .select('*');
 
+            // Parse the visual_metadata for each scene
+            const parsedScenes = scenes.map(scene => ({
+                ...scene,
+                visual_metadata: scene.visual_metadata ? JSON.parse(scene.visual_metadata) : {}
+            }));
+
             logger.info(`Retrieved ${scenes.length} scenes for job ${jobId}`);
-            return scenes;
+            return parsedScenes;
         } catch (error) {
             logger.error('Error retrieving scenes:', error);
             throw error;

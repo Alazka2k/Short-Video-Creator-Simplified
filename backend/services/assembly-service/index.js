@@ -26,6 +26,11 @@ class AssemblyServiceInterface {
     return await this.service.getProjectStatus(jobId);
   }
 
+  async validateAssets(jobId) {
+    logger.info(`Validating assets for job: ${jobId}`);
+    return await this.service.validateAssets(jobId);
+  }
+
   async cleanup() {
     logger.info('Cleaning up AssemblyServiceInterface');
     await this.service.close();
@@ -54,4 +59,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { AssemblyServiceInterface, startServer }; 
+module.exports = { AssemblyServiceInterface, startServer };

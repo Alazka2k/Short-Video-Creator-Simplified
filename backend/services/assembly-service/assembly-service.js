@@ -1,4 +1,4 @@
-const Json2Video = require('json2video-sdk');
+const { Movie, Scene } = require('json2video-sdk');
 const assemblyDataAccess = require('./data/assemblyDataAccess');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
@@ -10,9 +10,6 @@ class AssemblyService {
       throw new Error('Assembly API key not found in configuration');
     }
     
-    this.json2video = Json2Video({
-      apiKey: config.assembly.apiKey
-    });
     this.mediaBaseUrl = process.env.MEDIA_BASE_URL || config.services.gateway?.url || 'http://localhost:3000/media';
     
     logger.info(`Assembly Provider: ${config.assembly.provider}`);
@@ -22,8 +19,7 @@ class AssemblyService {
   async init() {
     logger.info('Initializing Assembly Service');
     try {
-      // Validate configuration
-      if (!config.assembly.provider === 'json2video') {
+      if (config.assembly.provider.toLowerCase() !== 'json2video') {
         throw new Error('Invalid assembly provider configuration');
       }
       logger.info('Assembly Service initialized successfully');
@@ -33,82 +29,122 @@ class AssemblyService {
     }
   }
 
-  convertLocalPathToUrl(localPath, jobId) {
-    // Remove the base output directory from the path
-    const relativePath = localPath.replace(config.output.directory, '');
-    // Convert backslashes to forward slashes if needed
-    const normalizedPath = relativePath.replace(/\\/g, '/');
-    // Get date from path
-    const dateMatch = normalizedPath.match(/\d{4}-\d{2}-\d{2}/);
-    const date = dateMatch ? dateMatch[0] : '';
-    // Extract scene number if present
-    const sceneMatch = normalizedPath.match(/scene_(\d+)/);
-    const sceneNumber = sceneMatch ? sceneMatch[1] : '';
-    
-    // Construct URL with correct path structure
-    const urlPath = sceneNumber 
-      ? `${date}/${jobId}/scene_${sceneNumber}`
-      : `${date}/${jobId}`;
-      
-    return `${this.mediaBaseUrl}/${urlPath}/${path.basename(normalizedPath)}`;
-  }
-
-  generateProjectConfig(jobId, scenes) {
-    return {
-      elements: {
-        scenes: scenes.map(scene => ({
-          duration: scene.duration,
-          transition: scene.transition,
-          layers: [
-            {
-              type: "video",
-              source: this.convertLocalPathToUrl(scene.videoUrl, jobId),
-              position: "center"
-            },
-            {
-              type: "audio",
-              source: this.convertLocalPathToUrl(scene.voiceUrl, jobId),
-              volume: 1
-            }
-          ]
-        })),
-        soundtrack: scenes[0]?.musicUrl ? {
-          source: this.convertLocalPathToUrl(scenes[0].musicUrl, jobId),
-          volume: 0.3
-        } : undefined
-      },
-      output: {
-        format: "mp4",
-        resolution: "1080p",
-        aspectRatio: "9:16",
-        fps: 30
-      }
-    };
-  }
-
-  async createVideoProject(jobId, scenes) {
+  async createVideoProject(jobId, sceneConfigs) {
     try {
-      // Create project configuration
-      const projectConfig = this.generateProjectConfig(jobId, scenes);
+      logger.info(`Creating video project for job: ${jobId}`);
 
-      // Create project in JSON2Video
-      const project = await this.json2video.createProject(projectConfig);
+      // Validate all required assets exist
+      const validation = await assemblyDataAccess.validateAssemblyAssets(jobId);
+      if (!validation.isValid) {
+        throw new Error('Missing required assets for video assembly');
+      }
 
-      // Store in database
-      const assemblyOutput = await assemblyDataAccess.createAssemblyOutput(jobId, {
-        status: 'processing',
-        projectId: project.id,
-        assemblyConfig: projectConfig,
-        metadata: { scenes: scenes.length }
-      });
+      // Initialize movie project
+      const movie = new Movie();
+      movie.setAPIKey(config.assembly.apiKey);
+      movie.set("quality", "high");
+
+      // Get and process all scenes in order
+      const scenes = await assemblyDataAccess.getAllScenes(jobId);
+      
+      for (const sceneData of scenes) {
+        const sceneConfig = sceneConfigs.find(config => config.sceneNumber === sceneData.scene_number);
+        if (!sceneConfig) {
+          throw new Error(`Missing configuration for scene ${sceneData.scene_number}`);
+        }
+
+        const assets = await assemblyDataAccess.getSceneAssets(jobId, sceneData.scene_id);
+        const scene = await this.createScene(assets, sceneConfig);
+        movie.addScene(scene);
+      }
+
+      // Add background music if available
+      const musicAsset = await assemblyDataAccess.getMusicAsset(jobId);
+      if (musicAsset) {
+        movie.set("soundtrack", {
+          source: this.getMediaUrl(musicAsset.music_file_url),
+          volume: 0.3
+        });
+      }
+
+      // Set output configuration
+      movie.set("format", "mp4");
+      movie.set("resolution", "1080p");
+      movie.set("aspect-ratio", "9:16");
+      movie.set("fps", 30);
 
       // Start rendering
-      await this.json2video.render(project.id);
+      const render = await movie.render();
+      logger.info(`Render started for job ${jobId}, project ID: ${render.movie.id}`);
+
+      // Create assembly record
+      const assemblyOutput = await assemblyDataAccess.createAssemblyOutput(jobId, {
+        status: 'processing',
+        projectId: render.movie.id,
+        assemblyConfig: movie.getConfig(),
+        metadata: { 
+          scenes: scenes.length,
+          startedAt: new Date().toISOString()
+        }
+      });
+
+      // Start progress monitoring
+      this.monitorRenderProgress(movie, jobId, render.movie.id);
 
       return assemblyOutput;
     } catch (error) {
       logger.error('Error in createVideoProject:', error);
       throw error;
+    }
+  }
+
+  async createScene(assets, sceneConfig) {
+    const scene = new Scene();
+    
+    // Add video layer
+    scene.addElement({
+      type: "video",
+      source: this.getMediaUrl(assets.video.video_file_url),
+      duration: sceneConfig.duration,
+      position: "center"
+    });
+
+    // Add voice layer
+    scene.addElement({
+      type: "audio",
+      source: this.getMediaUrl(assets.voice.voice_file_url),
+      volume: 1
+    });
+
+    // Add transition if specified
+    if (sceneConfig.transition) {
+      scene.set("transition", sceneConfig.transition);
+    }
+
+    return scene;
+  }
+
+  async monitorRenderProgress(movie, jobId, projectId) {
+    try {
+      await movie
+        .waitToFinish((status) => {
+          logger.info(`Render progress for job ${jobId}: ${status.movie.status} - ${status.movie.message}`);
+        })
+        .then(async (status) => {
+          logger.info(`Render completed for job ${jobId}: ${status.movie.url}`);
+          const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
+          await assemblyDataAccess.updateVideoUrl(assembly.assembly_id, status.movie.url);
+        })
+        .catch(async (error) => {
+          logger.error(`Render failed for job ${jobId}:`, error);
+          const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
+          await assemblyDataAccess.updateAssemblyStatus(assembly.assembly_id, 'failed', {
+            error: error.message,
+            failedAt: new Date().toISOString()
+          });
+        });
+    } catch (error) {
+      logger.error(`Error monitoring render progress for job ${jobId}:`, error);
     }
   }
 
@@ -119,7 +155,9 @@ class AssemblyService {
         throw new Error(`No assembly found for job ID: ${jobId}`);
       }
 
-      const status = await this.json2video.getProjectStatus(assembly.project_id);
+      const movie = new Movie();
+      movie.setAPIKey(config.assembly.apiKey);
+      const status = await movie.getStatus(assembly.project_id);
       return status;
     } catch (error) {
       logger.error('Error checking project status:', error);
@@ -127,10 +165,18 @@ class AssemblyService {
     }
   }
 
+  getMediaUrl(relativePath) {
+    if (!relativePath) {
+      throw new Error('Invalid relative path');
+    }
+    // Ensure the path uses forward slashes
+    const normalizedPath = relativePath.replace(/\\/g, '/');
+    return `${this.mediaBaseUrl}${normalizedPath}`;
+  }
+
   async close() {
     logger.info('Closing Assembly Service');
-    // Add any cleanup logic here if needed
   }
 }
 
-module.exports = new AssemblyService(); 
+module.exports = AssemblyService;

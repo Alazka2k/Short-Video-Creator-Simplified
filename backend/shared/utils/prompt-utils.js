@@ -30,16 +30,111 @@ class PromptUtils {
   static replacePlaceholders(prompt, params) {
     logger.info('Replacing placeholders in prompt');
     const flattenedParams = this.flattenObject(params);
+    let modifiedPrompt = prompt;
+
+    // Parameter mappings with their prefixes and commands
+    const paramMappings = {
+      // Image parameters
+      'llmGen.image.artistStyle': { prefix: 'in the style of', command: null },
+      'llmGen.image.shotStyle': { prefix: null, command: null },
+      'llmGen.image.aspectRatio': { prefix: null, command: '--ar' },
+      'llmGen.image.style': { prefix: null, command: '--style' },
+      'llmGen.image.sValue': { prefix: null, command: '--s' },
+      
+      // Script parameters
+      'llmGen.script.scriptTone': { prefix: '-', command: null },
+      'llmGen.script.vocabulary': { prefix: '-', command: null },
+      'llmGen.script.pacingStructure': { prefix: '-', command: null },
+      'llmGen.script.characterPerspective': { prefix: '-', command: null },
+
+      // Optional general parameters
+      'llmGen.general.generalDescription': { prefix: '-', command: null }
+    };
+
+    // Process each parameter
     for (const [key, value] of Object.entries(flattenedParams)) {
       const placeholder = `{{ ${key} }}`;
-      if (prompt.includes(placeholder)) {
-        prompt = prompt.replace(new RegExp(placeholder, 'g'), String(value));
-        logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+      
+      // If this is a mapped parameter (optional)
+      if (paramMappings[key]) {
+        if (!value || value === '') {
+          // Remove the placeholder and its associated prefix/command
+          modifiedPrompt = this.removeParameter(
+            modifiedPrompt, 
+            placeholder, 
+            paramMappings[key]
+          );
+          logger.info(`Removed parameter ${key} and its prefix/command from prompt`);
+        } else {
+          // Replace the placeholder with the value
+          modifiedPrompt = modifiedPrompt.replace(
+            new RegExp(placeholder, 'g'), 
+            String(value)
+          );
+          logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+        }
       } else {
-        logger.debug(`Placeholder ${placeholder} not found in the prompt.`);
+        // Handle required parameters normally
+        if (modifiedPrompt.includes(placeholder)) {
+          modifiedPrompt = modifiedPrompt.replace(
+            new RegExp(placeholder, 'g'), 
+            String(value)
+          );
+          logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+        } else {
+          logger.debug(`Placeholder ${placeholder} not found in the prompt.`);
+        }
       }
     }
-    return prompt;
+
+    // Clean up any remaining mapped parameters
+    for (const [key, mapping] of Object.entries(paramMappings)) {
+      const placeholder = `{{ ${key} }}`;
+      if (modifiedPrompt.includes(placeholder)) {
+        modifiedPrompt = this.removeParameter(
+          modifiedPrompt, 
+          placeholder, 
+          mapping
+        );
+        logger.info(`Cleaned up unused parameter ${key} from prompt`);
+      }
+    }
+
+    // Clean up empty lines and multiple spaces
+    modifiedPrompt = modifiedPrompt
+      .split('\n')
+      .filter(line => line.trim() !== '')
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/  +/g, ' ');
+
+    return modifiedPrompt;
+  }
+
+  static removeParameter(prompt, placeholder, mapping) {
+    let modifiedPrompt = prompt;
+
+    // Remove the placeholder and its prefix if exists
+    if (mapping.prefix) {
+      // Handle bullet point style prefixes
+      if (mapping.prefix === '-') {
+        const bulletPattern = new RegExp(`^\\s*${mapping.prefix}\\s*${placeholder}\\s*$\\n?`, 'gm');
+        modifiedPrompt = modifiedPrompt.replace(bulletPattern, '');
+      } else {
+        const prefixPattern = new RegExp(`${mapping.prefix}\\s*${placeholder}[,.]?\\s*`, 'g');
+        modifiedPrompt = modifiedPrompt.replace(prefixPattern, '');
+      }
+    } else {
+      modifiedPrompt = modifiedPrompt.replace(new RegExp(`${placeholder}[,.]?\\s*`, 'g'), '');
+    }
+
+    // Remove the command if exists, but only if it's a standalone command
+    if (mapping.command) {
+      const commandPattern = new RegExp(`\\s*${mapping.command}\\s+[^;\\n]+`, 'g');
+      modifiedPrompt = modifiedPrompt.replace(commandPattern, '');
+    }
+
+    return modifiedPrompt;
   }
 
   static flattenObject(obj, prefix = '') {
