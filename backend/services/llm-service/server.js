@@ -24,7 +24,7 @@ function createServer(llmServiceInterface) {
   app.post('/generate', async (req, res) => {
     try {
       logger.info('Processing LLM generation request');
-      const { inputPrompt, llmGenParams } = req.body;
+      const { inputPrompt, llmGenParams, jobId } = req.body;
   
       // Basic validation
       if (!inputPrompt) {
@@ -48,8 +48,13 @@ function createServer(llmServiceInterface) {
       llmGenParams.image = llmGenParams.image || {};
       llmGenParams.general.generalDescription = llmGenParams.general.generalDescription || '';
   
-      // Use the service interface directly instead of making an HTTP request
-      const result = await llmServiceInterface.process(llmGenParams, inputPrompt);
+      // Generate content (will create new jobId if none provided)
+      const result = await llmServiceInterface.process(
+        llmGenParams, 
+        inputPrompt,
+        false,
+        jobId  // Pass through jobId if provided, otherwise undefined
+      );
       
       logger.info('LLM generation completed successfully');
       res.json(result);

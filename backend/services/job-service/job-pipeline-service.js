@@ -56,12 +56,13 @@ class JobPipelineService {
       });
       logger.info(`Created job record with ID: ${jobId}`);
 
-      // Step 1: Generate LLM content
+      // Step 1: Generate LLM content - Pass jobId to LLM service
       logger.info('Starting LLM content generation...');
       const llmResult = await this.services.llm.process(
         parameters.llmGenParams,
         prompt,
-        false
+        false,
+        jobId  // Pass the jobId to LLM service
       );
 
       // Ensure we have scenes to process
@@ -75,47 +76,51 @@ class JobPipelineService {
       // Process each scene
       const sceneResults = [];
       for (let i = 0; i < llmResult.content.scenes.length; i++) {
-        const sceneIndex = i + 1;
+        const sceneId = i + 1;
         const scene = llmResult.content.scenes[i];
-        const sceneDir = this.getSceneOutputPath(jobOutputDir, sceneIndex);
+        const sceneDir = this.getSceneOutputPath(jobOutputDir, sceneId);
 
         try {
-          logger.info(`Processing scene ${sceneIndex}...`);
+          logger.info(`Processing scene ${sceneId}...`, {
+            jobId,
+            sceneId,
+            sceneDir
+          });
 
           // Step 2: Generate voice for scene
-          logger.info(`Generating voice for scene ${sceneIndex}`);
+          logger.info(`Generating voice for scene ${sceneId}`);
           const voiceResult = await this.services.voice.process(
             scene.description,
-            sceneIndex,
-            jobId,
+            sceneId,
+            jobId,  // Use the same jobId
             parameters.voiceGenParams?.voiceId
           );
           await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'completed', {
-            sceneIndex,
+            sceneId,
             outputPath: voiceResult.filePath
           });
 
           // Step 3: Generate image for scene
-          logger.info(`Generating image for scene ${sceneIndex}`);
+          logger.info(`Generating image for scene ${sceneId}`);
           const imageResult = await this.services.image.process(
             scene.visual_prompt,
-            sceneIndex,
+            sceneId,
             jobId
           );
           await this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', {
-            sceneIndex,
+            sceneId,
             outputPath: imageResult.filePath
           });
 
           // Step 4: Generate either animation or video
-          logger.info(`Generating ${visualizationType} for scene ${sceneIndex}`);
+          logger.info(`Generating ${visualizationType} for scene ${sceneId}`);
           let visualResult;
           
           if (visualizationType === 'animation') {
             visualResult = await this.services.animation.process(
               imageResult.filePath,
               scene.video_prompt,
-              sceneIndex,
+              sceneId,
               jobId,
               {
                 animationLength: parameters.animationGenParams?.animationLength || 5,
@@ -123,7 +128,7 @@ class JobPipelineService {
               }
             );
             await this.jobDataAccess.updateJobProgress(jobId, 'animation', 'completed', {
-              sceneIndex,
+              sceneId,
               outputPath: visualResult.filePath
             });
           } else {
@@ -132,18 +137,18 @@ class JobPipelineService {
               scene.video_prompt,
               scene.camera_movement,
               parameters.videoGenParams?.aspectRatio || '9:16',
-              sceneIndex,
+              sceneId,
               jobId
             );
             await this.jobDataAccess.updateJobProgress(jobId, 'video', 'completed', {
-              sceneIndex,
+              sceneId,
               outputPath: visualResult.filePath
             });
           }
 
           // Save scene results and metadata
           const sceneResult = {
-            sceneIndex,
+            sceneId,
             voice: voiceResult,
             image: imageResult,
             [visualizationType]: visualResult
@@ -153,29 +158,29 @@ class JobPipelineService {
           await fs.writeFile(
             path.join(sceneDir, 'metadata.json'),
             JSON.stringify({
-              sceneIndex,
+              sceneId,
               description: scene.description,
               voice: {
-                filePath: voiceResult.filePath,
-                fileName: path.basename(voiceResult.filePath)
+                filePath: voiceResult?.filePath || null,
+                fileName: voiceResult?.filePath ? path.basename(voiceResult.filePath) : null
               },
               image: {
-                filePath: imageResult.filePath,
-                fileName: path.basename(imageResult.filePath),
-                metadata: imageResult.metadata
+                filePath: imageResult?.filePath || null,
+                fileName: imageResult?.filePath ? path.basename(imageResult.filePath) : null,
+                metadata: imageResult?.metadata || {}
               },
               [visualizationType]: {
-                filePath: visualResult.filePath,
-                fileName: path.basename(visualResult.filePath),
-                metadata: visualResult.metadata
+                filePath: visualResult?.filePath || null,
+                fileName: visualResult?.filePath ? path.basename(visualResult.filePath) : null,
+                metadata: visualResult?.metadata || {}
               }
             }, null, 2)
           );
 
         } catch (sceneError) {
-          logger.error(`Error processing scene ${sceneIndex}:`, sceneError);
+          logger.error(`Error processing scene ${sceneId}:`, sceneError);
           await this.jobDataAccess.updateJobProgress(jobId, 'scene', 'failed', {
-            sceneIndex,
+            sceneId,
             error: sceneError.message
           });
           throw sceneError;

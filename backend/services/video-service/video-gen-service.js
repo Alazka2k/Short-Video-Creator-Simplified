@@ -41,14 +41,36 @@ class VideoGenService {
   }
 
   sanitizeVideoPrompt(prompt) {
-    const sanitizationRules = [
-      { regex: /\b(lifeline)\b/gi, replacement: "core" },
-      // Add more rules as needed
-    ];
+    if (!prompt) return '';
+
+    // List of sensitive terms and their replacements
+    const sensitiveTerms = {
+      'Donald Trump': 'person',
+      'Trump': 'person',
+      'Biden': 'person',
+      'Putin': 'person',
+      'Hitler': 'historical figure',
+      'Stalin': 'historical figure',
+      'lifeline': 'core',  // Keep this replacement
+      // Add other sensitive terms as needed
+    };
 
     let sanitizedPrompt = prompt;
-    sanitizationRules.forEach(rule => {
-      sanitizedPrompt = sanitizedPrompt.replace(rule.regex, rule.replacement);
+
+    // Replace sensitive terms
+    for (const [term, replacement] of Object.entries(sensitiveTerms)) {
+      const regex = new RegExp(term, 'gi');
+      sanitizedPrompt = sanitizedPrompt.replace(regex, replacement);
+    }
+
+    // Remove any remaining potentially problematic content
+    sanitizedPrompt = sanitizedPrompt
+      .replace(/[^\w\s.,;:!?()'"]/g, '') // Remove special characters
+      .trim();
+
+    logger.info('Sanitized video prompt:', {
+      original: prompt,
+      sanitized: sanitizedPrompt
     });
 
     return sanitizedPrompt;

@@ -7,22 +7,35 @@ const fs = require('fs').promises;
 
 class LLMServiceInterface {
   constructor() {
-    logger.info('Initializing LLMServiceInterface');
-    this.service = new LLMService();
-    logger.info('LLMService instance created');
+    this.llmService = null;
   }
 
   async initialize() {
-    logger.info('LLMServiceInterface initializing');
-    // Add any initialization logic here if needed
-    logger.info('LLMServiceInterface initialized');
+    logger.info('Initializing LLM Service Interface');
+    this.llmService = new LLMService();
+    logger.info('LLM Service Interface initialized');
   }
 
-  async process(llmGenParams, inputPrompt, isTest = false) {
-    logger.info('Processing LLM request', { llmGenParams, inputPrompt, isTest });
-    logger.debug('Current LLM config:', JSON.stringify(config.llm, null, 2));
-  
-    return await this.service.generateContent(inputPrompt, llmGenParams, isTest);
+  async process(llmGenParams, inputPrompt, isTest = false, providedJobId = null) {
+    try {
+      if (!this.llmService) {
+        throw new Error('LLM Service not initialized');
+      }
+
+      // In standalone mode (no providedJobId), generate content normally
+      // In pipeline mode (with providedJobId), use the provided jobId
+      const result = await this.llmService.generateContent(
+        inputPrompt,
+        llmGenParams,
+        isTest,
+        providedJobId
+      );
+
+      return result;
+    } catch (error) {
+      logger.error('Error in LLM Service Interface:', error);
+      throw error;
+    }
   }
 
   async loadPromptsFromCsv(csvPath) {
@@ -41,8 +54,8 @@ class LLMServiceInterface {
   }
 
   async cleanup() {
-    logger.info('Cleaning up LLMServiceInterface');
-    // Add any cleanup logic here if needed
+    logger.info('Cleaning up LLM Service Interface');
+    // Add any cleanup logic if needed
   }
 
   async processAllPrompts(csvPath, llmGenParams) {

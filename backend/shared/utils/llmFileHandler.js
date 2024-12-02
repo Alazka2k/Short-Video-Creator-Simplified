@@ -8,6 +8,11 @@ class LLMFileHandler {
     this.baseOutputDir = path.join(config.output.directory, 'llm');
   }
 
+  getOutputPath(jobId) {
+    const dateString = new Date().toISOString().split('T')[0];
+    return path.join(this.baseOutputDir, dateString, jobId, 'llm_output.json');
+  }
+
   async saveOutputFile(jobId, llmData) {
     try {
       const currentDate = new Date();
@@ -49,7 +54,7 @@ class LLMFileHandler {
 
   async updateSceneData(jobId, sceneData) {
     try {
-      const outputPath = await this.getOutputFilePath(jobId);
+      const outputPath = this.getOutputPath(jobId);
       let existingData = await this.readOutputFile(jobId);
 
       if (!existingData.scenes) {
@@ -83,13 +88,32 @@ class LLMFileHandler {
 
   async updateJobStatus(jobId, status) {
     try {
-      const outputPath = await this.getOutputFilePath(jobId);
-      const existingData = await this.readOutputFile(jobId);
+      const outputPath = this.getOutputPath(jobId);
+      const outputDir = path.dirname(outputPath);
 
-      existingData.status = status;
-      existingData.updatedAt = new Date().toISOString();
+      // Create directories if they don't exist
+      await fs.mkdir(outputDir, { recursive: true });
 
-      await fs.writeFile(outputPath, JSON.stringify(existingData, null, 2));
+      // Read existing file or create new one
+      let outputData = {};
+      try {
+        const fileContent = await fs.readFile(outputPath, 'utf8');
+        outputData = JSON.parse(fileContent);
+      } catch (error) {
+        // File doesn't exist yet, create new output data
+        outputData = {
+          jobId,
+          status: 'initialized',
+          createdAt: new Date().toISOString()
+        };
+      }
+
+      // Update status
+      outputData.status = status;
+      outputData.updatedAt = new Date().toISOString();
+
+      // Write back to file
+      await fs.writeFile(outputPath, JSON.stringify(outputData, null, 2));
       logger.info(`Updated job status in LLM output file: ${status}`);
     } catch (error) {
       logger.error('Error updating job status in LLM output file:', error);
@@ -98,7 +122,7 @@ class LLMFileHandler {
   }
 
   async readOutputFile(jobId) {
-    const outputPath = await this.getOutputFilePath(jobId);
+    const outputPath = this.getOutputPath(jobId);
     try {
       const data = await fs.readFile(outputPath, 'utf8');
       return JSON.parse(data);
@@ -109,12 +133,6 @@ class LLMFileHandler {
       }
       throw error;
     }
-  }
-
-  async getOutputFilePath(jobId) {
-    const currentDate = new Date();
-    const dateString = currentDate.toISOString().split('T')[0];
-    return path.join(this.baseOutputDir, dateString, jobId, 'llm_output.json');
   }
 }
 

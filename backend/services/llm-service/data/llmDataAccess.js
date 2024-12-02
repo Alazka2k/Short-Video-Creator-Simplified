@@ -1,6 +1,7 @@
 const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../../shared/utils/logger');
 const llmFileHandler = require('../../../shared/utils/llmFileHandler');
+const { v4: uuidv4 } = require('uuid');
 
 class LLMDataAccess {
     async createJob(jobId, prompt, status = 'pending', serviceSequence = [], metadata = {}) {
@@ -89,7 +90,7 @@ class LLMDataAccess {
     async createOutput(jobId, llmInputId, title, description, hashtags, musicTitle, musicLyrics, musicTags) {
         try {
             const [llmOutput] = await knex('llm_outputs').insert({
-                job_id: jobId,
+                job_id: jobId,  // Use only the jobId from the job service
                 llm_input_id: llmInputId,
                 title,
                 description,
@@ -124,44 +125,43 @@ class LLMDataAccess {
         }
     }
 
-    async createScene(jobId, llmOutputId, sceneNumber, description, visualPrompt, videoPrompt, cameraMovement, visualMetadata = {}) {
+    async createScene(jobId, llmOutputId, sceneId, description, visualPrompt, videoPrompt, cameraMovement, visualMetadata = {}) {
         try {
-            // First, ensure visualMetadata is a proper object
             const metadata = typeof visualMetadata === 'string' 
                 ? JSON.parse(visualMetadata) 
                 : visualMetadata;
 
             const [scene] = await knex('llm_scenes').insert({
-                job_id: jobId,
+                job_id: jobId,  // Use only the jobId from the job service
                 llm_output_id: llmOutputId,
-                scene_number: sceneNumber,
+                scene_id: sceneId,
                 description,
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
                 camera_movement: cameraMovement,
-                visual_metadata: JSON.stringify(metadata)  // Ensure proper JSON stringification
+                visual_metadata: JSON.stringify(metadata)
             }).returning('*');
             
             // Update output file with scene data
             await llmFileHandler.updateSceneData(jobId, {
-                scene_id: scene.scene_id,
-                scene_number: sceneNumber,
+                scene_id: scene.llm_scene_id,
+                scene_number: sceneId,
                 description,
                 visual_prompt: visualPrompt,
                 video_prompt: videoPrompt,
                 camera_movement: cameraMovement,
-                visual_metadata: metadata  // Pass the metadata object
+                visual_metadata: metadata
             });
 
             logger.info('LLM scene created:', {
                 table: 'llm_scenes',
                 jobId,
                 llmOutputId,
-                sceneNumber,
-                visualMetadata: metadata  // Log the metadata
+                sceneId,
+                visualMetadata: metadata
             });
 
-            return scene.scene_id;
+            return scene.llm_scene_id;
         } catch (error) {
             logger.error('Error creating LLM scene:', error);
             throw error;

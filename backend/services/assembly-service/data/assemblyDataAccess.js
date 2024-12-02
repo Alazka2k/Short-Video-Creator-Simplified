@@ -7,6 +7,13 @@ const config = require('../../../shared/utils/config');
 class AssemblyDataAccess {
   constructor() {
     this.storageBasePath = path.join(config.output.directory, 'assembly');
+    this.mediaBaseUrl = process.env.MEDIA_BASE_URL || config.services.gateway?.url || 'http://localhost:3000/media';
+    
+    // Log the paths we're using
+    logger.info('Assembly Data Access initialized with paths:', {
+      storageBasePath: this.storageBasePath,
+      mediaBaseUrl: this.mediaBaseUrl
+    });
   }
 
   async createAssemblyOutput(jobId, assemblyData) {
@@ -54,30 +61,88 @@ class AssemblyDataAccess {
     try {
       const assets = await knex.transaction(async (trx) => {
         // Get video asset
-        const video = await trx('video_outputs')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
-        
-        // Get voice asset
-        const voice = await trx('voice_outputs')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
+        const videoQuery = trx('video_outputs')
+          .where({ 
+            job_id: jobId, 
+            scene_id: sceneId 
+          });
 
-        // Get scene details
-        const scene = await trx('llm_scenes')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
-          
-        if (!video || !voice || !scene) {
-          throw new Error(`Missing required assets for scene ${sceneId}`);
+        logger.info('Querying video asset:', {
+          jobId,
+          sceneId,
+          query: videoQuery.toString()
+        });
+
+        const video = await videoQuery.first();
+
+        // Get voice asset
+        const voiceQuery = trx('voice_outputs')
+          .where({ 
+            job_id: jobId, 
+            scene_id: sceneId 
+          });
+
+        logger.info('Querying voice asset:', {
+          jobId,
+          sceneId,
+          query: voiceQuery.toString()
+        });
+
+        const voice = await voiceQuery.first();
+
+        // Get animation asset
+        const animationQuery = trx('animation_outputs')
+          .where({ 
+            job_id: jobId, 
+            scene_id: sceneId 
+          });
+
+        logger.info('Querying animation asset:', {
+          jobId,
+          sceneId,
+          query: animationQuery.toString()
+        });
+
+        const animation = await animationQuery.first();
+
+        // Log all found assets
+        logger.info('Asset lookup results:', {
+          jobId,
+          sceneId,
+          queries: {
+            video: videoQuery.toString(),
+            voice: voiceQuery.toString(),
+            animation: animationQuery.toString()
+          },
+          results: {
+            video: video ? {
+              found: true,
+              id: video.video_id,
+              path: video.video_file_url
+            } : 'Missing',
+            voice: voice ? {
+              found: true,
+              id: voice.voice_id,
+              path: voice.voice_file_url
+            } : 'Missing',
+            animation: animation ? {
+              found: true,
+              id: animation.animation_id,
+              path: animation.animation_file_url
+            } : 'Missing'
+          }
+        });
+
+        if (!video || !voice) {
+          throw new Error(`Missing required assets for scene ID ${sceneId}`);
         }
 
-        return { video, voice, scene };
+        return { video, voice, animation };
       });
 
       return assets;
     } catch (error) {
-      logger.error(`Error fetching scene assets for job ${jobId}, scene ${sceneId}:`, error);
+      logger.error(`Error fetching scene assets for job ${jobId}, scene ID ${sceneId}:`, error);
       throw error;
     }
   }
@@ -87,6 +152,17 @@ class AssemblyDataAccess {
       const music = await knex('music_outputs')
         .where({ job_id: jobId })
         .first();
+
+      if (music) {
+        logger.info('Found music asset:', {
+          jobId,
+          localPath: music.music_file_url,
+          publicUrl: `${this.mediaBaseUrl}/${music.music_file_url.replace(/\\/g, '/')}`
+        });
+      } else {
+        logger.info(`No music asset found for job ${jobId}`);
+      }
+
       return music;
     } catch (error) {
       logger.error(`Error fetching music asset for job ${jobId}:`, error);
@@ -122,7 +198,7 @@ class AssemblyDataAccess {
     try {
       const scenes = await knex('llm_scenes')
         .where('job_id', jobId)
-        .orderBy('scene_number', 'asc');
+        .orderBy('scene_id', 'asc');
       return scenes;
     } catch (error) {
       logger.error(`Error fetching all scenes for job ${jobId}:`, error);
@@ -187,6 +263,15 @@ class AssemblyDataAccess {
   async validateAssemblyAssets(jobId) {
     try {
       const scenes = await this.getAllScenes(jobId);
+      logger.info('Validating assets for scenes:', {
+        jobId,
+        sceneCount: scenes.length,
+        scenes: scenes.map(s => ({
+          sceneNumber: s.scene_number,
+          sceneId: s.scene_id
+        }))
+      });
+
       const results = await Promise.all(scenes.map(async (scene) => {
         try {
           const assets = await this.getSceneAssets(jobId, scene.scene_id);
@@ -214,7 +299,7 @@ class AssemblyDataAccess {
       return {
         scenes: results,
         music: !!music,
-        isValid: results.every(result => result.status === 'valid') && !!music
+        isValid: results.every(result => result.status === 'valid')
       };
     } catch (error) {
       logger.error(`Error validating assembly assets for job ${jobId}:`, error);

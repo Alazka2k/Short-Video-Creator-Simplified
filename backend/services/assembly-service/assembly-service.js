@@ -33,27 +33,46 @@ class AssemblyService {
     try {
       logger.info(`Creating video project for job: ${jobId}`);
 
-      // Validate all required assets exist
-      const validation = await assemblyDataAccess.validateAssemblyAssets(jobId);
-      if (!validation.isValid) {
-        throw new Error('Missing required assets for video assembly');
-      }
+      // Get all scenes first
+      const scenes = await assemblyDataAccess.getAllScenes(jobId);
+      logger.info('Found scenes in database:', {
+        jobId,
+        sceneCount: scenes.length,
+        scenes: scenes.map(s => ({
+          sceneNumber: s.scene_number,
+          sceneId: s.scene_id
+        }))
+      });
 
       // Initialize movie project
       const movie = new Movie();
       movie.setAPIKey(config.assembly.apiKey);
       movie.set("quality", "high");
 
-      // Get and process all scenes in order
-      const scenes = await assemblyDataAccess.getAllScenes(jobId);
-      
-      for (const sceneData of scenes) {
-        const sceneConfig = sceneConfigs.find(config => config.sceneNumber === sceneData.scene_number);
-        if (!sceneConfig) {
-          throw new Error(`Missing configuration for scene ${sceneData.scene_number}`);
+      // Process each scene config in order
+      for (const sceneConfig of sceneConfigs) {
+        // Find the corresponding scene from database
+        const dbScene = scenes.find(s => s.scene_id === sceneConfig.sceneNumber);
+        
+        if (!dbScene) {
+          logger.error('Scene not found in database:', {
+            jobId,
+            requestedSceneNumber: sceneConfig.sceneNumber,
+            availableScenes: scenes.map(s => s.scene_number)
+          });
+          throw new Error(`Scene ${sceneConfig.sceneNumber} not found in database`);
         }
 
-        const assets = await assemblyDataAccess.getSceneAssets(jobId, sceneData.scene_id);
+        logger.info('Processing scene:', {
+          jobId,
+          sceneId: sceneConfig.sceneNumber,
+          llmSceneId: dbScene.llm_scene_id,
+          duration: sceneConfig.duration,
+          transition: sceneConfig.transition
+        });
+
+        // Get assets using scene_id from database
+        const assets = await assemblyDataAccess.getSceneAssets(jobId, sceneConfig.sceneNumber);
         const scene = await this.createScene(assets, sceneConfig);
         movie.addScene(scene);
       }
@@ -101,10 +120,30 @@ class AssemblyService {
   async createScene(assets, sceneConfig) {
     const scene = new Scene();
     
+    // Convert local paths to public URLs
+    const videoUrl = this.getMediaUrl(assets.video.video_file_url);
+    const voiceUrl = this.getMediaUrl(assets.voice.voice_file_url);
+    
+    logger.info('Creating scene configuration:', {
+      sceneNumber: sceneConfig.sceneNumber,
+      duration: sceneConfig.duration,
+      transition: sceneConfig.transition,
+      assets: {
+        video: {
+          localPath: assets.video.video_file_url,
+          publicUrl: videoUrl
+        },
+        voice: {
+          localPath: assets.voice.voice_file_url,
+          publicUrl: voiceUrl
+        }
+      }
+    });
+
     // Add video layer
     scene.addElement({
       type: "video",
-      source: this.getMediaUrl(assets.video.video_file_url),
+      source: videoUrl,
       duration: sceneConfig.duration,
       position: "center"
     });
@@ -112,7 +151,7 @@ class AssemblyService {
     // Add voice layer
     scene.addElement({
       type: "audio",
-      source: this.getMediaUrl(assets.voice.voice_file_url),
+      source: voiceUrl,
       volume: 1
     });
 

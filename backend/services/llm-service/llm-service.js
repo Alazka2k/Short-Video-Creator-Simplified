@@ -8,6 +8,7 @@ const logger = require('../../shared/utils/logger');
 const PromptUtils = require('../../shared/utils/prompt-utils');
 const { VideoScriptSchema } = require('../../shared/config/models');
 const LLMDataAccess = require('./data/llmDataAccess');
+const llmFileHandler = require('../../shared/utils/llmFileHandler');
 
 class LLMService {
   constructor() {
@@ -21,20 +22,35 @@ class LLMService {
     logger.info(`OpenAI Model: ${config.llm.model}`);
   }
 
-  async generateContent(inputPrompt, llmGenParams, isTest = false) {
-    let jobId = uuidv4();
+  async generateContent(inputPrompt, llmGenParams, isTest = false, providedJobId = null) {
+    // Generate a new jobId if not provided (standalone mode) or use provided one (pipeline mode)
+    const jobId = providedJobId || uuidv4();
+    const isPipelineMode = !!providedJobId;
+
     try {
-      logger.info('Starting content generation:', { jobId, inputPrompt });
+      logger.info('Starting content generation:', { 
+        jobId, 
+        inputPrompt,
+        mode: isPipelineMode ? 'pipeline' : 'standalone'
+      });
       logger.debug('Generation parameters:', { llmGenParams, isTest });
 
-      // Create initial job record
-      if (!isTest) {
+      // Create initial job record ONLY in standalone mode
+      if (!isTest && !isPipelineMode) {
         await this.dataAccess.createJob(jobId, inputPrompt, 'pending', ['llm'], {
           startTime: new Date().toISOString(),
-          parameters: llmGenParams
+          parameters: llmGenParams,
+          mode: 'standalone'
         });
         logger.info(`Created job record with ID: ${jobId}`);
       }
+
+      // Create output file first to ensure directory exists
+      await llmFileHandler.saveOutputFile(jobId, {
+        prompt: inputPrompt,
+        status: 'pending',
+        parameters: llmGenParams
+      });
 
       // Load and prepare prompts
       const initialPrompt = await PromptUtils.loadInitialPrompt(
@@ -81,7 +97,7 @@ class LLMService {
           const llmInputId = await this.dataAccess.createInput(jobId, params);
           logger.info(`Created LLM input record: ${llmInputId}`);
 
-          // Store LLM output
+          // Store LLM output with the same jobId
           const llmOutputId = await this.dataAccess.createOutput(
             jobId,
             llmInputId,
@@ -152,6 +168,7 @@ class LLMService {
     } catch (error) {
       logger.error('Error in content generation:', error);
       if (!isTest) {
+        await llmFileHandler.updateJobStatus(jobId, 'failed');
         await this.dataAccess.updateJobStatus(jobId, 'failed');
       }
       throw error;
