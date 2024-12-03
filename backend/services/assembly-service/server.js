@@ -21,62 +21,44 @@ function createServer(assemblyServiceInterface) {
 
   // Assemble video endpoint
   app.post('/assemble', async (req, res) => {
-    logger.info('Assembly Service: Handling /assemble request');
-    const requestTimeout = setTimeout(() => {
-      logger.error('Assembly Service: Request timed out');
-      res.status(504).json({ error: 'Request timed out' });
-    }, 600000); // 10 minutes timeout for assembly
-
     try {
+      logger.info('Assembly Service: Handling /assemble request');
+      logger.info('Assembly Service: Request body:', req.body);
+
       const { jobId, scenes } = req.body;
-      logger.info(`Assembly Service: Request body: ${JSON.stringify(req.body)}`);
 
-      // Validate request
-      if (!jobId) {
-        throw new Error('jobId is required');
+      if (!jobId || !scenes) {
+        return res.status(400).json({ 
+          error: 'Missing required parameters', 
+          details: 'jobId and scenes are required' 
+        });
       }
-
-      if (!Array.isArray(scenes) || scenes.length === 0) {
-        throw new Error('scenes array is required and must not be empty');
-      }
-
-      // Validate scene configurations
-      scenes.forEach(scene => {
-        if (!scene.sceneNumber || typeof scene.duration !== 'number') {
-          throw new Error('Each scene must have a sceneNumber and duration');
-        }
-      });
 
       logger.info(`Assembly Service: Assembling video for job: ${jobId}`);
       const result = await assemblyServiceInterface.generateContent(jobId, scenes);
-      
-      clearTimeout(requestTimeout);
-      logger.info('Assembly Service: Video assembly initiated successfully');
-      res.json({
-        message: 'Video assembly initiated successfully',
-        result: result
-      });
+      res.json(result);
+
     } catch (error) {
-      clearTimeout(requestTimeout);
       logger.error('Assembly Service: Error assembling video:', error);
-      
-      // Send appropriate error response based on error type
-      if (error.message.includes('Missing required assets')) {
-        res.status(400).json({
-          error: 'Bad Request',
-          details: 'Missing required assets for video assembly. Ensure all scenes have video and voice content.'
-        });
-      } else if (error.message.includes('configuration')) {
-        res.status(400).json({
-          error: 'Bad Request',
-          details: error.message
-        });
-      } else {
-        res.status(500).json({
-          error: 'Internal server error',
-          details: error.message
-        });
+
+      // Improved error handling
+      const errorMessage = error?.message || 'Unknown error occurred';
+      const statusCode = error?.statusCode || 500;
+      const errorResponse = {
+        error: 'Assembly failed',
+        details: errorMessage
+      };
+
+      // Handle specific error cases
+      if (errorMessage.includes('Missing required assets')) {
+        errorResponse.statusCode = 400;
+        errorResponse.error = 'Missing assets';
+      } else if (errorMessage.includes('Scene not found')) {
+        errorResponse.statusCode = 404;
+        errorResponse.error = 'Scene not found';
       }
+
+      res.status(statusCode).json(errorResponse);
     }
   });
 

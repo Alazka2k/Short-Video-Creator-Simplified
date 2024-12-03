@@ -5,6 +5,7 @@ const path = require('path');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
 const VoiceDataAccess = require('./data/voiceDataAccess');
+const storageService = require('../../shared/utils/storage');
 
 class VoiceGenService {
   constructor() {
@@ -13,14 +14,14 @@ class VoiceGenService {
       apiKey: config.voiceGen.apiKey,
       timeoutMs: 120000 // 2 minutes timeout
     });
-    this.defaultModelId = config.voiceGen.modelId || 'eleven_multilingual_v2';
-    this.defaultVoiceId = config.voiceGen.defaultVoiceId || '21m00Tcm4TlvDq8ikWAM';
+    this.modelId = config.voiceGen.modelId;
+    this.backupVoiceId = config.voiceGen.voiceId;
     this.voiceDataAccess = VoiceDataAccess;
     
     logger.info(`Voice Generation Provider: ElevenLabs`);
     logger.info(`ElevenLabs API Key: ${config.voiceGen.apiKey ? 'Loaded' : 'Missing'}`);
-    logger.info(`Default Model ID: ${this.defaultModelId}`);
-    logger.info(`Default Voice ID: ${this.defaultVoiceId}`);
+    logger.info(`Model ID: ${this.modelId}`);
+    logger.info(`Backup Voice ID: ${this.backupVoiceId}`);
   }
 
   async generateVoice(text, sceneIndex, jobId, voiceId = null, isTest = false) {
@@ -28,7 +29,7 @@ class VoiceGenService {
       logger.info(`Generating voice for text: "${text.substring(0, 50)}..."`);
       logger.debug('Voice generation parameters:', { sceneIndex, jobId, voiceId, isTest });
       
-      const finalVoiceId = voiceId || this.defaultVoiceId;
+      const finalVoiceId = voiceId || this.backupVoiceId;
       if (!finalVoiceId) {
         throw new Error('No valid voice ID provided or found in config');
       }
@@ -38,7 +39,7 @@ class VoiceGenService {
       const audioStream = await this.client.generate({
         voice: finalVoiceId,
         text: text,
-        model_id: this.defaultModelId,
+        model_id: this.modelId,
         stream: true
       });
 
@@ -52,16 +53,29 @@ class VoiceGenService {
       // Save metadata
       await this.saveVoiceMetadata(metadataPath, sceneIndex, {
         text,
-        modelId: this.defaultModelId,
+        modelId: this.modelId,
         generatedAt: new Date().toISOString()
       });
+
+      // Upload to S3
+      const storageResult = await storageService.uploadFile(
+        voiceFilePath, 
+        'voice'
+      );
 
       // If this is a test, return test response
       if (isTest) {
         return {
           filePath: voiceFilePath,
           fileName: path.basename(voiceFilePath),
-          voiceId: finalVoiceId
+          voiceId: finalVoiceId,
+          storageKey: storageResult.storageKey,
+          publicUrl: storageResult.url,
+          metadata: {
+            text,
+            modelId: this.modelId,
+            generatedAt: new Date().toISOString()
+          }
         };
       }
 
@@ -70,24 +84,33 @@ class VoiceGenService {
         tempFilePath: voiceFilePath,
         voiceId: finalVoiceId,
         duration: writeResult.duration,
+        storageKey: storageResult.storageKey,
+        publicUrl: storageResult.url,
         metadata: {
           text,
-          modelId: this.defaultModelId,
+          modelId: this.modelId,
           generatedAt: new Date().toISOString()
         }
       };
 
       // Create database record
-      const voiceRecord = await this.voiceDataAccess.createVoiceOutput(jobId, sceneIndex, voiceData);
+      const voiceRecord = await this.voiceDataAccess.createVoiceOutput(
+        jobId, 
+        sceneIndex, 
+        voiceData
+      );
 
-      // Return standardized response
       return {
         filePath: voiceFilePath,
         fileName: path.basename(voiceFilePath),
         voiceId: finalVoiceId,
-        metadata: typeof voiceRecord.metadata === 'string' 
-          ? JSON.parse(voiceRecord.metadata) 
-          : voiceRecord.metadata
+        storageKey: storageResult.storageKey,
+        publicUrl: storageResult.url,
+        metadata: {
+          text,
+          modelId: this.modelId,
+          generatedAt: new Date().toISOString()
+        }
       };
 
     } catch (error) {

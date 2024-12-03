@@ -43,20 +43,31 @@ class VoiceDataAccess {
         createdAt: new Date().toISOString()
       };
 
-      // Create database record
+      // Create database record with S3 information
       const [voiceRecord] = await knex('voice_outputs')
         .insert({
           job_id: jobId,
           scene_id: sceneId,
-          voice_service_id: voiceData.voiceId,
-          voice_file_url: filePath,
-          metadata: JSON.stringify(fullMetadata)
+          elevenlabs_voice_id: voiceData.voiceId,
+          file_path: voiceData.tempFilePath,  // Keep local path for backup
+          storage_key: voiceData.storageKey,       // Add S3 storage key
+          public_url: voiceData.publicUrl,         // Add S3 public URL
+          metadata: JSON.stringify({
+            ...voiceData.metadata,
+            storage: {
+              key: voiceData.storageKey,
+              url: voiceData.publicUrl
+            }
+          })
         })
         .returning('*');
 
-      logger.info(`Created voice output record: ${voiceRecord.voice_id}`);
-      return voiceRecord;
+      logger.info('Created voice output record:', {
+        voiceId: voiceRecord.voice_id,
+        storageKey: voiceData.storageKey
+      });
 
+      return voiceRecord;
     } catch (error) {
       logger.error('Error creating voice output:', error);
       throw error;

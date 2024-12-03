@@ -52,5 +52,25 @@
     "username": "YOUR_DB_USERNAME",
     "password": "YOUR_DB_PASSWORD",
     "database": "YOUR_DB_NAME"
+  },
+  "services": {
+    "storage": {
+      "type": "aws",
+      "development": {
+        "region": "YOUR_AWS_REGION",
+        "bucket": "YOUR_S3_BUCKET",
+        "cdnUrl": "YOUR_CDN_URL"
+      },
+      "staging": {
+        "region": "YOUR_AWS_REGION",
+        "bucket": "YOUR_S3_BUCKET",
+        "cdnUrl": "YOUR_CDN_URL"
+      },
+      "production": {
+        "region": "YOUR_AWS_REGION",
+        "bucket": "YOUR_S3_BUCKET",
+        "cdnUrl": "YOUR_CDN_URL"
+      }
+    }
   }
 }

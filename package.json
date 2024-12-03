@@ -38,7 +38,9 @@
     "start:animation": "node backend/services/animation-service/index.js",
     "start:video": "node backend/services/video-service/index.js",
     "start:job": "node backend/services/job-service/index.js",
-    "start:assembly": "node backend/services/assembly-service/index.js"
+    "start:assembly": "node backend/services/assembly-service/index.js",
+    "test:s3": "node tests/storage/s3-test.js",
+    "test:s3:voice": "node tests/storage/voice-s3-test.js"
   },
   "keywords": [
     "AI",
@@ -54,6 +56,7 @@
     "@azure/msal-react": "^2.1.1",
     "@huggingface/inference": "^2.5.0",
     "async": "^3.2.4",
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.7.7",
     "axios-cookiejar-support": "^5.0.2",
     "bcrypt": "^5.1.1",

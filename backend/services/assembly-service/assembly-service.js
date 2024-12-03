@@ -3,6 +3,7 @@ const assemblyDataAccess = require('./data/assemblyDataAccess');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const path = require('path');
+const storageService = require('./data/storageService');
 
 class AssemblyService {
   constructor() {
@@ -120,45 +121,26 @@ class AssemblyService {
   async createScene(assets, sceneConfig) {
     const scene = new Scene();
     
-    // Convert local paths to public URLs
-    const videoUrl = this.getMediaUrl(assets.video.video_file_url);
-    const voiceUrl = this.getMediaUrl(assets.voice.voice_file_url);
+    // Get temporary URLs that are valid only for assembly duration
+    const videoUrl = await storageService.getSignedUrl(assets.video.storage_key, 7200); // 2 hours
+    const voiceUrl = await storageService.getSignedUrl(assets.voice.storage_key, 7200);
     
-    logger.info('Creating scene configuration:', {
+    logger.info('Creating scene with secure URLs:', {
       sceneNumber: sceneConfig.sceneNumber,
-      duration: sceneConfig.duration,
-      transition: sceneConfig.transition,
-      assets: {
-        video: {
-          localPath: assets.video.video_file_url,
-          publicUrl: videoUrl
-        },
-        voice: {
-          localPath: assets.voice.voice_file_url,
-          publicUrl: voiceUrl
-        }
-      }
+      duration: sceneConfig.duration
     });
 
-    // Add video layer
     scene.addElement({
       type: "video",
       source: videoUrl,
-      duration: sceneConfig.duration,
-      position: "center"
+      duration: sceneConfig.duration
     });
 
-    // Add voice layer
     scene.addElement({
       type: "audio",
       source: voiceUrl,
       volume: 1
     });
-
-    // Add transition if specified
-    if (sceneConfig.transition) {
-      scene.set("transition", sceneConfig.transition);
-    }
 
     return scene;
   }

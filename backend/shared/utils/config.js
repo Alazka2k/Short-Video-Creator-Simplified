@@ -1,3 +1,4 @@
+const dotenv = require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const logger = require('./logger');
@@ -23,6 +24,17 @@ function loadConfig() {
   const configPath = path.join(rootDir, 'config', 'default.json');
   const parametersPath = path.join(rootDir, 'data', 'input', 'parameters.json');
   
+  const env = process.env.NODE_ENV;
+  if (!env) {
+    logger.error('NODE_ENV is not set. This is required for the application to run.');
+    process.exit(1);
+  }
+  logger.info('Current environment:', { 
+    NODE_ENV: env,
+    isDefined: env !== undefined,
+    type: typeof env
+  });
+
   let rawConfig, rawParameters;
 
   try {
@@ -102,9 +114,10 @@ function loadConfig() {
   
   logger.info('LLM configuration:', JSON.stringify(config.llm, null, 2));
   logger.info('Voice configuration:', JSON.stringify(config.voiceGen, null, 2));
-
-  // Add service URLs to the configuration
+  
+  // Add service URLs with environment-specific defaults
   config.services = {
+    // Service URLs
     llm: { url: process.env.LLM_SERVICE_URL || 'http://localhost:3001' },
     image: { url: process.env.IMAGE_SERVICE_URL || 'http://localhost:3002' },
     voice: { url: process.env.VOICE_SERVICE_URL || 'http://localhost:3003' },
@@ -114,9 +127,20 @@ function loadConfig() {
     assembly: { url: process.env.ASSEMBLY_SERVICE_URL || 'http://localhost:3007' },
     job: { url: process.env.JOB_SERVICE_URL || 'http://localhost:3008' },
     auth: { url: process.env.AUTH_SERVICE_URL || 'http://localhost:3009' },
-    billing: { url: process.env.BILLING_SERVICE_URL || 'http://localhost:3010' }
+    billing: { url: process.env.BILLING_SERVICE_URL || 'http://localhost:3010' },
+    // Add storage configuration
+    storage: {
+      type: config.services?.storage?.type || 'aws',
+      config: config.services?.storage?.[env] || {
+        region: env ? process.env[`${env.toUpperCase()}_AWS_REGION`] : process.env.AWS_REGION,
+        bucket: env ? process.env[`${env.toUpperCase()}_AWS_BUCKET`] : process.env.AWS_BUCKET,
+        cdnUrl: env ? process.env[`${env.toUpperCase()}_CDN_URL`] : process.env.CDN_URL,
+        accessKeyId: env ? process.env[`${env.toUpperCase()}_AWS_ACCESS_KEY_ID`] : process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env ? process.env[`${env.toUpperCase()}_AWS_SECRET_ACCESS_KEY`] : process.env.AWS_SECRET_ACCESS_KEY
+      }
+    }
   };
-
+  
   // Log the merged configuration
   logger.info('Merged configuration:', JSON.stringify(config, null, 2));
 

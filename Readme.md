@@ -15,6 +15,7 @@
 12. [Output Format](#output-format)
 13. [Testing](#testing)
 14. [Source Code Export](#source-code-export)
+15. [Storage Setup](#storage-setup)
 
 ## Introduction
 
@@ -795,3 +796,72 @@ The export excludes sensitive information such as:
 - Personal configuration files
 - Environment-specific settings
 - Generated content and test outputs
+
+## Storage Setup
+
+The application uses AWS S3 for file storage. You'll need to:
+
+1. Create an S3 bucket
+2. Set up an IAM user with appropriate permissions
+3. Configure environment variables in default.json:
+
+```bash
+STORAGE_PROVIDER=aws
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=your_region
+AWS_BUCKET_NAME=your_bucket_name
+CDN_URL=your_cdn_url  # Optional, if using CloudFront
+```
+
+For local development, you can use the local filesystem by setting:
+```bash
+STORAGE_PROVIDER=local
+```
+
+## AWS S3 Setup
+
+1. Create three S3 buckets (one for each environment):
+   ```
+   short-video-creator-dev
+   short-video-creator-staging
+   short-video-creator-prod
+   ```
+
+2. For each bucket:
+   - Enable versioning
+   - Configure CORS:
+   ```json
+   [
+     {
+       "AllowedHeaders": ["*"],
+       "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+       "AllowedOrigins": ["*"],
+       "ExposeHeaders": []
+     }
+   ]
+   ```
+
+3. Create IAM users for each environment with appropriate permissions:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": [
+           "s3:PutObject",
+           "s3:GetObject",
+           "s3:ListBucket",
+           "s3:DeleteObject"
+         ],
+         "Resource": [
+           "arn:aws:s3:::your-bucket-name/*",
+           "arn:aws:s3:::your-bucket-name"
+         ]
+       }
+     ]
+   }
+   ```
+
+4. Set up CloudFront distributions (optional) for each bucket to serve content via CDN
