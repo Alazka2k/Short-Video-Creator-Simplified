@@ -1,6 +1,7 @@
 const express = require('express');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
+const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
 
 function createServer(animationServiceInterface) {
     const app = express();
@@ -28,30 +29,44 @@ function createServer(animationServiceInterface) {
         }, 300000); // 5 minutes timeout
       
         try {
-          const { imagePath, description, sceneIndex, jobId, options } = req.body;
+          const { imagePath, imageUrl, sceneIndex, jobId, options } = req.body;
           logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
           
-          if (!imagePath || !description || sceneIndex === undefined || !jobId) {
-            throw new Error('Missing required parameters: imagePath, description, sceneIndex, or jobId');
+          // Use imageUrl if provided, fall back to imagePath
+          const imageSource = imageUrl || imagePath;
+          
+          if (!imageSource || sceneIndex === undefined || !jobId) {
+            throw new Error('Missing required parameters: image source, sceneIndex, or jobId');
           }
       
-          logger.info(`Animation Service: Generating animation for description "${description}", scene ${sceneIndex}, jobId ${jobId}`);
+          if (!options?.videoPrompt) {
+            throw new Error('Video prompt is required in options');
+          }
+      
+          logger.info(`Animation Service: Generating animation for scene ${sceneIndex}, jobId ${jobId} with prompt "${options.videoPrompt}"`);
           
           const result = await animationServiceInterface.process(
-            imagePath, 
-            description, 
-            sceneIndex, 
+            imageSource,
             jobId,
-            options, 
-            false // false for production
+            sceneIndex,
+            jobId,
+            options,
+            false
           );
           
           clearTimeout(requestTimeout);
           logger.info('Animation Service: Animation generated successfully');
-          res.json({ 
+
+          // Transform response to use storage information
+          const response = {
             message: 'Animation generated successfully',
-            result: result
-          });
+            result: {
+              ...result,
+              url: undefined
+            }
+          };
+          
+          res.json(response);
         } catch (error) {
           clearTimeout(requestTimeout);
           logger.error('Animation Service: Error generating animation:', error);
@@ -64,7 +79,15 @@ function createServer(animationServiceInterface) {
       try {
         const { jobId } = req.params;
         const animations = await animationServiceInterface.getAnimationsForJob(jobId);
-        res.json(animations);
+        
+        // Transform response to use storage URLs
+        const transformedAnimations = animations.map(animation => ({
+          ...animation,
+          storage_key: animation.storage_key,
+          public_url: animation.public_url
+        }));
+        
+        res.json(transformedAnimations);
       } catch (error) {
         logger.error('Error fetching animations for job:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
@@ -78,7 +101,11 @@ function createServer(animationServiceInterface) {
         if (!animation) {
           return res.status(404).json({ error: 'Animation not found' });
         }
-        res.json(animation);
+        
+        // Refresh any URLs in the response
+        const refreshedAnimation = await StorageUrlHelper.refreshUrlsInObject(animation);
+        
+        res.json(refreshedAnimation);
       } catch (error) {
         logger.error('Error fetching animation for scene:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });

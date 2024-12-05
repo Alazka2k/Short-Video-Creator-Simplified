@@ -24,12 +24,9 @@ class AnimationDataAccess {
       // Ensure directory exists
       await fs.mkdir(fullPath, { recursive: true });
 
-      // Define file name and path
-      const fileName = `animation_scene_${sceneId}.mp4`;
-      const filePath = path.join(fullPath, fileName);
-
+      // Copy the temporary file to its final location
+      const filePath = path.join(fullPath, animationData.fileName);
       try {
-        // Copy the temporary file to its final location
         await fs.copyFile(animationData.tempFilePath, filePath);
         logger.info(`Copied animation file to: ${filePath}`);
       } catch (copyError) {
@@ -37,23 +34,25 @@ class AnimationDataAccess {
         throw new Error(`Failed to copy animation file: ${copyError.message}`);
       }
 
-      // Prepare metadata with simplified format
+      // Prepare metadata
       const fullMetadata = {
         ...animationData.metadata,
         relativePath,
         fullPath: filePath,
-        fileName,
+        fileName: animationData.fileName,
         createdAt: new Date().toISOString()
       };
 
       try {
-        // Create database record
+        // Create database record with storage information
         const [animationRecord] = await knex('animation_outputs')
           .insert({
             job_id: jobId,
             scene_id: sceneId,
-            original_pattern: animationData.originalPattern, // Now just storing pattern ID
-            animation_file_url: filePath,
+            original_pattern: animationData.originalPattern,
+            file_path: filePath,
+            storage_key: animationData.storage_key,
+            public_url: animationData.public_url,
             metadata: JSON.stringify(fullMetadata),
             created_at: knex.fn.now()
           })
@@ -61,15 +60,12 @@ class AnimationDataAccess {
 
         logger.info(`Created animation output record: ${animationRecord.animation_id}`);
 
-        // Parse metadata before returning
-        const result = {
+        return {
           ...animationRecord,
           metadata: typeof animationRecord.metadata === 'string' 
             ? JSON.parse(animationRecord.metadata)
             : animationRecord.metadata
         };
-
-        return result;
       } catch (dbError) {
         logger.error('Database error creating animation record:', dbError);
         // Clean up the copied file if database insertion fails
@@ -216,6 +212,28 @@ class AnimationDataAccess {
       return true;
     } catch (error) {
       logger.error('Error deleting animation:', error);
+      throw error;
+    }
+  }
+
+  async updateStorageInfo(animationId, storageInfo) {
+    try {
+      const [updated] = await knex('animation_outputs')
+        .where('animation_id', animationId)
+        .update({
+          storage_key: storageInfo.key,
+          public_url: storageInfo.url
+        })
+        .returning('*');
+
+      return {
+        ...updated,
+        metadata: typeof updated.metadata === 'string'
+          ? JSON.parse(updated.metadata)
+          : updated.metadata
+      };
+    } catch (error) {
+      logger.error('Error updating storage info:', error);
       throw error;
     }
   }

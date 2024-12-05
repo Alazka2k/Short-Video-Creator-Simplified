@@ -24,11 +24,11 @@ class AnimationServiceInterface {
   async process(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {
     try {
       logger.info(`Processing animation request for ${isTest ? 'test' : 'production'}`);
-      logger.info(`Prompt or TestFolder: "${promptOrTestFolder}", scene: ${sceneIndex}, jobId: ${jobId}`);
+      logger.info(`JobId: ${jobId}, scene: ${sceneIndex}`);
       logger.info(`Image path: ${imagePath}`);
-      logger.info('Animation options:', JSON.stringify(options));
+      logger.info('Animation options:', JSON.stringify(options, null, 2));
 
-      if (!options.videoPrompt) {
+      if (!options?.videoPrompt) {
         throw new Error('Video prompt is required for animation generation');
       }
 
@@ -46,9 +46,14 @@ class AnimationServiceInterface {
         isTest
       );
 
+      const transformedResult = {
+        ...result,
+        url: result.public_url || result.filePath
+      };
+
       logger.info('Animation generation completed successfully');
-      logger.info(`Animation saved to: ${result.filePath}`);
-      return result;
+      logger.info(`Animation saved to: ${transformedResult.url}`);
+      return transformedResult;
     } catch (error) {
       logger.error('Error processing animation:', error);
       throw error;

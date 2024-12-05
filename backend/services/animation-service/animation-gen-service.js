@@ -5,8 +5,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const sharp = require('sharp');
 const FormData = require('form-data');
-const AnimationPatternGenerator = require('../../shared/utils/pattern/animation-pattern-generator');
+const AnimationPatternManager = require('../../shared/utils/pattern/animation-pattern-manager');
 const AnimationDataAccess = require('./data/animationDataAccess');
+const storageService = require('../../shared/utils/storage');
+const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+const os = require('os');
 
 class AnimationGenService {
   constructor() {
@@ -16,7 +19,7 @@ class AnimationGenService {
     this.clientSecret = config.animationGen.clientSecret;
     this.animationLength = config.animationGen.animationLength;
     this.accessToken = null;
-    this.patternGenerator = new AnimationPatternGenerator();
+    this.patternManager = new AnimationPatternManager();
     this.dataAccess = AnimationDataAccess;
     logger.info('AnimationGenService constructed');
   }
@@ -25,7 +28,7 @@ class AnimationGenService {
     try {
       logger.info('Initializing AnimationGenService...');
       await this.getAccessToken();
-      await this.patternGenerator.patternManager.initialize();
+      await this.patternManager.initialize();
       logger.info('Immersity AI service initialized successfully');
     } catch (error) {
       const errorInfo = {
@@ -75,12 +78,27 @@ class AnimationGenService {
   async convertToJpeg(inputPath, outputPath) {
     try {
       logger.info(`Converting image to JPEG: ${inputPath} -> ${outputPath}`);
-      await sharp(inputPath)
-        .jpeg({ quality: 90 })
-        .toFile(outputPath);
+      
+      // If input is URL, download first
+      if (inputPath.startsWith('http')) {
+        const response = await axios({
+          method: 'get',
+          url: inputPath,
+          responseType: 'arraybuffer'
+        });
+        
+        await sharp(Buffer.from(response.data))
+          .jpeg({ quality: 90 })
+          .toFile(outputPath);
+      } else {
+        await sharp(inputPath)
+          .jpeg({ quality: 90 })
+          .toFile(outputPath);
+      }
+      
       logger.info(`Image converted to JPEG successfully: ${outputPath}`);
     } catch (error) {
-      logger.error('Error converting image to JPEG:', error.message);
+      logger.error('Error converting image to JPEG:', error);
       throw error;
     }
   }
@@ -195,6 +213,10 @@ class AnimationGenService {
     }
   }
 
+  async getImageFromUrl(imageUrl) {
+    return StorageUrlHelper.getFreshUrl(imageUrl);
+  }
+
   async generateAnimation(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {
     logger.info('generateAnimation called with:', { imagePath, promptOrTestFolder, sceneIndex, jobId, options, isTest });
     
@@ -212,120 +234,149 @@ class AnimationGenService {
 
     logger.info(`Starting animation generation for image: ${imagePath}`);
     
-    const jpegPath = path.join(path.dirname(imagePath), 'converted.jpg');
-    await this.convertToJpeg(imagePath, jpegPath);
-    
-    const animationLength = options.animationLength || this.animationLength;
-    const videoPrompt = options.videoPrompt || '';
-
-    let animationFilePath, metadataPath;
-    if (isTest) {
-      ({ animationFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest));
-    } else {
-      ({ animationFilePath, metadataPath } = this.getOutputPaths(jobId, sceneIndex, isTest));
+    let imageSource = imagePath;
+    if (imagePath.startsWith('http')) {
+      // Get fresh URL if needed
+      imageSource = await this.getImageFromUrl(imagePath);
+      logger.info('Using image URL:', imageSource);
     }
 
-    const endpoint = `${this.baseUrl}/api/v1/animation`;
-
+    // Create temp directory for converted file
+    const tempDir = path.join(os.tmpdir(), 'animation-service', jobId || 'test');
+    await fs.mkdir(tempDir, { recursive: true });
+    const jpegPath = path.join(tempDir, `scene_${sceneIndex}_converted.jpg`);
+    
     try {
-      // Generate or select pattern
-      const patternResult = await this.patternGenerator.generatePattern(videoPrompt);
-      logger.info(`Using pattern: ${patternResult.id}`);
-
-      const { disparityUrl, inputImageUrl } = await this.generateDisparityMap(jpegPath);
+      await this.convertToJpeg(imageSource, jpegPath);
       
-      const requestBody = {
-        inputImageUrl,
-        inputDisparityUrl: disparityUrl,
-        animationLength,
-        pattern: patternResult.pattern
-      };
-      logger.info(`Request body for animation generation: ${JSON.stringify(requestBody, null, 2)}`);
+      const animationLength = options.animationLength || this.animationLength;
+      const videoPrompt = options.videoPrompt || '';
 
-      const response = await axios.post(endpoint, requestBody, {
-        headers: { 
-          Authorization: `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        timeout: 3 * 60 * 1000 // 3 minutes timeout
-      });
-
-      const responseData = {
-        correlationId: response.data.correlationId,
-        resultPresignedUrl: response.data.resultPresignedUrl
-      };
-      logger.info(`Animation generation response received`);
-      logger.info(`Response status: ${response.status}`);
-      logger.info(`Response data: ${JSON.stringify(responseData, null, 2)}`);
-
-      const downloadUrl = response.data.resultPresignedUrl;
-      if (!downloadUrl) {
-        throw new Error('No download URL provided in the response');
+      let animationFilePath, metadataPath;
+      if (isTest) {
+        ({ animationFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest));
+      } else {
+        ({ animationFilePath, metadataPath } = this.getOutputPaths(jobId, sceneIndex, isTest));
       }
 
-      logger.info(`Downloading animation from URL: ${downloadUrl}`);
-      await this.downloadAnimation(downloadUrl, animationFilePath);
-      logger.info(`Animation generated and saved to ${animationFilePath}`);
+      const endpoint = `${this.baseUrl}/api/v1/animation`;
 
-      // Save metadata
-      await this.saveAnimationMetadata(metadataPath, {
-        patternId: patternResult.id,
-        fileName: path.basename(animationFilePath),
-        generatedAt: new Date().toISOString()
-      });
+      try {
+        // Select pattern from existing patterns
+        const selectedPattern = await this.patternManager.selectPattern(videoPrompt);
+        if (!selectedPattern) {
+          throw new Error('No animation pattern available');
+        }
+        logger.info(`Using pattern: ${selectedPattern.id}`);
 
-      if (!isTest) {
-        const animationData = {
-          originalPattern: patternResult.id,
-          tempFilePath: animationFilePath,
-          fileName: path.basename(animationFilePath),
-          metadata: {
-            prompt: videoPrompt,
-            duration: animationLength,
-            generatedAt: new Date().toISOString(),
-            patternId: patternResult.id,
-            animationParameters: {
-              inputImageUrl,
-              animationLength
-            }
-          }
+        const { disparityUrl, inputImageUrl } = await this.generateDisparityMap(jpegPath);
+        
+        const requestBody = {
+          inputImageUrl,
+          inputDisparityUrl: disparityUrl,
+          animationLength,
+          pattern: selectedPattern.pattern
         };
+        logger.info(`Request body for animation generation: ${JSON.stringify({
+          inputImageUrl,
+          inputDisparityUrl: disparityUrl,
+          animationLength
+        }, null, 2)}`);
 
-        logger.info('Creating animation output record with data:', 
-          JSON.stringify(animationData, null, 2));
+        const response = await axios.post(endpoint, requestBody, {
+          headers: { 
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          timeout: 3 * 60 * 1000 // 3 minutes timeout
+        });
 
-        const animationRecord = await this.dataAccess.createAnimationOutput(
-          jobId,
-          sceneIndex,
-          animationData
-        );
+        const responseData = {
+          correlationId: response.data.correlationId,
+          resultPresignedUrl: response.data.resultPresignedUrl
+        };
+        logger.info(`Animation generation response received`);
+        logger.info(`Response status: ${response.status}`);
+        logger.info(`Response data: ${JSON.stringify(responseData, null, 2)}`);
+
+        const downloadUrl = response.data.resultPresignedUrl;
+        if (!downloadUrl) {
+          throw new Error('No download URL provided in the response');
+        }
+
+        logger.info(`Downloading animation from URL: ${downloadUrl}`);
+        await this.downloadAnimation(downloadUrl, animationFilePath);
+        logger.info(`Animation generated and saved to ${animationFilePath}`);
+
+        // Save metadata
+        await this.saveAnimationMetadata(metadataPath, {
+          patternId: selectedPattern.id,
+          fileName: path.basename(animationFilePath),
+          generatedAt: new Date().toISOString()
+        });
+
+        if (!isTest) {
+          // Upload to storage
+          const storageResult = await storageService.uploadFile(animationFilePath, 'animation');
+          logger.info('Animation uploaded to storage successfully');
+
+          const animationData = {
+            originalPattern: selectedPattern.id,
+            tempFilePath: animationFilePath,
+            fileName: path.basename(animationFilePath),
+            storage_key: storageResult.storageKey,
+            public_url: storageResult.url,
+            metadata: {
+              prompt: videoPrompt,
+              duration: animationLength,
+              generatedAt: new Date().toISOString(),
+              patternId: selectedPattern.id,
+              animationParameters: {
+                inputImageUrl,
+                animationLength
+              }
+            }
+          };
+
+          logger.info('Creating animation output record with data:', 
+            JSON.stringify(animationData, null, 2));
+
+          const animationRecord = await this.dataAccess.createAnimationOutput(
+            jobId,
+            sceneIndex,
+            animationData
+          );
+
+          return {
+            filePath: animationFilePath,
+            fileName: path.basename(animationFilePath),
+            storage_key: storageResult.storageKey,
+            public_url: storageResult.url,
+            metadata: animationRecord.metadata
+          };
+        }
 
         return {
           filePath: animationFilePath,
-          fileName: path.basename(animationFilePath),
-          metadata: animationRecord.metadata
+          fileName: path.basename(animationFilePath)
         };
+
+      } catch (error) {
+        const errorInfo = {
+          message: error.message,
+          code: error.code,
+          response: error.response ? {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data
+          } : undefined
+        };
+        logger.error(`Error generating animation: ${JSON.stringify(errorInfo, null, 2)}`);
+        throw error;
       }
-
-      return {
-        filePath: animationFilePath,
-        fileName: path.basename(animationFilePath)
-      };
-
-    } catch (error) {
-      const errorInfo = {
-        message: error.message,
-        code: error.code,
-        response: error.response ? {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data
-        } : undefined
-      };
-      logger.error(`Error generating animation: ${JSON.stringify(errorInfo, null, 2)}`);
-      throw error;
     } finally {
+      // Clean up temp file
       try {
         await fs.unlink(jpegPath);
         logger.info(`Temporary JPEG file removed: ${jpegPath}`);
