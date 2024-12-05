@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const puppeteer = require('puppeteer');
 const ImageDataAccess = require('./data/imageDataAccess');
+const storageService = require('../../shared/utils/storage');
 
 class ImageGenService {
   constructor() {
@@ -14,7 +15,7 @@ class ImageGenService {
       ChannelId: config.imageGen.channelId,
       SalaiToken: config.imageGen.salaiToken,
       Debug: false,
-      Ws: config.imageGen.ws
+      Ws: config.imageGen.ws || true
     });
     this.imageDataAccess = ImageDataAccess;
     this.initialized = false;
@@ -56,20 +57,26 @@ class ImageGenService {
       await fs.mkdir(path.dirname(imageFilePath), { recursive: true });
 
       await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-
+      
       await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath), {
         prompt,
-        size: '512x512',
         generatedAt: new Date().toISOString()
       });
+
+      // Upload to S3
+      const storageResult = await storageService.uploadFile(
+        imageFilePath,
+        'image'
+      );
 
       const imageData = {
         tempFilePath: imageFilePath,
         originalUrl: originalImageUrl,
         imageUrl: selectedVariationUrl,
+        storageKey: storageResult.storageKey,
+        publicUrl: storageResult.url,
         metadata: {
           prompt,
-          size: '512x512',
           generatedAt: new Date().toISOString()
         }
       };
@@ -81,6 +88,8 @@ class ImageGenService {
         fileName: path.basename(imageFilePath),
         originalUrl: originalImageUrl,
         imageUrl: selectedVariationUrl,
+        storageKey: storageResult.storageKey,
+        publicUrl: storageResult.url,
         metadata: typeof imageRecord.metadata === 'string' 
           ? JSON.parse(imageRecord.metadata) 
           : imageRecord.metadata
@@ -92,14 +101,23 @@ class ImageGenService {
     }
   }
 
-  getOutputPaths(sceneIndex, jobId) {
+  getOutputPaths(sceneIndex, jobId, isTest = false) {
+    if (isTest) {
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image');
+      const testFolderPath = path.join(testOutputDir, `output_test_${sceneIndex}`);
+      return {
+        imageFilePath: path.join(testFolderPath, `image_scene_${sceneIndex}.png`),
+        metadataPath: path.join(testFolderPath, 'metadata.json')
+      };
+    }
+
     const currentDate = new Date();
     const dateString = currentDate.toISOString().split('T')[0];
     const folderPath = path.join(config.output.directory, 'image', dateString, jobId, `scene_${sceneIndex}`);
-    const imageFilePath = path.join(folderPath, `image_scene_${sceneIndex}.png`);
-    const metadataPath = path.join(folderPath, 'metadata.json');
-
-    return { imageFilePath, metadataPath };
+    return {
+      imageFilePath: path.join(folderPath, `image_scene_${sceneIndex}.png`),
+      metadataPath: path.join(folderPath, 'metadata.json')
+    };
   }
 
   getRandomVariationUrl(originalUrl) {
@@ -133,16 +151,11 @@ class ImageGenService {
     }
   }
 
-  async saveImageMetadata(metadataPath, sceneIndex, originalUrl, imageUrl, fileName, metadata) {
+  async saveImageMetadata(metadataPath, sceneIndex, metadata) {
     try {
       await fs.mkdir(path.dirname(metadataPath), { recursive: true });
       const metadataContent = {
-        [`scene_${sceneIndex}`]: {
-          originalUrl,
-          imageUrl,
-          fileName,
-          ...metadata
-        }
+        [`scene_${sceneIndex}`]: metadata
       };
       await fs.writeFile(metadataPath, JSON.stringify(metadataContent, null, 2));
       logger.info(`Metadata saved to ${metadataPath}`);

@@ -1,7 +1,7 @@
 const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
-const logger = require('../../../shared/utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
+const logger = require('../../../shared/utils/logger');
 const config = require('../../../shared/utils/config');
 
 class ImageDataAccess {
@@ -31,15 +31,6 @@ class ImageDataAccess {
       // Copy the temporary file to its final location
       await fs.copyFile(imageData.tempFilePath, filePath);
 
-      // Prepare metadata
-      const fullMetadata = {
-        ...imageData.metadata,
-        relativePath,
-        fullPath: filePath,
-        fileName,
-        createdAt: new Date().toISOString()
-      };
-
       // Create database record
       const [imageRecord] = await knex('image_outputs')
         .insert({
@@ -48,11 +39,17 @@ class ImageDataAccess {
           original_url: imageData.originalUrl,
           image_url: imageData.imageUrl,
           file_name: fileName,
-          metadata: JSON.stringify(fullMetadata)
+          storage_key: imageData.storageKey,   // Add S3 storage key
+          public_url: imageData.publicUrl,     // Add S3 public URL
+          metadata: JSON.stringify(imageData.metadata)
         })
         .returning('*');
 
-      logger.info(`Created image output record: ${imageRecord.image_id}`);
+      logger.info('Created image output record:', {
+        imageId: imageRecord.image_id,
+        storageKey: imageData.storageKey
+      });
+
       return imageRecord;
 
     } catch (error) {
