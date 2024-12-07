@@ -1,6 +1,9 @@
 const express = require('express');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
+const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+
+const MAX_PROMPT_LENGTH = 200;
 
 function createServer(musicServiceInterface) {
     const app = express();
@@ -21,29 +24,35 @@ function createServer(musicServiceInterface) {
 
     // Generate music endpoint
     app.post('/generate', async (req, res) => {
-      logger.info('Music Service: Handling /generate request');
-      const requestTimeout = setTimeout(() => {
-        logger.error('Music Service: Request timed out');
-        res.status(504).json({ error: 'Request timed out' });
-      }, 600000); // 10 minutes timeout
-
+      let requestTimeout;
       try {
-        const { jobId, title, lyrics, tags, instrumental } = req.body;
+        requestTimeout = setTimeout(() => {
+          logger.error('Music Service: Request timed out');
+          res.status(504).json({ error: 'Request timed out' });
+        }, 600000); // 10 minutes timeout
+
+        const { jobId, title, prompt, style, instrumental, lyric, custom } = req.body;
         logger.info(`Music Service: Request body: ${JSON.stringify(req.body)}`);
         
         if (!jobId) {
           throw new Error('jobId is required');
         }
 
-        if (!title || !tags) {
-          throw new Error('title and tags are required');
+        if (!prompt) {
+          throw new Error('prompt is required');
+        }
+
+        if (prompt.length > MAX_PROMPT_LENGTH) {
+          throw new Error(`prompt must be less than or equal ${MAX_PROMPT_LENGTH} characters`);
         }
 
         const musicData = {
-          title,
-          lyrics,
-          tags,
-          instrumental: instrumental ?? true
+          title: title,
+          prompt: prompt.substring(0, MAX_PROMPT_LENGTH),
+          style: style || '',
+          instrumental: instrumental ?? true,
+          lyric: lyric,
+          custom: custom ?? false
         };
 
         logger.info(`Music Service: Generating music for job ${jobId}`);
@@ -51,15 +60,30 @@ function createServer(musicServiceInterface) {
         const result = await musicServiceInterface.process(jobId, musicData);
         
         clearTimeout(requestTimeout);
+        requestTimeout = null;
+
         logger.info('Music Service: Music generated successfully');
         res.json({ 
           message: 'Music generated successfully',
-          result: result
+          result: await StorageUrlHelper.refreshUrlsInObject(result)
         });
       } catch (error) {
-        clearTimeout(requestTimeout);
-        logger.error('Music Service: Error generating music:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        if (requestTimeout) {
+          clearTimeout(requestTimeout);
+        }
+
+        const statusCode = error.response?.status || 500;
+        const errorMessage = error.message || 'Internal server error';
+
+        logger.error('Music Service: Error generating music:', {
+          message: errorMessage,
+          status: statusCode
+        });
+
+        res.status(statusCode).json({ 
+          error: statusCode === 504 ? 'Gateway timeout' : 'Internal server error',
+          details: errorMessage
+        });
       }
     });
 
@@ -71,7 +95,11 @@ function createServer(musicServiceInterface) {
         if (!music) {
           return res.status(404).json({ error: 'Music not found' });
         }
-        res.json(music);
+        
+        // Refresh URLs in music object
+        const refreshedMusic = await StorageUrlHelper.refreshUrlsInObject(music);
+        
+        res.json(refreshedMusic);
       } catch (error) {
         logger.error('Error fetching music for job:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
@@ -104,28 +132,6 @@ function createServer(musicServiceInterface) {
         res.json({ message: 'Music deleted successfully' });
       } catch (error) {
         logger.error('Error deleting music:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
-      }
-    });
-
-    // Get quota info endpoint
-    app.get('/quota', async (req, res) => {
-      try {
-        const quotaInfo = await musicServiceInterface.getQuotaInfo();
-        res.json(quotaInfo);
-      } catch (error) {
-        logger.error('Music Service: Error getting quota info:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
-      }
-    });
-
-    // Check cookie validity endpoint
-    app.get('/check-cookie', async (req, res) => {
-      try {
-        const isValid = await musicServiceInterface.checkCookieValidity();
-        res.json({ isValid });
-      } catch (error) {
-        logger.error('Music Service: Error checking cookie validity:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
       }
     });

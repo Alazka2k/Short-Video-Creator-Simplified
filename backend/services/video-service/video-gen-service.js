@@ -7,6 +7,8 @@ const fsSync = require('fs');
 const FormData = require('form-data');
 const path = require('path');
 const VideoDataAccess = require('./data/videoDataAccess');
+const storageService = require('../../shared/utils/storage');
+const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
 
 class VideoGenService {
   constructor() {
@@ -76,12 +78,26 @@ class VideoGenService {
     return sanitizedPrompt;
   }
 
-  async uploadImageToPicsur(imagePath) {
+  async downloadImageFromUrl(imageUrl) {
     try {
-      logger.info(`Uploading image to Picsur: ${imagePath}`);
-      const imageBuffer = await fs.readFile(imagePath);
+      logger.info(`Downloading image from URL: ${imageUrl}`);
+      const response = await axios({
+        method: 'get',
+        url: imageUrl,
+        responseType: 'arraybuffer'
+      });
+      return Buffer.from(response.data);
+    } catch (error) {
+      logger.error('Error downloading image from URL:', error);
+      throw error;
+    }
+  }
+
+  async uploadImageToPicsur(imageBuffer, fileName) {
+    try {
+      logger.info('Uploading image to Picsur');
       const formData = new FormData();
-      formData.append('image', imageBuffer, path.basename(imagePath));
+      formData.append('image', imageBuffer, fileName);
 
       const response = await axios.post('https://picsur.org/api/image/upload', formData, {
         headers: {
@@ -89,12 +105,10 @@ class VideoGenService {
         },
       });
 
-      logger.info(`Picsur upload response: ${JSON.stringify(response.data)}`);
-
       if (response.data.success) {
         const imageId = response.data.data.id;
         const imageUrl = `https://picsur.org/i/${imageId}.jpg`;
-        logger.info(`Image uploaded successfully. URL: ${imageUrl}`);
+        logger.info(`Image uploaded successfully to Picsur. URL: ${imageUrl}`);
         return imageUrl;
       } else {
         throw new Error('Image upload failed');
@@ -123,20 +137,24 @@ class VideoGenService {
     return { videoFilePath, metadataPath };
   }
 
-  async generateVideo(imagePath, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
+  async generateVideo(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
     try {
       logger.info(`Generating video with the following parameters:`);
-      logger.info(`Image Path: ${imagePath}`);
+      logger.info(`Image URL: ${imageUrl}`);
       logger.info(`Video Prompt: ${videoPrompt}`);
       logger.info(`Camera Movement: ${cameraMovement}`);
       logger.info(`Aspect Ratio: ${aspectRatio}`);
       logger.info(`Scene Index: ${sceneIndex}`);
       logger.info(`Is Test: ${isTest}`);
 
+      const freshImageUrl = await StorageUrlHelper.getFreshUrl(imageUrl);
+      const imageBuffer = await this.downloadImageFromUrl(freshImageUrl);
+      
+      const picsurUrl = await this.uploadImageToPicsur(imageBuffer, `scene_${sceneIndex}.jpg`);
+      logger.info(`Image uploaded to Picsur: ${picsurUrl}`);
+
       const sanitizedPrompt = this.sanitizeVideoPrompt(videoPrompt);
       logger.info(`Sanitized Video Prompt: ${sanitizedPrompt}`);
-
-      const imageUrl = await this.uploadImageToPicsur(imagePath);
 
       const requestPayload = {
         prompt: sanitizedPrompt,
@@ -145,7 +163,7 @@ class VideoGenService {
         keyframes: {
           frame0: {
             type: 'image',
-            url: imageUrl,
+            url: picsurUrl,
           },
         },
       };
@@ -183,9 +201,12 @@ class VideoGenService {
               fileName: path.basename(videoFilePath)
             });
           } else {
-            // For production mode, use database
+            // Upload to storage and save to database
+            const storageResult = await storageService.uploadFile(videoFilePath, 'video');
+            logger.info('Video uploaded to storage successfully');
+
             await this.dataAccess.createVideoOutput(
-              promptOrTestFolder, // Using promptOrTestFolder as jobId in production
+              promptOrTestFolder,
               sceneIndex,
               {
                 fileName: path.basename(videoFilePath),
@@ -193,9 +214,11 @@ class VideoGenService {
                 videoPrompt: sanitizedPrompt,
                 cameraMovement,
                 aspectRatio,
+                storage_key: storageResult.storageKey,
+                public_url: storageResult.url,
                 metadata: {
                   generationId: generation.id,
-                  sourceImageUrl: imageUrl,
+                  sourceImageUrl: freshImageUrl,
                   generationDuration: elapsedTime,
                   generatedAt: new Date().toISOString()
                 }
@@ -206,18 +229,43 @@ class VideoGenService {
           logger.info(`Video downloaded successfully: ${videoFilePath}`);
           return {
             filePath: videoFilePath,
-            fileName: path.basename(videoFilePath)
+            fileName: path.basename(videoFilePath),
+            storage_key: storageResult?.storageKey,
+            public_url: storageResult?.url,
+            metadata: {
+              generationId: generation.id,
+              sourceImageUrl: freshImageUrl,
+              generationDuration: elapsedTime,
+              generatedAt: new Date().toISOString()
+            }
           };
         } else if (videoGeneration.state === 'failed') {
-          throw new Error(`Video generation failed: ${videoGeneration.failure_reason}`);
+          const errorMessage = `Video generation failed: ${videoGeneration.failure_reason || 'Unknown error'}`;
+          logger.error(errorMessage);
+          return {
+            error: true,
+            details: errorMessage,
+            generationId: generation.id,
+            state: videoGeneration.state,
+            failure_reason: videoGeneration.failure_reason
+          };
         }
 
         // Wait for 20 seconds before checking again
         await new Promise(resolve => setTimeout(resolve, 20000));
       }
     } catch (error) {
-      logger.error('Error generating video:', error);
-      return { error: 'Video generation failed', details: error.message };
+      const errorMessage = error.message || 'Unknown error occurred';
+      logger.error('Error in video generation:', {
+        error: errorMessage,
+        stack: error.stack,
+        details: error.response?.data || error
+      });
+      return {
+        error: true,
+        details: errorMessage,
+        originalError: error
+      };
     }
   }
 

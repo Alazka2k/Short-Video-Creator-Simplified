@@ -2,6 +2,7 @@ const MusicGenService = require('./music-gen-service');
 const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
+const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
 
 class MusicServiceInterface {
   constructor() {
@@ -18,7 +19,20 @@ class MusicServiceInterface {
 
   async generateContent(jobId, musicData, isTest = false) {
     logger.info('Generating music content', { jobId, musicData, isTest });
-    return await this.service.generateMusic(jobId, musicData, isTest);
+    const result = await this.service.generateMusic(jobId, {
+      ...musicData,
+      title: musicData.prompt,  // Map prompt to title
+      style: typeof musicData.style === 'string' 
+        ? musicData.style.substring(0, 120)  // Ensure style is not longer than 120 chars
+        : '',
+      instrumental: musicData.instrumental ?? true
+    }, isTest);
+    
+    // If not test mode, refresh URLs before returning
+    if (!isTest) {
+      return await StorageUrlHelper.refreshUrlsInObject(result);
+    }
+    return result;
   }
 
   async process(jobId, musicData, isTest = false) {
@@ -29,15 +43,23 @@ class MusicServiceInterface {
       throw new Error('jobId is required for production mode');
     }
 
-    if (!musicData.title || !musicData.tags) {
-      throw new Error('title and tags are required');
+    if (!musicData.prompt) {
+      throw new Error('prompt is required');
+    }
+
+    if (!musicData.prompt) {
+      throw new Error('prompt is required');
     }
 
     return await this.generateContent(jobId, musicData, isTest);
   }
 
   async getMusicByJobId(jobId) {
-    return await this.service.getMusicByJobId(jobId);
+    const music = await this.service.getMusicByJobId(jobId);
+    if (music) {
+      return await StorageUrlHelper.refreshUrlsInObject(music);
+    }
+    return music;
   }
 
   async updateMusicMetadata(musicId, metadata) {
@@ -46,14 +68,6 @@ class MusicServiceInterface {
 
   async deleteMusic(musicId) {
     return await this.service.deleteMusic(musicId);
-  }
-
-  async getQuotaInfo() {
-    return await this.service.getQuotaInfo();
-  }
-
-  async checkCookieValidity() {
-    return await this.service.checkCookieValidity();
   }
 
   async cleanup() {

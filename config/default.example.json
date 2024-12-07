@@ -17,9 +17,9 @@
     "ws": true
   },
   "musicGen": {
-    "provider": "suno",
-    "sunoCookie": "YOUR_SUNO_COOKIE_HERE",
-    "sessionId":"YOUR_SUNO_SESSION_ID"
+    "provider": "acedata",
+    "apiKey": "YOUR_ACEDATA_API_KEY",
+    "modelId": "chirp-v3-0"
   },
   "animationGen": {
     "provider":"immersityAI",

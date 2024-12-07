@@ -118,7 +118,9 @@ class VideoDataAccess {
         video_prompt: videoData.videoPrompt,
         camera_movement: videoData.cameraMovement,
         aspect_ratio: videoData.aspectRatio,
-        video_file_url: videoPath,
+        file_path: videoPath,
+        storage_key: videoData.storage_key,
+        public_url: videoData.public_url,
         created_at: new Date(),
         metadata: JSON.stringify({
           fileName: videoData.fileName,
@@ -141,17 +143,16 @@ class VideoDataAccess {
         aspectRatio: videoData.aspectRatio,
         fileName: videoData.fileName,
         filePath: videoPath,
+        storage_key: videoData.storage_key,
+        public_url: videoData.public_url,
         ...videoData.metadata
       });
 
-      // Commit transaction
       await trx.commit();
-
       logger.info(`Video output record created with ID: ${videoOutput.video_id}`);
       return videoOutput;
 
     } catch (error) {
-      // Rollback transaction on error
       await trx.rollback();
       logger.error('Error creating video output record:', error);
       throw error;

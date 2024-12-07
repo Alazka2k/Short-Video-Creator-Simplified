@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../../../shared/utils/logger');
 const config = require('../../../shared/utils/config');
+const storageService = require('../../../shared/utils/storage');
 
 class MusicDataAccess {
     constructor() {
@@ -27,20 +28,25 @@ class MusicDataAccess {
                 await fs.rename(musicData.tempFilePath, finalFilePath);
             }
 
+            // Upload to storage
+            const storageResult = await storageService.uploadFile(finalFilePath, 'music');
+            logger.info('Music uploaded to storage successfully');
+
             // Prepare database record
             const record = {
                 job_id: jobId,
                 title: musicData.title,
-                tags: musicData.tags,
+                style: musicData.style || '',
+                lyric: musicData.lyric || null,
                 instrumental: musicData.instrumental,
-                music_file_url: finalFilePath,
+                file_path: finalFilePath,
+                storage_key: storageResult.storageKey,
+                public_url: storageResult.url,
                 created_at: new Date(),
                 metadata: JSON.stringify({
-                    title: musicData.title,
-                    tags: musicData.tags,
-                    instrumental: musicData.instrumental,
-                    generatedAt: new Date().toISOString(),
-                    ...musicData.metadata
+                    generationId: musicData.metadata.generationId,
+                    created_at: musicData.metadata.created_at,
+                    generatedAt: musicData.metadata.generatedAt
                 })
             };
 
@@ -55,10 +61,18 @@ class MusicDataAccess {
                 JSON.stringify({
                     fileName: finalFileName,
                     title: musicData.title,
-                    tags: musicData.tags,
+                    style: musicData.style,
+                    lyric: musicData.lyric || null,
                     instrumental: musicData.instrumental,
-                    generatedAt: new Date().toISOString(),
-                    ...musicData.metadata
+                    file_path: finalFilePath,
+                    storage_key: storageResult.storageKey,
+                    public_url: storageResult.url,
+                    created_at: new Date(),
+                    metadata: JSON.stringify({
+                        generationId: musicData.metadata.generationId,
+                        created_at: musicData.metadata.created_at,
+                        generatedAt: musicData.metadata.generatedAt
+                    })
                 }, null, 2)
             );
 
@@ -108,9 +122,9 @@ class MusicDataAccess {
 
             // Update metadata file if it exists
             const musicRecord = await this.getMusicByJobId(updated.job_id);
-            if (musicRecord && musicRecord.music_file_url) {
+            if (musicRecord && musicRecord.file_path) {
                 const metadataPath = path.join(
-                    path.dirname(musicRecord.music_file_url),
+                    path.dirname(musicRecord.file_path),
                     'metadata.json'
                 );
                 try {
@@ -143,11 +157,11 @@ class MusicDataAccess {
             }
 
             // Delete the file if it exists
-            if (music.music_file_url) {
+            if (music.file_path) {
                 try {
-                    await fs.unlink(music.music_file_url);
+                    await fs.unlink(music.file_path);
                     const metadataPath = path.join(
-                        path.dirname(music.music_file_url),
+                        path.dirname(music.file_path),
                         'metadata.json'
                     );
                     await fs.unlink(metadataPath);

@@ -1,191 +1,158 @@
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
+const os = require('os');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const sunoAuth = require('./suno_auth');
 const MusicDataAccess = require('./data/musicDataAccess');
+const storageService = require('../../shared/utils/storage');
+const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
 
 class MusicGenService {
   constructor() {
-    this.baseUrl = 'https://suno-api-one-zeta.vercel.app';
+    this.baseUrl = 'https://api.acedata.cloud';
     this.musicGenOptions = config.parameters?.musicGen || {};
     this.dataAccess = MusicDataAccess;
     logger.info('Initialized MusicGenService with options:', JSON.stringify(this.musicGenOptions, null, 2));
   }
 
   async generateMusic(jobId, musicData, isTest = false) {
-      try {
-        logger.info(`Generating music for job ${jobId}, title: "${musicData.title}"`);
-        logger.info('Music data:', JSON.stringify(musicData, null, 2));
-        
-        const makeInstrumental = musicData.instrumental;
-        logger.info(`Make instrumental: ${makeInstrumental}`);
-    
-        const payload = {
-          prompt: makeInstrumental ? "" : musicData.lyrics,
-          tags: musicData.tags,
-          title: musicData.title,
-          make_instrumental: makeInstrumental,
-          wait_audio: false,
-          mv: this.musicGenOptions.modelId || "chirp-v3-0"
-        };
-    
-        logger.info('Payload for music generation:', JSON.stringify(payload, null, 2));
-    
-        const endpoint = `${this.baseUrl}/api/custom_generate`;
-        logger.info(`Calling endpoint: ${endpoint}`);
-    
-        const headers = this.getHeaders();
-        let response;
-        try {
-          response = await axios.post(endpoint, payload, { headers });
-        } catch (axiosError) {
-          // Handle Axios error specifically
-          const errorInfo = {
-            message: axiosError.message,
-            status: axiosError.response?.status,
-            statusText: axiosError.response?.statusText,
-            data: axiosError.response?.data
-          };
-          logger.error('Suno API request failed:', errorInfo);
-          throw new Error(`Suno API request failed: ${axiosError.message}`);
-        }
-    
-        if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
-          throw new Error('Invalid response from music generation API');
-        }
-    
-        logger.info('Music generation task initiated successfully');
-        const generationResult = response.data[0];
-        const musicInfo = await this.waitForMusicGeneration(generationResult.id);
-        
-        if (isTest) {
-          const { outputPath, metadataPath } = this.getTestOutputPaths();
-          await this.downloadMusic(musicInfo.audio_url, outputPath);
-          await this.saveMusicMetadata(metadataPath, path.basename(outputPath), musicData);
+    try {
+      logger.info(`Generating music for job ${jobId}, title: "${musicData.title}" and prompt: "${musicData.prompt}"`);
+      logger.info('Music data:', JSON.stringify(musicData, null, 2));
 
-          return {
-            filePath: outputPath,
-            fileName: path.basename(outputPath),
-            audioUrl: musicInfo.audio_url
-          };
-        } else {
-          // Production mode with database integration
-          const tempOutputPath = await this.createTempFile(musicInfo.audio_url);
+      const payload = {
+        action: 'generate',
+        prompt: musicData.prompt,
+        title: musicData.title,
+        style: musicData.style,
+        lyric: musicData.lyric,
+        custom: musicData.custom ?? false,
+        instrumental: musicData.instrumental ?? true,
+        model: this.musicGenOptions.modelId
+      };
+
+      if (musicData.style) {
+        payload.style = musicData.style;
+      }
+
+      if (musicData.lyric) {
+        payload.lyric = musicData.lyric;
+      }
+
+      logger.info('Payload for music generation:', JSON.stringify(payload, null, 2));
+
+      const endpoint = `${this.baseUrl}/suno/audios`;
+      logger.info(`Calling endpoint: ${endpoint}`);
+
+      const response = await axios.post(endpoint, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.musicGen.apiKey}`
+        },
+        timeout: 300000 // 5 minute timeout
+      });
+
+      if (!response.data || !response.data.success || !Array.isArray(response.data.data)) {
+        logger.error('Invalid API response:', response.data);
+        throw new Error('Invalid response format from music generation API');
+      }
+
+      if (response.data.data.length === 0) {
+        throw new Error('No music variations generated');
+      }
+
+      logger.info('Music generation task completed successfully:', response.data);
+      
+      // Use the first variation by default
+      const selectedVariation = response.data.data[0];
+
+      if (isTest) {
+        const { outputPath, metadataPath } = this.getTestOutputPaths();
+        await this.downloadMusic(selectedVariation.audio_url, outputPath);
+        await this.saveMusicMetadata(metadataPath, path.basename(outputPath), musicData);
+
+        return {
+          filePath: outputPath,
+          fileName: path.basename(outputPath),
+          audioUrl: selectedVariation.audio_url
+        };
+      } else {
+        // Create temp directory for downloaded file
+        const tempDir = path.join(os.tmpdir(), 'music-service', jobId);
+        await fs.mkdir(tempDir, { recursive: true });
+        const tempOutputPath = path.join(tempDir, `temp_${Date.now()}.mp3`);
+        
+        try {
+          await this.downloadMusic(selectedVariation.audio_url, tempOutputPath);
           
           const musicRecord = await this.dataAccess.createMusicOutput(jobId, {
             tempFilePath: tempOutputPath,
             title: musicData.title,
-            tags: musicData.tags,
-            instrumental: makeInstrumental,
+            style: musicData.style,
+            instrumental: musicData.instrumental,
             metadata: {
-              generationId: generationResult.id,
-              audioUrl: musicInfo.audio_url,
+              generationId: selectedVariation.id,
+              created_at: selectedVariation.created_at,
               generatedAt: new Date().toISOString()
             }
           });
 
-          // Clean up temp file
+          return {
+            filePath: musicRecord.file_path,
+            fileName: path.basename(musicRecord.file_path),
+            title: musicRecord.title,
+            style: musicRecord.style,
+            storage_key: musicRecord.storage_key,
+            public_url: musicRecord.public_url,
+            metadata: typeof musicRecord.metadata === 'string' 
+              ? JSON.parse(musicRecord.metadata) 
+              : musicRecord.metadata
+          };
+        } catch (error) {
+          // Only try to delete the temp file if there was an error
           try {
             await fs.unlink(tempOutputPath);
             logger.info(`Temporary file removed: ${tempOutputPath}`);
           } catch (cleanupError) {
             logger.warn(`Failed to remove temporary file: ${tempOutputPath}`, cleanupError);
           }
-
-          return {
-            filePath: musicRecord.music_file_url,
-            fileName: path.basename(musicRecord.music_file_url),
-            title: musicRecord.title,
-            tags: musicRecord.tags,
-            metadata: typeof musicRecord.metadata === 'string' 
-              ? JSON.parse(musicRecord.metadata) 
-              : musicRecord.metadata
-          };
+          throw error;
         }
-      } catch (error) {
-        // Safe error logging
-        const errorInfo = {
-          message: error.message,
-          name: error.name,
-          code: error.code,
-          stack: error.stack
-        };
-        logger.error('Error generating music:', errorInfo);
-        throw error;
       }
-  }
-
-  getTestOutputPaths() {
-    const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'music');
-    return {
-      outputPath: path.join(testOutputDir, `background_music.mp3`),
-      metadataPath: path.join(testOutputDir, 'metadata.json')
-    };
-  }
-
-  async createTempFile(audioUrl) {
-    const tempDir = path.join(os.tmpdir(), 'music-service');
-    await fs.mkdir(tempDir, { recursive: true });
-    const tempPath = path.join(tempDir, `temp_${Date.now()}.mp3`);
-    await this.downloadMusic(audioUrl, tempPath);
-    return tempPath;
-  }
-
-  async waitForMusicGeneration(id, maxAttempts = 30, interval = 10000) {
-    for (let i = 0; i < maxAttempts; i++) {
-      try {
-        const musicInfo = await this.getMusicInfo(id);
-        logger.info(`Music generation status: ${musicInfo.status}`);
-        if (musicInfo.status === 'complete' && musicInfo.audio_url) {
-          return musicInfo;
-        } else if (musicInfo.status === 'failed') {
-          throw new Error('Music generation failed');
-        } else if (musicInfo.status === 'streaming' && musicInfo.audio_url) {
-          return musicInfo;
-        }
-      } catch (error) {
-        logger.warn(`Error fetching music info (attempt ${i + 1}/${maxAttempts}):`, error.message);
-      }
-      logger.info(`Waiting for music generation... Attempt ${i + 1}/${maxAttempts}`);
-      await new Promise(resolve => setTimeout(resolve, interval));
-    }
-    throw new Error('Music generation timed out');
-  }
-
-  async getMusicInfo(id) {
-    try {
-      const endpoint = `${this.baseUrl}/api/get`;
-      const params = { ids: id };
-      logger.info(`Calling endpoint: ${endpoint}`);
-      
-      const response = await axios.get(endpoint, {
-        params: params,
-        headers: this.getHeaders()
-      });
-  
-      if (!response.data?.length) {
-        throw new Error('Invalid response from get music info API');
-      }
-  
-      const musicInfo = response.data[0];
-      logger.info(`Received music info for ID ${id}`);
-      return musicInfo;
     } catch (error) {
-      logger.error('Error getting music info:', error);
-      throw error;
+      // Clean error object to prevent circular references
+      const cleanError = {
+        message: error.message,
+        name: error.name,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      };
+
+      if (error.response?.data) {
+        cleanError.data = typeof error.response.data === 'object' 
+          ? JSON.stringify(error.response.data)
+          : error.response.data;
+      }
+
+      logger.error('Error generating music:', cleanError);
+
+      if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
+        throw new Error('Music generation service timed out');
+      }
+
+      throw new Error(error.response?.data?.message || error.message);
     }
   }
 
-  async downloadMusic(audioUrl, outputPath) {
+  async downloadMusic(url, outputPath) {
     try {
-      logger.info(`Downloading music from URL: ${audioUrl}`);
+      logger.info(`Downloading music from URL: ${url}`);
       const response = await axios({
         method: 'get',
-        url: audioUrl,
-        responseType: 'arraybuffer',
-        headers: this.getHeaders()
+        url: url,
+        responseType: 'arraybuffer'
       });
 
       await fs.mkdir(path.dirname(outputPath), { recursive: true });
@@ -197,21 +164,25 @@ class MusicGenService {
     }
   }
 
+  getTestOutputPaths() {
+    const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'music');
+    return {
+      outputPath: path.join(testOutputDir, `background_music.mp3`),
+      metadataPath: path.join(testOutputDir, 'metadata.json')
+    };
+  }
+
   async saveMusicMetadata(metadataPath, fileName, musicData) {
     const metadata = {
       musicFile: fileName,
       title: musicData.title,
-      tags: musicData.tags,
+      style: musicData.style,
       instrumental: musicData.instrumental
     };
 
     await fs.mkdir(path.dirname(metadataPath), { recursive: true });
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
     logger.info(`Metadata saved to ${metadataPath}`);
-  }
-
-  getHeaders() {
-    return sunoAuth.getAuthHeaders();
   }
 
   // Database-related methods
@@ -225,34 +196,6 @@ class MusicGenService {
 
   async deleteMusic(musicId) {
     return await this.dataAccess.deleteMusic(musicId);
-  }
-
-  // Service health check methods
-  async getQuotaInfo() {
-    try {
-      const endpoint = `${this.baseUrl}/api/get_limit`;
-      const response = await axios.get(endpoint, {
-        headers: this.getHeaders()
-      });
-      return response.data;
-    } catch (error) {
-      logger.error('Error getting quota info:', error);
-      throw error;
-    }
-  }
-
-  async checkCookieValidity() {
-    try {
-      const endpoint = `${this.baseUrl}/api/get`;
-      await axios.get(endpoint, { headers: this.getHeaders() });
-      return true;
-    } catch (error) {
-      if (error.response?.status === 401) {
-        logger.error('Cookie is invalid or expired');
-        return false;
-      }
-      throw error;
-    }
   }
 }
 
