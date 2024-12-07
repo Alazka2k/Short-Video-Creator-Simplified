@@ -187,10 +187,12 @@ class VideoGenService {
         logger.info(`Generation status update (${Math.floor(elapsedTime / 1000)}s elapsed): ${JSON.stringify(videoGeneration, null, 2)}`);
 
         if (videoGeneration.state === 'completed') {
-          logger.info(`Video generation completed. Full response: ${JSON.stringify(videoGeneration, null, 2)}`);
-          
+          const videoUrl = videoGeneration.assets.video;
           const { videoFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest);
-          await this.downloadVideo(videoGeneration.assets.video, videoFilePath);
+          await this.downloadVideo(videoUrl, videoFilePath);
+
+          let storageResult;  // Declare storageResult at the top of the block
+          let result;         // Declare result to store what we'll return
 
           if (isTest) {
             // For test mode, save metadata directly to file
@@ -200,9 +202,20 @@ class VideoGenService {
               aspectRatio,
               fileName: path.basename(videoFilePath)
             });
+
+            result = {
+              filePath: videoFilePath,
+              fileName: path.basename(videoFilePath),
+              metadata: {
+                generationId: generation.id,
+                sourceImageUrl: freshImageUrl,
+                generationDuration: elapsedTime,
+                generatedAt: new Date().toISOString()
+              }
+            };
           } else {
             // Upload to storage and save to database
-            const storageResult = await storageService.uploadFile(videoFilePath, 'video');
+            storageResult = await storageService.uploadFile(videoFilePath, 'video');
             logger.info('Video uploaded to storage successfully');
 
             await this.dataAccess.createVideoOutput(
@@ -224,21 +237,23 @@ class VideoGenService {
                 }
               }
             );
+
+            result = {
+              filePath: videoFilePath,
+              fileName: path.basename(videoFilePath),
+              storage_key: storageResult.storageKey,
+              public_url: storageResult.url,
+              metadata: {
+                generationId: generation.id,
+                sourceImageUrl: freshImageUrl,
+                generationDuration: elapsedTime,
+                generatedAt: new Date().toISOString()
+              }
+            };
           }
 
           logger.info(`Video downloaded successfully: ${videoFilePath}`);
-          return {
-            filePath: videoFilePath,
-            fileName: path.basename(videoFilePath),
-            storage_key: storageResult?.storageKey,
-            public_url: storageResult?.url,
-            metadata: {
-              generationId: generation.id,
-              sourceImageUrl: freshImageUrl,
-              generationDuration: elapsedTime,
-              generatedAt: new Date().toISOString()
-            }
-          };
+          return result;
         } else if (videoGeneration.state === 'failed') {
           const errorMessage = `Video generation failed: ${videoGeneration.failure_reason || 'Unknown error'}`;
           logger.error(errorMessage);
