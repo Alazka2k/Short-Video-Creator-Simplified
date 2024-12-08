@@ -9,8 +9,9 @@ const SceneSchema = z.object({
 
 const MusicSchema = z.object({
   title: z.string(),
-  lyrics: z.string(),
-  tags: z.string(),
+  prompt: z.string(),
+  style: z.string(),
+  lyrics: z.string()
 });
 
 const VideoScriptSchema = z.object({

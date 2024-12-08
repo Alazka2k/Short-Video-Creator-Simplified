@@ -105,8 +105,10 @@ class LLMService {
             video_script.description,
             video_script.hashtags,
             video_script.music.title,
+            video_script.music.prompt,
+            video_script.music.style,
             video_script.music.lyrics,
-            video_script.music.tags
+            llmGenParams?.music?.instrumental ?? true
           );
           logger.info(`Created LLM output record: ${llmOutputId}`);
 
@@ -159,8 +161,10 @@ class LLMService {
           })),
           music: {
             title: video_script.music.title,
+            prompt: video_script.music.prompt,
+            style: video_script.music.style,
             lyrics: video_script.music.lyrics,
-            tags: video_script.music.tags
+            instrumental: video_script.music.instrumental
           }
         }
       };

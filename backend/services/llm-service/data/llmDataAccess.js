@@ -87,17 +87,19 @@ class LLMDataAccess {
       }
     }
 
-    async createOutput(jobId, llmInputId, title, description, hashtags, musicTitle, musicLyrics, musicTags) {
+    async createOutput(jobId, llmInputId, title, description, hashtags, musicTitle, musicPrompt, musicStyle, musicLyrics, musicInstrumental) {
         try {
             const [llmOutput] = await knex('llm_outputs').insert({
-                job_id: jobId,  // Use only the jobId from the job service
+                job_id: jobId,
                 llm_input_id: llmInputId,
                 title,
                 description,
                 hashtags,
                 music_title: musicTitle,
-                music_lyrics: musicLyrics,
-                music_tags: musicTags
+                music_prompt: musicPrompt,
+                music_style: musicStyle,
+                music_lyrics: musicInstrumental ? null : musicLyrics,
+                music_instrumental: musicInstrumental
             }).returning('*');
 
             // Update output file with generated content
@@ -107,8 +109,10 @@ class LLMDataAccess {
                 description,
                 hashtags,
                 music_title: musicTitle,
-                music_lyrics: musicLyrics,
-                music_tags: musicTags
+                music_prompt: musicPrompt,
+                music_style: musicStyle,
+                music_lyrics: musicInstrumental ? null : musicLyrics,
+                music_instrumental: musicInstrumental
             });
 
             logger.info('LLM output created:', {

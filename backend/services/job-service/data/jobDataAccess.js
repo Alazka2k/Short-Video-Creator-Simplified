@@ -11,7 +11,15 @@ class JobDataAccess {
 
   async createJob(jobData) {
     try {
-      const { jobId, prompt, status, serviceSequence = [], parameters = {}, visualizationType } = jobData;
+      const { 
+        jobId, 
+        prompt, 
+        status, 
+        serviceSequence = [], 
+        parameters = {}, 
+        visualizationType,
+        serviceConfig = {} 
+      } = jobData;
 
       // Validate jobId
       if (!jobId || typeof jobId !== 'string' || !this.isValidUUID(jobId)) {
@@ -27,15 +35,19 @@ class JobDataAccess {
           service_sequence: JSON.stringify(serviceSequence),
           metadata: JSON.stringify({
             parameters,
-            visualizationType,
             startTime: new Date().toISOString()
-          })
+          }),
+          // Add new columns
+          skip_voice: serviceConfig.skipVoice ?? false,
+          skip_music: serviceConfig.skipMusic ?? false,
+          skip_image: serviceConfig.skipImage ?? false,
+          skip_visualization: serviceConfig.skipVisualization ?? false,
+          visualization_type: visualizationType || null
         })
         .returning('*');
 
       logger.info(`Created job record: ${jobRecord.job_id}`);
       return jobRecord;
-
     } catch (error) {
       logger.error('Error creating job:', error);
       throw error;
@@ -57,7 +69,13 @@ class JobDataAccess {
       return {
         ...job,
         service_sequence: this.safeJsonParse(job.service_sequence, []),
-        metadata: this.safeJsonParse(job.metadata, {})
+        metadata: this.safeJsonParse(job.metadata, {}),
+        serviceConfig: {
+          skipVoice: job.skip_voice,
+          skipMusic: job.skip_music,
+          skipImage: job.skip_image,
+          skipVisualization: job.skip_visualization
+        }
       };
     } catch (error) {
       logger.error('Error getting job:', error);
@@ -70,11 +88,14 @@ class JobDataAccess {
       const job = await this.getJob(jobId);
       if (!job) throw new Error(`Job not found: ${jobId}`);
   
-      const metadata = this.safeJsonParse(job.metadata, {});
+      const metadata = typeof job.metadata === 'string' 
+        ? JSON.parse(job.metadata || '{}') 
+        : (job.metadata || {});
+  
       metadata.progress = metadata.progress || {};
       metadata.progress[service] = {
         status,
-        ...details,
+        ...(typeof details === 'object' ? details : {}),
         updatedAt: new Date().toISOString()
       };
   

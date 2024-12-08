@@ -45,33 +45,103 @@ class JobPipelineService {
     try {
       logger.info(`Starting content generation job ${jobId} for prompt: ${prompt}`);
       
+      // Get and validate service configuration
+      const skipImage = parameters.serviceConfig?.skipImage ?? false;
+      const skipVisualization = (skipImage || (parameters.serviceConfig?.skipVisualization ?? false));
+
+      // Validate visualization type if visualization is not skipped
+      if (!skipVisualization) {
+        if (!visualizationType) {
+          throw new Error('visualizationType is required when visualization is not skipped');
+        }
+        if (!['video', 'animation'].includes(visualizationType)) {
+          throw new Error('visualizationType must be either "video" or "animation"');
+        }
+      }
+
+      const serviceConfig = {
+        skipVoice: parameters.serviceConfig?.skipVoice ?? false,
+        skipMusic: parameters.serviceConfig?.skipMusic ?? false,
+        skipImage,
+        skipVisualization
+      };
+
       // Create initial job record
       await this.jobDataAccess.createJob({
         jobId,
         prompt,
         status: 'in_progress',
-        parameters,
-        visualizationType,
+        parameters: {
+          ...parameters,
+          serviceConfig  // Store the validated config
+        },
+        visualizationType: skipVisualization ? null : visualizationType,
         startTime: new Date().toISOString()
       });
       logger.info(`Created job record with ID: ${jobId}`);
 
-      // Step 1: Generate LLM content - Pass jobId to LLM service
+      // Step 1: Generate LLM content
       logger.info('Starting LLM content generation...');
       const llmResult = await this.services.llm.process(
         parameters.llmGenParams,
         prompt,
         false,
-        jobId  // Pass the jobId to LLM service
+        jobId
       );
 
-      // Ensure we have scenes to process
       if (!llmResult?.content?.scenes?.length) {
         throw new Error('LLM service did not generate any scenes');
       }
 
       // Create output directories
       await this.ensureOutputDirectories(jobOutputDir, llmResult.content.scenes.length);
+
+      // Start music generation early if not skipped
+      let musicResult = null;
+      if (!serviceConfig.skipMusic) {
+        try {
+          const musicPromise = this.services.music.process(
+            jobId,
+            {
+              title: llmResult.content.music.title,
+              prompt: llmResult.content.music.prompt,
+              style: llmResult.content.music.style,
+              lyrics: llmResult.content.music.lyrics,
+              instrumental: parameters.musicGenParams?.instrumental ?? true
+            }
+          );
+
+          // Set a timeout for music generation
+          const musicTimeout = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Music generation timed out')), 300000); // 5 minutes
+          });
+
+          // Race between music generation and timeout
+          musicResult = await Promise.race([musicPromise, musicTimeout])
+            .catch(error => {
+              logger.error('Error in music generation:', error);
+              return null; // Return null on error to continue job
+            });
+
+          if (musicResult) {
+            await this.jobDataAccess.updateJobProgress(jobId, 'music', 'completed', {
+              filePath: musicResult.filePath,
+              storage_key: musicResult.storage_key,
+              public_url: musicResult.public_url,
+              metadata: musicResult.metadata
+            });
+          } else {
+            await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
+              error: 'Music generation failed or timed out'
+            });
+          }
+        } catch (error) {
+          logger.error('Error in music generation:', error);
+          await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
+            error: error.message
+          });
+        }
+      }
 
       // Process each scene
       const sceneResults = [];
@@ -87,66 +157,76 @@ class JobPipelineService {
             sceneDir
           });
 
-          // Step 2: Generate voice for scene
-          logger.info(`Generating voice for scene ${sceneId}`);
-          const voiceResult = await this.services.voice.process(
-            scene.description,
-            sceneId,
-            jobId,  // Use the same jobId
-            parameters.voiceGenParams?.voiceId
-          );
-          await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'completed', {
-            sceneId,
-            outputPath: voiceResult.filePath
-          });
-
-          // Step 3: Generate image for scene
-          logger.info(`Generating image for scene ${sceneId}`);
-          const imageResult = await this.services.image.process(
-            scene.visual_prompt,
-            sceneId,
-            jobId
-          );
-          await this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', {
-            sceneId,
-            outputPath: imageResult.filePath
-          });
-
-          // Step 4: Generate either animation or video
-          logger.info(`Generating ${visualizationType} for scene ${sceneId}`);
-          let visualResult;
-          
-          if (visualizationType === 'animation') {
-            visualResult = await this.services.animation.process(
-              imageResult.filePath,
-              scene.video_prompt,
+          // Generate voice and image in parallel
+          const [voiceResult, imageResult] = await Promise.all([
+            !serviceConfig.skipVoice ? this.services.voice.process(
+              scene.description,
               sceneId,
               jobId,
-              {
-                animationLength: parameters.animationGenParams?.animationLength || 5,
-                animationPrompt: scene.video_prompt
-              }
-            );
-            await this.jobDataAccess.updateJobProgress(jobId, 'animation', 'completed', {
-              sceneId,
-              outputPath: visualResult.filePath
-            });
-          } else {
-            visualResult = await this.services.video.process(
-              imageResult.filePath,
-              scene.video_prompt,
-              scene.camera_movement,
-              parameters.videoGenParams?.aspectRatio || '9:16',
+              parameters.voiceGenParams?.voiceId
+            ) : Promise.resolve(null),
+            !serviceConfig.skipImage ? this.services.image.process(
+              scene.visual_prompt,
               sceneId,
               jobId
-            );
-            await this.jobDataAccess.updateJobProgress(jobId, 'video', 'completed', {
+            ) : Promise.resolve(null)
+          ]);
+
+          // Update progress for completed services
+          if (voiceResult) {
+            await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'completed', {
               sceneId,
-              outputPath: visualResult.filePath
+              filePath: voiceResult.filePath,
+              storage_key: voiceResult.storage_key,
+              public_url: voiceResult.public_url
             });
           }
 
-          // Save scene results and metadata
+          if (imageResult) {
+            await this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', {
+              sceneId,
+              filePath: imageResult.filePath,
+              storage_key: imageResult.storage_key,
+              public_url: imageResult.public_url
+            });
+          }
+
+          // Generate visual content (animation or video) if not skipped
+          let visualResult = null;
+          if (!serviceConfig.skipVisualization) {
+            if (visualizationType === 'animation') {
+              visualResult = await this.services.animation.process(
+                imageResult.public_url,
+                scene.video_prompt,
+                sceneId,
+                jobId,
+                parameters.animationGenParams
+              );
+              await this.jobDataAccess.updateJobProgress(jobId, 'animation', 'completed', {
+                sceneId,
+                filePath: visualResult.filePath,
+                storage_key: visualResult.storage_key,
+                public_url: visualResult.public_url
+              });
+            } else {
+              visualResult = await this.services.video.process(
+                imageResult.public_url,
+                scene.video_prompt,
+                scene.camera_movement,
+                parameters.videoGenParams?.aspectRatio || '16:9',
+                sceneId,
+                jobId
+              );
+              await this.jobDataAccess.updateJobProgress(jobId, 'video', 'completed', {
+                sceneId,
+                filePath: visualResult.filePath,
+                storage_key: visualResult.storage_key,
+                public_url: visualResult.public_url
+              });
+            }
+          }
+
+          // Save scene results
           const sceneResult = {
             sceneId,
             voice: voiceResult,
@@ -155,28 +235,35 @@ class JobPipelineService {
           };
           sceneResults.push(sceneResult);
 
+          // Save scene metadata
           await fs.writeFile(
             path.join(sceneDir, 'metadata.json'),
             JSON.stringify({
               sceneId,
               description: scene.description,
-              voice: {
-                filePath: voiceResult?.filePath || null,
-                fileName: voiceResult?.filePath ? path.basename(voiceResult.filePath) : null
-              },
-              image: {
-                filePath: imageResult?.filePath || null,
-                fileName: imageResult?.filePath ? path.basename(imageResult.filePath) : null,
-                metadata: imageResult?.metadata || {}
-              },
+              voice: voiceResult ? {
+                filePath: voiceResult.filePath,
+                fileName: path.basename(voiceResult.filePath),
+                storage_key: voiceResult.storage_key,
+                public_url: voiceResult.public_url,
+                metadata: voiceResult.metadata
+              } : null,
+              image: imageResult ? {
+                filePath: imageResult.filePath,
+                fileName: path.basename(imageResult.filePath),
+                storage_key: imageResult.storage_key,
+                public_url: imageResult.public_url,
+                metadata: imageResult.metadata
+              } : null,
               [visualizationType]: {
-                filePath: visualResult?.filePath || null,
-                fileName: visualResult?.filePath ? path.basename(visualResult.filePath) : null,
-                metadata: visualResult?.metadata || {}
+                filePath: visualResult.filePath,
+                fileName: path.basename(visualResult.filePath),
+                storage_key: visualResult.storage_key,
+                public_url: visualResult.public_url,
+                metadata: visualResult.metadata
               }
             }, null, 2)
           );
-
         } catch (sceneError) {
           logger.error(`Error processing scene ${sceneId}:`, sceneError);
           await this.jobDataAccess.updateJobProgress(jobId, 'scene', 'failed', {
@@ -187,23 +274,6 @@ class JobPipelineService {
         }
       }
 
-      // Step 5: Generate background music (commented out for now)
-      /*
-      logger.info('Generating background music');
-      const musicResult = await this.services.music.process(
-        jobId,
-        {
-          title: llmResult.content.music.title,
-          lyrics: llmResult.content.music.lyrics,
-          tags: llmResult.content.music.tags,
-          instrumental: parameters.musicGenParams?.instrumental || true
-        }
-      );
-      await this.jobDataAccess.updateJobProgress(jobId, 'music', 'completed', {
-        outputPath: musicResult.filePath
-      });
-      */
-
       // Save project metadata
       const projectMetadata = {
         jobId,
@@ -213,7 +283,13 @@ class JobPipelineService {
         visualizationType,
         llmResult: llmResult.content,
         scenes: sceneResults,
-        // music: musicResult
+        music: musicResult ? {
+          filePath: musicResult.filePath,
+          fileName: musicResult.fileName,
+          storage_key: musicResult.storage_key,
+          public_url: musicResult.public_url,
+          metadata: musicResult.metadata
+        } : null
       };
 
       await fs.writeFile(
@@ -237,14 +313,15 @@ class JobPipelineService {
         outputDir: jobOutputDir,
         content: {
           llm: llmResult.content,
-          scenes: sceneResults
+          scenes: sceneResults,
+          music: musicResult
         }
       };
 
     } catch (error) {
       logger.error(`Error in job ${jobId}:`, error);
       
-      try {
+     try {
         const errorData = {
           status: 'failed',
           metadata: JSON.stringify({
@@ -304,3 +381,4 @@ class JobPipelineService {
 }
 
 module.exports = JobPipelineService;
+
