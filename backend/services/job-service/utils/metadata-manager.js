@@ -34,7 +34,7 @@ class MetadataManager {
           filePath: metadata.imageResult.filePath,
           fileName: path.basename(metadata.imageResult.filePath),
           storage_key: metadata.imageResult.storage_key,
-          public_url: metadata.imageResult.public_url,
+          public_url: metadata.imageResult.publicUrl,
           metadata: metadata.imageResult.metadata
         } : null
       };

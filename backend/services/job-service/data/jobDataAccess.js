@@ -28,12 +28,20 @@ class JobDataAccess {
       // Get service config from parameters if available
       const serviceConfigFromParams = parameters.serviceConfig || {};
 
+      // Initialize service sequence based on config
+      const serviceSequence = ['llm']; // LLM is always first
+      if (!serviceConfigFromParams.skipImage) serviceSequence.push('image');
+      if (!serviceConfigFromParams.skipVoice) serviceSequence.push('voice');
+      if (!serviceConfigFromParams.skipMusic) serviceSequence.push('music');
+      if (!serviceConfigFromParams.skipVisualization) serviceSequence.push(visualizationType);
+
       // Create job record
       const [jobRecord] = await knex('jobs')
         .insert({
           job_id: jobId,
           prompt,
           status,
+          service_sequence: JSON.stringify(serviceSequence),
           metadata: JSON.stringify({
             parameters,
             startTime: new Date().toISOString()
@@ -55,7 +63,8 @@ class JobDataAccess {
           skipImage: jobRecord.skip_image,
           skipVisualization: jobRecord.skip_visualization
         },
-        visualizationType: jobRecord.visualization_type
+        visualizationType: jobRecord.visualization_type,
+        serviceSequence
       });
 
       return jobRecord;
@@ -100,6 +109,12 @@ class JobDataAccess {
       if (!job) throw new Error(`Job not found: ${jobId}`);
   
       const metadata = this.safeJsonParse(job.metadata) || {};
+      const serviceSequence = this.safeJsonParse(job.service_sequence) || [];
+  
+      // Add service to sequence if not already present
+      if (!serviceSequence.includes(service)) {
+        serviceSequence.push(service);
+      }
   
       metadata.progress = metadata.progress || {};
       metadata.progress[service] = {
@@ -119,7 +134,8 @@ class JobDataAccess {
       }
   
       await this.updateJob(jobId, {
-        metadata: JSON.stringify(metadata)
+        metadata: JSON.stringify(metadata),
+        service_sequence: JSON.stringify(serviceSequence)
       });
   
       logger.info(`Updated progress for job ${jobId}, service: ${service}, status: ${status}`);

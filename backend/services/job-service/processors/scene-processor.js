@@ -73,41 +73,24 @@ class SceneProcessor {
           jobId
         );
 
-        // Normalize the URL property name
-        result.public_url = result.publicUrl;
-
         // Log the complete image result
         logger.info('Image generation result:', {
           jobId,
           sceneId,
           filePath: result.filePath,
           storage_key: result.storage_key,
-          public_url: result.public_url,
-          publicUrl: result.publicUrl // Log both to verify
+          public_url: result.publicUrl
         });
 
         await this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', {
           sceneId,
           filePath: result.filePath,
           storage_key: result.storage_key,
-          public_url: result.public_url
+          public_url: result.publicUrl
         });
         return result;
       })() : Promise.resolve(null)
     ]);
-
-    // Verify image result has required fields
-    if (imageResult && !imageResult.public_url && imageResult.publicUrl) {
-      imageResult.public_url = imageResult.publicUrl; // Ensure we have the correct property
-    }
-
-    if (imageResult && !imageResult.public_url) {
-      logger.error('Image result missing public_url:', {
-        jobId,
-        sceneId,
-        imageResult
-      });
-    }
 
     return [voiceResult, imageResult];
   }
