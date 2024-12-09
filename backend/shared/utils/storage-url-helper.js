@@ -4,6 +4,10 @@ const logger = require('./logger');
 class StorageUrlHelper {
   static async getFreshUrl(url) {
     try {
+      if (!url) {
+        throw new Error('URL is required');
+      }
+
       // Check if it's an S3 URL from our storage
       if (url.includes('short-video-creator-dev.s3')) {
         // Extract storage key from URL (everything after .com/)

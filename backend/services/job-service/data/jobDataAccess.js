@@ -15,7 +15,6 @@ class JobDataAccess {
         jobId, 
         prompt, 
         status, 
-        serviceSequence = [], 
         parameters = {}, 
         visualizationType,
         serviceConfig = {} 
@@ -26,27 +25,39 @@ class JobDataAccess {
         throw new Error(`Invalid jobId: ${jobId}`);
       }
 
+      // Get service config from parameters if available
+      const serviceConfigFromParams = parameters.serviceConfig || {};
+
       // Create job record
       const [jobRecord] = await knex('jobs')
         .insert({
           job_id: jobId,
           prompt,
           status,
-          service_sequence: JSON.stringify(serviceSequence),
           metadata: JSON.stringify({
             parameters,
             startTime: new Date().toISOString()
           }),
-          // Add new columns
-          skip_voice: serviceConfig.skipVoice ?? false,
-          skip_music: serviceConfig.skipMusic ?? false,
-          skip_image: serviceConfig.skipImage ?? false,
-          skip_visualization: serviceConfig.skipVisualization ?? false,
-          visualization_type: visualizationType || null
+          // Use service config from parameters
+          skip_voice: serviceConfigFromParams.skipVoice ?? false,
+          skip_music: serviceConfigFromParams.skipMusic ?? false,
+          skip_image: serviceConfigFromParams.skipImage ?? false,
+          skip_visualization: serviceConfigFromParams.skipVisualization ?? false,
+          // Use visualization type from parameters if available
+          visualization_type: parameters.visualizationType || visualizationType || null
         })
         .returning('*');
 
-      logger.info(`Created job record: ${jobRecord.job_id}`);
+      logger.info(`Created job record: ${jobRecord.job_id}`, {
+        serviceConfig: {
+          skipVoice: jobRecord.skip_voice,
+          skipMusic: jobRecord.skip_music,
+          skipImage: jobRecord.skip_image,
+          skipVisualization: jobRecord.skip_visualization
+        },
+        visualizationType: jobRecord.visualization_type
+      });
+
       return jobRecord;
     } catch (error) {
       logger.error('Error creating job:', error);
@@ -88,16 +99,24 @@ class JobDataAccess {
       const job = await this.getJob(jobId);
       if (!job) throw new Error(`Job not found: ${jobId}`);
   
-      const metadata = typeof job.metadata === 'string' 
-        ? JSON.parse(job.metadata || '{}') 
-        : (job.metadata || {});
+      const metadata = this.safeJsonParse(job.metadata) || {};
   
       metadata.progress = metadata.progress || {};
       metadata.progress[service] = {
         status,
-        ...(typeof details === 'object' ? details : {}),
+        ...(details || {}),
         updatedAt: new Date().toISOString()
       };
+  
+      // If any service failed, store the error
+      if (status === 'failed' && details.error) {
+        metadata.errors = metadata.errors || [];
+        metadata.errors.push({
+          service,
+          error: details.error,
+          timestamp: new Date().toISOString()
+        });
+      }
   
       await this.updateJob(jobId, {
         metadata: JSON.stringify(metadata)
@@ -111,18 +130,31 @@ class JobDataAccess {
   }
   
   // Helper method for safe JSON parsing
-  safeJsonParse(value, defaultValue = null) {
-    if (!value) return defaultValue;
+  safeJsonParse(value) {
+    if (!value) return null;
+    if (typeof value === 'object') return value;
     try {
       return JSON.parse(value);
     } catch (error) {
       logger.warn(`Error parsing JSON: ${error.message}. Using default value.`);
-      return defaultValue;
+      return null;
     }
   }
 
   async updateJob(jobId, updateData) {
     try {
+      // If there's an error in the metadata, ensure it's properly stored
+      if (updateData.metadata && typeof updateData.metadata === 'string') {
+        try {
+          const metadata = JSON.parse(updateData.metadata);
+          if (metadata.error) {
+            updateData.error = metadata.error; // Store error in dedicated column
+          }
+        } catch (parseError) {
+          logger.warn('Error parsing metadata JSON:', parseError);
+        }
+      }
+
       const [updated] = await knex('jobs')
         .where('job_id', jobId)
         .update({

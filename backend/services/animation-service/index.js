@@ -23,16 +23,26 @@ class AnimationServiceInterface {
 
   async process(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {
     try {
-      logger.info(`Processing animation request for ${isTest ? 'test' : 'production'}`);
-      logger.info(`JobId: ${jobId}, scene: ${sceneIndex}`);
-      logger.info(`Image path: ${imagePath}`);
-      logger.info('Animation options:', JSON.stringify(options, null, 2));
+      logger.info('Animation service: Starting process...', {
+        imagePath,
+        sceneIndex,
+        jobId,
+        options: JSON.stringify(options),
+        isTest
+      });
 
+      // Validate inputs
       if (!options?.videoPrompt) {
+        logger.error('Animation service: Missing video prompt');
         throw new Error('Video prompt is required for animation generation');
       }
 
-      if (!isTest && !jobId) {
+      if (!imagePath) {
+        logger.error('Animation service: Missing image path');
+        throw new Error('Image path is required for animation generation');
+      }
+
+      if (!jobId && !isTest) {
         throw new Error('jobId is required for production mode');
       }
 
@@ -55,7 +65,10 @@ class AnimationServiceInterface {
       logger.info(`Animation saved to: ${transformedResult.url}`);
       return transformedResult;
     } catch (error) {
-      logger.error('Error processing animation:', error);
+      logger.error('Animation service: Process failed', {
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }

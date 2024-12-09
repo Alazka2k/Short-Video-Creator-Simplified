@@ -44,7 +44,22 @@ class JobServiceInterface {
   }
 
   async process(prompt, parameters = {}, visualizationType = 'animation') {
-    return await this.jobPipeline.generateContent(prompt, parameters, visualizationType);
+    try {
+      const result = await this.jobPipeline.generateContent(prompt, parameters, visualizationType);
+      
+      // Log appropriate message based on status
+      if (result.status === 'failed') {
+        logger.warn(`Job ${result.jobId} completed with service failures`);
+      } else {
+        logger.info(`Job ${result.jobId} completed successfully`);
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error('Job Service: Error generating content:', error);
+      error.jobId = error.jobId || 'unknown'; // Ensure jobId is available
+      throw error;
+    }
   }
 
   async getJobStatus(jobId) {

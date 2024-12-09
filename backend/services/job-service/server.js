@@ -38,6 +38,15 @@ function createServer(jobService) {
       const result = await jobService.process(prompt, parameters, visualizationType);
       
       clearTimeout(requestTimeout);
+
+      // Check if job completed successfully or with service failures
+      if (result.status === 'failed') {
+        return res.status(207).json({  // 207 Multi-Status
+          message: 'Content generation completed with some service failures',
+          result
+        });
+      }
+
       res.json({
         message: 'Content generation completed successfully',
         result
@@ -45,7 +54,11 @@ function createServer(jobService) {
     } catch (error) {
       clearTimeout(requestTimeout);
       logger.error('Job Service: Error generating content:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: error.message,
+        jobId: error.jobId  // Include jobId if available
+      });
     }
   });
 
