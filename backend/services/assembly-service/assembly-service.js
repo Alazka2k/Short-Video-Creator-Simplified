@@ -3,18 +3,18 @@ const assemblyDataAccess = require('./data/assemblyDataAccess');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const path = require('path');
-const storageService = require('./data/storageService');
+const storageService = require('../../shared/utils/storage');
+const renderMonitor = require('./monitors/renderMonitor');
+const fs = require('fs').promises;
 
 class AssemblyService {
   constructor() {
-    if (!config.assembly || !config.assembly.apiKey) {
+    if (!config.assembly?.apiKey) {
       throw new Error('Assembly API key not found in configuration');
     }
     
-    this.mediaBaseUrl = process.env.MEDIA_BASE_URL || config.services.gateway?.url || 'http://localhost:3000/media';
-    
-    logger.info(`Assembly Provider: ${config.assembly.provider}`);
-    logger.info(`Assembly API Key: ${config.assembly.apiKey ? 'Loaded' : 'Missing'}`);
+    this.apiKey = config.assembly.apiKey;
+    logger.info('Assembly Service initialized with API key');
   }
 
   async init() {
@@ -46,72 +46,280 @@ class AssemblyService {
       });
 
       // Initialize movie project
+      logger.info('Creating new Movie instance');
       const movie = new Movie();
-      movie.setAPIKey(config.assembly.apiKey);
-      movie.set("quality", "high");
-
-      // Process each scene config in order
-      for (const sceneConfig of sceneConfigs) {
-        // Find the corresponding scene from database
-        const dbScene = scenes.find(s => s.scene_id === sceneConfig.sceneNumber);
+      logger.info('Movie instance created:', {
+        hasSetMethod: typeof movie.set === 'function',
+        hasRenderMethod: typeof movie.render === 'function',
+        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(movie)),
+        movieObject: JSON.stringify(movie, null, 2)
+      });
+      
+      // Set API key
+      try {
+        if (!this.apiKey) {
+          throw new Error('API key is not configured');
+        }
         
-        if (!dbScene) {
-          logger.error('Scene not found in database:', {
-            jobId,
-            requestedSceneNumber: sceneConfig.sceneNumber,
-            availableScenes: scenes.map(s => s.scene_number)
-          });
-          throw new Error(`Scene ${sceneConfig.sceneNumber} not found in database`);
+        movie.setAPIKey(this.apiKey);
+        logger.info('Movie project initialized with API key');
+      } catch (error) {
+        logger.error('Failed to set API key:', error);
+        throw new Error(`Failed to initialize movie project: ${error.message}`);
+      }
+
+      // Set quality and output configuration first
+      try {
+        // Set only properties that are listed in the Movie instance
+        const configSteps = [
+          { key: 'quality', value: 'high' },
+          { key: 'width', value: 1080 },
+          { key: 'height', value: 1920 },
+          { key: 'fps', value: 30 },
+          { key: 'resolution', value: '1080p' },
+          { key: 'exports', value: [{ 
+            format: 'mp4',
+            resolution: '1080p'
+          }] }
+        ];
+
+        // The aspect ratio will be determined by width/height
+
+        logger.info('Attempting to set movie configuration:', configSteps);
+
+        // Set each property individually with logging
+        for (const config of configSteps) {
+          try {
+            logger.info(`Setting ${config.key}:`, config.value);
+            movie.set(config.key, config.value);
+            logger.info(`Successfully set ${config.key}`);
+          } catch (error) {
+            logger.error(`Failed to set ${config.key}:`, {
+              value: config.value,
+              error: error.message || 'Unknown error',
+              stack: error.stack
+            });
+            throw new Error(`Failed to set ${config.key}: ${error.message || 'Unknown error'}`);
+          }
         }
 
-        logger.info('Processing scene:', {
-          jobId,
-          sceneId: sceneConfig.sceneNumber,
-          llmSceneId: dbScene.llm_scene_id,
-          duration: sceneConfig.duration,
-          transition: sceneConfig.transition
+        logger.info('Movie configuration completed successfully:', {
+          movieInstance: {
+            hasSetMethod: typeof movie.set === 'function',
+            hasRenderMethod: typeof movie.render === 'function',
+            movieObject: JSON.stringify(movie, null, 2)
+          }
         });
 
-        // Get assets using scene_id from database
-        const assets = await assemblyDataAccess.getSceneAssets(jobId, sceneConfig.sceneNumber);
-        const scene = await this.createScene(assets, sceneConfig);
-        movie.addScene(scene);
+      } catch (error) {
+        logger.error('Failed to set movie configuration:', {
+          error: error.message,
+          stack: error.stack,
+          movieInstance: {
+            hasSetMethod: typeof movie.set === 'function',
+            hasRenderMethod: typeof movie.render === 'function',
+            movieObject: JSON.stringify(movie, null, 2)
+          }
+        });
+        throw new Error(`Failed to configure movie settings: ${error.message}`);
       }
+
+      // Process each scene
+      logger.info(`Starting to process ${sceneConfigs.length} scenes`);
+
+      // Store scene assets for configuration
+      const sceneAssets = {};
+
+      for (const sceneConfig of sceneConfigs) {
+        try {
+          const assets = await assemblyDataAccess.getSceneAssets(jobId, sceneConfig.sceneId);
+          // Store assets for this scene
+          sceneAssets[sceneConfig.sceneId] = assets;
+
+          logger.info('Processing scene:', {
+            sceneId: sceneConfig.sceneId,
+            duration: sceneConfig.duration,
+            transition: sceneConfig.transition,
+            visualType: assets.visual.type,
+            assets: {
+              hasVisual: !!assets.visual.asset,
+              hasVoice: !!assets.voice,
+              visualType: assets.visual.type,
+              visualUrl: assets.visual.asset?.public_url,
+              voiceUrl: assets.voice?.public_url
+            }
+          });
+
+          const scene = new Scene();
+
+          // Set basic scene properties
+          scene.set("duration", sceneConfig.duration);
+
+          // Add visual element with transition
+          if (assets.visual.asset) {
+            try {
+              const visualElement = {
+                type: assets.visual.type === 'image' ? 'image' : 'video',
+                source: assets.visual.asset.public_url,
+                fit: "cover",
+                position: "center"
+              };
+
+              // Add transition to the element if specified
+              if (sceneConfig.transition) {
+                visualElement.transition = typeof sceneConfig.transition === 'string' 
+                  ? {
+                      style: sceneConfig.transition,
+                      duration: 1.0
+                    }
+                  : sceneConfig.transition;
+              }
+              
+              logger.info('Adding visual element:', {
+                sceneId: sceneConfig.sceneId,
+                element: visualElement
+              });
+              
+              scene.addElement(visualElement);
+            } catch (error) {
+              logger.error('Failed to add visual element:', {
+                sceneId: sceneConfig.sceneId,
+                error: error.message,
+                visualType: assets.visual.type,
+                url: assets.visual.asset.public_url
+              });
+              throw error;
+            }
+          }
+
+          // Add voice if available
+          if (assets.voice) {
+            try {
+              const audioElement = {
+                type: "audio",
+                source: assets.voice.public_url,
+                volume: 1,
+                loop: false
+              };
+
+              logger.info('Adding audio element:', {
+                sceneId: sceneConfig.sceneId,
+                element: audioElement
+              });
+
+              scene.addElement(audioElement);
+            } catch (error) {
+              logger.error('Failed to add audio element:', {
+                sceneId: sceneConfig.sceneId,
+                error: error.message,
+                url: assets.voice.public_url
+              });
+              throw error;
+            }
+          }
+
+          // Add scene to movie
+          try {
+            movie.addScene(scene);
+            logger.info(`Added scene ${sceneConfig.sceneId} to movie`, {
+              sceneConfig,
+              sceneElements: scene.elements?.length || 0
+            });
+          } catch (error) {
+            logger.error('Failed to add scene to movie:', {
+              sceneId: sceneConfig.sceneId,
+              error: error.message,
+              scene: JSON.stringify(scene)
+            });
+            throw error;
+          }
+
+        } catch (error) {
+          logger.error(`Error processing scene ${sceneConfig.sceneId}:`, {
+            error: error.message,
+            stack: error.stack,
+            sceneConfig,
+            fullError: error
+          });
+          throw error;
+        }
+      }
+
+      logger.info(`Completed processing all ${sceneConfigs.length} scenes`);
 
       // Add background music if available
       const musicAsset = await assemblyDataAccess.getMusicAsset(jobId);
       if (musicAsset) {
         movie.set("soundtrack", {
-          source: this.getMediaUrl(musicAsset.music_file_url),
-          volume: 0.3
+          source: musicAsset.public_url,
+          volume: 0.3,
+          loop: true
         });
+        logger.info('Added background music to movie');
       }
 
-      // Set output configuration
-      movie.set("format", "mp4");
-      movie.set("resolution", "1080p");
-      movie.set("aspect-ratio", "9:16");
-      movie.set("fps", 30);
-
       // Start rendering
-      const render = await movie.render();
-      logger.info(`Render started for job ${jobId}, project ID: ${render.movie.id}`);
+      logger.info('Starting movie render...');
 
-      // Create assembly record
-      const assemblyOutput = await assemblyDataAccess.createAssemblyOutput(jobId, {
-        status: 'processing',
-        projectId: render.movie.id,
-        assemblyConfig: movie.getConfig(),
-        metadata: { 
-          scenes: scenes.length,
-          startedAt: new Date().toISOString()
+      // Store configuration for database
+      const movieConfig = {
+        quality: "high",
+        width: 1080,
+        height: 1920,
+        fps: 30,
+        resolution: "1080p",
+        exports: [{ 
+          format: 'mp4',
+          resolution: '1080p'
+        }],
+        scenes: sceneConfigs.map(scene => ({
+          ...scene,
+          elements: {
+            visual: sceneAssets[scene.sceneId]?.visual?.asset?.public_url,
+            voice: sceneAssets[scene.sceneId]?.voice?.public_url
+          }
+        }))
+      };
+
+      logger.info('Starting movie render with configuration:', movieConfig);
+
+      try {
+        // Start render
+        const render = await movie.render();
+        logger.info('Render response:', render);
+
+        if (!render || !render.project) {
+          throw new Error('Invalid render response: missing project ID');
         }
-      });
 
-      // Start progress monitoring
-      this.monitorRenderProgress(movie, jobId, render.movie.id);
+        const projectId = render.project;
+        logger.info(`Render queued for job ${jobId}, project ID: ${projectId}`);
 
-      return assemblyOutput;
+        // Create assembly record
+        const assemblyOutput = await assemblyDataAccess.createAssemblyOutput(jobId, {
+          status: 'processing',
+          projectId: projectId,
+          assemblyConfig: movieConfig,
+          metadata: { 
+            scenes: sceneConfigs.length,
+            startedAt: new Date().toISOString()
+          }
+        });
+
+        // Start progress monitoring using the dedicated monitor
+        renderMonitor.monitorRender(movie, jobId, projectId);
+
+        return assemblyOutput;
+      } catch (error) {
+        logger.error('Render failed:', {
+          error: error.message,
+          stack: error.stack,
+          movieConfig,
+          movieObject: JSON.stringify(movie, null, 2)
+        });
+        throw new Error(`Failed to start render: ${error.message}`);
+      }
+
     } catch (error) {
       logger.error('Error in createVideoProject:', error);
       throw error;
@@ -145,47 +353,6 @@ class AssemblyService {
     return scene;
   }
 
-  async monitorRenderProgress(movie, jobId, projectId) {
-    try {
-      await movie
-        .waitToFinish((status) => {
-          logger.info(`Render progress for job ${jobId}: ${status.movie.status} - ${status.movie.message}`);
-        })
-        .then(async (status) => {
-          logger.info(`Render completed for job ${jobId}: ${status.movie.url}`);
-          const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
-          await assemblyDataAccess.updateVideoUrl(assembly.assembly_id, status.movie.url);
-        })
-        .catch(async (error) => {
-          logger.error(`Render failed for job ${jobId}:`, error);
-          const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
-          await assemblyDataAccess.updateAssemblyStatus(assembly.assembly_id, 'failed', {
-            error: error.message,
-            failedAt: new Date().toISOString()
-          });
-        });
-    } catch (error) {
-      logger.error(`Error monitoring render progress for job ${jobId}:`, error);
-    }
-  }
-
-  async getProjectStatus(jobId) {
-    try {
-      const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
-      if (!assembly) {
-        throw new Error(`No assembly found for job ID: ${jobId}`);
-      }
-
-      const movie = new Movie();
-      movie.setAPIKey(config.assembly.apiKey);
-      const status = await movie.getStatus(assembly.project_id);
-      return status;
-    } catch (error) {
-      logger.error('Error checking project status:', error);
-      throw error;
-    }
-  }
-
   getMediaUrl(relativePath) {
     if (!relativePath) {
       throw new Error('Invalid relative path');
@@ -197,6 +364,59 @@ class AssemblyService {
 
   async close() {
     logger.info('Closing Assembly Service');
+  }
+
+  async saveLocalOutput(jobId, videoUrl, metadata) {
+    try {
+      // Create output path structure
+      const dateFolder = new Date().toISOString().split('T')[0];
+      const outputPath = path.join(
+        config.output.directory,
+        'assembly',
+        dateFolder,
+        jobId
+      );
+
+      // Ensure directory exists
+      await fs.mkdir(outputPath, { recursive: true });
+      
+      // Save metadata
+      const metadataPath = path.join(outputPath, 'metadata.json');
+      await fs.writeFile(
+        metadataPath, 
+        JSON.stringify({
+          jobId,
+          videoUrl,
+          createdAt: new Date().toISOString(),
+          ...metadata
+        }, null, 2)
+      );
+
+      // Download and save video file
+      if (videoUrl) {
+        const videoPath = path.join(outputPath, 'assembled_video.mp4');
+        const response = await fetch(videoUrl);
+        const buffer = await response.buffer();
+        await fs.writeFile(videoPath, buffer);
+      }
+
+      logger.info('Saved local output files:', {
+        jobId,
+        outputPath,
+        files: ['metadata.json', 'assembled_video.mp4']
+      });
+
+      return {
+        outputPath,
+        metadataPath
+      };
+    } catch (error) {
+      logger.error('Failed to save local output:', {
+        jobId,
+        error: error.message
+      });
+      // Don't throw - this is just for testing
+    }
   }
 }
 

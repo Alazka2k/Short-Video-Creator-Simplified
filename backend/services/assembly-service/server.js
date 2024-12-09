@@ -27,38 +27,47 @@ function createServer(assemblyServiceInterface) {
 
       const { jobId, scenes } = req.body;
 
-      if (!jobId || !scenes) {
+      // Validate required fields
+      if (!jobId || !scenes || !Array.isArray(scenes)) {
         return res.status(400).json({ 
           error: 'Missing required parameters', 
-          details: 'jobId and scenes are required' 
+          details: 'jobId and scenes array are required' 
         });
       }
 
       logger.info(`Assembly Service: Assembling video for job: ${jobId}`);
-      const result = await assemblyServiceInterface.generateContent(jobId, scenes);
-      res.json(result);
+      logger.info(`Assembly Service: Scenes: ${JSON.stringify(scenes)}`);
 
-    } catch (error) {
-      logger.error('Assembly Service: Error assembling video:', error);
+      // Validate each scene has required fields
+      const invalidScenes = scenes.filter(scene => 
+        !scene.sceneId || 
+        typeof scene.duration !== 'number' || 
+        scene.duration <= 0
+      );
 
-      // Improved error handling
-      const errorMessage = error?.message || 'Unknown error occurred';
-      const statusCode = error?.statusCode || 500;
-      const errorResponse = {
-        error: 'Assembly failed',
-        details: errorMessage
-      };
-
-      // Handle specific error cases
-      if (errorMessage.includes('Missing required assets')) {
-        errorResponse.statusCode = 400;
-        errorResponse.error = 'Missing assets';
-      } else if (errorMessage.includes('Scene not found')) {
-        errorResponse.statusCode = 404;
-        errorResponse.error = 'Scene not found';
+      if (invalidScenes.length > 0) {
+        return res.status(400).json({
+          error: 'Invalid scene configuration',
+          details: 'Each scene must have a sceneId and positive duration'
+        });
       }
 
-      res.status(statusCode).json(errorResponse);
+      try {
+        const result = await assemblyServiceInterface.generateContent(jobId, scenes);
+        res.json(result);
+      } catch (error) {
+        logger.error('Error generating content:', error);
+        res.status(500).json({
+          error: 'Assembly generation failed',
+          details: error.message
+        });
+      }
+    } catch (error) {
+      logger.error('Assembly Service: Error handling request:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        details: error.message
+      });
     }
   });
 
@@ -127,10 +136,10 @@ function createServer(assemblyServiceInterface) {
 
   // Error handling middleware
   app.use((err, req, res, next) => {
-    logger.error(`Assembly Service: Unhandled error: ${err.stack}`);
+    logger.error('Assembly Service Error:', err);
     res.status(500).json({
-      error: 'Internal server error',
-      details: err.message
+      error: 'Internal Server Error',
+      message: err.message
     });
   });
 

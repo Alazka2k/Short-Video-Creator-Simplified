@@ -11,29 +11,57 @@ class AssemblyServiceInterface {
   }
 
   async initialize() {
-    logger.info('Initializing AssemblyServiceInterface');
-    await this.service.init();
-    logger.info('AssemblyServiceInterface initialized');
+    try {
+      logger.info('Initializing AssemblyServiceInterface');
+      await this.service.init();
+      logger.info('AssemblyServiceInterface initialized');
+    } catch (error) {
+      logger.error('Failed to initialize AssemblyServiceInterface:', error);
+      throw error;
+    }
   }
 
   async generateContent(jobId, scenes) {
-    logger.info(`Generating assembled video for job: ${jobId}`);
-    return await this.service.createVideoProject(jobId, scenes);
+    try {
+      logger.info(`Generating assembled video for job: ${jobId}`);
+      
+      // Validate input
+      if (!jobId || !scenes || !Array.isArray(scenes)) {
+        throw new Error('Invalid input parameters');
+      }
+
+      // Validate each scene
+      scenes.forEach((scene, index) => {
+        if (!scene.sceneId || typeof scene.duration !== 'number') {
+          throw new Error(`Invalid scene configuration at index ${index}`);
+        }
+      });
+
+      return await this.service.createVideoProject(jobId, scenes);
+    } catch (error) {
+      logger.error('Error in generateContent:', error);
+      throw error;
+    }
   }
 
   async getStatus(jobId) {
-    logger.info(`Getting assembly status for job: ${jobId}`);
-    return await this.service.getProjectStatus(jobId);
-  }
-
-  async validateAssets(jobId) {
-    logger.info(`Validating assets for job: ${jobId}`);
-    return await this.service.validateAssets(jobId);
+    try {
+      logger.info(`Getting assembly status for job: ${jobId}`);
+      return await this.service.getProjectStatus(jobId);
+    } catch (error) {
+      logger.error('Error getting assembly status:', error);
+      throw error;
+    }
   }
 
   async cleanup() {
-    logger.info('Cleaning up AssemblyServiceInterface');
-    await this.service.close();
+    try {
+      logger.info('Cleaning up AssemblyServiceInterface');
+      await this.service.close();
+    } catch (error) {
+      logger.error('Error during cleanup:', error);
+      throw error;
+    }
   }
 }
 
