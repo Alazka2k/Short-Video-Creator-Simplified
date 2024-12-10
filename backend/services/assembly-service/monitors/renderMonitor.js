@@ -89,8 +89,8 @@ class RenderMonitor {
 
     const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
     const metadata = {
-      videoUrl: status.movie.url,
       status: 'completed',
+      job_id: jobId,
       metadata: {
         completedAt: new Date().toISOString(),
         duration: timeElapsed,
@@ -101,11 +101,8 @@ class RenderMonitor {
       }
     };
 
-    // Update database
-    await assemblyDataAccess.updateAssemblyOutput(assembly.assembly_id, metadata);
-
-    // Save local copy for testing
-    await assemblyService.saveLocalOutput(jobId, status.movie.url, metadata);
+    // Update database and save local copy
+    await assemblyDataAccess.updateAssemblyOutput(assembly.assembly_id, metadata, status.movie.url);
   }
 
   async handleRenderFailure(error, jobId, projectId, startTime, lastProgress) {
@@ -119,6 +116,7 @@ class RenderMonitor {
     const assembly = await assemblyDataAccess.getAssemblyByJobId(jobId);
     await assemblyDataAccess.updateAssemblyOutput(assembly.assembly_id, {
       status: 'failed',
+      job_id: jobId,
       metadata: {
         error: error.message,
         failedAt: new Date().toISOString(),

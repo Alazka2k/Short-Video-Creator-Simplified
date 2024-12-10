@@ -160,7 +160,7 @@ class AssemblyService {
             try {
               const visualElement = {
                 type: assets.visual.type === 'image' ? 'image' : 'video',
-                source: assets.visual.asset.public_url,
+                src: assets.visual.asset.public_url,
                 fit: "cover",
                 position: "center"
               };
@@ -197,9 +197,9 @@ class AssemblyService {
             try {
               const audioElement = {
                 type: "audio",
-                source: assets.voice.public_url,
+                src: assets.voice.public_url,
                 volume: 1,
-                loop: false
+                loop: 0
               };
 
               logger.info('Adding audio element:', {
@@ -253,7 +253,7 @@ class AssemblyService {
         movie.set("soundtrack", {
           source: musicAsset.public_url,
           volume: 0.3,
-          loop: true
+          loop: 0
         });
         logger.info('Added background music to movie');
       }

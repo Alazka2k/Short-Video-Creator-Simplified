@@ -215,12 +215,35 @@ class AssemblyDataAccess {
         return null;
       }
 
-      return {
-        ...assembly,
-        metadata: JSON.parse(assembly.metadata)
-      };
+      // Handle metadata
+      if (assembly.metadata) {
+        try {
+          assembly.metadata = typeof assembly.metadata === 'string' ? 
+            JSON.parse(assembly.metadata) : assembly.metadata;
+        } catch (e) {
+          logger.error('Error parsing metadata:', e);
+          assembly.metadata = null;
+        }
+      }
+
+      // Handle assembly config
+      if (assembly.assembly_config) {
+        try {
+          assembly.assembly_config = typeof assembly.assembly_config === 'string' ? 
+            JSON.parse(assembly.assembly_config) : assembly.assembly_config;
+        } catch (e) {
+          logger.error('Error parsing assembly_config:', e);
+          assembly.assembly_config = null;
+        }
+      }
+
+      return assembly;
     } catch (error) {
-      logger.error('Error getting assembly by job ID:', error);
+      logger.error('Error getting assembly by job ID:', {
+        jobId,
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }
@@ -340,15 +363,23 @@ class AssemblyDataAccess {
     return uuidRegex.test(uuid);
   }
 
-  async updateAssemblyOutput(assemblyId, updateData) {
+  async updateAssemblyOutput(assemblyId, updateData, videoUrl = null) {
     try {
-      // If we have a video URL, upload it to storage
-      if (updateData.videoUrl) {
-        const fileName = `final_video_${assemblyId}.mp4`;
-        const localPath = path.join(this.storageBasePath, fileName);
+      // If we have a video URL, handle file storage
+      if (videoUrl) {
+        // Create date-based folder structure
+        const dateFolder = new Date().toISOString().split('T')[0];
+        const outputPath = path.join(
+          this.storageBasePath,
+          dateFolder,
+          updateData.job_id
+        );
+        
+        const fileName = 'assembled_video.mp4';
+        const localPath = path.join(outputPath, fileName);
 
         // Download the video locally first
-        await this.downloadFile(updateData.videoUrl, localPath);
+        await this.downloadFile(videoUrl, localPath);
 
         // Upload to storage
         const storageResult = await storageService.uploadFile(localPath, 'assembly');
@@ -361,7 +392,19 @@ class AssemblyDataAccess {
           public_url: storageResult.url
         };
 
-        // Clean up local file
+        // Save metadata
+        const metadataPath = path.join(outputPath, 'metadata.json');
+        await fs.writeFile(
+          metadataPath, 
+          JSON.stringify({
+            jobId: updateData.job_id,
+            videoUrl,
+            createdAt: new Date().toISOString(),
+            ...updateData
+          }, null, 2)
+        );
+
+        // Clean up local video file
         await fs.unlink(localPath);
       }
 
@@ -382,6 +425,10 @@ class AssemblyDataAccess {
 
   async downloadFile(url, localPath) {
     try {
+      // Ensure directory exists
+      const directory = path.dirname(localPath);
+      await fs.mkdir(directory, { recursive: true });
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Failed to download file: ${response.statusText}`);
@@ -392,7 +439,12 @@ class AssemblyDataAccess {
 
       logger.info('File downloaded successfully:', { url, localPath });
     } catch (error) {
-      logger.error('Error downloading file:', error);
+      logger.error('Error downloading file:', {
+        url,
+        localPath,
+        error: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   }
