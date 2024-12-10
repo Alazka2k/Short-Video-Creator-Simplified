@@ -91,6 +91,7 @@ class RenderMonitor {
     const metadata = {
       status: 'completed',
       job_id: jobId,
+      project_id: projectId,
       metadata: {
         completedAt: new Date().toISOString(),
         duration: timeElapsed,
@@ -117,6 +118,7 @@ class RenderMonitor {
     await assemblyDataAccess.updateAssemblyOutput(assembly.assembly_id, {
       status: 'failed',
       job_id: jobId,
+      project_id: projectId,
       metadata: {
         error: error.message,
         failedAt: new Date().toISOString(),

@@ -296,24 +296,6 @@ class AssemblyDataAccess {
     }
   }
 
-  async updateVideoUrl(assemblyId, videoFileUrl) {
-    try {
-      const [updated] = await knex('assembly_outputs')
-        .where('assembly_id', assemblyId)
-        .update({
-          video_file_url: videoFileUrl,
-          status: 'completed',
-          updated_at: knex.fn.now()
-        })
-        .returning('*');
-
-      return updated;
-    } catch (error) {
-      logger.error('Error updating video URL:', error);
-      throw error;
-    }
-  }
-
   async validateAssemblyAssets(jobId) {
     try {
       const scenes = await this.getAllScenes(jobId);
@@ -365,6 +347,11 @@ class AssemblyDataAccess {
 
   async updateAssemblyOutput(assemblyId, updateData, videoUrl = null) {
     try {
+      let dbUpdate = {
+        ...updateData,
+        updated_at: knex.fn.now()
+      };
+
       // If we have a video URL, handle file storage
       if (videoUrl) {
         // Create date-based folder structure
@@ -384,14 +371,6 @@ class AssemblyDataAccess {
         // Upload to storage
         const storageResult = await storageService.uploadFile(localPath, 'assembly');
 
-        // Update the data with storage info
-        updateData = {
-          ...updateData,
-          file_path: localPath,
-          storage_key: storageResult.storageKey,
-          public_url: storageResult.url
-        };
-
         // Save metadata
         const metadataPath = path.join(outputPath, 'metadata.json');
         await fs.writeFile(
@@ -404,21 +383,66 @@ class AssemblyDataAccess {
           }, null, 2)
         );
 
-        // Clean up local video file
-        await fs.unlink(localPath);
+        logger.info('File uploaded to storage:', {
+          localPath,
+          publicUrl: storageResult.url,
+          storageKey: storageResult.storageKey
+        });
+
+        // Create database update object with correct column names
+        dbUpdate = {
+          ...dbUpdate,
+          file_path: localPath.replace(/\\/g, '/'),
+          storage_key: storageResult.storageKey,
+          public_url: storageResult.url,
+          status: 'completed'
+        };
+
+        // Log the update data
+        logger.info('Updating database with:', {
+          projectId: updateData.project_id,
+          filePath: dbUpdate.file_path,
+          storageKey: dbUpdate.storage_key,
+          publicUrl: dbUpdate.public_url,
+          status: dbUpdate.status
+        });
+
+        // Find assembly by project_id and update
+        const [updated] = await knex('assembly_outputs')
+          .where('project_id', updateData.project_id)
+          .update(dbUpdate)
+          .returning('*');
+
+        if (!updated) {
+          throw new Error(`No assembly found with project_id: ${updateData.project_id}`);
+        }
+
+        // Verify the update
+        logger.info('Database update result:', {
+          projectId: updated.project_id,
+          status: updated.status,
+          filePath: updated.file_path,
+          storageKey: updated.storage_key,
+          publicUrl: updated.public_url
+        });
+
+        return updated;
+      } else {
+        // Regular update without file handling
+        const [updated] = await knex('assembly_outputs')
+          .where('project_id', updateData.project_id)
+          .update(dbUpdate)
+          .returning('*');
+
+        return updated;
       }
-
-      const [updated] = await knex('assembly_outputs')
-        .where('assembly_id', assemblyId)
-        .update({
-          ...updateData,
-          updated_at: knex.fn.now()
-        })
-        .returning('*');
-
-      return updated;
     } catch (error) {
-      logger.error('Error updating assembly output:', error);
+      logger.error('Error updating assembly output:', {
+        error: error.message,
+        stack: error.stack,
+        projectId: updateData.project_id,
+        updateData
+      });
       throw error;
     }
   }
