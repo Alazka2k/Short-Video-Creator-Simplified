@@ -1,7 +1,7 @@
 'use client'
 
-import { Sidebar } from './sidebar'
-import { Header } from './header'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
 import { useAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
