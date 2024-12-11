@@ -48,10 +48,10 @@ class VoiceDataAccess {
         .insert({
           job_id: jobId,
           scene_id: sceneId,
-          elevenlabs_voice_id: voiceData.voiceId,
-          file_path: voiceData.tempFilePath,  // Keep local path for backup
-          storage_key: voiceData.storageKey,       // Add S3 storage key
-          public_url: voiceData.publicUrl,         // Add S3 public URL
+          elevenlabs_voice_id: voiceData.elevenlabsVoiceId,
+          file_path: voiceData.tempFilePath,
+          storage_key: voiceData.storageKey,
+          public_url: voiceData.publicUrl,
           metadata: JSON.stringify({
             ...voiceData.metadata,
             storage: {

@@ -55,7 +55,7 @@ class SceneProcessor {
           scene.description,
           sceneId,
           jobId,
-          parameters.voiceGenParams?.voiceId
+          parameters.voiceGenParams?.elevenlabsVoiceId
         );
         await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'completed', {
           sceneId,
@@ -181,6 +181,60 @@ class SceneProcessor {
       logger.error('Error saving scene metadata:', error);
       throw error;
     }
+  }
+
+  async generateImage(scene, sceneIndex, jobId) {
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        logger.info(`Generating image for scene ${sceneIndex}, attempt ${attempt}/${maxRetries}`);
+        
+        // Check if service needs initialization
+        if (!await this.services.image.service.isHealthy()) {
+          logger.info('Image service unhealthy, attempting to reinitialize...');
+          await this.services.image.initialize();
+          logger.info('Image service reinitialized');
+        }
+
+        const result = await this.services.image.process(
+          scene.imagePrompt,
+          sceneIndex,
+          jobId
+        );
+        return result;
+      } catch (error) {
+        lastError = error;
+        logger.error(`Image generation attempt ${attempt} failed:`, error);
+
+        // Check if it's a connection-related error
+        if (error.message.includes('WebSocket') || 
+            error.message.includes('ENOTFOUND') || 
+            error.message.includes('not initialized')) {
+          if (attempt < maxRetries) {
+            logger.info('Attempting to reinitialize image service...');
+            try {
+              await this.services.image.initialize();
+              logger.info('Successfully reinitialized image service');
+              // Restart the job service after successful reinitialization
+              process.exit(0); // PM2 will automatically restart the service
+            } catch (initError) {
+              logger.error('Failed to reinitialize image service:', initError);
+              const delay = attempt * 5000;
+              logger.info(`Waiting ${delay}ms before next attempt...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+          }
+        } else {
+          // If it's not a connection error, don't retry
+          break;
+        }
+      }
+    }
+
+    // If we get here, all attempts failed
+    throw new Error(`Failed to generate image after ${maxRetries} attempts: ${lastError?.message}`);
   }
 }
 

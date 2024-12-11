@@ -15,8 +15,25 @@ function createServer(imageServiceInterface) {
   });
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ status: 'Image Service is healthy' });
+  app.get('/health', async (req, res) => {
+    try {
+      const isHealthy = await imageServiceInterface.service.isHealthy();
+      if (isHealthy) {
+        res.json({ status: 'Image Service is healthy', initialized: true });
+      } else {
+        res.status(503).json({ 
+          status: 'Image Service is unhealthy',
+          initialized: false,
+          message: 'Service is attempting to reconnect'
+        });
+      }
+    } catch (error) {
+      logger.error('Health check failed:', error);
+      res.status(503).json({ 
+        status: 'Image Service is unhealthy',
+        error: error.message
+      });
+    }
   });
 
   // Generate image endpoint

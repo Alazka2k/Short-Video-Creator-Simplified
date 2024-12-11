@@ -6,7 +6,7 @@
   },
   "voiceGen": {
     "modelId": "eleven_multilingual_v2",
-    "defaultVoiceId": "e5WNhrdI30aXpS2RSGm1",
+    "testVoiceId": "e5WNhrdI30aXpS2RSGm1",
     "stability": 0.5,
     "similarity_boost": 0.75
   },

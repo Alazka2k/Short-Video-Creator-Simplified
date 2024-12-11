@@ -1,46 +1,33 @@
-const { Midjourney } = require('midjourney');
-const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const fs = require('fs').promises;
-const path = require('path');
-const puppeteer = require('puppeteer');
+const MidjourneyClient = require('./clients/midjourney-client');
+const ImageDownloader = require('./utils/image-downloader');
+const FileManager = require('./utils/file-manager');
 const ImageDataAccess = require('./data/imageDataAccess');
 const storageService = require('../../shared/utils/storage');
+const path = require('path');
 
 class ImageGenService {
   constructor() {
     logger.info('Constructing ImageGenService');
-    this.client = new Midjourney({
-      ServerId: config.imageGen.serverId,
-      ChannelId: config.imageGen.channelId,
-      SalaiToken: config.imageGen.salaiToken,
-      Debug: false,
-      Ws: config.imageGen.ws || true
-    });
+    this.client = new MidjourneyClient();
+    this.downloader = new ImageDownloader();
+    this.fileManager = new FileManager();
     this.imageDataAccess = ImageDataAccess;
-    this.initialized = false;
   }
 
   async init() {
-    try {
-      logger.info('Initializing Midjourney client...');
-      await this.client.init();
-      this.initialized = true;
-      logger.info('Midjourney client initialized successfully');
-    } catch (error) {
-      logger.error('Failed to initialize Midjourney client:', error);
-      throw error;
-    }
+    await this.client.init();
+  }
+
+  async isHealthy() {
+    return await this.client.isConnected();
   }
 
   async generateImage(prompt, sceneIndex = null, jobId = null) {
-    if (!this.initialized) {
-      throw new Error('ImageGenService not initialized. Call init() first.');
-    }
-
     try {
       logger.info(`Generating image for prompt: "${prompt}"`);
-      const result = await this.client.Imagine(prompt, (uri, progress) => {
+      
+      const result = await this.client.generateImage(prompt, (uri, progress) => {
         logger.info(`Image generation progress: ${progress}%`);
       });
 
@@ -48,145 +35,66 @@ class ImageGenService {
         throw new Error('No image generated');
       }
 
-      logger.info('Image generated successfully');
-      const originalImageUrl = result.uri;
-      const selectedVariationUrl = this.getRandomVariationUrl(originalImageUrl);
-      logger.info(`Selected variation URL: ${selectedVariationUrl}`);
-
-      const { imageFilePath, metadataPath } = this.getOutputPaths(sceneIndex, jobId);
-      await fs.mkdir(path.dirname(imageFilePath), { recursive: true });
-
-      await this.downloadImageWithPuppeteer(selectedVariationUrl, imageFilePath);
-      
-      await this.saveImageMetadata(metadataPath, sceneIndex, originalImageUrl, selectedVariationUrl, path.basename(imageFilePath), {
-        prompt,
-        generatedAt: new Date().toISOString()
-      });
-
-      // Upload to S3
-      const storageResult = await storageService.uploadFile(
-        imageFilePath,
-        'image'
-      );
-
-      const imageData = {
-        tempFilePath: imageFilePath,
-        originalUrl: originalImageUrl,
-        imageUrl: selectedVariationUrl,
-        storageKey: storageResult.storageKey,
-        publicUrl: storageResult.url,
-        metadata: {
-          prompt,
-          generatedAt: new Date().toISOString()
-        }
-      };
-
-      const imageRecord = await this.imageDataAccess.createImageOutput(jobId, sceneIndex, imageData);
-
-      return {
-        filePath: imageFilePath,
-        fileName: path.basename(imageFilePath),
-        originalUrl: originalImageUrl,
-        imageUrl: selectedVariationUrl,
-        storageKey: storageResult.storageKey,
-        publicUrl: storageResult.url,
-        metadata: typeof imageRecord.metadata === 'string' 
-          ? JSON.parse(imageRecord.metadata) 
-          : imageRecord.metadata
-      };
-
+      return await this.processGeneratedImage(result, prompt, sceneIndex, jobId);
     } catch (error) {
       logger.error('Error generating image:', error);
       throw error;
     }
   }
 
-  getOutputPaths(sceneIndex, jobId, isTest = false) {
-    if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'image');
-      const testFolderPath = path.join(testOutputDir, `output_test_${sceneIndex}`);
-      return {
-        imageFilePath: path.join(testFolderPath, `image_scene_${sceneIndex}.png`),
-        metadataPath: path.join(testFolderPath, 'metadata.json')
-      };
-    }
+  async processGeneratedImage(result, prompt, sceneIndex, jobId) {
+    const originalImageUrl = result.uri;
+    const selectedVariationUrl = this.downloader.getRandomVariationUrl(originalImageUrl);
+    
+    const { imageFilePath, metadataPath } = this.fileManager.getOutputPaths(sceneIndex, jobId);
+    
+    await this.downloader.downloadImage(selectedVariationUrl, imageFilePath);
+    
+    const storageResult = await storageService.uploadFile(imageFilePath, 'image');
+    
+    await this.fileManager.saveMetadata(metadataPath, sceneIndex, {
+      prompt,
+      originalUrl: originalImageUrl,
+      selectedUrl: selectedVariationUrl,
+      generatedAt: new Date().toISOString()
+    });
 
-    const currentDate = new Date();
-    const dateString = currentDate.toISOString().split('T')[0];
-    const folderPath = path.join(config.output.directory, 'image', dateString, jobId, `scene_${sceneIndex}`);
+    const imageData = this.prepareImageData(imageFilePath, originalImageUrl, selectedVariationUrl, storageResult, prompt);
+    const imageRecord = await this.imageDataAccess.createImageOutput(jobId, sceneIndex, imageData);
+
+    return this.prepareResponse(imageFilePath, originalImageUrl, selectedVariationUrl, storageResult, imageRecord);
+  }
+
+  prepareImageData(imageFilePath, originalUrl, imageUrl, storageResult, prompt) {
     return {
-      imageFilePath: path.join(folderPath, `image_scene_${sceneIndex}.png`),
-      metadataPath: path.join(folderPath, 'metadata.json')
+      tempFilePath: imageFilePath,
+      originalUrl,
+      imageUrl,
+      storageKey: storageResult.storageKey,
+      publicUrl: storageResult.url,
+      metadata: {
+        prompt,
+        generatedAt: new Date().toISOString()
+      }
     };
   }
 
-  getRandomVariationUrl(originalUrl) {
-    const urlParts = originalUrl.split('/');
-    const filename = urlParts[urlParts.length - 1].split('?')[0];
-    const match = filename.match(/.*_([a-f0-9-]+)\.png$/);
-    if (!match) {
-      throw new Error('Unable to extract identifier from URL');
-    }
-    const identifier = match[1];
-    const randomVariation = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
-    return `https://cdn.midjourney.com/${identifier}/0_${randomVariation}.png`;
-  }
-
-  async downloadImageWithPuppeteer(url, outputPath) {
-    const browser = await puppeteer.launch({ headless: false });
-    const page = await browser.newPage();
-  
-    try {
-      await page.goto(url, { waitUntil: 'networkidle2' });
-      await page.waitForSelector('img');
-      const viewSource = await page.goto(url);
-      const buffer = await viewSource.buffer();
-      await fs.writeFile(outputPath, buffer);
-      logger.info(`Image downloaded successfully to ${outputPath}`);
-    } catch (error) {
-      logger.error('Error downloading image:', error);
-      throw error;
-    } finally {
-      await browser.close();
-    }
-  }
-
-  async saveImageMetadata(metadataPath, sceneIndex, metadata) {
-    try {
-      await fs.mkdir(path.dirname(metadataPath), { recursive: true });
-      const metadataContent = {
-        [`scene_${sceneIndex}`]: metadata
-      };
-      await fs.writeFile(metadataPath, JSON.stringify(metadataContent, null, 2));
-      logger.info(`Metadata saved to ${metadataPath}`);
-    } catch (error) {
-      logger.error('Error saving metadata:', error);
-      throw error;
-    }
-  }
-
-  async getImageOutputsForJob(jobId) {
-    return await this.imageDataAccess.getImagesByJobId(jobId);
-  }
-
-  async getImageOutputForScene(sceneId) {
-    return await this.imageDataAccess.getImageBySceneId(sceneId);
-  }
-
-  async updateImageMetadata(imageId, metadata) {
-    return await this.imageDataAccess.updateImageMetadata(imageId, metadata);
-  }
-
-  async deleteImage(imageId) {
-    return await this.imageDataAccess.deleteImage(imageId);
+  prepareResponse(imageFilePath, originalUrl, imageUrl, storageResult, imageRecord) {
+    return {
+      filePath: imageFilePath,
+      fileName: path.basename(imageFilePath),
+      originalUrl,
+      imageUrl,
+      storageKey: storageResult.storageKey,
+      publicUrl: storageResult.url,
+      metadata: typeof imageRecord.metadata === 'string' 
+        ? JSON.parse(imageRecord.metadata) 
+        : imageRecord.metadata
+    };
   }
 
   async close() {
-    if (this.initialized) {
-      await this.client.Close();
-      this.initialized = false;
-      logger.info('Midjourney connection closed');
-    }
+    await this.client.close();
   }
 }
 

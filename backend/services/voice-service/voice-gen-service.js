@@ -15,29 +15,46 @@ class VoiceGenService {
       timeoutMs: 120000 // 2 minutes timeout
     });
     this.modelId = config.voiceGen.modelId;
-    this.backupVoiceId = config.voiceGen.voiceId;
     this.voiceDataAccess = VoiceDataAccess;
     
     logger.info(`Voice Generation Provider: ElevenLabs`);
     logger.info(`ElevenLabs API Key: ${config.voiceGen.apiKey ? 'Loaded' : 'Missing'}`);
     logger.info(`Model ID: ${this.modelId}`);
-    logger.info(`Backup Voice ID: ${this.backupVoiceId}`);
   }
 
-  async generateVoice(text, sceneIndex, jobId, voiceId = null, isTest = false) {
+  async generateVoice(text, sceneIndex, jobId, elevenlabsVoiceId = null, isTest = false) {
     try {
       logger.info(`Generating voice for text: "${text.substring(0, 50)}..."`);
-      logger.debug('Voice generation parameters:', { sceneIndex, jobId, voiceId, isTest });
+      logger.debug('Voice generation parameters:', { sceneIndex, jobId, elevenlabsVoiceId, isTest });
       
-      const finalVoiceId = voiceId || this.backupVoiceId;
-      if (!finalVoiceId) {
-        throw new Error('No valid voice ID provided or found in config');
+      if (!elevenlabsVoiceId) {
+        throw new Error('ElevenLabs Voice ID is required but was not provided');
       }
-      logger.info(`Using voice ID: ${finalVoiceId}`);
+
+      try {
+        const voicesResponse = await this.client.voices.getAll();
+        const voicesList = Array.isArray(voicesResponse) ? voicesResponse : voicesResponse.voices;
+        
+        if (!voicesList || !Array.isArray(voicesList)) {
+          logger.error('Unexpected voice list format:', voicesResponse);
+          throw new Error('Failed to get valid voice list from ElevenLabs');
+        }
+
+        const voiceExists = voicesList.some(voice => voice.voice_id === elevenlabsVoiceId);
+        
+        if (!voiceExists) {
+          throw new Error(`Voice ID ${elevenlabsVoiceId} does not exist in ElevenLabs`);
+        }
+      } catch (error) {
+        logger.error('Error validating ElevenLabs voice:', error);
+        throw new Error(`Failed to validate ElevenLabs voice ID: ${error.message}`);
+      }
+
+      logger.info(`Using ElevenLabs voice ID: ${elevenlabsVoiceId}`);
 
       // Generate voice stream
       const audioStream = await this.client.generate({
-        voice: finalVoiceId,
+        voice: elevenlabsVoiceId,
         text: text,
         model_id: this.modelId,
         stream: true
@@ -68,7 +85,7 @@ class VoiceGenService {
         return {
           filePath: voiceFilePath,
           fileName: path.basename(voiceFilePath),
-          voiceId: finalVoiceId,
+          elevenlabsVoiceId: elevenlabsVoiceId,
           storageKey: storageResult.storageKey,
           publicUrl: storageResult.url,
           metadata: {
@@ -82,7 +99,7 @@ class VoiceGenService {
       // Prepare data for database
       const voiceData = {
         tempFilePath: voiceFilePath,
-        voiceId: finalVoiceId,
+        elevenlabsVoiceId: elevenlabsVoiceId,
         duration: writeResult.duration,
         storageKey: storageResult.storageKey,
         publicUrl: storageResult.url,
@@ -103,7 +120,7 @@ class VoiceGenService {
       return {
         filePath: voiceFilePath,
         fileName: path.basename(voiceFilePath),
-        voiceId: finalVoiceId,
+        elevenlabsVoiceId: elevenlabsVoiceId,
         storageKey: storageResult.storageKey,
         publicUrl: storageResult.url,
         metadata: {

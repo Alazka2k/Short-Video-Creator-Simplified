@@ -10,6 +10,12 @@ class ImageServiceInterface {
     logger.info('ImageGenService instance created');
   }
 
+  async handleUnhandledRejection(reason, promise) {
+    logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+    // Handle similar to uncaught exceptions
+    await this.handleUncaughtError(reason);
+  }
+
   async initialize() {
     logger.info('Initializing ImageServiceInterface');
     await this.service.init();

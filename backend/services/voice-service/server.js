@@ -28,7 +28,7 @@ function createServer(voiceServiceInterface) {
       }, 300000); // 5 minutes timeout
 
       try {
-        const { text, sceneIndex, jobId, voiceId } = req.body;
+        const { text, sceneIndex, jobId, elevenlabsVoiceId } = req.body;
         logger.info(`Voice Service: Request body: ${JSON.stringify(req.body)}`);
         
         if (!text) {
@@ -45,7 +45,7 @@ function createServer(voiceServiceInterface) {
           text,
           sceneIndex || 1,  // Use 1-based indexing for consistency
           jobId,
-          voiceId
+          elevenlabsVoiceId
         );
         
         clearTimeout(requestTimeout);
