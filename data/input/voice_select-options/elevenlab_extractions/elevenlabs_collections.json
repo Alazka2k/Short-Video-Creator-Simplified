@@ -1,0 +1,274 @@
+{
+    "collections": [
+        {
+            "id": "e9zMBQs53vsNhMd0ZE90",
+            "title": "Bring your stories to life",
+            "category": "use_case",
+            "voices": null,
+            "featured": true,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/bring-your-stories-to-life.jpg",
+            "background_color": "purple"
+        },
+        {
+            "id": "N0PPPXZ8AXEDYmOeYzfH",
+            "title": "Deepak Chopra™ Meditative Voices Collection",
+            "category": "special",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/deepak-chopra.jpg",
+            "background_color": "teal"
+        },
+        {
+            "id": "HXn5AetPOJgAHd2D60mP",
+            "title": "Engaging Characters for Video Games",
+            "category": "use_case",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/game-characters.jpg",
+            "background_color": "teal"
+        },
+        {
+            "id": "NT2a3XKvGJgrtwWzIgjz",
+            "title": "Epic Voices",
+            "category": "use_case",
+            "voices": null,
+            "featured": true,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/epic-voices.jpg",
+            "background_color": "blue"
+        },
+        {
+            "id": "nIEZ3ILgNgPWPjuDsIAS",
+            "title": "John Wayne™ Rugged Men Collection",
+            "category": "special",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/john-wayne.jpg",
+            "background_color": "red"
+        },
+        {
+            "id": "RtXK4bHXmqQJtlEsDAT8",
+            "title": "Maya Angelou™ Poetic Voices Collection",
+            "category": "special",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/maya-angelou.jpg",
+            "background_color": "purple"
+        },
+        {
+            "id": "A5qk3OsieqBbFyYKvct2",
+            "title": "Perfect for Conversational AI",
+            "category": "use_case",
+            "voices": null,
+            "featured": true,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/conversational-ai.jpg",
+            "background_color": "green"
+        },
+        {
+            "id": "jgYeh22UWqsNeAHcyNYt",
+            "title": "Romantic Story Voices",
+            "category": "use_case",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": "https://storage.googleapis.com/eleven-public-cdn/images/collections/romantic-voices.jpg",
+            "background_color": "red"
+        },
+        {
+            "id": "Xm5ZAS3a2piKcfTqSN4U",
+            "title": "Top Picks for Arabic",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "red"
+        },
+        {
+            "id": "AGTeOly5SLSgXo1AITcU",
+            "title": "Top Picks for Chinese",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "blue"
+        },
+        {
+            "id": "PS43eKKZfmXBzbYKrAKR",
+            "title": "Top Picks for Czech",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "black"
+        },
+        {
+            "id": "BIhT43S6XEUoWdbtcosY",
+            "title": "Top Picks for Dutch",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "purple"
+        },
+        {
+            "id": "KqLAz1CDL3eA1GvG0t3k",
+            "title": "Top Picks for Filipino",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "orange"
+        },
+        {
+            "id": "I1E9FW8d5PM4xaBohFvs",
+            "title": "Top Picks for Finnish",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "purple"
+        },
+        {
+            "id": "nmntPsxDzs7GALYQ767j",
+            "title": "Top Picks for French",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "blue"
+        },
+        {
+            "id": "SHEPnUB9fOVkgNfheMfX",
+            "title": "Top Picks for German",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "yellow"
+        },
+        {
+            "id": "oLRT68lRV6Kr1mRMlglT",
+            "title": "Top Picks for Hindi",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "orange"
+        },
+        {
+            "id": "W6IRl1bmYEeJT15upfpW",
+            "title": "Top Picks for Hungarian",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "teal"
+        },
+        {
+            "id": "yiIatjVhxRVWBYp0H1hn",
+            "title": "Top Picks for Indonesian",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "teal"
+        },
+        {
+            "id": "KKeFwcOmelEGRMPHgP7Q",
+            "title": "Top Picks for Italian",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "green"
+        },
+        {
+            "id": "UGC2MMPNUvXMCEymkmOD",
+            "title": "Top Picks for Japanese",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "red"
+        },
+        {
+            "id": "bCHU6zVd6rV9gwUZBK7g",
+            "title": "Top Picks for Norwegian",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "red"
+        },
+        {
+            "id": "qFYUjpSWok254PZ1P2nL",
+            "title": "Top Picks for Polish",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "yellow"
+        },
+        {
+            "id": "QAIDZ5mMiq07tSFUl7FS",
+            "title": "Top Picks for Portuguese",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "green"
+        },
+        {
+            "id": "BCBCcY4SRbje7toioSZF",
+            "title": "Top Picks for Romanian",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "red"
+        },
+        {
+            "id": "EIvgm5GkUAsDiadxDz5q",
+            "title": "Top Picks for Slovak",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "black"
+        },
+        {
+            "id": "89Mb3BofY2npW2OrSk9H",
+            "title": "Top picks for Spanish",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "red"
+        },
+        {
+            "id": "8L42baElbZTpLb5Rw68T",
+            "title": "Top picks for Swedish",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "orange"
+        },
+        {
+            "id": "5EhVbLG28PL6Jy0UrOt9",
+            "title": "Top picks for Turkish",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "red"
+        },
+        {
+            "id": "eFvoF7Xp0o3N8K7e5a84",
+            "title": "Top picks for Vietnamese",
+            "category": "language",
+            "voices": null,
+            "featured": false,
+            "cover_image_url": null,
+            "background_color": "teal"
+        }
+    ]
+}

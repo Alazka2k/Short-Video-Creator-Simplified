@@ -1,0 +1,89 @@
+{
+  "parameter": "{{ llmGen.characterPerspective }}",
+  "definition": {
+    "documentaryVideos": {
+      "expert": {
+        "description": "Provides authoritative insights and analysis",
+        "examples": ["scientists", "historians", "industry leaders"]
+      },
+      "eyewitness": {
+        "description": "Offers first-hand accounts of events",
+        "examples": ["participants in historical events", "local residents"]
+      },
+      "affectedIndividual": {
+        "description": "Shares personal experiences related to the topic",
+        "examples": ["patients in medical documentaries", "environmental impact victims"]
+      }
+    },
+    "educationalInstructional": {
+      "instructor": {
+        "description": "Guides learners through concepts and skills",
+        "examples": ["teachers", "trainers", "coaches"]
+      },
+      "studentLearner": {
+        "description": "Demonstrates the learning process, asks questions",
+        "examples": ["on-screen learner", "relatable character"]
+      },
+      "practitioner": {
+        "description": "Shows real-world application of knowledge",
+        "examples": ["professionals in their field", "experienced craftspeople"]
+      }
+    },
+    "promotionalVideos": {
+      "satisfiedCustomer": {
+        "description": "Provides testimonials and success stories",
+        "examples": ["product users", "service beneficiaries"]
+      },
+      "brandAmbassador": {
+        "description": "Represents and embodies the brand's values",
+        "examples": ["celebrities", "influencers", "company representatives"]
+      },
+      "problemSolver": {
+        "description": "Demonstrates how the product/service addresses needs",
+        "examples": ["fictional characters facing common issues"]
+      }
+    },
+    "narrativeFilms": {
+      "protagonist": {
+        "description": "Drives the main story and undergoes character development",
+        "examples": ["hero", "main character"]
+      },
+      "antagonist": {
+        "description": "Provides conflict and challenges for the protagonist",
+        "examples": ["villain", "opposing force"]
+      },
+      "supportingCharacter": {
+        "description": "Adds depth and context to the story",
+        "examples": ["sidekick", "mentor", "love interest"]
+      }
+    },
+    "corporateBusiness": {
+      "executive": {
+        "description": "Provides vision and leadership perspective",
+        "examples": ["company founders", "top management"]
+      },
+      "employee": {
+        "description": "Offers insights into company culture and operations",
+        "examples": ["team members", "department heads"]
+      },
+      "clientPartner": {
+        "description": "Shares experiences of working with the company",
+        "examples": ["business partners", "long-term clients"]
+      }
+    },
+    "vlogsPersonal": {
+      "contentCreator": {
+        "description": "Shares personal experiences and opinions",
+        "examples": ["vlogger", "influencer"]
+      },
+      "guest": {
+        "description": "Provides additional perspectives or expertise",
+        "examples": ["friends", "collaborators", "interviewees"]
+      },
+      "audienceStandIn": {
+        "description": "Represents the viewer's perspective",
+        "examples": ["character asking questions viewers might have"]
+      }
+    }
+  }
+}

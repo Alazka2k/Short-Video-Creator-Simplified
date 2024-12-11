@@ -1,0 +1,89 @@
+{
+  "parameter": "{{ llmGen.vocabulary }}",
+  "definition": {
+    "documentaryVideos": {
+      "descriptiveLanguage": {
+        "description": "Use vivid adjectives and adverbs to paint a picture",
+        "examples": ["lush landscapes", "gripping stories"]
+      },
+      "informativeTone": {
+        "description": "Focus on clarity and factual information",
+        "examples": ["According to recent studies..."]
+      },
+      "engagingQuestions": {
+        "description": "Pose rhetorical questions to provoke thought",
+        "examples": ["What drives human curiosity?"]
+      }
+    },
+    "educationalInstructional": {
+      "clearAndConcise": {
+        "description": "Use straightforward vocabulary",
+        "examples": ["Let's explore", "In this lesson, we will..."]
+      },
+      "technicalTerms": {
+        "description": "Introduce jargon but provide definitions",
+        "examples": ["Photosynthesis is the process by which..."]
+      },
+      "encouragingPhrases": {
+        "description": "Use motivational language",
+        "examples": ["You can do this!", "Let's dive deeper!"]
+      }
+    },
+    "promotionalVideos": {
+      "persuasiveLanguage": {
+        "description": "Use compelling adjectives and action verbs",
+        "examples": ["Transform your life with...", "Discover the benefits of..."]
+      },
+      "callToAction": {
+        "description": "Direct phrases urging immediate response",
+        "examples": ["Sign up today!", "Don't miss out!"]
+      },
+      "positiveTone": {
+        "description": "Emphasize benefits and positive outcomes",
+        "examples": ["Join our community of satisfied customers!"]
+      }
+    },
+    "narrativeFilms": {
+      "characterSpecific": {
+        "description": "Tailor language to reflect character backgrounds and personalities",
+        "examples": ["formal language for noble characters", "slang for streetwise characters"]
+      },
+      "emotionalExpression": {
+        "description": "Use expressive language to convey feelings",
+        "examples": ["I can't believe this is happening!"]
+      },
+      "imageryAndMetaphors": {
+        "description": "Employ figurative language to enhance storytelling",
+        "examples": ["Her smile was like sunshine on a rainy day"]
+      }
+    },
+    "corporateBusiness": {
+      "professionalTone": {
+        "description": "Use formal vocabulary suitable for a corporate audience",
+        "examples": ["We aim to enhance productivity through..."]
+      },
+      "industryJargon": {
+        "description": "Incorporate relevant terminology that resonates with the target audience",
+        "examples": ["synergy", "ROI"]
+      },
+      "clearObjectives": {
+        "description": "State goals clearly",
+        "examples": ["Our mission is to...", "We strive to achieve..."]
+      }
+    },
+    "vlogsPersonal": {
+      "conversationalLanguage": {
+        "description": "Use informal, relatable vocabulary",
+        "examples": ["Hey everyone!", "I just wanted to share..."]
+      },
+      "personalAnecdotes": {
+        "description": "Include personal stories or experiences for relatability",
+        "examples": ["The other day, I realized..."]
+      },
+      "engagementPrompts": {
+        "description": "Encourage interaction with viewers",
+        "examples": ["Let me know what you think in the comments!"]
+      }
+    }
+  }
+}

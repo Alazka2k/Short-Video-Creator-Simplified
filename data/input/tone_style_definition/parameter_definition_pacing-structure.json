@@ -1,0 +1,65 @@
+{
+  "parameter": "{{ llmGen.pacingStructure }}",
+  "definition": {
+    "narrativeFilms": {
+      "threeActStructure": {
+        "description": "Slow build-up in Act 1, increasing tension in Act 2, and rapid climax in Act 3",
+        "examples": ["character introduction scenes", "rising action sequences", "climactic finale"]
+      },
+      "varyingSceneLengths": {
+        "description": "Quick cuts for energy, longer takes for depth, mixing it up to prevent monotony",
+        "examples": ["action montages", "emotional dialogue scenes", "establishing shots"]
+      }
+    },
+    "documentaries": {
+      "measuredPacing": {
+        "description": "Slower, more consistent rhythm to allow for information absorption",
+        "examples": ["expert interviews", "detailed explanations", "archival footage"]
+      },
+      "alternatingTempos": {
+        "description": "Slower rhythms for reflection, quicker tempos for high-energy segments",
+        "examples": ["contemplative nature scenes", "dramatic reenactments", "news footage"]
+      }
+    },
+    "actionThriller": {
+      "fastPacedRhythm": {
+        "description": "Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension",
+        "examples": ["chase sequences", "fight scenes", "rapid montages"]
+      },
+      "contrast": {
+        "description": "Alternating between fast and slow pacing to create unpredictability and keep viewers engaged",
+        "examples": ["quiet character moments", "sudden action bursts", "suspense building"]
+      }
+    },
+    "comedy": {
+      "snappyPacing": {
+        "description": "Rapid-fire dialogues and precise editing to land jokes effectively",
+        "examples": ["quick-witted exchanges", "visual gags", "comedic montages"]
+      },
+      "wellTimedPauses": {
+        "description": "Strategic use of pauses to enhance comedic timing",
+        "examples": ["reaction shots", "awkward silences", "punchline delivery"]
+      }
+    },
+    "educationalTraining": {
+      "balancedPacing": {
+        "description": "Alternating between fast-paced, high-energy segments and slower, more informative sections",
+        "examples": ["quick overview segments", "detailed demonstrations", "practice sessions"]
+      },
+      "deliberatePacing": {
+        "description": "Slower pace for complex concepts, allowing viewers to absorb information",
+        "examples": ["step-by-step tutorials", "concept explanations", "review sections"]
+      }
+    },
+    "promotionalVideos": {
+      "energeticPacing": {
+        "description": "Faster and more dynamic to generate enthusiasm and encourage action",
+        "examples": ["product highlights", "testimonial montages", "call-to-action sequences"]
+      },
+      "musicDrivenRhythm": {
+        "description": "Using upbeat music combined with quick-paced editing to create momentum",
+        "examples": ["brand montages", "lifestyle sequences", "product demonstrations"]
+      }
+    }
+  }
+}

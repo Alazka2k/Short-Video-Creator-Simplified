@@ -1,0 +1,622 @@
+[
+    {
+        "id": "N0PPPXZ8AXEDYmOeYzfH",
+        "title": "Deepak Chopra™ Meditative Voices Collection",
+        "category": "special",
+        "background_color": "teal",
+        "voices": [
+            {
+            "elevenlabs_voice_id": "2qfp6zPuviqeCOZIE9RZ",
+            "name": "Christina - Calming  Yoga Instructor",
+            "accent": "american",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "calm",
+            "use_case": "informative_educational",
+            "category": "professional",
+            "language": "en",
+            "description": "30-40 year old African American woman's voice with calm, pleasant and relaxed tone. Great for use as yoga instructor, e-learning and guided tutorials."
+            },
+            {
+            "elevenlabs_voice_id": "pBZVCk298iJlHAcHQwLr",
+            "name": "Leoni Vergara",
+            "accent": "spanish",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "confident",
+            "use_case": "conversational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "International Cosmopolitan and educated voice. Warm, soothing, friendly and eloquent tone. Works great for Virtual Assistants and conversational text."
+            },
+            {
+            "elevenlabs_voice_id": "Atp5cNFg1Wj5gyKD7HWV",
+            "name": "Natasha - Gentle Meditation",
+            "accent": "american",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "whispery",
+            "use_case": "narrative_story",
+            "category": "professional",
+            "language": "en",
+            "description": "Middle aged American Female with a Soothing, Gentle & whispering Voice. Suitable to ASMR & Meditation."
+            },
+            {
+            "elevenlabs_voice_id": "wgHvco1wiREKN0BdyVx5",
+            "name": "Drew - Deep, Soothing, Guided Meditation",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "deep",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Perfect for meditation & contemplation"
+            },
+            {
+            "elevenlabs_voice_id": "pjcYQlDFKMbcOUp6F5GD",
+            "name": "Brittney",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "calm",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A calm and relaxing female voice, ideal for meditation and self-reflection. The tone is smooth and measured, painting a clear picture for the listener with a youthful, vibrant voice."
+            }
+        ]
+    },
+    {
+        "id": "RtXK4bHXmqQJtlEsDAT8",
+        "title": "Maya Angelou™ Poetic Voices Collection",
+        "category": "special",
+        "background_color": "purple",
+        "voices": [
+            {
+            "elevenlabs_voice_id": "pBZVCk298iJlHAcHQwLr",
+            "name": "Leoni Vergara",
+            "accent": "spanish",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "confident",
+            "use_case": "conversational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "International Cosmopolitan and educated voice. Warm, soothing, friendly and eloquent tone. Works great for Virtual Assistants and conversational text."
+            },
+            {
+            "elevenlabs_voice_id": "A9evEp8yGjv4c3WsIKuY",
+            "name": "Ralf Eisend",
+            "accent": "german",
+            "gender": "male",
+            "age": "old",
+            "descriptive": "calm",
+            "use_case": "narrative_story",
+            "category": "professional",
+            "language": "en",
+            "description": "An international audio book speaker with clear and deep voice, ideal for audio books and audibles."
+            },
+            {
+            "elevenlabs_voice_id": "7NsaqHdLuKNFvEfjpUno",
+            "name": "Seer Morganna",
+            "accent": "",
+            "gender": "female",
+            "age": "old",
+            "descriptive": "wise",
+            "use_case": "characters_animation",
+            "category": "professional",
+            "language": "en",
+            "description": "The voice of an old wise seer woman telling people of their fortunes. Works well for Animations and characters in a story."
+            },
+            {
+            "elevenlabs_voice_id": "vY7jMt4Cbubxeq9O5Qsj",
+            "name": "Kitten Kaley Rose",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "confident",
+            "use_case": "narrative_story",
+            "category": "professional",
+            "language": "en",
+            "description": "This woman's voice—cool, passionate, confident, loving, and soothing—is a symphony of emotions, a melody that resonates long after the last note fades."
+            },
+            {
+            "elevenlabs_voice_id": "BL7YSL1bAkmW8U0JnU8o",
+            "name": "Jen - Soothing Gentle Thoughtful Melancholy",
+            "accent": "american",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "calm",
+            "use_case": "narrative_story",
+            "category": "professional",
+            "language": "en",
+            "description": "A calm, somber, thoughtful, reflective, velvety, melancholy voice with mid-deep tones. Good for poetry, meditation, and narration."
+            }
+        ]
+    },
+    {
+        "id": "e9zMBQs53vsNhMd0ZE90",
+        "title": "Bring your stories to life",
+        "category": "use_case",
+        "background_color": "purple",
+        "voices": [
+            {
+            "elevenlabs_voice_id": "XjLkpWUlnhS8i7gGz3lZ",
+            "name": "David Castlemore - Newsreader and Educator",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "formal",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A clear and crisp middle age professional American voice that is in the style of Broadcast news presenters. Great for the reader app for long form content."
+            },
+            {
+            "elevenlabs_voice_id": "7S3KNdLDL7aRgBVRQb1z",
+            "name": "Nathaniel C. - Deep Rich Mature British voice",
+            "accent": "british",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "confident",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Nathaniel is veteran British character actor and comedian whose art has transcended international borders and cultures. His voice reflects this wealth of experience, helping you create a beautiful narration style for your social media videos, Audiobooks, and corporate AVs. Give his voice a try—you'll love it."
+            },
+            {
+            "elevenlabs_voice_id": "ZF6FPAbjXT4488VcRRnw",
+            "name": "Amelia",
+            "accent": "british",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "upbeat",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A young British English woman's voice, clear and easy to understand. Expressive and enthusiastic, it's beautiful for narration, podcasts and social media such as YouTube, Tiktok, Reels and Stories. This studio-produced audio is great for a young woman's Gen-Z voice in audiobooks, high-quality video dubbing, advertising and reading."
+            },
+            {
+            "elevenlabs_voice_id": "wJqPPQ618aTW29mptyoc",
+            "name": "Ana-Rita",
+            "accent": "british",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "soft",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A Young British Female Voice, Smooth, Expressive, Good for Book Narration."
+            },
+            {
+            "elevenlabs_voice_id": "fCxG8OHm4STbIsWe4aT9",
+            "name": "Harrison Gale – The Velvet Voice",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "deep",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A voice imbued with a deep, velvety richness that commands attention and soothes the listener - not only sonorous and authoritative but also carries a charismatic allure, making it perfect for a wide array of projects from immersive audiobooks and engaging advertisements to compelling documentaries and educational content."
+            },
+            {
+            "elevenlabs_voice_id": "JBFqnCBsd6RMkjVDRZzb",
+            "name": "George",
+            "accent": "British",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "warm",
+            "use_case": "narration",
+            "category": "premade",
+            "language": "en",
+            "description": "Warm British male voice for narration"
+            },
+            {
+            "elevenlabs_voice_id": "pFZP5JQG7iQjIQuC4Bku",
+            "name": "Lily",
+            "accent": "British",
+            "gender": "female",
+            "age": "middle-aged",
+            "descriptive": "warm",
+            "use_case": "narration",
+            "category": "premade",
+            "language": "en",
+            "description": "Warm British female voice for narration"
+            },
+            {
+            "elevenlabs_voice_id": "nPczCjzI2devNBz1zQrb",
+            "name": "Brian",
+            "accent": "American",
+            "gender": "male",
+            "age": "middle-aged",
+            "descriptive": "deep",
+            "use_case": "narration",
+            "category": "premade",
+            "language": "en",
+            "description": "Deep American male voice for narration"
+            }
+        ]
+    },
+    {
+        "id": "HXn5AetPOJgAHd2D60mP",
+        "title": "Engaging Characters for Video Games",
+        "category": "use_case",
+        "background_color": "teal",
+        "voices": [
+            {
+            "elevenlabs_voice_id": "chcMmmtY1cmQh2ye1oXi",
+            "name": "Timmy",
+            "accent": "british",
+            "gender": "male",
+            "age": "young",
+            "descriptive": "hyped",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A young to middle aged medieval style character. High energy, Higher Pitch. Perfect for Games & Animation. Peasant, Unit, Grunt, Villager, Town Crier, Farmer."
+            },
+            {
+            "elevenlabs_voice_id": "dfZGXKiIzjizWtJ0NgPy",
+            "name": "Michael Mouse - High Energy Comic Character",
+            "accent": "american",
+            "gender": "male",
+            "age": "young",
+            "descriptive": "hyped",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A male American comic and cartoon character. Voice was trained, reading modern and antique comic literature, mostly Walt Disney comics including the known Mickey Mouse, Donald Duck and Goofy characters. Perfect for funny, hilarious and silly dialogues."
+            },
+            {
+            "elevenlabs_voice_id": "KTPVrSVAEUSJRClDzBw7",
+            "name": "Cowboy Bob // VF",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "pleasant",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "An aged American male voice, rich with the gravel of countless tales and tinged with a Southern drawl as comforting as a porch swing at dusk. It carries the wisdom of the Old West and the warmth of a sunset over the plains, perfect for stories needing a touch of rugged charm and timeless wisdom."
+            },
+            {
+            "elevenlabs_voice_id": "f2yUVfK5jdm78zlpcZ8C",
+            "name": "Albert - Funny Cartoon Character",
+            "accent": "",
+            "gender": "male",
+            "age": "young",
+            "descriptive": "intense",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "de",
+            "description": "Young German male with a strongly dynamic voice. Works perfectly for funny, nerdy and silly characters. Absolutely hilarious."
+            },
+            {
+            "elevenlabs_voice_id": "9yzdeviXkFddZ4Oz8Mok",
+            "name": "Lutz Laugh - Chuckling and Giggly",
+            "accent": "american",
+            "gender": "male",
+            "age": "young",
+            "descriptive": "excited",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Young American male voice cheerfully cracking up. Perfect for humorous dialogues and happy characters. Voice was created reading jokes and funny literature."
+            },
+            {
+                "elevenlabs_voice_id": "flHkNRp1BlvT73UL6gyz",
+                "name": "Jessica Anne Bogart - Character and Animation",
+                "accent": "american",
+                "gender": "female",
+                "age": "middle_aged",
+                "descriptive": "crisp",
+                "use_case": "characters_animation",
+                "category": "high_quality",
+                "language": "en",
+                "description": "The Villain! Wickedly eloquent. Calculating. Cruel and calm."
+            },
+            {
+                "elevenlabs_voice_id": "vfaqCOvlrKi4Zp7C2IAm",
+                "name": "Demon Monster",
+                "accent": "american",
+                "gender": "neutral",
+                "age": "middle_aged",
+                "descriptive": "deep",
+                "use_case": "characters_animation",
+                "category": "high_quality",
+                "language": "en",
+                "description": "A Deep Demon Monster. Perfect for Video Games, Characters & Animation. Ghoul, Monster, Fantasy, Dark, Horror."
+            }
+        ]
+    },
+    {
+        "id": "NT2a3XKvGJgrtwWzIgjz",
+        "title": "Epic Voices",
+        "category": "use_case",
+        "background_color": "blue",
+        "voices": [
+          {
+            "elevenlabs_voice_id": "qNkzaJoHLLdpvgh5tISm",
+            "name": "Carter the Mountain King",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "deep",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Middle-aged American male. Voice is rich, smooth, & rugged. Each syllable lingers on the palate, leaving a tantalizing trail of sensation in its wake."
+          },
+          {
+            "elevenlabs_voice_id": "FF7KdobWPaiR0vkcALHF",
+            "name": "David - Epic Movie Trailer",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "deep",
+            "use_case": "entertainment_tv",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Middle aged Male with a deep voice. Suitable for Entertainment & TV."
+          },
+          {
+            "elevenlabs_voice_id": "eVItLK1UvXctxuaRV2Oq",
+            "name": "Sexy Female Villain Voice",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "confident",
+            "use_case": "characters_animation",
+            "category": "professional",
+            "language": "en",
+            "description": "A seductive and dangerous femme fatale, this female voice drips with the sexy allure of a villain. Perfect for video game characters. Think \"over the top, exaggerated, anime villain\" voice!"
+          },
+          {
+            "elevenlabs_voice_id": "flHkNRp1BlvT73UL6gyz",
+            "name": "Jessica Anne Bogart - Character and Animation",
+            "accent": "american",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "crisp",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "The Villain! Wickedly eloquent. Calculating. Cruel and calm."
+          },
+          {
+            "elevenlabs_voice_id": "uVKHymY7OYMd6OailpG5",
+            "name": "Frederick - Old Gnarly Narrator",
+            "accent": "standard",
+            "gender": "male",
+            "age": "old",
+            "descriptive": "raspy",
+            "use_case": "characters_animation",
+            "category": "professional",
+            "language": "de",
+            "description": "Listen to the rugged tales, this grizzled baritone tells. This gnarly, well-seasoned voice rings with hard-won authenticity and wisdom, ideal for historical epics, gritty westerns, and stories demanding a road-worn raconteur."
+          }
+        ]
+    },
+    {
+        "id": "A5qk3OsieqBbFyYKvct2",
+        "title": "Perfect for Conversational AI",
+        "category": "use_case",
+        "background_color": "green",
+        "voices": [
+          {
+            "elevenlabs_voice_id": "gOkFV1JMCt0G0n9xmBwV",
+            "name": "W. L. Oxley",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "professional",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "American adult male, conversational, centered, controlled, honest, direct. Perfect for Storytelling."
+          },
+          {
+            "elevenlabs_voice_id": "HDA9tsk27wYi3uq0fPcK",
+            "name": "Stuart - Energetic and enthusiastic",
+            "accent": "australian",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "upbeat",
+            "use_case": "informative_educational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A 40-year-old Australian male He speaks with a softer Australian accent, not the broad, stereotypical twang often associated with the Outback, but rather a gentler, more refined tone that reflects his maturity and sophistication."
+          },
+          {
+            "elevenlabs_voice_id": "L0Dsvb3SLTyegXwtm47J",
+            "name": "Archer",
+            "accent": "british",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "calm",
+            "use_case": "conversational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Conversational, calm British, thirty-something, perfect for an AI agent."
+          },
+          {
+            "elevenlabs_voice_id": "XfNU2rGpBa01ckF309OY",
+            "name": "Nichalia Schwartz",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "confident",
+            "use_case": "informative_educational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Friendly, intelligent, engaging 20s-30s female American. Ideal for audiobooks, long-form narration, eLearning / e-learning, YouTube channel narration, educational material, explainers, podcasts, and corporate training videos."
+          },
+          {
+            "elevenlabs_voice_id": "tnSpp4vdxKPjI9w0GnoV",
+            "name": "Hope - upbeat and clear",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "upbeat",
+            "use_case": "social_media",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Upbeat and clear American female voice"
+          },
+          {
+            "elevenlabs_voice_id": "rCmVtv8cYU60uhlsOo1M",
+            "name": "Ana",
+            "accent": "british",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "upbeat",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Young British Female, emotional, expressive, good for children's books narration."
+          },
+          {
+            "elevenlabs_voice_id": "UgBBYS2sOqTuMpoF3BR0",
+            "name": "Mark - Natural Conversations",
+            "accent": "american",
+            "gender": "male",
+            "age": "young",
+            "descriptive": "casual",
+            "use_case": "conversational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A casual, young-adult speaking in a natural manner. Perfect for Conversational AI."
+          },
+          {
+            "elevenlabs_voice_id": "tpFVjZdYBvOaWaUIRHRz",
+            "name": "Victoria Lennon",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "calm",
+            "use_case": "conversational",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Feminine, Raspy, down to earth, cool, textured, very chill, natural, Her, AI, girl next door, IT girl, That girl, north american, relaxed."
+          },
+          {
+            "elevenlabs_voice_id": "cjVigY5qzO86Huf0OWal",
+            "name": "Eric",
+            "accent": "American",
+            "gender": "male",
+            "age": "middle-aged",
+            "descriptive": "friendly",
+            "use_case": "conversational",
+            "category": "premade",
+            "language": "en",
+            "description": "Friendly American male voice for conversation"
+          },
+          {
+            "elevenlabs_voice_id": "XrExE9yKIg1WjnnlVkGX",
+            "name": "Matilda",
+            "accent": "American",
+            "gender": "female",
+            "age": "middle-aged",
+            "descriptive": "friendly",
+            "use_case": "narration",
+            "category": "premade",
+            "language": "en",
+            "description": "Friendly American female voice for narration"
+          }
+        ]
+    },
+    {
+        "id": "jgYeh22UWqsNeAHcyNYt",
+        "title": "Romantic Story Voices",
+        "category": "use_case",
+        "background_color": "red",
+        "voices": [
+          {
+            "elevenlabs_voice_id": "pjcYQlDFKMbcOUp6F5GD",
+            "name": "Brittney",
+            "accent": "american",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "calm",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A calm and relaxing female voice, ideal for meditation and self-reflection. The tone is smooth and measured, painting a clear picture for the listener with a youthful, vibrant voice."
+          },
+          {
+            "elevenlabs_voice_id": "j9jfwdrw7BRfcR43Qohk",
+            "name": "Frederick Surrey",
+            "accent": "british",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "calm",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Professional, calm, well spoken British narrator full of intrigue and wonder. Suitable for Nature, Science, Mystery & History documentaries or audio books & narration projects that need a smooth & velvety tone."
+          },
+          {
+            "elevenlabs_voice_id": "S9EGwlCtMF7VXtENq79v",
+            "name": "Emma Taylor",
+            "accent": "british",
+            "gender": "female",
+            "age": "young",
+            "descriptive": "gentle",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A young British English story teller with a London accent and a soft gentle voice. Perfect for narrations."
+          },
+          {
+            "elevenlabs_voice_id": "s0GiK2helkVWdtc4eTnI",
+            "name": "Jack Bass - The Calm and Gritty Storyteller",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "calm",
+            "use_case": "social_media",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A calm and gritty storyteller for all of your podcast, audiobook, meditation project, ASMR, and other needs."
+          },
+          {
+            "elevenlabs_voice_id": "LruHrtVF6PSyGItzMNHS",
+            "name": "Benjamin - Deep, Warm, Calming",
+            "accent": "american",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "relaxed",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A gentle and warm Middle Age American voice to soothe and relax you. Suitable for all types of narration but specially designed for applications like ASMR and Guided Visualization relaxation applications."
+          },
+          {
+            "elevenlabs_voice_id": "lUCNYQh2kqW2wiie85Qk",
+            "name": "Charmion - Soft and husky",
+            "accent": "british",
+            "gender": "female",
+            "age": "middle_aged",
+            "descriptive": "serious",
+            "use_case": "characters_animation",
+            "category": "high_quality",
+            "language": "en",
+            "description": "Middle-aged British female. Suitable for Characters."
+          },
+          {
+            "elevenlabs_voice_id": "NFG5qt843uXKj4pFvR7C",
+            "name": "Adam Stone - late night radio",
+            "accent": "british",
+            "gender": "male",
+            "age": "middle_aged",
+            "descriptive": "meditative",
+            "use_case": "narrative_story",
+            "category": "high_quality",
+            "language": "en",
+            "description": "A middle aged 'Brit' with a velvety laid back, late night talk show host timbre."
+          }
+        ]
+    }
+]

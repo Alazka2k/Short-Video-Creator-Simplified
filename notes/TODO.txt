@@ -1,10 +1,6 @@
 # Improvements:
 
 - Improve and parametrize the initial Prompt
-    - Tone of the narrator
-    - Vibe
-    - Perspective
-    - Realistic / Fantastic
     - Language Option
 
 LLM Generation Improvements:
@@ -36,12 +32,14 @@ Prio 1:
 - Finalize Routing Logic to direct requests to every microservice
   - Integrate Video Service
 
-- Introduce Cutting Service with JSON2VIDEO (https://json2video.com/docs/)
+- Introduce Assembly Service with JSON2VIDEO (https://json2video.com/docs/)
     - Upload assets?
 
 - Design Database Architecture and Introduce Database Integration
 
 - Introduce Job Service (Content Pipeline)
+
+Prio 2:
 - Auth service
 - Billing service
 - Frontend

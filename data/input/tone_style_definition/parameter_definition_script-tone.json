@@ -1,0 +1,89 @@
+{
+  "parameter": "{{ llmGen.scriptTone }}",
+  "definition": {
+    "documentaryVideos": {
+      "authoritative": {
+        "description": "Convey expertise and credibility",
+        "examples": ["confident statements", "well-researched facts"]
+      },
+      "objective": {
+        "description": "Present information impartially, avoiding bias",
+        "examples": ["balanced perspectives", "neutral language"]
+      },
+      "inquisitive": {
+        "description": "Foster curiosity and critical thinking",
+        "examples": ["thought-provoking questions", "exploratory language"]
+      }
+    },
+    "educationalInstructional": {
+      "encouraging": {
+        "description": "Motivate and support learners",
+        "examples": ["positive reinforcement", "empathetic language"]
+      },
+      "patient": {
+        "description": "Explain concepts thoroughly without rushing",
+        "examples": ["step-by-step instructions", "repeated key points"]
+      },
+      "enthusiastic": {
+        "description": "Show passion for the subject matter",
+        "examples": ["energetic delivery", "expressing genuine interest"]
+      }
+    },
+    "promotionalVideos": {
+      "exciting": {
+        "description": "Generate enthusiasm and interest",
+        "examples": ["upbeat language", "dynamic pacing"]
+      },
+      "persuasive": {
+        "description": "Convince the audience to take action",
+        "examples": ["emphasizing benefits", "creating urgency"]
+      },
+      "confident": {
+        "description": "Project assurance in the product or service",
+        "examples": ["authoritative statements", "positive predictions"]
+      }
+    },
+    "narrativeFilms": {
+      "emotive": {
+        "description": "Convey and evoke emotions",
+        "examples": ["dramatic language", "expressive dialogue"]
+      },
+      "atmospheric": {
+        "description": "Create mood and ambiance",
+        "examples": ["descriptive narration", "tone-setting dialogue"]
+      },
+      "characterDriven": {
+        "description": "Reflect individual personalities",
+        "examples": ["unique speech patterns", "character-specific attitudes"]
+      }
+    },
+    "corporateBusiness": {
+      "professional": {
+        "description": "Maintain a polished, business-appropriate tone",
+        "examples": ["formal language", "respectful address"]
+      },
+      "informative": {
+        "description": "Focus on clear communication of facts and data",
+        "examples": ["concise explanations", "relevant statistics"]
+      },
+      "aspirational": {
+        "description": "Inspire confidence and ambition",
+        "examples": ["future-oriented language", "success-focused narrative"]
+      }
+    },
+    "vlogsPersonal": {
+      "casual": {
+        "description": "Create a relaxed, friendly atmosphere",
+        "examples": ["conversational language", "personal anecdotes"]
+      },
+      "authentic": {
+        "description": "Project genuineness and relatability",
+        "examples": ["honest reflections", "sharing real experiences"]
+      },
+      "interactive": {
+        "description": "Engage directly with the audience",
+        "examples": ["asking for opinions", "responding to comments"]
+      }
+    }
+  }
+}
