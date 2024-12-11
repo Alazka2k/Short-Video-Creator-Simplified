@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode colors */
+    --brand-primary: #9333EA;
+    --brand-secondary: #7E22CE;
+    --bg-main: #FFFFFF;
+    --bg-card: #F4F4F5;
+    --bg-element: #FAFAFA;
+    --bg-hover: #F4F4F5;
+    --text-primary: #18181B;
+    --text-secondary: #71717A;
+    --text-muted: #A1A1AA;
+    --border-primary: #E4E4E7;
+    --border-secondary: #F4F4F5;
+    --success: #10B981;
+    --error: #EF4444;
+    --warning: #F59E0B;
+  }
+
+  [data-theme='dark'] {
+    --bg-main: #0A0A0A;
+    --bg-card: #18181B;
+    --bg-element: #27272A;
+    --bg-hover: #3F3F46;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --border-primary: #27272A;
+    --border-secondary: #3F3F46;
+  }
+
+  body {
+    @apply min-h-screen bg-bg-main text-text-primary antialiased;
+  }
+
+  /* Container styles */
+  .container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+} 

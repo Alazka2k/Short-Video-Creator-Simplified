@@ -28,6 +28,7 @@ A web-based application that automates the creation of short-form videos by orch
    - Image Generation Service
    - Animation Generation Service
    - Video Generation Service
+   - Assembly Service (Video Assembly)
 
 2. **New Services to Develop**:
    - Authentication Service
@@ -39,8 +40,6 @@ A web-based application that automates the creation of short-form videos by orch
      - Premium feature access control
      - Payment processing
    - Final Video Creation Service
-     - Scene compilation
-     - Final video rendering
      - Export functionality
 
 ### Database Structure
@@ -51,9 +50,6 @@ A web-based application that automates the creation of short-form videos by orch
   - Job tracking
   - Credit system
 
-### Storage System
-- MVP Phase: Local file storage
-- Future: Cloud storage integration planned
 
 ## User Features
 
