@@ -8,6 +8,13 @@ import { Apple } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
+interface Auth0User {
+  sub: string;
+  email: string;
+  name?: string;
+  picture?: string;
+}
+
 export function LoginForm() {
   const { loginWithPopup, getAccessTokenSilently } = useAuth0();
   const { toast } = useToast();
@@ -18,29 +25,34 @@ export function LoginForm() {
       setIsLoading(true);
 
       // Login with Auth0 popup
-      const auth0Response = await loginWithPopup({
-        connection: provider,
-      });
+      const auth0Response = (await loginWithPopup({
+        authorizationParams: {
+          connection: provider
+        }
+      })) as unknown as { user: Auth0User };
 
       // Get the access token
       const accessToken = await getAccessTokenSilently();
 
-      // Create/update user in our database through API gateway
-      const response = await fetch('/api/auth/social', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          accessToken,
-          provider,
-          profile: auth0Response.user,
-        }),
-      });
+      // Before sending to backend, verify auth0Response exists and has user data
+      if (auth0Response?.user) {
+        // Create/update user in our database through API gateway
+        const response = await fetch('/api/auth/social', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            accessToken,
+            provider,
+            profile: auth0Response.user,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to create user account');
+        if (!response.ok) {
+          throw new Error('Failed to create user account');
+        }
       }
 
       toast({
