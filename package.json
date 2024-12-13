@@ -40,7 +40,10 @@
     "start:job": "node backend/services/job-service/index.js",
     "start:assembly": "node backend/services/assembly-service/index.js",
     "test:s3": "node tests/storage/s3-test.js",
-    "test:s3:voice": "node tests/storage/voice-s3-test.js"
+    "test:s3:voice": "node tests/storage/voice-s3-test.js",
+    "deploy:auth:dev": "node deployment/scripts/update-auth0-settings.js development",
+    "deploy:auth:staging": "node deployment/scripts/update-auth0-settings.js staging",
+    "deploy:auth:prod": "node deployment/scripts/update-auth0-settings.js production"
   },
   "keywords": [
     "AI",
@@ -71,6 +74,7 @@
     "dotenv": "^16.0.3",
     "elevenlabs": "^0.15.0",
     "express": "^4.21.0",
+    "express-oauth2-jwt-bearer": "^1.6.0",
     "ffprobe-static": "^3.1.0",
     "form-data": "^4.0.0",
     "google-auth-library": "^9.14.1",

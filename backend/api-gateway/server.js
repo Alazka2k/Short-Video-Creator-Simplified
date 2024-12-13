@@ -4,6 +4,8 @@ const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
 const assemblyRoutes = require('../services/assembly-service/server');
 const path = require('path');
+const authTestRoutes = require('../../tests/auth/auth-test');
+const serviceAuthMiddleware = require('./middleware/serviceAuth');
 // Commented out auth-related imports
 // const authController = require('../services/auth-service/auth-controller');
 // const authMiddleware = require('../services/auth-service/auth-middleware');
@@ -27,7 +29,7 @@ app.get('/health', (req, res) => {
 });
 
 // LLM Service route
-app.post('/api/llm/generate', async (req, res) => {
+app.post('/api/llm/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to LLM service');
     const { inputPrompt, llmGenParams } = req.body;
@@ -73,7 +75,7 @@ app.post('/api/llm/generate', async (req, res) => {
 });
 
 // Voice Service route
-app.post('/api/voice/generate', async (req, res) => {
+app.post('/api/voice/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Voice service');
     const response = await axios.post(`${config.services.voice.url}/generate`, req.body, {
@@ -89,7 +91,7 @@ app.post('/api/voice/generate', async (req, res) => {
 });
 
 // Image Service route
-app.post('/api/image/generate', async (req, res) => {
+app.post('/api/image/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Image service');
     const response = await axios.post(`${config.services.image.url}/generate`, req.body, {
@@ -105,7 +107,7 @@ app.post('/api/image/generate', async (req, res) => {
 });
 
 // Music Service route
-app.post('/api/music/generate', async (req, res) => {
+app.post('/api/music/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Music service');
     const response = await axios.post(`${config.services.music.url}/generate`, req.body, {
@@ -121,7 +123,7 @@ app.post('/api/music/generate', async (req, res) => {
 });
 
 // Animation Service route
-app.post('/api/animation/generate', async (req, res) => {
+app.post('/api/animation/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Animation service');
     const response = await axios.post(`${config.services.animation.url}/generate`, req.body, {
@@ -137,7 +139,7 @@ app.post('/api/animation/generate', async (req, res) => {
 });
 
 // Video Service route
-app.post('/api/video/generate', async (req, res) => {
+app.post('/api/video/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Video service');
     const response = await axios.post(`${config.services.video.url}/generate`, req.body, {
@@ -153,7 +155,7 @@ app.post('/api/video/generate', async (req, res) => {
 });
 
 // Assembly Service routes
-app.post('/api/assembly/assemble', async (req, res) => {
+app.post('/api/assembly/assemble', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Assembly service');
     const response = await axios.post(`${config.services.assembly.url}/assemble`, req.body, {
@@ -171,7 +173,7 @@ app.post('/api/assembly/assemble', async (req, res) => {
   }
 });
 
-app.get('/api/assembly/status/:jobId', async (req, res) => {
+app.get('/api/assembly/status/:jobId', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info(`Forwarding assembly status request for jobId: ${req.params.jobId}`);
     const response = await axios.get(`${config.services.assembly.url}/status/${req.params.jobId}`, {
@@ -189,7 +191,7 @@ app.get('/api/assembly/status/:jobId', async (req, res) => {
   }
 });
 
-app.get('/api/assembly/validate/:jobId', async (req, res) => {
+app.get('/api/assembly/validate/:jobId', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info(`Forwarding assembly validation request for jobId: ${req.params.jobId}`);
     const response = await axios.get(`${config.services.assembly.url}/validate/${req.params.jobId}`, {
@@ -208,7 +210,7 @@ app.get('/api/assembly/validate/:jobId', async (req, res) => {
 });
 
 // Job Service routes
-app.post('/api/job/generate', async (req, res) => {
+app.post('/api/job/generate', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to Job service');
     const response = await axios.post(`${config.services.job.url}/generate`, req.body, {
@@ -223,7 +225,7 @@ app.post('/api/job/generate', async (req, res) => {
   }
 });
 
-app.get('/api/job/jobs/:jobId', async (req, res) => {
+app.get('/api/job/jobs/:jobId', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info(`Forwarding job status request for jobId: ${req.params.jobId}`);
     const response = await axios.get(`${config.services.job.url}/jobs/${req.params.jobId}`, {
@@ -238,7 +240,7 @@ app.get('/api/job/jobs/:jobId', async (req, res) => {
   }
 });
 
-app.get('/api/job/jobs', async (req, res) => {
+app.get('/api/job/jobs', serviceAuthMiddleware, async (req, res) => {
   try {
     logger.info('Forwarding request to get all jobs');
     const response = await axios.get(`${config.services.job.url}/jobs`, {
@@ -265,7 +267,10 @@ app.get('/api/job/jobs', async (req, res) => {
 // });
 
 // Add media serving endpoint
-app.use('/media', express.static(path.join(__dirname, '../../data/output')));
+app.use('/media', serviceAuthMiddleware, express.static(path.join(__dirname, '../../data/output')));
+
+// Add test routes
+app.use('/api/auth-test', authTestRoutes);
 
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {
