@@ -4,41 +4,121 @@
 
 @layer base {
   :root {
-    /* Light mode colors */
-    --brand-primary: #9333EA;
-    --brand-secondary: #7E22CE;
-    --bg-main: #FFFFFF;
-    --bg-card: #F4F4F5;
-    --bg-element: #FAFAFA;
-    --bg-hover: #F4F4F5;
-    --text-primary: #18181B;
-    --text-secondary: #71717A;
-    --text-muted: #A1A1AA;
-    --border-primary: #E4E4E7;
-    --border-secondary: #F4F4F5;
-    --success: #10B981;
-    --error: #EF4444;
-    --warning: #F59E0B;
+    --background: 0 0% 98%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 280 46% 96%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 271 91% 65%;
+    --radius: 0.5rem;
   }
 
-  [data-theme='dark'] {
-    --bg-main: #0A0A0A;
-    --bg-card: #18181B;
-    --bg-element: #27272A;
-    --bg-hover: #3F3F46;
-    --text-primary: #FFFFFF;
-    --text-secondary: #A1A1AA;
-    --text-muted: #71717A;
-    --border-primary: #27272A;
-    --border-secondary: #3F3F46;
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 215 20.2% 65.1%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 271 91% 65%;
   }
 
   body {
-    @apply min-h-screen bg-bg-main text-text-primary antialiased;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+.gradient-animate {
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+} 
+
+/* Add these custom gradients */
+@layer utilities {
+  .gradient-primary {
+    @apply bg-gradient-to-r from-violet-500 to-purple-500;
+  }
+  
+  .gradient-primary-text {
+    @apply bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent;
   }
 
-  /* Container styles */
-  .container {
-    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  .gradient-hover {
+    @apply hover:from-violet-600 hover:to-purple-600;
+  }
+
+  .animate-in {
+    animation: animate-in 0.5s ease-out;
+  }
+
+  .slide-in-from-top {
+    animation: slide-in-from-top 0.5s ease-out;
+  }
+
+  .slide-in-from-bottom {
+    animation: slide-in-from-bottom 0.5s ease-out;
+  }
+
+  .hover-card {
+    @apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+  }
+} 
+
+@keyframes animate-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-from-top {
+  from { 
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
   }
 } 

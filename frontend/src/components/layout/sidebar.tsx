@@ -1,54 +1,82 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
-  Video, 
-  FileVideo,
-  Settings,
-} from 'lucide-react'
+  HomeIcon, 
+  VideoIcon, 
+  SettingsIcon,
+  LayoutDashboardIcon,
+  FolderIcon
+} from 'lucide-react';
 
-const navigation = [
-  { name: 'Create Video', href: '/create', icon: Video },
-  { name: 'My Videos', href: '/videos', icon: FileVideo },
-  { name: 'Settings', href: '/settings', icon: Settings },
-]
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function Sidebar() {
-  const pathname = usePathname()
+const menuItems = [
+  {
+    title: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboardIcon
+  },
+  {
+    title: 'My Videos',
+    href: '/dashboard/videos',
+    icon: VideoIcon
+  },
+  {
+    title: 'Projects',
+    href: '/dashboard/projects',
+    icon: FolderIcon
+  },
+  {
+    title: 'Settings',
+    href: '/dashboard/settings',
+    icon: SettingsIcon
+  }
+];
+
+export function Sidebar({ className }: SidebarProps) {
+  const pathname = usePathname();
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
-      <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border-primary bg-bg-main px-6 pb-4">
-        <nav className="flex flex-1 flex-col pt-8">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
-            <li>
-              <ul role="list" className="-mx-2 space-y-1">
-                {navigation.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        pathname === item.href
-                          ? 'bg-bg-hover text-text-primary'
-                          : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary',
-                        'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6'
-                      )}
-                    >
-                      <item.icon
-                        className="h-6 w-6 shrink-0"
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          </ul>
+    <aside className={cn(
+      "border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      className
+    )}>
+      <div className="flex flex-col h-full px-4 py-6">
+        <div className="mb-8">
+          <Link href="/dashboard" className="flex items-center space-x-2">
+            <span className="font-bold text-xl bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+              Video Creator
+            </span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  isActive 
+                    ? "bg-primary/10 text-primary hover:bg-primary/20" 
+                    : "hover:bg-muted"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.title}
+              </Link>
+            );
+          })}
         </nav>
       </div>
-    </div>
-  )
+    </aside>
+  );
 } 

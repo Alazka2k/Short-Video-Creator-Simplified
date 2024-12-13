@@ -1,5 +1,3 @@
-import { config } from '@/lib/config';
-
 interface TokenResponse {
   access_token: string;
   refresh_token: string;
@@ -21,15 +19,11 @@ export class TokenManager {
 
   async refreshToken(refreshToken: string): Promise<TokenResponse> {
     try {
-      const response = await fetch(`${config.auth.auth0.domain}/oauth/token`, {
+      const response = await fetch('/api/auth/refresh', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          grant_type: 'refresh_token',
-          client_id: config.auth.auth0.clientId,
-          refresh_token: refreshToken,
-          scope: 'openid profile email'
-        })
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
@@ -41,8 +35,6 @@ export class TokenManager {
       return tokens;
     } catch (error) {
       console.error('Token refresh failed:', error);
-      // Redirect to login on failure
-      window.location.href = '/login';
       throw error;
     }
   }

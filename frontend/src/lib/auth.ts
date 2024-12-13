@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { config } from '@/lib/config'
 
 interface AuthState {
   token: string | null

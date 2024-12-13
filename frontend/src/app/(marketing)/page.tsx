@@ -1,10 +1,14 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { 
   Wand2,
   Zap,
   Timer,
   BarChart3,
+  TrendingUpIcon,
+  ClockIcon,
+  BarChart3Icon,
 } from "lucide-react"
 
 const features = [
@@ -39,47 +43,84 @@ export default function Home() {
       {/* Hero Section */}
       <section className="py-24 md:py-32">
         <div className="container">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-6xl lg:text-7xl">
-              Create Engaging Videos with{' '}
-              <span className="text-brand-primary">AI</span>
+          <div className="mx-auto max-w-3xl text-center animate-in slide-in-from-top">
+            <h1 className="mb-8 text-5xl font-bold tracking-tight md:text-6xl lg:text-7xl">
+              <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+                Create Engaging Videos
+              </span>
+              <br />
+              with AI
             </h1>
-            <p className="mt-6 text-lg leading-8 text-text-secondary">
-              Transform your content into professional videos in minutes. 
-              Powered by AI, designed for creators.
+            <p className="mb-10 text-xl text-muted-foreground">
+              Transform your content into professional videos in minutes. Powered by AI, designed for creators.
             </p>
-            <div className="mt-10 flex justify-center gap-6">
-              <Link href="/signup">
-                <Button size="lg" className="h-12 px-8">Get Started</Button>
-              </Link>
-              <Link href="/features">
-                <Button size="lg" variant="outline" className="h-12 px-8">Learn More</Button>
-              </Link>
+            <div className="flex justify-center gap-6">
+              <Button 
+                className={cn(
+                  "bg-gradient-to-r from-violet-500 to-purple-500",
+                  "transition-all duration-200",
+                  "hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]",
+                  "hover:scale-[1.02]"
+                )}
+              >
+                Get Started
+              </Button>
+              <Button variant="outline" className="border-2">
+                Learn More
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-bg-card">
+      <section className="py-24 bg-background">
         <div className="container">
           <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature) => (
-              <div
-                key={feature.name}
-                className="group relative rounded-2xl border border-border-primary bg-bg-main p-8 transition-all hover:border-brand-primary/50"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary">
-                  <feature.icon className="h-6 w-6" />
+            <div className="group slide-in-from-bottom" style={{ animationDelay: '100ms' }}>
+              <div className="p-4 rounded-2xl transition-all duration-200 hover:bg-accent/50">
+                <div className="mb-4 p-3 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl w-fit">
+                  <Wand2 className="h-6 w-6 text-violet-500" />
                 </div>
-                <h3 className="mt-6 text-xl font-semibold text-text-primary">
-                  {feature.name}
-                </h3>
-                <p className="mt-2 text-text-secondary">
-                  {feature.description}
+                <h3 className="text-xl font-semibold mb-2">AI-Powered Creation</h3>
+                <p className="text-muted-foreground">
+                  Create professional videos in minutes using advanced AI technology.
                 </p>
               </div>
-            ))}
+            </div>
+            <div className="group slide-in-from-bottom" style={{ animationDelay: '200ms' }}>
+              <div className="p-4 rounded-2xl transition-all duration-200 hover:bg-accent/50">
+                <div className="mb-4 p-3 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl w-fit">
+                  <TrendingUpIcon className="h-6 w-6 text-violet-500" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Analytics & Insights</h3>
+                <p className="text-muted-foreground">
+                  Gain valuable insights into your video performance with our advanced analytics tools.
+                </p>
+              </div>
+            </div>
+            <div className="group slide-in-from-bottom" style={{ animationDelay: '300ms' }}>
+              <div className="p-4 rounded-2xl transition-all duration-200 hover:bg-accent/50">
+                <div className="mb-4 p-3 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl w-fit">
+                  <ClockIcon className="h-6 w-6 text-violet-500" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Fast & Efficient</h3>
+                <p className="text-muted-foreground">
+                  Create videos quickly and efficiently with our streamlined process.
+                </p>
+              </div>
+            </div>
+            <div className="group slide-in-from-bottom" style={{ animationDelay: '400ms' }}>
+              <div className="p-4 rounded-2xl transition-all duration-200 hover:bg-accent/50">
+                <div className="mb-4 p-3 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl w-fit">
+                  <BarChart3Icon className="h-6 w-6 text-violet-500" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Customizable Templates</h3>
+                <p className="text-muted-foreground">
+                  Choose from a variety of customizable templates to match your brand's style.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

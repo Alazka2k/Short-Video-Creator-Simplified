@@ -1,33 +1,31 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { ThemeProvider } from '@/components/providers/theme-provider'
-import { cn } from '@/lib/utils'
+import { Inter } from 'next/font/google';
+import { ThemeProvider } from '@/components/providers/theme-provider';
+import { Auth0ProviderWrapper } from '@/components/providers/auth0-provider';
+import { cn } from '@/lib/utils';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body 
-        className={cn(
-          inter.className,
-          "min-h-screen bg-bg-main font-sans antialiased"
-        )}
-      >
+      <body suppressHydrationWarning>
         <ThemeProvider
-          attribute="data-theme"
+          attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
           storageKey="video-creator-theme"
         >
-          {children}
+          <Auth0ProviderWrapper>
+            {children}
+          </Auth0ProviderWrapper>
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 } 

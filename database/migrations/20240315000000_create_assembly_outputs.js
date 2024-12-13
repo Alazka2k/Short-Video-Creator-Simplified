@@ -1,17 +1,20 @@
 exports.up = function(knex) {
-  return knex.schema.createTable('assembly_outputs', (table) => {
-    table.increments('assembly_id').primary();
-    table.uuid('job_id').references('job_id').inTable('jobs').onDelete('CASCADE');
-    table.string('status').notNullable().defaultTo('pending');
-    table.string('video_file_url');
-    table.string('project_id');  // JSON2Video project ID
-    table.jsonb('assembly_config'); // Store the JSON2Video configuration
-    table.jsonb('metadata');
-    table.timestamp('created_at').defaultTo(knex.fn.now());
-    table.timestamp('updated_at').defaultTo(knex.fn.now());
+  return knex.schema.hasTable('assembly_outputs').then(exists => {
+    if (!exists) {
+      return knex.schema.createTable('assembly_outputs', table => {
+        table.increments('assembly_id').primary();
+        table.uuid('job_id');
+        table.string('status').notNullable().defaultTo('pending');
+        table.string('video_file_url');
+        table.string('project_id');
+        table.jsonb('assembly_config');
+        table.jsonb('metadata');
+        table.timestamps(true, true);
+      });
+    }
   });
 };
 
 exports.down = function(knex) {
-  return knex.schema.dropTable('assembly_outputs');
+  return knex.schema.dropTableIfExists('assembly_outputs');
 }; 

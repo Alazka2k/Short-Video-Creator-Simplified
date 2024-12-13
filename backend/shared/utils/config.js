@@ -25,6 +25,7 @@ function loadConfig() {
   const parametersPath = path.join(rootDir, 'data', 'input', 'parameters.json');
   
   const env = process.env.NODE_ENV;
+  const envPrefix = env.toUpperCase();
   if (!env) {
     logger.error('NODE_ENV is not set. This is required for the application to run.');
     process.exit(1);
@@ -132,17 +133,27 @@ function loadConfig() {
     storage: {
       type: config.services?.storage?.type || 'aws',
       config: config.services?.storage?.[env] || {
-        region: env ? process.env[`${env.toUpperCase()}_AWS_REGION`] : process.env.AWS_REGION,
-        bucket: env ? process.env[`${env.toUpperCase()}_AWS_BUCKET`] : process.env.AWS_BUCKET,
-        cdnUrl: env ? process.env[`${env.toUpperCase()}_CDN_URL`] : process.env.CDN_URL,
-        accessKeyId: env ? process.env[`${env.toUpperCase()}_AWS_ACCESS_KEY_ID`] : process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: env ? process.env[`${env.toUpperCase()}_AWS_SECRET_ACCESS_KEY`] : process.env.AWS_SECRET_ACCESS_KEY
+        region: env ? process.env[`${envPrefix}_AWS_REGION`] : process.env.AWS_REGION,
+        bucket: env ? process.env[`${envPrefix}_AWS_BUCKET`] : process.env.AWS_BUCKET,
+        cdnUrl: env ? process.env[`${envPrefix}_CDN_URL`] : process.env.CDN_URL,
+        accessKeyId: env ? process.env[`${envPrefix}_AWS_ACCESS_KEY_ID`] : process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env ? process.env[`${envPrefix}_AWS_SECRET_ACCESS_KEY`] : process.env.AWS_SECRET_ACCESS_KEY
       }
     }
   };
   
   // Log the merged configuration
   logger.info('Merged configuration:', JSON.stringify(config, null, 2));
+
+  // Auth0 config
+  config.auth = {
+    auth0: {
+      domain: process.env[`${envPrefix}_AUTH0_DOMAIN`],
+      clientId: process.env[`${envPrefix}_AUTH0_CLIENT_ID`],
+      clientSecret: process.env[`${envPrefix}_AUTH0_CLIENT_SECRET`],
+      audience: process.env[`${envPrefix}_AUTH0_AUDIENCE`]
+    }
+  };
 
   return config;
 }

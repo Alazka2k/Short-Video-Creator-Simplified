@@ -6,9 +6,10 @@ const assemblyRoutes = require('../services/assembly-service/server');
 const path = require('path');
 const authTestRoutes = require('../../tests/auth/auth-test');
 const serviceAuthMiddleware = require('./middleware/serviceAuth');
-// Commented out auth-related imports
-// const authController = require('../services/auth-service/auth-controller');
-// const authMiddleware = require('../services/auth-service/auth-middleware');
+const { authMiddleware, checkPermission } = require('../services/auth-service/auth-middleware');
+
+// Import auth controller functions individually
+const { loginWithSocial, getProfile } = require('../services/auth-service/auth-controller');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,7 +30,11 @@ app.get('/health', (req, res) => {
 });
 
 // LLM Service route
-app.post('/api/llm/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/llm/generate', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to LLM service');
     const { inputPrompt, llmGenParams } = req.body;
@@ -75,7 +80,11 @@ app.post('/api/llm/generate', serviceAuthMiddleware, async (req, res) => {
 });
 
 // Voice Service route
-app.post('/api/voice/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/voice/generate', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Voice service');
     const response = await axios.post(`${config.services.voice.url}/generate`, req.body, {
@@ -91,7 +100,11 @@ app.post('/api/voice/generate', serviceAuthMiddleware, async (req, res) => {
 });
 
 // Image Service route
-app.post('/api/image/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/image/generate', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Image service');
     const response = await axios.post(`${config.services.image.url}/generate`, req.body, {
@@ -107,7 +120,11 @@ app.post('/api/image/generate', serviceAuthMiddleware, async (req, res) => {
 });
 
 // Music Service route
-app.post('/api/music/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/music/generate', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Music service');
     const response = await axios.post(`${config.services.music.url}/generate`, req.body, {
@@ -123,7 +140,11 @@ app.post('/api/music/generate', serviceAuthMiddleware, async (req, res) => {
 });
 
 // Animation Service route
-app.post('/api/animation/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/animation/generate', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Animation service');
     const response = await axios.post(`${config.services.animation.url}/generate`, req.body, {
@@ -139,7 +160,11 @@ app.post('/api/animation/generate', serviceAuthMiddleware, async (req, res) => {
 });
 
 // Video Service route
-app.post('/api/video/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/video/generate', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Video service');
     const response = await axios.post(`${config.services.video.url}/generate`, req.body, {
@@ -155,7 +180,11 @@ app.post('/api/video/generate', serviceAuthMiddleware, async (req, res) => {
 });
 
 // Assembly Service routes
-app.post('/api/assembly/assemble', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/assembly/assemble', 
+  authMiddleware, 
+  checkPermission('create_video'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Assembly service');
     const response = await axios.post(`${config.services.assembly.url}/assemble`, req.body, {
@@ -210,7 +239,11 @@ app.get('/api/assembly/validate/:jobId', serviceAuthMiddleware, async (req, res)
 });
 
 // Job Service routes
-app.post('/api/job/generate', serviceAuthMiddleware, async (req, res) => {
+app.post('/api/job/generate', 
+  authMiddleware, 
+  checkPermission('create_job'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to Job service');
     const response = await axios.post(`${config.services.job.url}/generate`, req.body, {
@@ -225,7 +258,11 @@ app.post('/api/job/generate', serviceAuthMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/job/jobs/:jobId', serviceAuthMiddleware, async (req, res) => {
+app.get('/api/job/jobs/:jobId', 
+  authMiddleware, 
+  checkPermission('create_job'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info(`Forwarding job status request for jobId: ${req.params.jobId}`);
     const response = await axios.get(`${config.services.job.url}/jobs/${req.params.jobId}`, {
@@ -240,7 +277,11 @@ app.get('/api/job/jobs/:jobId', serviceAuthMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/job/jobs', serviceAuthMiddleware, async (req, res) => {
+app.get('/api/job/jobs', 
+  authMiddleware, 
+  checkPermission('create_job'), 
+  serviceAuthMiddleware, 
+  async (req, res) => {
   try {
     logger.info('Forwarding request to get all jobs');
     const response = await axios.get(`${config.services.job.url}/jobs`, {
@@ -256,21 +297,30 @@ app.get('/api/job/jobs', serviceAuthMiddleware, async (req, res) => {
   }
 });
 
-// Commented out Auth Service routes
-// app.post('/api/auth/register', authController.register);
-// app.post('/api/auth/login', authController.login);
-// app.post('/api/auth/social', authController.loginWithSocial);
-
-// Commented out example of a protected route
-// app.get('/api/protected', authMiddleware, (req, res) => {
-//   res.json({ message: 'This is a protected route', user: req.user });
-// });
-
 // Add media serving endpoint
 app.use('/media', serviceAuthMiddleware, express.static(path.join(__dirname, '../../data/output')));
 
 // Add test routes
 app.use('/api/auth-test', authTestRoutes);
+
+// Auth routes
+app.post('/api/auth/social', loginWithSocial);
+app.get('/api/auth/me', authMiddleware, getProfile);
+
+// Protected routes with permission checks
+app.get('/api/templates', 
+  authMiddleware, 
+  checkPermission('use_templates'), 
+  async (req, res) => {
+    // Template access code
+});
+
+app.post('/api/v1/*', 
+  authMiddleware, 
+  checkPermission('api_access'), 
+  async (req, res) => {
+    // API access code
+});
 
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {
@@ -287,6 +337,10 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
   logger.info('Configured routes:');
+  
+  // Auth routes
+  logger.info('  /api/auth/social -> Auth0 social login');
+  logger.info('  /api/auth/me -> Get user profile');
   
   // LLM Service
   logger.info(`  /api/llm/generate -> ${config.services.llm.url}/generate`);

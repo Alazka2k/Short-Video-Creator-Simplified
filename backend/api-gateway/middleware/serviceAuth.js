@@ -8,7 +8,8 @@ const serviceAuthMiddleware = [
   (req, res, next) => {
     logger.info('Authenticated request:', {
       user: req.auth,
-      endpoint: req.originalUrl
+      endpoint: req.originalUrl,
+      environment: process.env.NODE_ENV
     });
     next();
   }

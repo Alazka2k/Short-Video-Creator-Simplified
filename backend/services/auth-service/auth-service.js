@@ -1,45 +1,74 @@
 // auth-service.js
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const authModel = require('./auth-model');
-const config = require('../../shared/utils/config');
+const { auth0Management } = require('./auth0');
+const authDataAccess = require('./data/authDataAccess');
+const logger = require('../../shared/utils/logger');
+const knex = require('../../shared/database/knex');
 
 class AuthService {
-  async registerUser(email, password) {
-    const existingUser = await authModel.getUserByEmail(email);
-    if (existingUser) {
-      throw new Error('User already exists');
-    }
-    const userId = await authModel.createUser(email, password);
-    return this.generateToken(userId);
-  }
-
-  async loginUser(email, password) {
-    const user = await authModel.getUserByEmail(email);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new Error('Invalid password');
-    }
-    return this.generateToken(user.id);
-  }
-
-  generateToken(userId) {
-    return jwt.sign({ userId }, config.auth.jwtSecret, { expiresIn: '1h' });
-  }
-
-  async verifyToken(token) {
+  async getUserProfile(auth0Id) {
     try {
-      const decoded = jwt.verify(token, config.auth.jwtSecret);
-      const user = await authModel.getUserById(decoded.userId);
+      // Get user from our database
+      const user = await authDataAccess.findUserByAuth0Id(auth0Id);
+      
       if (!user) {
-        throw new Error('User not found');
+        // If user doesn't exist in our db, get from Auth0 and create
+        const auth0User = await auth0Management.getUser({ id: auth0Id });
+        return await authDataAccess.createUser({
+          auth0Id: auth0User.user_id,
+          email: auth0User.email,
+          name: auth0User.name,
+          picture: auth0User.picture,
+          provider: auth0User.identities[0].provider
+        });
       }
+
       return user;
     } catch (error) {
-      throw new Error('Invalid token');
+      logger.error('Error getting user profile:', error);
+      throw error;
+    }
+  }
+
+  async updateUserProfile(auth0Id, userData) {
+    try {
+      // Update in Auth0
+      await auth0Management.updateUser({ id: auth0Id }, {
+        name: userData.name,
+        picture: userData.picture
+      });
+
+      // Update in our database
+      return await authDataAccess.updateUser(auth0Id, userData);
+    } catch (error) {
+      logger.error('Error updating user profile:', error);
+      throw error;
+    }
+  }
+
+  async deleteUser(auth0Id) {
+    try {
+      // Delete from Auth0
+      await auth0Management.deleteUser({ id: auth0Id });
+
+      // Delete from our database
+      await authDataAccess.deleteUser(auth0Id);
+    } catch (error) {
+      logger.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
+  async syncUserWithAuth0(auth0Id) {
+    try {
+      const auth0User = await auth0Management.getUser({ id: auth0Id });
+      return await authDataAccess.updateUser(auth0Id, {
+        email: auth0User.email,
+        name: auth0User.name,
+        picture: auth0User.picture
+      });
+    } catch (error) {
+      logger.error('Error syncing user with Auth0:', error);
+      throw error;
     }
   }
 }

@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Video Creator Frontend
 
-## Getting Started
+## Overview
+React/Next.js frontend application for the Video Creator platform.
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Architecture
+```
+frontend/
+├── src/
+│   ├── app/                                                    # Next.js app router pages
+│   │   ├── page.tsx                                            # Landing page
+│   │   ├── login/            # Auth pages
+│   │   ├── dashboard/        # Protected dashboard pages
+│   │   └── layout.tsx        # Root layout with providers
+│   ├── components/            # React components
+│   │   ├── auth/             # Authentication components
+│   │   │   ├── login-form.tsx    # Auth0 login component
+│   │   │   └── protected.tsx     # Auth wrapper component
+│   │   ├── content/          # Content generation components
+│   │   │   ├── video-generator.tsx  # Main video creation
+│   │   │   └── parameters.tsx       # Generation parameters
+│   │   ├── dashboard/        # Dashboard components
+│   │   │   ├── dashboard.tsx      # Main dashboard view
+│   │   │   ├── stats.tsx          # Usage statistics
+│   │   │   └── welcome.tsx        # User welcome section
+│   │   ├── jobs/             # Job management components
+│   │   │   ├── job-list.tsx       # Jobs overview
+│   │   │   ├── job-card.tsx       # Individual job display
+│   │   │   └── job-actions.tsx    # Job control buttons
+│   │   ├── layout/           # Layout components
+│   │   │   ├── nav-bar.tsx        # Top navigation
+│   │   │   ├── sidebar.tsx        # Side navigation
+│   │   │   └── dashboard-layout.tsx # Dashboard wrapper
+│   │   ├── providers/        # Context providers
+│   │   │   ├── auth0-provider.tsx  # Auth0 configuration
+│   │   │   └── theme-provider.tsx  # Theme management
+│   │   └── ui/               # Shared UI components
+│   │       ├── button.tsx         # Button components
+│   │       ├── input.tsx          # Input components
+│   │       └── loading-spinner.tsx # Loading states
+│   ├── lib/                  # Shared utilities
+│   │   ├── hooks/            # Custom React hooks
+│   │   │   ├── useAuth.ts         # Auth state hook
+│   │   │   └── useJobs.ts         # Job management hook
+│   │   ├── auth/             # Auth utilities
+│   │   │   ├── refresh.ts         # Token refresh
+│   │   │   └── types.ts           # Auth type definitions
+│   │   ├── config.ts         # Configuration
+│   │   └── utils.ts          # General utilities
+│   └── types/                # TypeScript types
+│       ├── auth.ts           # Auth-related types
+│       ├── job.ts            # Job-related types
+│       └── api.ts            # API response types
+└── public/                   # Static assets
+│   ├── images/              # Image assets
+│   └── icons/               # Icon assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Current Status
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Completed Features
+- [ ] Authentication Setup
+  - [x] Auth0 Integration
+  - [x] Protected Routes HOC
+  - [ ] User Profile
+- [ ] Dashboard
+  - [x] Basic Layout
+  - [ ] User Stats
+- [ ] Content Generation
+  - [ ] Video Generator
+  - [ ] Job Management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### In Progress
+- Auth0 Configuration Refinement
+- Protected Routes Implementation
+- API Integration
 
-## Learn More
+## Development
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
+- Node.js 18+
+- npm/yarn
+- Auth0 Account
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Environment Setup
+1. Create `.env.local`:
+```bash
+DEVELOPMENT_AUTH0_DOMAIN=your-domain
+DEVELOPMENT_AUTH0_CLIENT_ID=your-client-id
+DEVELOPMENT_AUTH0_AUDIENCE=your-audience
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Running Locally
+```bash
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
+### Authentication Flow
+1. User clicks login
+2. Redirected to Auth0
+3. After auth, returns to dashboard
+4. Protected routes/components check auth status
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Component Guidelines
+- Use 'use client' for interactive components
+- Implement proper TypeScript types
+- Follow established folder structure
+- Use withAuth HOC for protected components
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Testing
+- Unit Tests: `npm run test`
+- E2E Tests: `npm run test:e2e`
+- Auth Testing Guide in `/docs`
+
+## Deployment
+- Environment Variables
+- Build Process
+- Deployment Checklist
+
+## Documentation
+Detailed documentation available in `/docs`:
+- Authentication
+- Component Library
+- API Integration
+- State Management
