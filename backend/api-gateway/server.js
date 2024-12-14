@@ -7,9 +7,7 @@ const path = require('path');
 const authTestRoutes = require('../../tests/auth/auth-test');
 const serviceAuthMiddleware = require('./middleware/serviceAuth');
 const { authMiddleware, checkPermission } = require('../services/auth-service/auth-middleware');
-
-// Import auth controller functions individually
-const { loginWithSocial, getProfile } = require('../services/auth-service/auth-controller');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -303,10 +301,6 @@ app.use('/media', serviceAuthMiddleware, express.static(path.join(__dirname, '..
 // Add test routes
 app.use('/api/auth-test', authTestRoutes);
 
-// Auth routes
-app.post('/api/auth/social', loginWithSocial);
-app.get('/api/auth/me', authMiddleware, getProfile);
-
 // Protected routes with permission checks
 app.get('/api/templates', 
   authMiddleware, 
@@ -321,6 +315,9 @@ app.post('/api/v1/*',
   async (req, res) => {
     // API access code
 });
+
+// Mount auth routes
+app.use('/api/auth', authRoutes);
 
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {

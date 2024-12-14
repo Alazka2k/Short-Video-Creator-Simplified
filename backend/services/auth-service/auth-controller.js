@@ -1,6 +1,6 @@
 // auth-controller.js
 const { auth0 } = require('./auth0');
-const authDataAccess = require('./data/authDataAccess');
+const authService = require('./auth-service');
 const logger = require('../../shared/utils/logger');
 
 const loginWithSocial = async (req, res) => {
@@ -15,52 +15,108 @@ const loginWithSocial = async (req, res) => {
       });
     }
 
-    // Find or create user
-    let user = await authDataAccess.findUserByAuth0Id(profile.sub);
-    
-    if (!user) {
-      user = await authDataAccess.createUser({
-        auth0Id: profile.sub,
-        email: profile.email,
-        name: profile.name,
-        picture: profile.picture,
-        provider
-      });
-    } else {
-      user = await authDataAccess.updateUser(profile.sub, {
-        email: profile.email,
-        name: profile.name,
-        picture: profile.picture
-      });
-    }
+    // Handle social login
+    const { user, refreshToken } = await authService.handleSocialLogin(provider, profile);
 
-    // Get user with roles and subscription
-    const userWithDetails = await authDataAccess.getUserWithRoleAndSubscription(profile.sub);
-
-    res.json({ user: userWithDetails });
+    res.json({ 
+      user,
+      tokens: {
+        refresh_token: refreshToken,
+        expires_in: 30 * 24 * 60 * 60 // 30 days in seconds
+      }
+    });
   } catch (error) {
     logger.error('Social login error:', error);
-    res.status(500).json({ error: 'Login failed', details: error.message });
+    res.status(500).json({ 
+      error: 'Login failed', 
+      message: 'An unexpected error occurred during login'
+    });
+  }
+};
+
+const handleRegisterCallback = async (req, res) => {
+  try {
+    const { email, sub: auth0Id, name, picture } = req.body;
+
+    // Create user in our database after Auth0 registration
+    const { user, refreshToken } = await authService.handleNewUser({
+      auth0Id,
+      email,
+      name: name || email.split('@')[0], // Use email username if no name provided
+      picture: picture || null,
+      provider: 'auth0'
+    });
+
+    res.json({ 
+      user,
+      tokens: {
+        refresh_token: refreshToken,
+        expires_in: 30 * 24 * 60 * 60 // 30 days in seconds
+      }
+    });
+  } catch (error) {
+    logger.error('Registration callback error:', error);
+    res.status(500).json({ 
+      error: 'Registration failed', 
+      message: 'An unexpected error occurred during registration'
+    });
   }
 };
 
 const getProfile = async (req, res) => {
   try {
-    const auth0Id = req.user.sub;
-    const userWithDetails = await authDataAccess.getUserWithRoleAndSubscription(auth0Id);
+    const auth0Id = req.auth.payload.sub;
+    const user = await authService.getUserProfile(auth0Id);
 
-    if (!userWithDetails) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user: userWithDetails });
+    res.json({ user });
   } catch (error) {
     logger.error('Get profile error:', error);
-    res.status(500).json({ error: 'Failed to get profile', details: error.message });
+    res.status(500).json({ error: 'Failed to get profile' });
+  }
+};
+
+const refreshToken = async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+    
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    const { user, refreshToken: newRefreshToken } = await authService.refreshToken(refresh_token);
+
+    res.json({
+      user,
+      tokens: {
+        refresh_token: newRefreshToken,
+        expires_in: 30 * 24 * 60 * 60 // 30 days in seconds
+      }
+    });
+  } catch (error) {
+    logger.error('Token refresh error:', error);
+    res.status(401).json({ error: 'Invalid refresh token' });
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    const { session_id, all_devices } = req.body;
+    await authService.logout(session_id, all_devices);
+    res.json({ message: 'Successfully logged out' });
+  } catch (error) {
+    logger.error('Logout error:', error);
+    res.status(500).json({ error: 'Logout failed' });
   }
 };
 
 module.exports = {
   loginWithSocial,
-  getProfile
+  handleRegisterCallback,
+  getProfile,
+  refreshToken,
+  logout
 };
