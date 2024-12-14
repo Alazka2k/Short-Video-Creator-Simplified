@@ -2,19 +2,37 @@ const { ManagementClient } = require('auth0');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 
+// Debug logging
+logger.info('Auth0 Config:', {
+  domain: config.auth.auth0.domain,
+  clientId: config.auth.auth0.clientId,
+  audience: config.auth.auth0.audience
+});
+
 // Initialize Auth0 management client
 const auth0Management = new ManagementClient({
   domain: config.auth.auth0.domain,
   clientId: config.auth.auth0.clientId,
   clientSecret: config.auth.auth0.clientSecret,
-  audience: config.auth.auth0.audience
+  audience: `https://${config.auth.auth0.domain}/api/v2/`,
+  scope: 'read:users update:users delete:users read:user_idp_tokens'
+});
+
+// Debug logging
+logger.info('Auth0 Management Client:', {
+  domain: config.auth.auth0.domain,
+  audience: `https://${config.auth.auth0.domain}/api/v2/`,
+  hasUsers: !!auth0Management.users
 });
 
 // Initialize Auth0 authentication client
 const auth0 = {
   getUser: async (id) => {
     try {
-      return await auth0Management.getUser({ id });
+      logger.info('Attempting to get user with ID:', id);
+      // Debug what methods are available
+      logger.info('Available methods:', Object.keys(auth0Management));
+      return await auth0Management.users.get({ id });
     } catch (error) {
       logger.error('Error getting user from Auth0:', error);
       throw error;
@@ -23,7 +41,7 @@ const auth0 = {
 
   updateUser: async (id, updates) => {
     try {
-      return await auth0Management.updateUser({ id }, updates);
+      return await auth0Management.users.update({ id }, updates);
     } catch (error) {
       logger.error('Error updating user in Auth0:', error);
       throw error;
@@ -32,7 +50,7 @@ const auth0 = {
 
   deleteUser: async (id) => {
     try {
-      return await auth0Management.deleteUser({ id });
+      return await auth0Management.users.delete({ id });
     } catch (error) {
       logger.error('Error deleting user from Auth0:', error);
       throw error;

@@ -1,5 +1,5 @@
 // auth-service.js
-const { auth0Management } = require('./auth0');
+const { auth0 } = require('./auth0');
 const authDataAccess = require('./data/authDataAccess');
 const logger = require('../../shared/utils/logger');
 const { generateToken, hashToken } = require('./utils/crypto');
@@ -11,7 +11,7 @@ class AuthService {
       const user = await authDataAccess.getUserWithRoleAndSubscription(auth0Id);
       
       if (!user) {
-        const auth0User = await auth0Management.getUser({ id: auth0Id });
+        const auth0User = await auth0.getUser(auth0Id);
         return await authDataAccess.createUser({
           auth0Id: auth0User.user_id,
           email: auth0User.email,
@@ -65,7 +65,7 @@ class AuthService {
 
   async updateUserProfile(auth0Id, userData) {
     try {
-      await auth0Management.updateUser({ id: auth0Id }, {
+      await auth0.updateUser({ id: auth0Id }, {
         name: userData.name,
         picture: userData.picture
       });

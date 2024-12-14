@@ -21,6 +21,19 @@ const authMiddleware = auth({
 const checkPermission = (requiredPermission) => {
   return async (req, res, next) => {
     try {
+      // Log the auth payload for debugging
+      logger.info('Auth payload:', req.auth.payload);
+
+      // Check if this is a client credentials token
+      if (req.auth.payload.gty === 'client-credentials') {
+        // For client credentials flow, we might want to handle this differently
+        // Maybe check client permissions instead of user permissions
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Client credentials cannot access this endpoint'
+        });
+      }
+
       // Get user from auth service using the auth0 id
       const user = await authService.getUserProfile(req.auth.payload.sub);
       
