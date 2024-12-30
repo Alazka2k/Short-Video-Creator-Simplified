@@ -28,6 +28,7 @@ const refreshLimiter = rateLimit({
 router.post('/social', loginLimiter, authController.loginWithSocial);
 router.post('/register-callback', loginLimiter, authController.handleRegisterCallback);
 router.post('/refresh', refreshLimiter, authController.refreshToken);
+router.post('/logout', authController.logout);
 
 // Protected routes (require valid token)
 router.get('/profile', 
@@ -42,12 +43,6 @@ router.get('/profile',
   checkPermission('update:profile'),
   authController.updateProfile
 ); */
-
-router.post('/logout',
-  authMiddleware,
-  checkPermission('perform:logout'),
-  authController.logout
-);
 
 // Error handling middleware
 router.use((err, req, res, next) => {

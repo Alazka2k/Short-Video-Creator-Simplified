@@ -228,6 +228,7 @@ class AuthDataAccess {
       const [sessionId] = await knex('user_sessions')
         .insert({
           user_id: userId,
+          is_valid: true,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
           created_at: new Date()
         })
@@ -326,13 +327,29 @@ class AuthDataAccess {
 
   async findValidSession(tokenHash) {
     try {
-      return await knex('user_sessions')
+      logger.info('Looking for session with token hash:', tokenHash);
+      
+      const session = await knex('user_sessions')
+        .join('users', 'user_sessions.user_id', 'users.user_id')
         .where({
-          refresh_token_hash: tokenHash,
-          is_valid: true
+          'user_sessions.refresh_token_hash': tokenHash,
+          'user_sessions.is_valid': true
         })
-        .where('expires_at', '>', new Date())
+        .where('user_sessions.expires_at', '>', new Date())
+        .select('user_sessions.*', 'users.*')
         .first();
+
+      if (!session) {
+        logger.info('No valid session found for token hash');
+      } else {
+        logger.info('Found valid session:', { 
+          session_id: session.session_id,
+          user_id: session.user_id,
+          expires_at: session.expires_at
+        });
+      }
+
+      return session;
     } catch (error) {
       logger.error('Error finding valid session:', error);
       throw error;

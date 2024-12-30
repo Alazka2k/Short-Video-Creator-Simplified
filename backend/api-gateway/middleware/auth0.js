@@ -26,11 +26,14 @@ const checkPermission = (requiredPermission) => {
 
       // Check if this is a client credentials token
       if (req.auth.payload.gty === 'client-credentials') {
-        // For client credentials flow, we might want to handle this differently
-        // Maybe check client permissions instead of user permissions
+        logger.warn('Client credentials token used for user endpoint:', {
+          endpoint: req.originalUrl,
+          tokenType: req.auth.payload.gty,
+          clientId: req.auth.payload.azp
+        });
         return res.status(403).json({
           error: 'Forbidden',
-          message: 'Client credentials cannot access this endpoint'
+          message: 'Please use a user token for this endpoint. Client credentials tokens are not allowed.'
         });
       }
 
@@ -38,7 +41,11 @@ const checkPermission = (requiredPermission) => {
       const user = await authService.getUserProfile(req.auth.payload.sub);
       
       if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        logger.warn('User not found for token subject:', req.auth.payload.sub);
+        return res.status(404).json({ 
+          error: 'Not Found',
+          message: 'User profile not found'
+        });
       }
 
       // Get user permissions
@@ -48,6 +55,11 @@ const checkPermission = (requiredPermission) => {
       if (permissions.some(p => p.name === requiredPermission)) {
         next();
       } else {
+        logger.warn('Permission denied:', {
+          userId: user.auth0_id,
+          requiredPermission,
+          userPermissions: permissions
+        });
         res.status(403).json({
           error: 'Forbidden',
           message: `Missing required permission: ${requiredPermission}`

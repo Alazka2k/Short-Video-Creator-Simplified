@@ -152,8 +152,25 @@ function loadConfig() {
       clientId: process.env[`${envPrefix}_AUTH0_CLIENT_ID`],
       clientSecret: process.env[`${envPrefix}_AUTH0_CLIENT_SECRET`],
       audience: process.env[`${envPrefix}_AUTH0_AUDIENCE`]
+    },
+    jwt: {
+      secret: process.env[`${envPrefix}_JWT_SECRET`],
+      accessExpirationMinutes: 60, // 1 hour
+      refreshExpirationDays: 30,   // 30 days
     }
   };
+
+  // Validate Auth0 configuration
+  if (!config.auth.auth0.clientSecret) {
+    logger.error('AUTH0_CLIENT_SECRET is not set. This is required for Auth0 authentication.');
+    process.exit(1);
+  }
+
+  // Validate JWT configuration
+  if (!config.auth.jwt.secret) {
+    logger.error('JWT_SECRET is not set. This is required for token signing and verification.');
+    process.exit(1);
+  }
 
   return config;
 }

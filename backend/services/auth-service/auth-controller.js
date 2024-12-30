@@ -16,15 +16,9 @@ const loginWithSocial = async (req, res) => {
     }
 
     // Handle social login
-    const { user, refreshToken } = await authService.handleSocialLogin(provider, profile);
+    const { user, tokens } = await authService.handleSocialLogin(provider, profile);
 
-    res.json({ 
-      user,
-      tokens: {
-        refresh_token: refreshToken,
-        expires_in: 30 * 24 * 60 * 60 // 30 days in seconds
-      }
-    });
+    res.json({ user, tokens });
   } catch (error) {
     logger.error('Social login error:', error);
     res.status(500).json({ 
@@ -66,36 +60,52 @@ const handleRegisterCallback = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
+    
+    if (!auth0Id) {
+      return res.status(400).json({ 
+        error: 'Bad Request', 
+        message: 'User ID not found in token' 
+      });
+    }
+
+    logger.info('Getting profile for user:', auth0Id);
     const user = await authService.getUserProfile(auth0Id);
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        error: 'Not Found',
+        message: 'User profile not found'
+      });
     }
 
     res.json({ user });
   } catch (error) {
     logger.error('Get profile error:', error);
-    res.status(500).json({ error: 'Failed to get profile' });
+    
+    if (error.name === 'UnauthorizedError') {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        message: 'Invalid or expired token'
+      });
+    }
+
+    res.status(500).json({ 
+      error: 'Internal Server Error',
+      message: 'Failed to get user profile'
+    });
   }
 };
 
 const refreshToken = async (req, res) => {
   try {
-    const { refresh_token } = req.body;
+    const refreshToken = req.body.refresh_token || req.body.refreshToken;
     
-    if (!refresh_token) {
+    if (!refreshToken) {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
-    const { user, refreshToken: newRefreshToken } = await authService.refreshToken(refresh_token);
-
-    res.json({
-      user,
-      tokens: {
-        refresh_token: newRefreshToken,
-        expires_in: 30 * 24 * 60 * 60 // 30 days in seconds
-      }
-    });
+    const { user, tokens } = await authService.refreshToken(refreshToken);
+    res.json({ user, tokens });
   } catch (error) {
     logger.error('Token refresh error:', error);
     res.status(401).json({ error: 'Invalid refresh token' });
@@ -104,8 +114,14 @@ const refreshToken = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    const { session_id, all_devices } = req.body;
-    await authService.logout(session_id, all_devices);
+    const refreshToken = req.body.refresh_token || req.body.refreshToken;
+    const allDevices = req.body.all_devices || req.body.allDevices;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    await authService.logout(refreshToken, allDevices);
     res.json({ message: 'Successfully logged out' });
   } catch (error) {
     logger.error('Logout error:', error);
