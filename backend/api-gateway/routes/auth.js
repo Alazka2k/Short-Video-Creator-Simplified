@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const authController = require('../../services/auth-service/auth-controller');
+const socialAuthController = require('../../services/auth-service/controllers/social-auth-controller');
+const emailAuthController = require('../../services/auth-service/controllers/email-auth-controller');
+const userController = require('../../services/auth-service/controllers/user-controller');
 const { authenticate } = require('../../services/auth-service/middleware/auth');
 const logger = require('../../shared/utils/logger');
 
@@ -24,14 +26,20 @@ const refreshLimiter = rateLimit({
   }
 });
 
-// Public routes (with rate limiting)
-router.post('/social', loginLimiter, authController.loginWithSocial);
-router.post('/register-callback', loginLimiter, authController.handleRegisterCallback);
-router.post('/refresh', refreshLimiter, authController.refreshToken);
-router.post('/logout', authController.logout);
+// Social auth routes
+router.post('/social', loginLimiter, socialAuthController.loginWithSocial);
+router.post('/register-callback', loginLimiter, socialAuthController.handleRegisterCallback);
 
-// Protected routes (require valid token)
-router.get('/profile', authenticate, authController.getProfile);
+// Email auth routes
+router.post('/register', loginLimiter, emailAuthController.registerWithEmail);
+router.post('/login', loginLimiter, emailAuthController.loginWithEmail);
+router.post('/forgot-password', loginLimiter, emailAuthController.forgotPassword);
+router.post('/reset-password', loginLimiter, emailAuthController.resetPassword);
+
+// User management routes
+router.get('/profile', authenticate, userController.getProfile);
+router.post('/refresh', refreshLimiter, userController.refreshToken);
+router.post('/logout', userController.logout);
 
 // Error handling middleware
 router.use((err, req, res, next) => {

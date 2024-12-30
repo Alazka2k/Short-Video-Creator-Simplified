@@ -16,7 +16,7 @@ const auth0Management = new ManagementClient({
   clientId: config.auth.auth0.clientId,
   clientSecret: config.auth.auth0.clientSecret,
   audience: `https://${config.auth.auth0.domain}/api/v2/`,
-  scope: 'read:users update:users delete:users read:user_idp_tokens'
+  scope: 'read:users update:users create:users delete:users read:user_idp_tokens'
 });
 
 // Debug logging
@@ -32,6 +32,25 @@ const auth0Authentication = new AuthenticationClient({
   clientId: config.auth.auth0.clientId,
   clientSecret: config.auth.auth0.clientSecret
 });
+
+// Extend Auth0 management client with additional methods
+auth0Management.getUsersByEmail = async (email) => {
+  try {
+    return await auth0Management.users.getByEmail(email);
+  } catch (error) {
+    logger.error('Error getting users by email from Auth0:', error);
+    throw error;
+  }
+};
+
+auth0Management.getUser = async ({ id }) => {
+  try {
+    return await auth0Management.users.get({ id });
+  } catch (error) {
+    logger.error('Error getting user from Auth0:', error);
+    throw error;
+  }
+};
 
 // Initialize Auth0 authentication client
 const auth0 = {
@@ -75,33 +94,6 @@ const auth0 = {
       return await auth0Management.users.delete({ id });
     } catch (error) {
       logger.error('Error deleting user from Auth0:', error);
-      throw error;
-    }
-  },
-
-  createOrganization: async (data) => {
-    try {
-      return await auth0Management.createOrganization(data);
-    } catch (error) {
-      logger.error('Error creating organization in Auth0:', error);
-      throw error;
-    }
-  },
-
-  addOrganizationMembers: async (orgId, members) => {
-    try {
-      return await auth0Management.addOrganizationMembers({ id: orgId }, members);
-    } catch (error) {
-      logger.error('Error adding members to organization in Auth0:', error);
-      throw error;
-    }
-  },
-
-  createOrganizationInvitation: async (orgId, invitation) => {
-    try {
-      return await auth0Management.createOrganizationInvitation({ id: orgId }, invitation);
-    } catch (error) {
-      logger.error('Error creating organization invitation in Auth0:', error);
       throw error;
     }
   }

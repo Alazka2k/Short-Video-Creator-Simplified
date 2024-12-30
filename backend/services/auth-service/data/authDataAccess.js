@@ -84,7 +84,7 @@ class AuthDataAccess {
         // Assign default role
         await trx('user_roles').insert({
           user_id: newUser.user_id,
-          role_id: 1
+          role_id: 1  // User role (not admin)
         });
 
         // Create free trial subscription

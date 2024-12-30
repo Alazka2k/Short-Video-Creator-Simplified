@@ -1,7 +1,17 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const config = require('../../../shared/utils/config');
 const logger = require('../../../shared/utils/logger');
 const { auth0 } = require('../auth0');
+
+// Utility functions
+const generateToken = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+const hashToken = (token) => {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
 
 class TokenService {
   static async generateAccessToken(user) {
@@ -114,4 +124,8 @@ class TokenService {
   }
 }
 
-module.exports = TokenService; 
+module.exports = {
+  TokenService,
+  generateToken,
+  hashToken
+}; 
