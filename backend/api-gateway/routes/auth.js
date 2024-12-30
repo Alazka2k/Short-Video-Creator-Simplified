@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const authController = require('../../services/auth-service/auth-controller');
-const { authMiddleware, checkPermission } = require('../middleware/auth0');
+const { authenticate } = require('../../services/auth-service/middleware/auth');
 const logger = require('../../shared/utils/logger');
 
 // Rate limiting configuration
@@ -31,18 +31,7 @@ router.post('/refresh', refreshLimiter, authController.refreshToken);
 router.post('/logout', authController.logout);
 
 // Protected routes (require valid token)
-router.get('/profile', 
-  authMiddleware, 
-  checkPermission('read:profile'), 
-  authController.getProfile
-);
-
-// Remove or comment out until implemented
-/* router.patch('/profile',
-  authMiddleware,
-  checkPermission('update:profile'),
-  authController.updateProfile
-); */
+router.get('/profile', authenticate, authController.getProfile);
 
 // Error handling middleware
 router.use((err, req, res, next) => {

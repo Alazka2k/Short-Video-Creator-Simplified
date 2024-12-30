@@ -59,25 +59,29 @@ const handleRegisterCallback = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const auth0Id = req.auth.payload.sub;
-    
-    if (!auth0Id) {
+    // req.user is set by our authenticate middleware
+    if (!req.user || !req.user.auth0Id) {
+      logger.error('Missing user or auth0Id in request:', req.user);
       return res.status(400).json({ 
         error: 'Bad Request', 
         message: 'User ID not found in token' 
       });
     }
 
-    logger.info('Getting profile for user:', auth0Id);
+    const auth0Id = req.user.auth0Id;
+    logger.info('Getting profile for auth0Id:', auth0Id);
+    
     const user = await authService.getUserProfile(auth0Id);
 
     if (!user) {
+      logger.warn('No user found for auth0Id:', auth0Id);
       return res.status(404).json({ 
         error: 'Not Found',
         message: 'User profile not found'
       });
     }
 
+    logger.info('Successfully retrieved profile for auth0Id:', auth0Id);
     res.json({ user });
   } catch (error) {
     logger.error('Get profile error:', error);
