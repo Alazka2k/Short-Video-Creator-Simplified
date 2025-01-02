@@ -157,6 +157,7 @@ class AuthService {
       logger.info('Attempting to logout user');
       
       const tokenHash = hashToken(refreshToken);
+      logger.info('Looking for session with token hash:', tokenHash);
       const session = await authDataAccess.findValidSession(tokenHash);
       
       if (session) {
@@ -171,11 +172,17 @@ class AuthService {
         }
         
         logger.info('Logout completed successfully');
-        return true;
-      } else {
-        logger.warn('No valid session found for the provided refresh token');
-        return false;
+        return {
+          message: 'Logged out successfully',
+          status: 'success'
+        };
       }
+
+      logger.warn('No valid session found for the provided refresh token');
+      return {
+        message: 'No active session found',
+        status: 'success'
+      };
     } catch (error) {
       logger.error('Error in logout:', error);
       throw error;

@@ -1,5 +1,7 @@
-const TokenService = require('../utils/token');
+const { TokenService } = require('../utils/token');
 const logger = require('../../../shared/utils/logger');
+const jwt = require('jsonwebtoken');
+const config = require('../../../shared/utils/config');
 
 const authenticate = async (req, res, next) => {
   try {
@@ -9,11 +11,11 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    logger.info('Verifying token:', token.substring(0, 20) + '...');
+    logger.info('Verifying token:');
     
     try {
-      // Use our local token verification
-      const decoded = TokenService.verifySessionToken(token);
+      // Use jwt.verify directly
+      const decoded = jwt.verify(token, config.auth.jwt.secret);
       logger.info('Decoded token payload:', decoded);
       
       // Get the auth0Id from either auth0_id or sub

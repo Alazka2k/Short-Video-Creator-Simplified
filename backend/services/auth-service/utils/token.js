@@ -36,6 +36,15 @@ class TokenService {
     }
   }
 
+  static verifySessionToken(token) {
+    try {
+      return jwt.verify(token, config.auth.jwt.secret);
+    } catch (error) {
+      logger.error('Error verifying session token:', error);
+      throw error;
+    }
+  }
+
   static generateTokens(userId, userData) {
     try {
       logger.info('Generating session tokens for user:', userId);
@@ -77,10 +86,6 @@ class TokenService {
       logger.error('Error generating tokens:', error);
       throw error;
     }
-  }
-
-  static verifySessionToken(token) {
-    return jwt.verify(token, config.auth.jwt.secret);
   }
 
   static async generateAuthTokens(userId) {
