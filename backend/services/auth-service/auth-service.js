@@ -417,17 +417,16 @@ class AuthService {
       logger.info('Authenticating user with email:', email);
 
       try {
-        // Authenticate using Auth0 SDK with resource owner password flow
+        // Authenticate using Resource Owner Password grant type
         const response = await axios.post(`https://${config.auth.auth0.domain}/oauth/token`, {
-          grant_type: 'password',
-          username: email,
-          password: password,
-          audience: config.auth.auth0.audience,
+          grant_type: 'http://auth0.com/oauth/grant-type/password-realm',
           client_id: config.auth.auth0.clientId,
           client_secret: config.auth.auth0.clientSecret,
+          username: email,
+          password: password,
+          realm: 'Username-Password-Authentication',
           scope: 'openid profile email',
-          connection: 'Username-Password-Authentication',
-          realm: 'Username-Password-Authentication'
+          audience: config.auth.auth0.audience
         }, {
           headers: {
             'Content-Type': 'application/json'
@@ -488,6 +487,10 @@ class AuthService {
           status: authError?.response?.status,
           details: authError?.response?.data
         });
+        
+        if (authError?.response?.status === 403) {
+          throw new Error('invalid credentials');
+        }
         
         // Check if user exists to give appropriate error message
         try {
