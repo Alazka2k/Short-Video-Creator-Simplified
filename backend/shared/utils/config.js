@@ -119,16 +119,17 @@ function loadConfig() {
   // Add service URLs with environment-specific defaults
   config.services = {
     // Service URLs
-    llm: { url: process.env.LLM_SERVICE_URL || 'http://localhost:3001' },
-    image: { url: process.env.IMAGE_SERVICE_URL || 'http://localhost:3002' },
-    voice: { url: process.env.VOICE_SERVICE_URL || 'http://localhost:3003' },
-    animation: { url: process.env.ANIMATION_SERVICE_URL || 'http://localhost:3004' },
-    video: { url: process.env.VIDEO_SERVICE_URL || 'http://localhost:3005' },
-    music: { url: process.env.MUSIC_SERVICE_URL || 'http://localhost:3006' },
-    assembly: { url: process.env.ASSEMBLY_SERVICE_URL || 'http://localhost:3007' },
-    job: { url: process.env.JOB_SERVICE_URL || 'http://localhost:3008' },
-    auth: { url: process.env.AUTH_SERVICE_URL || 'http://localhost:3009' },
-    billing: { url: process.env.BILLING_SERVICE_URL || 'http://localhost:3010' },
+    llm: { url: process.env[`${envPrefix}_LLM_SERVICE_URL`]},
+    image: { url: process.env[`${envPrefix}_IMAGE_SERVICE_URL`]},
+    voice: { url: process.env[`${envPrefix}_VOICE_SERVICE_URL`]},
+    animation: { url: process.env[`${envPrefix}_ANIMATION_SERVICE_URL`]},
+    video: { url: process.env[`${envPrefix}_VIDEO_SERVICE_URL`]},
+    music: { url: process.env[`${envPrefix}_MUSIC_SERVICE_URL`]},
+    assembly: { url: process.env[`${envPrefix}_ASSEMBLY_SERVICE_URL`]},
+    job: { url: process.env[`${envPrefix}_JOB_SERVICE_URL`]},
+    auth: { url: process.env[`${envPrefix}_AUTH_SERVICE_URL`]},
+    billing: { url: process.env[`${envPrefix}_BILLING_SERVICE_URL`]},
+    docs: { url: process.env[`${envPrefix}_DOCS_SERVICE_URL`]},
     // Add storage configuration
     storage: {
       type: config.services?.storage?.type || 'aws',

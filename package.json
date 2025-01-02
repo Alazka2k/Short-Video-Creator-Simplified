@@ -4,7 +4,9 @@
   "description": "A tool for creating short video content using AI services",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:docs\" \"npm run dev:all-services\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:docs": "cd docs-site && npm start",
     "dev:gateway": "nodemon backend/api-gateway/server.js",
     "dev:auth": "nodemon backend/services/auth-service/auth-service.js",
     "dev:llm": "nodemon backend/services/llm-service/index.js",
@@ -15,7 +17,7 @@
     "dev:music": "nodemon backend/services/music-service/index.js",
     "dev:assembly": "nodemon backend/services/assembly-service/index.js",
     "dev:job": "nodemon backend/services/job-service/index.js",
-    "dev:all": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:llm\" \"npm run dev:image\" \"npm run dev:voice\" \"npm run dev:animation\" \"npm run dev:video\" \"npm run dev:music\" \"npm run dev:assembly\" \"npm run dev:job\"",
+    "dev:all-services": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:llm\" \"npm run dev:image\" \"npm run dev:voice\" \"npm run dev:animation\" \"npm run dev:video\" \"npm run dev:music\" \"npm run dev:assembly\" \"npm run dev:job\"",
     "test": "node tests/llm-test.js && node tests/voice-gen-test.js && node tests/image-gen-test.js",
     "test:llm": "node tests/llm-test.js",
     "test:midjourney": "node tests/midjourney-test.js",
@@ -41,6 +43,7 @@
     "migrate:prod": "knex migrate:latest --env production",
     "migrate:status": "knex migrate:status",
     "migrate:rollback": "knex migrate:down",
+    "start:docs": "node backend/services/docs-service/server.js",
     "start:all": "concurrently \"npm run start:gateway\" \"npm run start:auth\" \"npm run start:llm\" \"npm run start:image\" \"npm run start:voice\" \"npm run start:animation\" \"npm run start:video\" \"npm run start:music\" \"npm run start:assembly\" \"npm run start:job\"",
     "start:gateway": "node backend/api-gateway/server.js",
     "start:llm": "node backend/services/llm-service/index.js",
@@ -56,7 +59,11 @@
     "test:s3:voice": "node tests/storage/voice-s3-test.js",
     "deploy:auth:dev": "node deployment/scripts/update-auth0-settings.js development",
     "deploy:auth:staging": "node deployment/scripts/update-auth0-settings.js staging",
-    "deploy:auth:prod": "node deployment/scripts/update-auth0-settings.js production"
+    "deploy:auth:prod": "node deployment/scripts/update-auth0-settings.js production",
+    "build": "npm run build:app && npm run build:docs",
+    "build:app": "cd frontend && npm run build",
+    "build:docs": "cd docs-site && npm run build",
+    "lint": "eslint ."
   },
   "keywords": [
     "AI",
@@ -119,7 +126,10 @@
     "winston": "^3.14.2",
     "ws": "^8.13.0",
     "zod": "^3.23.8",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "express-session": "^1.17.3",
+    "passport": "^0.6.0",
+    "passport-auth0": "^1.4.3"
   },
   "devDependencies": {
     "@types/async": "^3.2.20",

@@ -8,6 +8,7 @@ const authTestRoutes = require('../../tests/auth/auth-test');
 const serviceAuthMiddleware = require('./middleware/serviceAuth');
 const { verifyAuth0Token, checkPermission } = require('../services/auth-service/middleware/auth0-verify.middleware');
 const authRoutes = require('./routes/auth');
+const docsRoutes = require('./routes/docs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -319,6 +320,9 @@ app.post('/api/v1/*',
 // Mount auth routes
 app.use('/api/auth', authRoutes);
 
+// Documentation routes
+app.use('/docs', docsRoutes);
+
 // Catch-all route for unhandled requests
 app.use('*', (req, res) => {
   logger.warn(`Received unhandled request: ${req.method} ${req.originalUrl}`);
@@ -333,7 +337,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
-  logger.info('Configured routes:');
+  logger.info(`Documentation available at http://localhost:${PORT}/docs`);
   
   // Auth routes
   logger.info('  /api/auth/social -> Auth0 social login');

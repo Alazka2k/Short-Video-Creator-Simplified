@@ -205,8 +205,23 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   └── server.js
 │   ├── services/
 │   │   ├── auth-service/
-│   │   │   ├── auth-controller.js
-│   │   │   └── auth-model.js
+│   │   │   ├── controllers/
+│   │   │   │   ├── email-auth-controller.js
+│   │   │   │   ├── social-auth-controller.js
+│   │   │   │   └── user-controller.js
+│   │   │   ├── data/
+│   │   │   │   └── authDataAccess.js
+│   │   │   ├── middleware/
+│   │   │   │   └── jwt-verify.middleware.js
+│   │   │   ├── services/
+│   │   │   │   ├── email-auth.service.js
+│   │   │   │   ├── social-auth.service.js
+│   │   │   │   ├── session.service.js
+│   │   │   │   └── user.service.js
+│   │   │   ├── utils/
+│   │   │   │   └── token.js
+│   │   │   ├── auth0.js
+│   │   │   └── auth-service.js
 │   │   ├── job-service/
 │   │   │   ├── data/
 │   │   │   │   └── jobDataAccess.js
@@ -255,7 +270,7 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │   │   │   ├── server.js
 │   │   │   └── index.js
 │   │   └── video-service/
-│   ���       ├── data/
+│   │       ├── data/
 │   │       │   └── videoDataAccess.js
 │   │       ├── video-gen-service.js
 │   │       ├── server.js
@@ -268,30 +283,46 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 │       │   ├── pattern/
 │       │   │   ├── animation-pattern-manager.js
 │       │   │   └── animation-pattern-generator.js
+│       │   ├── storage/
+│       │   │   ├── storage.js
+│       │   │   └── storage-url-helper.js
+│       │   ├── validation/
+│       │   │   └── schema-validator.js
 │       │   ├── config.js
 │       │   ├── logger.js
 │       │   ├── prompt-utils.js
 │       │   ├── llmFileHandler.js
 │       │   ├── audio-utils.js
+│       │   ├── file-utils.js
 │       │   └── export-source-code.js
 │       └── config/
 │           ├── database.js
 │           └── models.js
 ├── frontend/
 │   └── src/
-│       ├── public/
+│       ├── app/
+│       │   ├── (auth)/
+│       │   │   ├── login/
+│       │   │   └── register/
+│       │   ├── dashboard/
+│       │   └── page.tsx
 │       ├── components/
-│       │   ├── Header.js
-│       │   ├── Footer.js
-│       │   └── ServiceSelector.js
-│       ├── pages/
-│       │   ├── Home.js
-│       │   ├── Dashboard.js
-│       │   └── JobSubmission.js
-│       ├── services/
-│       │   ├── api.js
-│       │   └── auth.js
-│       └��─ App.js
+│       │   ├── ui/
+│       │   │   ├── button.tsx
+│       │   │   └── [other-ui-components]
+│       │   ├── auth/
+│       │   │   ├── login-form.tsx
+│       │   │   └── register-form.tsx
+│       │   └── shared/
+│       │       ├── header.tsx
+│       │       └── footer.tsx
+│       ├── lib/
+│       │   ├── utils.ts
+│       │   └── auth.ts
+│       ├── types/
+│       │   └── index.d.ts
+│       └── styles/
+│           └── globals.css
 ├── database/
 │   ├── migrations/
 │   │   └── 20241004181232_initial_schema.js
@@ -906,3 +937,75 @@ STORAGE_PROVIDER=local
    ```
 
 4. Set up CloudFront distributions (optional) for each bucket to serve content via CDN
+
+## Authentication System
+
+The project implements a comprehensive authentication system using Auth0:
+
+### Features
+- Email/password authentication
+- Google social login
+- JWT-based session management
+- Refresh token mechanism
+- Multi-device session support
+- Single and all-device logout capabilities
+
+### Security Measures
+- Rate limiting for login attempts
+- Secure token storage
+- Role-based access control
+- Session invalidation
+- Auth0 integration for identity management
+
+### Authentication Flows
+1. **Email Registration**
+   - User registration with email verification
+   - Secure password handling
+   - Automatic profile creation
+
+2. **Social Authentication**
+   - Google Sign-In integration
+   - Automatic profile synchronization
+   - Social profile data management
+
+3. **Session Management**
+   - JWT token generation and validation
+   - Refresh token rotation
+   - Secure session tracking
+   - Multiple device support
+
+### Planned Features
+- Apple Sign-In integration
+- Two-factor authentication
+- Password reset functionality
+- Enhanced security notifications
+
+## Documentation System
+
+The project includes an integrated documentation system:
+
+### Structure
+- `/docs` - Public documentation
+- `/docs/developer` - Protected developer documentation
+- `/docs/api` - Protected API documentation
+
+### Features
+- Unified server serving both app and docs
+- OAuth-based authentication for protected sections
+- Real-time API documentation updates
+- SEO optimization for public docs
+- Version control for documentation
+- Dark/light mode support
+- Full-text search functionality
+
+### Access Control
+- Public access to general documentation
+- Protected access to developer guides
+- Protected access to API documentation
+- Role-based documentation access
+
+### Development Environment
+- Local development server
+- Hot reloading for documentation
+- Preview deployments
+- Automated builds
