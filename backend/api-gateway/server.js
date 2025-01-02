@@ -6,7 +6,7 @@ const assemblyRoutes = require('../services/assembly-service/server');
 const path = require('path');
 const authTestRoutes = require('../../tests/auth/auth-test');
 const serviceAuthMiddleware = require('./middleware/serviceAuth');
-const { authMiddleware, checkPermission } = require('../services/auth-service/auth-middleware');
+const { verifyAuth0Token, checkPermission } = require('../services/auth-service/middleware/auth0-verify.middleware');
 const authRoutes = require('./routes/auth');
 
 const app = express();
@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
 
 // LLM Service route
 app.post('/api/llm/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -79,7 +79,7 @@ app.post('/api/llm/generate',
 
 // Voice Service route
 app.post('/api/voice/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -99,7 +99,7 @@ app.post('/api/voice/generate',
 
 // Image Service route
 app.post('/api/image/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -119,7 +119,7 @@ app.post('/api/image/generate',
 
 // Music Service route
 app.post('/api/music/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -139,7 +139,7 @@ app.post('/api/music/generate',
 
 // Animation Service route
 app.post('/api/animation/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -159,7 +159,7 @@ app.post('/api/animation/generate',
 
 // Video Service route
 app.post('/api/video/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -179,7 +179,7 @@ app.post('/api/video/generate',
 
 // Assembly Service routes
 app.post('/api/assembly/assemble', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_video'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -238,7 +238,7 @@ app.get('/api/assembly/validate/:jobId', serviceAuthMiddleware, async (req, res)
 
 // Job Service routes
 app.post('/api/job/generate', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_job'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -257,7 +257,7 @@ app.post('/api/job/generate',
 });
 
 app.get('/api/job/jobs/:jobId', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_job'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -276,7 +276,7 @@ app.get('/api/job/jobs/:jobId',
 });
 
 app.get('/api/job/jobs', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('create_job'), 
   serviceAuthMiddleware, 
   async (req, res) => {
@@ -303,14 +303,14 @@ app.use('/api/auth-test', authTestRoutes);
 
 // Protected routes with permission checks
 app.get('/api/templates', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('use_templates'), 
   async (req, res) => {
     // Template access code
 });
 
 app.post('/api/v1/*', 
-  authMiddleware, 
+  verifyAuth0Token, 
   checkPermission('api_access'), 
   async (req, res) => {
     // API access code
@@ -337,7 +337,14 @@ app.listen(PORT, () => {
   
   // Auth routes
   logger.info('  /api/auth/social -> Auth0 social login');
-  logger.info('  /api/auth/me -> Get user profile');
+  logger.info('  /api/auth/register-callback -> Auth0 register callback');
+  logger.info('  /api/auth/register -> Auth0 register');
+  logger.info('  /api/auth/login -> Auth0 login');
+  logger.info('  /api/auth/forgot-password -> Auth0 forgot password');
+  logger.info('  /api/auth/reset-password -> Auth0 reset password');
+  logger.info('  /api/auth/profile -> Get user profile');
+  logger.info('  /api/auth/refresh -> Auth0 refresh token');
+  logger.info('  /api/auth/logout -> Auth0 logout');
   
   // LLM Service
   logger.info(`  /api/llm/generate -> ${config.services.llm.url}/generate`);

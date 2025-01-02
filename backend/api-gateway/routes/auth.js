@@ -4,7 +4,7 @@ const rateLimit = require('express-rate-limit');
 const socialAuthController = require('../../services/auth-service/controllers/social-auth-controller');
 const emailAuthController = require('../../services/auth-service/controllers/email-auth-controller');
 const userController = require('../../services/auth-service/controllers/user-controller');
-const { authenticate } = require('../../services/auth-service/middleware/auth');
+const { verifyJwtToken } = require('../../services/auth-service/middleware/jwt-verify.middleware');
 const logger = require('../../shared/utils/logger');
 
 // Rate limiting configuration
@@ -37,7 +37,7 @@ router.post('/forgot-password', loginLimiter, emailAuthController.forgotPassword
 router.post('/reset-password', loginLimiter, emailAuthController.resetPassword);
 
 // User management routes
-router.get('/profile', authenticate, userController.getProfile);
+router.get('/profile', verifyJwtToken, userController.getProfile);
 router.post('/refresh', refreshLimiter, userController.refreshToken);
 router.post('/logout', userController.logout);
 

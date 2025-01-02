@@ -121,22 +121,43 @@ class AuthService {
   async refreshToken(refreshToken) {
     try {
       const tokenHash = hashToken(refreshToken);
+      logger.info('Looking for session with token hash:', tokenHash);
       const session = await authDataAccess.findValidSession(tokenHash);
 
       if (!session) {
+        logger.warn('No valid session found for refresh token');
         throw new Error('Invalid refresh token');
       }
 
+      logger.info('Found valid session:', {
+        session_id: session.session_id,
+        user_id: session.user_id,
+        expires_at: session.expires_at
+      });
+
+      // Invalidate old session
       await authDataAccess.invalidateSession(session.session_id, 'token_refresh');
+      logger.info('Invalidated old session:', session.session_id);
+
+      // Create new session
       const newSessionId = await authDataAccess.createSession(session.user_id);
       const newRefreshToken = generateToken();
+      const newRefreshTokenHash = hashToken(newRefreshToken);
 
+      logger.info('Created new session:', {
+        session_id: newSessionId,
+        user_id: session.user_id
+      });
+
+      // Update new session with refresh token hash
       await authDataAccess.updateSession(newSessionId, {
-        refresh_token_hash: hashToken(newRefreshToken)
+        refresh_token_hash: newRefreshTokenHash
       });
 
       // Generate access token using the user data from session
       const accessToken = await TokenService.generateAccessToken(session);
+
+      logger.info('Generated new tokens for session:', newSessionId);
 
       return { 
         user: session,
@@ -156,36 +177,80 @@ class AuthService {
     try {
       logger.info('Attempting to logout user');
       
+      if (!refreshToken) {
+        logger.warn('No refresh token provided');
+        return {
+          message: 'No refresh token provided',
+          status: 'error',
+          details: 'A refresh token is required for logout'
+        };
+      }
+      
       const tokenHash = hashToken(refreshToken);
       logger.info('Looking for session with token hash:', tokenHash);
       const session = await authDataAccess.findValidSession(tokenHash);
       
-      if (session) {
-        logger.info(`Found valid session for user ${session.user_id}, session ID: ${session.session_id}`);
-        
-        if (allDevices) {
-          logger.info(`Invalidating all sessions for user ${session.user_id}`);
-          await authDataAccess.invalidateAllUserSessions(session.user_id);
-        } else {
-          logger.info(`Invalidating single session ${session.session_id}`);
-          await authDataAccess.invalidateSession(session.session_id, 'user_logout');
-        }
-        
-        logger.info('Logout completed successfully');
+      if (!session) {
+        logger.warn('No valid session found for the provided refresh token');
         return {
-          message: 'Logged out successfully',
-          status: 'success'
+          message: 'No active session found',
+          status: 'info',
+          details: 'The provided refresh token does not match any active session'
         };
       }
 
-      logger.warn('No valid session found for the provided refresh token');
-      return {
-        message: 'No active session found',
-        status: 'success'
+      logger.info(`Found valid session for user ${session.user_id}, session ID: ${session.session_id}`);
+      
+      let invalidatedSession;
+      if (allDevices) {
+        logger.info(`Invalidating all sessions for user ${session.user_id}`);
+        const invalidatedSessions = await authDataAccess.invalidateAllUserSessions(session.user_id);
+        logger.info('All sessions invalidated:', invalidatedSessions);
+        // Use the first invalidated session for the response
+        invalidatedSession = Array.isArray(invalidatedSessions) && invalidatedSessions.length > 0 
+          ? invalidatedSessions[0] 
+          : null;
+      } else {
+        logger.info(`Invalidating single session ${session.session_id}`);
+        invalidatedSession = await authDataAccess.invalidateSession(session.session_id, 'user_logout');
+        logger.info('Session invalidated:', invalidatedSession);
+      }
+
+      // Check if session was actually invalidated by checking is_valid flag
+      if (!invalidatedSession || invalidatedSession.is_valid) {
+        logger.warn('Session invalidation failed - session still valid');
+        return {
+          message: 'Session invalidation failed',
+          status: 'error',
+          details: 'Failed to invalidate the session'
+        };
+      }
+      
+      logger.info('Logout completed successfully:', {
+        sessionId: session.session_id,
+        userId: session.user_id,
+        invalidatedAt: invalidatedSession.invalidated_at
+      });
+      
+      const successResponse = {
+        message: 'Logged out successfully',
+        status: 'success',
+        details: {
+          session_id: session.session_id,
+          user_id: session.user_id,
+          invalidated_at: invalidatedSession.invalidated_at
+        }
       };
+
+      logger.info('Returning logout response:', JSON.stringify(successResponse, null, 2));
+      return successResponse;
     } catch (error) {
       logger.error('Error in logout:', error);
-      throw error;
+      return {
+        message: 'Logout failed',
+        status: 'error',
+        details: error.message
+      };
     }
   }
 
@@ -553,4 +618,8 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService();
+// Create an instance of AuthService
+const authService = new AuthService();
+
+// Export the instance
+module.exports = authService;

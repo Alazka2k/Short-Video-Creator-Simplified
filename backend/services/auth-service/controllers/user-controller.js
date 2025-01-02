@@ -66,17 +66,48 @@ const logout = async (req, res) => {
     const allDevices = req.body.all_devices || req.body.allDevices;
 
     if (!refreshToken) {
-      return res.status(400).json({ error: 'Refresh token is required' });
+      return res.status(400).json({ 
+        error: 'Refresh token is required',
+        message: 'A refresh token is required for logout'
+      });
     }
 
-    const wasSessionFound = await authService.logout(refreshToken, allDevices);
-    res.json({ 
-      message: wasSessionFound ? 'Successfully logged out' : 'No active session found',
-      status: wasSessionFound ? 'success' : 'info'
-    });
+    logger.info('Calling authService.logout with refreshToken:', refreshToken);
+    const result = await authService.logout(refreshToken, allDevices);
+    logger.info('Logout result:', JSON.stringify(result, null, 2));
+    
+    // Handle case where result is undefined
+    if (!result) {
+      logger.warn('Logout result is undefined');
+      return res.status(500).json({
+        error: 'Logout failed',
+        message: 'Failed to process logout request'
+      });
+    }
+    
+    // Send appropriate status code based on result status
+    logger.info('Processing logout result with status:', result.status);
+    
+    switch (result.status) {
+      case 'error':
+        return res.status(401).json(result);
+      case 'info':
+        return res.status(200).json(result);
+      case 'success':
+        return res.status(200).json(result);
+      default:
+        logger.warn('Unexpected result status:', result.status);
+        return res.status(200).json(result);
+    }
   } catch (error) {
-    logger.error('Logout error:', error);
-    res.status(500).json({ error: 'Logout failed' });
+    logger.error('Logout error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    return res.status(500).json({ 
+      error: 'Logout failed',
+      message: 'Failed to process logout request'
+    });
   }
 };
 

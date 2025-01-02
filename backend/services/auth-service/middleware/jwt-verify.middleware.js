@@ -1,9 +1,24 @@
+/**
+ * JWT Token Verification Middleware
+ * 
+ * This middleware verifies the JWT tokens issued by our application (not Auth0 tokens).
+ * It's used to protect our internal API endpoints by validating the access tokens
+ * we generate after successful Auth0 authentication.
+ * 
+ * Flow:
+ * 1. Extracts Bearer token from Authorization header
+ * 2. Verifies the token using our JWT secret
+ * 3. Attaches user info to the request object
+ * 
+ * @module auth-service/middleware/jwt-verify.middleware
+ **/
+
 const { TokenService } = require('../utils/token');
 const logger = require('../../../shared/utils/logger');
 const jwt = require('jsonwebtoken');
 const config = require('../../../shared/utils/config');
 
-const authenticate = async (req, res, next) => {
+const verifyJwtToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -11,10 +26,10 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    logger.info('Verifying token:');
+    logger.info('Verifying JWT token');
     
     try {
-      // Use jwt.verify directly
+      // Verify token using our application's JWT secret
       const decoded = jwt.verify(token, config.auth.jwt.secret);
       logger.info('Decoded token payload:', decoded);
       
@@ -46,4 +61,4 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate }; 
+module.exports = { verifyJwtToken }; 

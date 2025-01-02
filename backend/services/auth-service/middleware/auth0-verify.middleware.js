@@ -1,13 +1,32 @@
-const { auth0 } = require('./auth0');
-const logger = require('../../shared/utils/logger');
+/**
+ * Auth0 Token Verification Middleware
+ * 
+ * This middleware verifies tokens issued directly by Auth0.
+ * It's used to validate tokens in the social authentication flow and
+ * when receiving callbacks from Auth0.
+ * 
+ * Features:
+ * 1. Verifies Auth0 JWT tokens using Auth0's JWKS (JSON Web Key Set)
+ * 2. Validates token audience and issuer
+ * 3. Implements permission checking for protected routes
+ * 
+ * @module auth-service/middleware/auth0-verify.middleware
+ */
+
+const { auth0 } = require('../auth0');
+const logger = require('../../../shared/utils/logger');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
 
+// Initialize JWKS client for Auth0 public key retrieval
 const jwksClient = jwksRsa({
   jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`
 });
 
-async function authMiddleware(req, res, next) {
+/**
+ * Verifies Auth0 tokens using Auth0's public keys
+ */
+async function verifyAuth0Token(req, res, next) {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
@@ -35,15 +54,19 @@ async function authMiddleware(req, res, next) {
     req.user = verifiedToken;
     next();
   } catch (error) {
-    logger.error('Authentication error:', error);
+    logger.error('Auth0 token verification error:', error);
     res.status(401).json({ error: 'Please authenticate' });
   }
 }
 
+/**
+ * Checks if the authenticated user has the required permission
+ * @param {string} requiredPermission - The permission to check for
+ */
 const checkPermission = (requiredPermission) => async (req, res, next) => {
   try {
     const auth0Id = req.user.sub;
-    const authDataAccess = require('./data/authDataAccess');
+    const authDataAccess = require('../data/authDataAccess');
     
     const permissions = await authDataAccess.getUserPermissions(auth0Id);
     const hasPermission = permissions.some(p => p.name === requiredPermission);
@@ -64,6 +87,6 @@ const checkPermission = (requiredPermission) => async (req, res, next) => {
 };
 
 module.exports = {
-  authMiddleware,
+  verifyAuth0Token,
   checkPermission
 };

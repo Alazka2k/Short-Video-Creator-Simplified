@@ -244,11 +244,19 @@ class AuthDataAccess {
 
   async invalidateSession(sessionId, reason = 'user_logout') {
     try {
+      logger.info('Attempting to invalidate session:', { sessionId, reason });
+      
       const session = await knex('user_sessions')
         .where('session_id', sessionId)
         .first();
 
       if (session) {
+        logger.info('Found session to invalidate:', {
+          sessionId: session.session_id,
+          userId: session.user_id,
+          currentlyValid: session.is_valid
+        });
+
         await knex('user_sessions')
           .where('session_id', sessionId)
           .update({
@@ -257,8 +265,25 @@ class AuthDataAccess {
             invalidation_reason: reason
           });
 
+        logger.info('Session marked as invalid');
         await this.logAuthEvent(session.user_id, 'session_invalidated', { reason });
+        
+        // Return the updated session
+        const updatedSession = await knex('user_sessions')
+          .where('session_id', sessionId)
+          .first();
+          
+        logger.info('Retrieved updated session:', {
+          sessionId: updatedSession.session_id,
+          isValid: updatedSession.is_valid,
+          invalidatedAt: updatedSession.invalidated_at
+        });
+        
+        return updatedSession;
       }
+      
+      logger.warn('No session found to invalidate:', { sessionId });
+      return null;
     } catch (error) {
       logger.error('Error invalidating session:', error);
       throw error;
@@ -400,6 +425,12 @@ class AuthDataAccess {
         });
 
       await this.logAuthEvent(userId, 'all_sessions_invalidated');
+
+      // Return all invalidated sessions
+      return await knex('user_sessions')
+        .where('user_id', userId)
+        .where('invalidation_reason', 'user_logout_all')
+        .orderBy('invalidated_at', 'desc');
     } catch (error) {
       logger.error('Error invalidating all sessions:', error);
       throw error;
