@@ -26,15 +26,13 @@ A web-based application that automates the creation of short-form videos by orch
    - LLM Service (Script Generation)
    - Voice Generation Service
    - Image Generation Service
+   - Music Generation Service
    - Animation Generation Service
    - Video Generation Service
    - Assembly Service (Video Assembly)
+   - Auth Service (with Social Login and Email/Password authentication)
 
 2. **New Services to Develop**:
-   - Authentication Service
-     - Email/Password authentication
-     - Social login (Google, Apple)
-     - JWT token management
    - Billing/Premium Service
      - Credit system management
      - Premium feature access control
