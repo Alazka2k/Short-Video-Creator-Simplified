@@ -77,6 +77,14 @@
 - Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0)
 - Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
 - Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
+- Implement advanced progress tracking system:
+  - Use Redis for real-time progress updates
+  - Track individual service progress (LLM, Image, Voice, Video, Music)
+  - Track scene-level progress for multi-scene videos
+  - Implement WebSocket endpoints for real-time frontend updates
+  - Add estimated time remaining based on historical data
+  - Support progress visualization in the frontend dashboard
+  - Enable progress notifications (email, in-app)
 - Optimize service startup process:
   - Reduce redundant logging
   - Centralize common initialization

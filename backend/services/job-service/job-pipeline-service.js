@@ -23,23 +23,32 @@ class JobPipelineService {
     return path.join(this.baseOutputPath, dateString, jobId);
   }
 
-  getSceneOutputPath(jobOutputDir, sceneIndex) {
-    return path.join(jobOutputDir, `scene_${sceneIndex}`);
-  }
+  async processScenes(llmResult, jobId, jobOutputDir, serviceConfig, parameters, visualizationType) {
+    // Process all scenes in parallel
+    const scenePromises = llmResult.content.scenes.map((scene, i) => {
+      const sceneId = i + 1;
+      const sceneDir = this.getSceneOutputPath(jobOutputDir, sceneId);
+      
+      return this.sceneProcessor.processScene(
+        scene, sceneId, jobId, sceneDir, serviceConfig, parameters, visualizationType
+      ).catch(error => {
+        logger.error(`Error processing scene ${sceneId}:`, error);
+        return { status: 'failed', error: error.message };
+      });
+    });
 
-  async ensureOutputDirectories(jobOutputDir, scenesCount) {
     try {
-      // Create base job directory
-      await fs.mkdir(jobOutputDir, { recursive: true });
-
-      // Create scene directories
-      for (let i = 1; i <= scenesCount; i++) {
-        await fs.mkdir(this.getSceneOutputPath(jobOutputDir, i), { recursive: true });
-      }
-      logger.info(`Created output directories in ${jobOutputDir}`);
+      const results = await Promise.all(scenePromises);
+      return {
+        sceneResults: results,
+        hasFailedServices: results.some(r => r.status === 'failed')
+      };
     } catch (error) {
-      logger.error('Error creating output directories:', error);
-      throw error;
+      logger.error(`Error processing scenes in parallel: ${error.message}`);
+      return {
+        sceneResults: [],
+        hasFailedServices: true
+      };
     }
   }
 
@@ -58,18 +67,18 @@ class JobPipelineService {
         skipVisualization: parameters.serviceConfig?.skipVisualization ?? false
       };
 
-      // Use visualization type from parameters if available, otherwise use the provided one
-      const finalVisualizationType = parameters.visualizationType;
+      // Use visualization type from parameters if available
+      const visualizationType = parameters.visualizationType;
 
       // Validate visualization type if visualization is not skipped
       if (!serviceConfig.skipVisualization) {
-        if (!finalVisualizationType) {
+        if (!visualizationType) {
           throw new Error('visualizationType is required when visualization is not skipped');
         }
-        if (!['video', 'animation'].includes(finalVisualizationType)) {
+        if (!['video', 'animation'].includes(visualizationType)) {
           throw new Error('visualizationType must be either "video" or "animation"');
         }
-        logger.info(`Using visualization type: ${finalVisualizationType}`);
+        logger.info(`Using visualization type: ${visualizationType}`);
       }
 
       // Create initial job record
@@ -78,12 +87,10 @@ class JobPipelineService {
         prompt,
         status: 'in_progress',
         parameters,
-        visualizationType: finalVisualizationType,
-        startTime: new Date().toISOString()
+        visualizationType
       });
-      logger.info(`Created job record with ID: ${jobId}`);
 
-      // Step 1: Generate LLM content
+      // Step 1: Generate LLM content (blocking)
       logger.info('Starting LLM content generation...');
       const llmResult = await this.services.llm.process(
         parameters.llmGenParams,
@@ -99,15 +106,18 @@ class JobPipelineService {
       // Create output directories
       await this.ensureOutputDirectories(jobOutputDir, llmResult.content.scenes.length);
 
-      // Process music in parallel
-      const musicResult = await this.musicProcessor.generateMusic(
+      // Process music in parallel with scenes
+      const musicPromise = this.musicProcessor.generateMusic(
         jobId, llmResult, parameters, serviceConfig
       );
 
-      // Process scenes
+      // Process scenes in parallel
       const sceneResults = await this.processScenes(
-        llmResult, jobId, jobOutputDir, serviceConfig, parameters, finalVisualizationType
+        llmResult, jobId, jobOutputDir, serviceConfig, parameters, visualizationType
       );
+
+      // Wait for music to complete
+      const musicResult = await musicPromise;
 
       // Save metadata and finish up
       await this.finalizeJob(
@@ -117,6 +127,26 @@ class JobPipelineService {
       return this.prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResult);
     } catch (error) {
       await this.handleError(jobId, error);
+      throw error;
+    }
+  }
+
+  getSceneOutputPath(jobOutputDir, sceneIndex) {
+    return path.join(jobOutputDir, `scene_${sceneIndex}`);
+  }
+
+  async ensureOutputDirectories(jobOutputDir, scenesCount) {
+    try {
+      // Create base job directory
+      await fs.mkdir(jobOutputDir, { recursive: true });
+
+      // Create scene directories
+      for (let i = 1; i <= scenesCount; i++) {
+        await fs.mkdir(this.getSceneOutputPath(jobOutputDir, i), { recursive: true });
+      }
+      logger.info(`Created output directories in ${jobOutputDir}`);
+    } catch (error) {
+      logger.error('Error creating output directories:', error);
       throw error;
     }
   }
@@ -159,33 +189,6 @@ class JobPipelineService {
       logger.error('Error getting jobs stats:', error);
       throw error;
     }
-  }
-
-  async processScenes(llmResult, jobId, jobOutputDir, serviceConfig, parameters, visualizationType) {
-    const sceneResults = [];
-    let hasFailedServices = false;
-
-    for (let i = 0; i < llmResult.content.scenes.length; i++) {
-      const sceneId = i + 1;
-      const scene = llmResult.content.scenes[i];
-      const sceneDir = this.getSceneOutputPath(jobOutputDir, sceneId);
-
-      try {
-        const sceneResult = await this.sceneProcessor.processScene(
-          scene, sceneId, jobId, sceneDir, serviceConfig, parameters, visualizationType
-        );
-        sceneResults.push(sceneResult);
-      } catch (error) {
-        hasFailedServices = true;
-        logger.error(`Error processing scene ${sceneId}:`, error);
-        await this.jobDataAccess.updateJobProgress(jobId, 'scene', 'failed', {
-          sceneId,
-          error: error.message
-        });
-      }
-    }
-
-    return { sceneResults, hasFailedServices };
   }
 
   async finalizeJob(jobId, jobOutputDir, llmResult, sceneResults, musicResult, parameters) {
