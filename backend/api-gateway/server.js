@@ -10,6 +10,12 @@ const { verifyAuth0Token, checkPermission } = require('../services/auth-service/
 const authRoutes = require('./routes/auth');
 const docsRoutes = require('./routes/docs');
 
+console.log('Current Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  isDefined: process.env.NODE_ENV !== undefined,
+  type: typeof process.env.NODE_ENV
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

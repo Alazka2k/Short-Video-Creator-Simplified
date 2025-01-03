@@ -77,6 +77,11 @@
 - Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0)
 - Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
 - Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
+- Optimize service startup process:
+  - Reduce redundant logging
+  - Centralize common initialization
+  - Improve configuration loading
+  - Streamline service bootstrapping
 
 ## Success Criteria for MVP
 1. Users can create videos end-to-end

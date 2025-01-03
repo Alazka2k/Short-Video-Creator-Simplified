@@ -18,9 +18,21 @@ const logger = require('../../../shared/utils/logger');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
 
+// Get environment-specific Auth0 configuration
+const envPrefix = process.env.NODE_ENV?.toUpperCase();
+const auth0Domain = process.env[`${envPrefix}_AUTH0_DOMAIN`];
+const auth0Audience = process.env[`${envPrefix}_AUTH0_AUDIENCE`];
+
+// Log Auth0 configuration
+logger.info('Auth0 Configuration:', {
+  domain: auth0Domain,
+  audience: auth0Audience,
+  environment: process.env.NODE_ENV
+});
+
 // Initialize JWKS client for Auth0 public key retrieval
 const jwksClient = jwksRsa({
-  jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`
+  jwksUri: `https://${auth0Domain}/.well-known/jwks.json`
 });
 
 /**
@@ -46,15 +58,20 @@ async function verifyAuth0Token(req, res, next) {
 
     // Verify token
     const verifiedToken = jwt.verify(token, publicKey, {
-      audience: process.env.AUTH0_AUDIENCE,
-      issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+      audience: auth0Audience,
+      issuer: `https://${auth0Domain}/`,
       algorithms: ['RS256']
     });
 
     req.user = verifiedToken;
     next();
   } catch (error) {
-    logger.error('Auth0 token verification error:', error);
+    logger.error('Auth0 token verification error:', {
+      error: error.message,
+      stack: error.stack,
+      domain: auth0Domain,
+      audience: auth0Audience
+    });
     res.status(401).json({ error: 'Please authenticate' });
   }
 }
@@ -65,6 +82,34 @@ async function verifyAuth0Token(req, res, next) {
  */
 const checkPermission = (requiredPermission) => async (req, res, next) => {
   try {
+    // Check if this is a client credentials token
+    if (req.user.gty === 'client-credentials') {
+      // For M2M applications, check token scopes
+      const scopes = (req.user.scope || '').split(' ');
+      logger.info('M2M token scopes:', { scopes, requiredPermission });
+      
+      // Convert permission to scope format (e.g., create_video -> create:videos)
+      const requiredScope = requiredPermission
+        .replace('_', ':') // convert create_video to create:video
+        .replace('video', 'videos'); // make it plural for API convention
+      
+      if (!scopes.includes(requiredScope)) {
+        logger.warn('M2M token missing required scope:', {
+          requiredScope,
+          availableScopes: scopes
+        });
+        return res.status(403).json({
+          error: 'Insufficient scope',
+          message: `Missing required scope: ${requiredScope}`,
+          requiredScope,
+          availableScopes: scopes
+        });
+      }
+      
+      return next();
+    }
+
+    // For regular user tokens, check permissions in the database
     const auth0Id = req.user.sub;
     const authDataAccess = require('../data/authDataAccess');
     
@@ -75,13 +120,18 @@ const checkPermission = (requiredPermission) => async (req, res, next) => {
       return res.status(403).json({ 
         error: 'Insufficient permissions',
         requiredPermission,
-        message: 'Please upgrade your subscription to access this feature'
+        message: 'You do not have permission to access this feature'
       });
     }
     
     next();
   } catch (error) {
-    logger.error('Permission check error:', error);
+    logger.error('Permission check error:', {
+      error: error.message,
+      stack: error.stack,
+      isM2M: req.user?.gty === 'client-credentials',
+      scopes: req.user?.scope
+    });
     res.status(500).json({ error: 'Permission check failed' });
   }
 };
