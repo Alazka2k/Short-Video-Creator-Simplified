@@ -35,6 +35,14 @@ class JobDataAccess {
       if (!serviceConfigFromParams.skipMusic) serviceSequence.push('music');
       if (!serviceConfigFromParams.skipVisualization) serviceSequence.push(visualizationType);
 
+      // Create metadata object with all configurations
+      const metadata = {
+        parameters,
+        startTime: new Date().toISOString(),
+        serviceConfig: serviceConfigFromParams,
+        visualizationType: parameters.visualizationType || visualizationType || null
+      };
+
       // Create job record
       const [jobRecord] = await knex('jobs')
         .insert({
@@ -42,28 +50,13 @@ class JobDataAccess {
           prompt,
           status,
           service_sequence: JSON.stringify(serviceSequence),
-          metadata: JSON.stringify({
-            parameters,
-            startTime: new Date().toISOString()
-          }),
-          // Use service config from parameters
-          skip_voice: serviceConfigFromParams.skipVoice ?? false,
-          skip_music: serviceConfigFromParams.skipMusic ?? false,
-          skip_image: serviceConfigFromParams.skipImage ?? false,
-          skip_visualization: serviceConfigFromParams.skipVisualization ?? false,
-          // Use visualization type from parameters if available
-          visualization_type: parameters.visualizationType || visualizationType || null
+          metadata: JSON.stringify(metadata)
         })
         .returning('*');
 
       logger.info(`Created job record: ${jobRecord.job_id}`, {
-        serviceConfig: {
-          skipVoice: jobRecord.skip_voice,
-          skipMusic: jobRecord.skip_music,
-          skipImage: jobRecord.skip_image,
-          skipVisualization: jobRecord.skip_visualization
-        },
-        visualizationType: jobRecord.visualization_type,
+        serviceConfig: serviceConfigFromParams,
+        visualizationType: metadata.visualizationType,
         serviceSequence
       });
 
