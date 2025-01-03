@@ -37,23 +37,9 @@
 - Add possibility to run a job and afterwards directly and automatically the assembly service (for the option the assembly parameters need to be input in the request)
 - Add a possibility to download the video
 
-## Phase 2: Core Features
+## Phase 2: Implement Missing Core Features
 
-### 2.1 Video Management
-- Project organization
-- Video status tracking
-- Basic editing capabilities
-- Download/export options
-- Video preview player
-
-### 2.2 User Settings
-- Profile management
-- Notification preferences
-- Usage statistics
-
-## Phase 3: Payment / Billing / Subscription Integration
-
-### 3.1 Basic Subscription System
+### 2.1 Payment / Billing / Subscription Integration System
 - Implement Stripe integration
 - Create simple pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand
 - Integrate additional token purchase options (e.g. 1000 tokens for $10, 5000 tokens for $50, 10000 tokens for $100, etc., exact pricing needs to be defined)
@@ -61,18 +47,28 @@
 - Setup usage tracking
 - Implement basic billing
 
-## Phase 4: Testing & Refinement
+### 2.2 Video Assembly
+- Improve the final video assembly service with enhanced variables (depending on json2Video)
+
+### 2.3 Video Management
+- Project organization
+- Download/export options
+- Video preview player
+
+## Phase 3: Testing & Refinement
+- User authentication
+- Video Service testing
 - User flow testing
 - Bug fixing
 - Performance optimization
 - Documentation updates
 
-## Phase 5: Deployment of version 0.1.0
+## Phase 4: Deployment of version 0.1.0
 - Deploy to Staging environment
 - Test the deployment on the staging environment
 - Deploy to Production environment
 
-## Phase 6: Post-MVP Enhancements
+## Phase 5: Post-MVP Enhancements
 - Implement basic analytics (videos created, usage)
 - Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0)
 - Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
