@@ -246,7 +246,7 @@ app.get('/api/assembly/validate/:jobId', serviceAuthMiddleware, async (req, res)
 // Job Service routes
 app.post('/api/job/generate', 
   verifyAuth0Token, 
-  checkPermission('create_job'), 
+  checkPermission('create_jobs'), 
   serviceAuthMiddleware, 
   async (req, res) => {
   try {
@@ -265,7 +265,7 @@ app.post('/api/job/generate',
 
 app.get('/api/job/jobs/:jobId', 
   verifyAuth0Token, 
-  checkPermission('create_job'), 
+  checkPermission('create_jobs'), 
   serviceAuthMiddleware, 
   async (req, res) => {
   try {
@@ -284,7 +284,7 @@ app.get('/api/job/jobs/:jobId',
 
 app.get('/api/job/jobs', 
   verifyAuth0Token, 
-  checkPermission('create_job'), 
+  checkPermission('create_jobs'), 
   serviceAuthMiddleware, 
   async (req, res) => {
   try {

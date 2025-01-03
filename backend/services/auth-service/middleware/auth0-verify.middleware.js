@@ -91,7 +91,13 @@ const checkPermission = (requiredPermission) => async (req, res, next) => {
       // Convert permission to scope format (e.g., create_video -> create:videos)
       const requiredScope = requiredPermission
         .replace('_', ':') // convert create_video to create:video
-        .replace('video', 'videos'); // make it plural for API convention
+        .replace(/^create:video$/, 'create:videos') // make videos plural
+        .replace(/^create:jobs?$/, 'create:jobs'); // handle both singular and plural forms of jobs
+      
+      logger.info('Permission conversion:', {
+        original: requiredPermission,
+        converted: requiredScope
+      });
       
       if (!scopes.includes(requiredScope)) {
         logger.warn('M2M token missing required scope:', {
