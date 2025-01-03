@@ -25,7 +25,10 @@ function createServer(animationServiceInterface) {
         logger.info('Animation Service: Handling /generate request');
         const requestTimeout = setTimeout(() => {
           logger.error('Animation Service: Request timed out');
-          res.status(504).json({ error: 'Request timed out' });
+          res.status(504).json({ 
+            error: 'Service timeout', 
+            message: 'The animation generation request took too long to process. Please try again.' 
+          });
         }, 300000); // 5 minutes timeout
       
         try {
@@ -70,7 +73,34 @@ function createServer(animationServiceInterface) {
         } catch (error) {
           clearTimeout(requestTimeout);
           logger.error('Animation Service: Error generating animation:', error);
-          res.status(500).json({ error: 'Internal server error', details: error.message });
+
+          // Handle specific error types
+          if (error.response?.status === 402 && error.response?.data?.errorCode === 'NOT_ENOUGH_FUNDS') {
+            return res.status(503).json({
+              error: 'Service temporarily unavailable',
+              message: 'The animation service is currently unavailable. Our team has been notified and is working to resolve this issue. Please try again later.'
+            });
+          }
+
+          // Handle other known error types
+          const errorMapping = {
+            'Missing required parameters': 400,
+            'Video prompt is required': 400,
+            'Animation Generation Service not initialized': 503,
+            'No animation pattern available': 503,
+            'Failed to download animation': 503,
+            'No download URL provided': 503
+          };
+
+          const statusCode = errorMapping[error.message] || 500;
+          const userMessage = statusCode === 400 
+            ? error.message 
+            : 'An unexpected error occurred while generating the animation. Please try again later.';
+
+          res.status(statusCode).json({ 
+            error: statusCode === 400 ? 'Invalid request' : 'Internal server error',
+            message: userMessage
+          });
         }
     });
 

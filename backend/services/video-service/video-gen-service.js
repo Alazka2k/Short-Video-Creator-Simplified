@@ -9,6 +9,8 @@ const path = require('path');
 const VideoDataAccess = require('./data/videoDataAccess');
 const storageService = require('../../shared/utils/storage');
 const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+const ImageHelper = require('../../shared/utils/image-helper');
+const os = require('os');
 
 class VideoGenService {
   constructor() {
@@ -88,8 +90,19 @@ class VideoGenService {
       });
       return Buffer.from(response.data);
     } catch (error) {
-      logger.error('Error downloading image from URL:', error);
-      throw error;
+      const safeError = {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data ? (
+          typeof error.response.data === 'string' 
+            ? error.response.data.substring(0, 500) 
+            : 'Binary data not shown'
+        ) : undefined
+      };
+      logger.error('Error downloading image from URL:', safeError);
+      throw new Error(`Failed to download image: ${error.message}`);
     }
   }
 
@@ -138,6 +151,7 @@ class VideoGenService {
   }
 
   async generateVideo(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
+    let tempFiles = [];
     try {
       logger.info(`Generating video with the following parameters:`);
       logger.info(`Image URL: ${imageUrl}`);
@@ -147,11 +161,25 @@ class VideoGenService {
       logger.info(`Scene Index: ${sceneIndex}`);
       logger.info(`Is Test: ${isTest}`);
 
+      // Get fresh URL if it's an S3 URL
       const freshImageUrl = await StorageUrlHelper.getFreshUrl(imageUrl);
-      const imageBuffer = await this.downloadImageFromUrl(freshImageUrl);
+      logger.info(`Using fresh image URL: ${freshImageUrl}`);
+
+      // Download the image using ImageHelper
+      const imageBuffer = await ImageHelper.downloadImageFromUrl(freshImageUrl);
       
-      const picsurUrl = await this.uploadImageToPicsur(imageBuffer, `scene_${sceneIndex}.jpg`);
-      logger.info(`Image uploaded to Picsur: ${picsurUrl}`);
+      // Create temp file for the image
+      const tempDir = path.join(os.tmpdir(), 'video-service', 'temp');
+      await fs.mkdir(tempDir, { recursive: true });
+      const tempImagePath = path.join(tempDir, `scene_${sceneIndex}_input.jpg`);
+      await fs.writeFile(tempImagePath, imageBuffer);
+      tempFiles.push(tempImagePath);
+
+      // Upload to our S3 storage and get a fresh URL
+      logger.info('Uploading image to storage...');
+      const uploadResult = await storageService.uploadFile(tempImagePath, 'video-input');
+      const lumaImageUrl = await storageService.getSignedUrl(uploadResult.storageKey, 3600); // 1 hour expiry
+      logger.info(`Image uploaded successfully, URL: ${lumaImageUrl}`);
 
       const sanitizedPrompt = this.sanitizeVideoPrompt(videoPrompt);
       logger.info(`Sanitized Video Prompt: ${sanitizedPrompt}`);
@@ -163,7 +191,7 @@ class VideoGenService {
         keyframes: {
           frame0: {
             type: 'image',
-            url: picsurUrl,
+            url: lumaImageUrl,
           },
         },
       };
@@ -190,12 +218,12 @@ class VideoGenService {
           const videoUrl = videoGeneration.assets.video;
           const { videoFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest);
           await this.downloadVideo(videoUrl, videoFilePath);
+          tempFiles.push(videoFilePath);
 
-          let storageResult;  // Declare storageResult at the top of the block
-          let result;         // Declare result to store what we'll return
+          let storageResult;
+          let result;
 
           if (isTest) {
-            // For test mode, save metadata directly to file
             await this.saveVideoMetadata(metadataPath, sceneIndex, {
               videoPrompt: sanitizedPrompt,
               cameraMovement,
@@ -214,7 +242,6 @@ class VideoGenService {
               }
             };
           } else {
-            // Upload to storage and save to database
             storageResult = await storageService.uploadFile(videoFilePath, 'video');
             logger.info('Video uploaded to storage successfully');
 
@@ -252,35 +279,36 @@ class VideoGenService {
             };
           }
 
-          logger.info(`Video downloaded successfully: ${videoFilePath}`);
           return result;
         } else if (videoGeneration.state === 'failed') {
-          const errorMessage = `Video generation failed: ${videoGeneration.failure_reason || 'Unknown error'}`;
-          logger.error(errorMessage);
-          return {
-            error: true,
-            details: errorMessage,
-            generationId: generation.id,
-            state: videoGeneration.state,
-            failure_reason: videoGeneration.failure_reason
-          };
+          throw new Error(`Video generation failed: ${videoGeneration.failure_reason || 'Unknown error'}`);
         }
 
-        // Wait for 20 seconds before checking again
-        await new Promise(resolve => setTimeout(resolve, 20000));
+        // Wait before checking again
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     } catch (error) {
-      const errorMessage = error.message || 'Unknown error occurred';
-      logger.error('Error in video generation:', {
-        error: errorMessage,
-        stack: error.stack,
-        details: error.response?.data || error
-      });
-      return {
-        error: true,
-        details: errorMessage,
-        originalError: error
+      const safeError = {
+        message: error.message,
+        code: error.code,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: typeof error.response.data === 'string' ? error.response.data.substring(0, 500) : 'Response data too large'
+        } : undefined
       };
+      logger.error('Error in video generation:', safeError);
+      throw error;
+    } finally {
+      // Clean up all temp files
+      for (const file of tempFiles) {
+        try {
+          await fs.unlink(file);
+          logger.info(`Temporary file removed: ${file}`);
+        } catch (unlinkError) {
+          logger.warn(`Failed to remove temporary file: ${file}`, unlinkError);
+        }
+      }
     }
   }
 

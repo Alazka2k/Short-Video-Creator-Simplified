@@ -9,6 +9,7 @@ const AnimationPatternManager = require('../../shared/utils/pattern/animation-pa
 const AnimationDataAccess = require('./data/animationDataAccess');
 const storageService = require('../../shared/utils/storage');
 const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+const ImageHelper = require('../../shared/utils/image-helper');
 const os = require('os');
 
 class AnimationGenService {
@@ -98,50 +99,18 @@ class AnimationGenService {
       
       logger.info(`Image converted to JPEG successfully: ${outputPath}`);
     } catch (error) {
-      logger.error('Error converting image to JPEG:', error);
-      throw error;
-    }
-  }
-
-  async uploadImageToPicsur(imagePath) {
-    try {
-      logger.info(`Uploading image to Picsur: ${imagePath}`);
-      const imageBuffer = await fs.readFile(imagePath);
-      const formData = new FormData();
-      formData.append('image', imageBuffer, path.basename(imagePath));
-
-      const response = await axios.post('https://picsur.org/api/image/upload', formData, {
-        headers: {
-          ...formData.getHeaders(),
-        },
-      });
-
-      if (response.data.success) {
-        const imageId = response.data.data.id;
-        logger.info(`Image uploaded successfully. Image ID: ${imageId}`);
-        return { imageId, uploadResponse: response.data };
-      } else {
-        throw new Error('Image upload failed');
-      }
-    } catch (error) {
-      const errorInfo = {
+      const safeError = {
         message: error.message,
         code: error.code,
         response: error.response ? {
           status: error.response.status,
           statusText: error.response.statusText,
-          data: error.response.data
+          data: typeof error.response.data === 'string' ? error.response.data.substring(0, 500) : 'Response data too large'
         } : undefined
       };
-      logger.error('Error uploading image to Picsur:', errorInfo);
+      logger.error('Error converting image to JPEG:', safeError);
       throw error;
     }
-  }
-
-  constructImageUrl(imageId) {
-    const url = `https://picsur.org/i/${imageId}.jpg`;
-    logger.info(`Constructed image URL: ${url}`);
-    return url;
   }
 
   async generateDisparityMap(imagePath) {
@@ -150,11 +119,9 @@ class AnimationGenService {
     try {
       logger.info(`Starting disparity map generation for image: ${imagePath}`);
       
-      const { imageId } = await this.uploadImageToPicsur(imagePath);
-      logger.info(`Image uploaded to Picsur. Image ID: ${imageId}`);
-
-      const inputImageUrl = this.constructImageUrl(imageId);
-      logger.info(`Constructed input image URL: ${inputImageUrl}`);
+      // Make the image accessible via S3 using the shared helper
+      const inputImageUrl = await ImageHelper.makeImageAccessible(imagePath, path.basename(imagePath, path.extname(imagePath)), 'animation-service');
+      logger.info(`Using accessible image URL: ${inputImageUrl}`);
 
       const requestBody = {
         inputImageUrl
@@ -181,16 +148,16 @@ class AnimationGenService {
 
       return { disparityUrl: response.data.resultPresignedUrl, inputImageUrl };
     } catch (error) {
-      const errorInfo = {
+      const safeError = {
         message: error.message,
         code: error.code,
         response: error.response ? {
           status: error.response.status,
           statusText: error.response.statusText,
-          data: error.response.data
+          data: typeof error.response.data === 'string' ? error.response.data.substring(0, 500) : 'Response data too large'
         } : undefined
       };
-      logger.error(`Error generating disparity map: ${JSON.stringify(errorInfo, null, 2)}`);
+      logger.error(`Error generating disparity map:`, safeError);
       throw error;
     }
   }
@@ -232,21 +199,23 @@ class AnimationGenService {
       throw new Error('jobId is required for production mode');
     }
 
-    logger.info(`Starting animation generation for image: ${imagePath}`);
-    
-    let imageSource = imagePath;
-    if (imagePath.startsWith('http')) {
-      // Get fresh URL if needed
-      imageSource = await this.getImageFromUrl(imagePath);
-      logger.info('Using image URL:', imageSource);
-    }
-
-    // Create temp directory for converted file
-    const tempDir = path.join(os.tmpdir(), 'animation-service', jobId || 'test');
-    await fs.mkdir(tempDir, { recursive: true });
-    const jpegPath = path.join(tempDir, `scene_${sceneIndex}_converted.jpg`);
-    
+    let tempFiles = [];
     try {
+      logger.info(`Starting animation generation for image: ${imagePath}`);
+      
+      let imageSource = imagePath;
+      if (imagePath.startsWith('http')) {
+        // Get fresh URL if needed
+        imageSource = await this.getImageFromUrl(imagePath);
+        logger.info('Using image URL:', imageSource);
+      }
+
+      // Create temp directory for converted file
+      const tempDir = path.join(os.tmpdir(), 'animation-service', jobId || 'test');
+      await fs.mkdir(tempDir, { recursive: true });
+      const jpegPath = path.join(tempDir, `scene_${sceneIndex}_converted.jpg`);
+      tempFiles.push(jpegPath);
+      
       await this.convertToJpeg(imageSource, jpegPath);
       
       const animationLength = options.animationLength || this.animationLength;
@@ -363,25 +332,27 @@ class AnimationGenService {
         };
 
       } catch (error) {
-        const errorInfo = {
+        const safeError = {
           message: error.message,
           code: error.code,
           response: error.response ? {
             status: error.response.status,
             statusText: error.response.statusText,
-            data: error.response.data
+            data: typeof error.response.data === 'string' ? error.response.data.substring(0, 500) : error.response.data
           } : undefined
         };
-        logger.error(`Error generating animation: ${JSON.stringify(errorInfo, null, 2)}`);
+        logger.error(`Error generating animation:`, safeError);
         throw error;
       }
     } finally {
-      // Clean up temp file
-      try {
-        await fs.unlink(jpegPath);
-        logger.info(`Temporary JPEG file removed: ${jpegPath}`);
-      } catch (unlinkError) {
-        logger.warn(`Failed to remove temporary JPEG file: ${jpegPath}`, unlinkError);
+      // Clean up all temp files
+      for (const file of tempFiles) {
+        try {
+          await fs.unlink(file);
+          logger.info(`Temporary file removed: ${file}`);
+        } catch (unlinkError) {
+          logger.warn(`Failed to remove temporary file: ${file}`, unlinkError);
+        }
       }
     }
   }
