@@ -22,7 +22,12 @@ export default function RootLayout({
           storageKey="video-creator-theme"
         >
           <Auth0ProviderWrapper>
-            {children}
+            <div className="main-gradient" />
+            <div className="gradient-overlay" />
+            
+            <div className="relative">
+              {children}
+            </div>
           </Auth0ProviderWrapper>
         </ThemeProvider>
       </body>

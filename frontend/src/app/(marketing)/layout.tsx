@@ -7,9 +7,24 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="relative min-h-screen flex flex-col bg-gradient-to-br from-background to-background/95">
+    <div className="relative flex min-h-screen flex-col">
+      {/* Modern gradient background */}
+      <div className="fixed inset-0 -z-10">
+        {/* Primary gradient blob */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
+        
+        {/* Accent blobs */}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-secondary/20 rounded-full blur-3xl" />
+        
+        {/* Grain overlay */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj4NCjxmaWx0ZXIgaWQ9ImEiIHg9IjAiIHk9IjAiPg0KPGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPg0KPC9maWx0ZXI+DQo8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjA1Ii8+DQo8L3N2Zz4=')] opacity-20" />
+      </div>
+
       <MarketingHeader />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        {children}
+      </main>
       <MarketingFooter />
     </div>
   )
