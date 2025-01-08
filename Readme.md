@@ -363,6 +363,45 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 
 ## Architecture
 
+### Frontend Architecture
+The frontend is built with Next.js 14 and follows a modern, component-based architecture:
+
+#### App Structure
+- `app/`
+  - `(marketing)/` - Public marketing pages
+    - `page.tsx` - Landing page
+    - `showcase/` - Example videos showcase
+    - `features/` - Detailed features page
+  - `(dashboard)/` - Protected dashboard area
+    - `layout.tsx` - Dashboard layout wrapper
+    - `videos/` - Video management
+    - `create/` - Video creation
+    - `settings/` - User settings
+
+#### Components
+- `marketing/` - Marketing page components
+  - `hero/` - Hero section with demo carousel
+  - `features/` - Features grid layout
+  - `process/` - How it works steps
+  - `testimonials/` - User success stories
+  - `showcase/` - Video examples display
+- `layout/` - Shared layout components
+  - `header.tsx` - Main navigation
+  - `footer.tsx` - Site footer
+  - `dashboard-layout.tsx` - Dashboard structure
+  - `sidebar.tsx` - Dashboard navigation
+- `ui/` - Reusable UI components
+- `auth/` - Authentication components
+- `video/` - Video-related components
+
+#### Key Features
+- Modern, responsive design
+- Server and client components
+- Route groups for organization
+- Protected routes with authentication
+- Optimized images and animations
+- Dark/light mode support
+
 The application follows a microservices architecture designed for flexibility and maintainability:
 
 1. API Gateway: Handles routing and direct communication with all services
