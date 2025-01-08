@@ -14,6 +14,38 @@ const DEBUG = process.env.NODE_ENV === 'development';
 
 const debug = createDebugger('Header');
 
+/**
+ * Header Component
+ * 
+ * Main navigation header that appears across all pages.
+ * Provides navigation, theme switching, and user account access.
+ * 
+ * Features:
+ * - Responsive navigation menu
+ * - Theme toggle (light/dark mode)
+ * - User authentication status
+ * - Mobile menu for smaller screens
+ * - Sticky positioning
+ * - Transparent to solid background transition
+ * 
+ * Navigation:
+ * - Logo/Home link
+ * - Main navigation links
+ * - Authentication buttons
+ * - Theme toggle
+ * 
+ * States:
+ * - Default: Transparent background
+ * - Scrolled: Solid background with blur
+ * - Mobile: Hamburger menu
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <Header />
+ * ```
+ */
+
 export function Header() {
   const { isAuthenticated, logout, user, loginWithRedirect, isLoading } = useAuth0();
   const router = useRouter();

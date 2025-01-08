@@ -49,56 +49,103 @@ React/Next.js frontend application for the Video Creator platform.
   - [ ] Progress Tracking
 
 ## Architecture
-```
-frontend/
+```frontend/
+├── public/                                                # Static assets
+│   ├── demo/                                             # Demo content
+│   ├── file.svg                                          # SVG assets
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
 ├── src/
-│   ├── app/                                                    # Next.js app router pages
-│   │   ├── page.tsx                                            # Landing page
-│   │   ├── login/            # Auth pages
-│   │   ├── dashboard/        # Protected dashboard pages
-│   │   └── layout.tsx        # Root layout with providers
-│   ├── components/            # React components
-│   │   ├── auth/             # Authentication components
-│   │   │   ├── login-form.tsx    # Auth0 login component
-│   │   │   └── protected.tsx     # Auth wrapper component
-│   │   ├── content/          # Content generation components
-│   │   │   ├── video-generator.tsx  # Main video creation
-│   │   │   └── parameters.tsx       # Generation parameters
-│   │   ├── dashboard/        # Dashboard components
-│   │   │   ├── dashboard.tsx      # Main dashboard view
-│   │   │   ├── stats.tsx          # Usage statistics
-│   │   │   └── welcome.tsx        # User welcome section
-│   │   ├── jobs/             # Job management components
-│   │   │   ├── job-list.tsx       # Jobs overview
-│   │   │   ├── job-card.tsx       # Individual job display
-│   │   │   └── job-actions.tsx    # Job control buttons
-│   │   ├── layout/           # Layout components
-│   │   │   ├── nav-bar.tsx        # Top navigation
-│   │   │   ├── sidebar.tsx        # Side navigation
-│   │   │   └── dashboard-layout.tsx # Dashboard wrapper
-│   │   ├── providers/        # Context providers
-│   │   │   ├── auth0-provider.tsx  # Auth0 configuration
-│   │   │   └── theme-provider.tsx  # Theme management
-│   │   └── ui/               # Shared UI components
-│   │       ├── button.tsx         # Button components
-│   │       ├── input.tsx          # Input components
-│   │       └── loading-spinner.tsx # Loading states
-│   ├── lib/                  # Shared utilities
-│   │   ├── hooks/            # Custom React hooks
-│   │   │   ├── useAuth.ts         # Auth state hook
-│   │   │   └── useJobs.ts         # Job management hook
-│   │   ├── auth/             # Auth utilities
-│   │   │   ├── refresh.ts         # Token refresh
-│   │   │   └── types.ts           # Auth type definitions
-│   │   ├── config.ts         # Configuration
-│   │   └── utils.ts          # General utilities
-│   └── types/                # TypeScript types
-│       ├── auth.ts           # Auth-related types
-│       ├── job.ts            # Job-related types
-│       └── api.ts            # API response types
-└── public/                   # Static assets
-    ├── images/              # Image assets
-    └── icons/               # Icon assets
+│   ├── app/                                             # Next.js app router pages
+│   │   ├── api/                                         # API routes
+│   │   │   └── auth/                                    # Auth API endpoints
+│   │   │       ├── [...nextauth]/                      # NextAuth.js configuration
+│   │   │       │   └── route.ts                        # NextAuth route handler
+│   │   │       ├── callback/                           # Auth callbacks
+│   │   │       │   └── route.ts                        # Callback handler
+│   │   │       └── user/                               # User management
+│   │   │           └── route.ts                        # User routes
+│   │   ├── (auth)/                                     # Auth routes
+│   │   │   ├── layout.tsx                              # Auth layout
+│   │   │   └── login/                                  # Login pages
+│   │   │       └── page.tsx                            # Login page
+│   │   ├── (dashboard)/                                # Protected dashboard routes
+│   │   │   ├── create/                                 # Video creation
+│   │   │   │   └── page.tsx                           # Creation page
+│   │   │   ├── settings/                               # User settings
+│   │   │   │   └── page.tsx                           # Settings page
+│   │   │   ├── videos/                                 # Video management
+│   │   │   │   └── page.tsx                           # Videos list page
+│   │   │   └── layout.tsx                              # Dashboard layout
+│   │   ├── (marketing)/                                # Marketing pages
+│   │   │   ├── features/                               # Features pages
+│   │   │   │   ├── page.tsx                           # Features page
+│   │   │   │   └── layout.tsx                         # Features layout
+│   │   │   ├── page.tsx                                # Landing page
+│   │   │   └── layout.tsx                              # Marketing layout
+│   │   ├── dashboard/                                  # Dashboard pages
+│   │   │   ├── layout.tsx                              # Dashboard layout
+│   │   │   └── page.tsx                                # Dashboard home
+│   │   ├── login/                                      # Login section
+│   │   │   └── page.tsx                                # Login page
+│   │   ├── favicon.ico                                 # Site favicon
+│   │   └── layout.tsx                                  # Root layout
+│   ├── components/                                     # React components
+│   │   ├── auth/                                      # Authentication components
+│   │   │   ├── feature-slideshow.tsx                   # Feature slideshow
+│   │   │   ├── login-form.tsx                          # Login form
+│   │   │   └── protected-route.tsx                     # Route protection
+│   │   ├── content/                                   # Content components
+│   │   │   └── video-generator.tsx                     # Video generator
+│   │   ├── dashboard/                                 # Dashboard components
+│   │   │   └── dashboard.tsx                           # Dashboard main
+│   │   ├── jobs/                                      # Job components
+│   │   │   └── job-list.tsx                           # Jobs list
+│   │   ├── layout/                                    # Layout components
+│   │   │   ├── dashboard-header.tsx                    # Dashboard header
+│   │   │   ├── dashboard-layout.tsx                    # Dashboard layout
+│   │   │   ├── header.tsx                              # Main header
+│   │   │   ├── nav-bar.tsx                            # Navigation bar
+│   │   │   └── sidebar.tsx                            # Sidebar
+│   │   ├── llm/                                       # LLM components
+│   │   │   └── generate-content.tsx                    # Content generator
+│   │   ├── marketing/                                 # Marketing components
+│   │   │   ├── features/                              # Features section
+│   │   │   │   └── FeaturesSection.tsx                # Features grid
+│   │   │   ├── hero/                                  # Hero section
+│   │   │   │   ├── HeroCTA.tsx                        # Call-to-action
+│   │   │   │   ├── HeroSection.tsx                    # Hero main
+│   │   │   │   ├── HeroVideo.tsx                      # Hero video
+│   │   │   │   └── types.d.ts                         # Hero types
+│   │   │   ├── process/                               # Process section
+│   │   │   │   └── ProcessSection.tsx                 # Process steps
+│   │   │   ├── footer.tsx                             # Marketing footer
+│   │   │   └── header.tsx                             # Marketing header
+│   │   ├── providers/                                 # Context providers
+│   │   │   ├── auth0-provider.tsx                     # Auth0 provider
+│   │   │   └── theme-provider.tsx                     # Theme provider
+│   │   ├── ui/                                       # Shared UI components
+│   │   │   ├── button.tsx                            # Button component
+│   │   │   ├── card.tsx                              # Card component
+│   │   │   ├── dropdown-menu.tsx                     # Dropdown menu
+│   │   │   ├── index.ts                              # UI barrel file
+│   │   │   ├── input.tsx                             # Input component
+│   │   │   ├── loading-spinner.tsx                   # Loading spinner
+│   │   │   ├── loading.tsx                           # Loading state
+│   │   │   ├── textarea.tsx                          # Textarea component
+│   │   │   ├── toast.tsx                             # Toast component
+│   │   │   └── use-toast.tsx                         # Toast hook
+│   │   ├── video/                                    # Video components
+│   │   │   └── creation-form.tsx                     # Video creation form
+│   │   └── theme-toggle.tsx                          # Theme toggle
+│   ├── lib/                                          # Shared utilities
+│   │   └── utils.ts                                   # Utility functions
+│   ├── styles/                                       # Styling
+│   │   └── globals.css                               # Global styles
+│   └── types/                                        # TypeScript types
+│       └── shared.d.ts                               # Shared type definitions
 ```
 
 ## Development

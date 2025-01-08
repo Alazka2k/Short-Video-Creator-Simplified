@@ -1,3 +1,37 @@
+/**
+ * Marketing Layout Component
+ * 
+ * Root layout for all marketing-related pages (landing page, features, pricing, etc.).
+ * Provides consistent structure and styling for public-facing pages.
+ * 
+ * Features:
+ * - Common header and footer
+ * - Theme provider integration
+ * - SEO optimization setup
+ * - Analytics integration (when implemented)
+ * - Responsive layout structure
+ * 
+ * Layout Elements:
+ * - Marketing header with navigation
+ * - Main content area
+ * - Marketing footer with links
+ * - Theme handling
+ * 
+ * Responsibilities:
+ * - Marketing pages structure
+ * - Theme context provision
+ * - Analytics tracking
+ * - SEO metadata
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <MarketingLayout>
+ *   <LandingPage />
+ * </MarketingLayout>
+ * ```
+ */
+
 import { MarketingHeader } from "@/components/marketing/header"
 import { MarketingFooter } from "@/components/marketing/footer"
 

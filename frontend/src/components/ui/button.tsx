@@ -3,6 +3,41 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
+/**
+ * Button Component
+ * 
+ * A versatile button component that supports multiple variants and sizes.
+ * Built with accessibility and customization in mind.
+ * 
+ * Features:
+ * - Multiple visual variants (primary, secondary, outline, ghost)
+ * - Different sizes (sm, md, lg)
+ * - Loading state support
+ * - Icon support (left and right)
+ * - Full width option
+ * - Disabled state styling
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * // Primary button
+ * <Button variant="primary">Click me</Button>
+ * 
+ * // Secondary button with loading state
+ * <Button variant="secondary" loading>Processing</Button>
+ * 
+ * // Ghost button with icon
+ * <Button variant="ghost" icon={<Icon />}>With Icon</Button>
+ * ```
+ * 
+ * @prop {string} variant - The visual style variant of the button
+ * @prop {string} size - The size of the button
+ * @prop {boolean} loading - Whether to show loading state
+ * @prop {boolean} fullWidth - Whether the button should take full width
+ * @prop {ReactNode} leftIcon - Icon to show on the left
+ * @prop {ReactNode} rightIcon - Icon to show on the right
+ */
+
 const buttonVariants = cva(
   "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
   {

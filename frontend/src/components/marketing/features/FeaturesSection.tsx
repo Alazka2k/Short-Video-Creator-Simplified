@@ -1,3 +1,26 @@
+/**
+ * Features Section Component
+ * 
+ * A modern, animated grid layout showcasing the key features of the video creation platform.
+ * This component includes:
+ * - Animated feature cards with icons and descriptions
+ * - Responsive grid layout (1 column on mobile, 2 columns on desktop)
+ * - Hover effects and transitions
+ * - Framer Motion animations for smooth entry
+ * 
+ * Features displayed:
+ * - Scene-Based Creation
+ * - AI-Powered Generation
+ * - Multi-Platform Ready
+ * - Fine-Tuning Control
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <FeaturesSection />
+ * ```
+ */
+
 "use client"
 
 import Link from "next/link"

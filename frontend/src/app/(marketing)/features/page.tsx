@@ -1,3 +1,40 @@
+/**
+ * Features Page
+ * 
+ * Detailed showcase of all platform features and capabilities.
+ * Provides in-depth information about each feature with examples and use cases.
+ * 
+ * Feature Categories:
+ * - Content Creation
+ *   - AI-powered generation
+ *   - Scene-based creation
+ *   - Voice synthesis
+ * - Customization
+ *   - Style controls
+ *   - Voice options
+ *   - Music selection
+ * - Export & Sharing
+ *   - Multiple formats
+ *   - Platform optimization
+ *   - Direct sharing
+ * 
+ * Page Structure:
+ * - Feature overview grid
+ * - Detailed feature sections
+ * - Interactive demonstrations
+ * - Use case examples
+ * - Technical specifications
+ * 
+ * Integration:
+ * - Links to documentation
+ * - Connection to pricing plans
+ * - Demo request options
+ * 
+ * @page
+ * @example
+ * URL: /features
+ */
+
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { 

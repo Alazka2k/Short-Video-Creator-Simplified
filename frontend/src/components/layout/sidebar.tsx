@@ -37,6 +37,39 @@ const menuItems = [
   }
 ];
 
+/**
+ * Sidebar Component
+ * 
+ * Dashboard navigation sidebar providing access to all main features.
+ * Responsive design that transforms into a mobile drawer on smaller screens.
+ * 
+ * Features:
+ * - Collapsible navigation menu
+ * - Active state highlighting
+ * - Mobile responsive drawer
+ * - User profile section
+ * - Quick action buttons
+ * 
+ * Navigation Sections:
+ * - Dashboard overview
+ * - Video creation
+ * - Projects/Videos list
+ * - Settings
+ * - User profile
+ * 
+ * States:
+ * - Desktop: Fixed sidebar
+ * - Mobile: Drawer with overlay
+ * - Active route highlighting
+ * - Hover effects
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <Sidebar />
+ * ```
+ */
+
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
 

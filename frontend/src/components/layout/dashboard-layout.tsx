@@ -6,6 +6,40 @@ import { useAuth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { config } from '@/lib/config'
 
+/**
+ * Dashboard Layout Component
+ * 
+ * Main layout wrapper for all dashboard pages. Provides the structure and
+ * common elements shared across all dashboard views.
+ * 
+ * Features:
+ * - Protected route wrapper
+ * - Responsive layout structure
+ * - Integration with header and sidebar
+ * - Content area management
+ * - Authentication check
+ * 
+ * Layout Structure:
+ * - Fixed header at top
+ * - Sidebar on left (desktop)
+ * - Main content area
+ * - Responsive padding/margins
+ * 
+ * Responsibilities:
+ * - Authentication protection
+ * - Layout structure
+ * - Responsive behavior
+ * - Component composition
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <DashboardLayout>
+ *   <DashboardContent />
+ * </DashboardLayout>
+ * ```
+ */
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { token } = useAuth()
 

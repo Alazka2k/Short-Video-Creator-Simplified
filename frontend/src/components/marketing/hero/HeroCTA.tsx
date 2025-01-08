@@ -4,6 +4,32 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Play, ChevronDown } from 'lucide-react'
 
+/**
+ * Hero Call-to-Action Component
+ * 
+ * Primary call-to-action section within the hero area that drives user engagement.
+ * Designed to convert visitors into users through compelling action buttons.
+ * 
+ * Features:
+ * - Primary action button for getting started
+ * - Secondary action for learning more
+ * - Animated entrance effects
+ * - Responsive button layout
+ * - Hover state animations
+ * - Integration with authentication flow
+ * 
+ * Usage:
+ * - Primary button triggers sign-up/login flow
+ * - Secondary button scrolls to features section
+ * - Tracks click events for analytics (when implemented)
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <HeroCTA />
+ * ```
+ */
+
 export function HeroCTA() {
   const scrollToHowItWorks = () => {
     const element = document.getElementById('how-it-works')

@@ -32,6 +32,38 @@ const steps = [
   },
 ]
 
+/**
+ * Process Section Component
+ * 
+ * Displays the step-by-step process of creating videos using the platform.
+ * Uses a visual timeline approach to explain the workflow to users.
+ * 
+ * Features:
+ * - Animated step reveals on scroll
+ * - Numbered steps with icons
+ * - Responsive layout adaptation
+ * - Visual connection between steps
+ * - Gradient accents and hover effects
+ * 
+ * Process Steps:
+ * 1. Input your idea/prompt
+ * 2. AI generates content
+ * 3. Review and customize
+ * 4. Export and share
+ * 
+ * Visual Elements:
+ * - Step numbers with gradient backgrounds
+ * - Descriptive icons for each step
+ * - Connecting lines between steps
+ * - Hover state enhancements
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <ProcessSection />
+ * ```
+ */
+
 export function ProcessSection() {
   return (
     <section className="min-h-screen flex items-center relative py-24 overflow-hidden">

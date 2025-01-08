@@ -1,3 +1,34 @@
+/**
+ * Marketing Landing Page
+ * 
+ * The main entry point and homepage for the video creation platform.
+ * Showcases the platform's key features and value proposition to potential users.
+ * 
+ * Page Sections:
+ * - Hero section with main value proposition
+ * - Features showcase
+ * - How it works / Process steps
+ * - Social proof (planned)
+ * - Pricing preview (planned)
+ * - Final CTA (planned)
+ * 
+ * Features:
+ * - Responsive design for all devices
+ * - Animated section transitions
+ * - Interactive demonstrations
+ * - Performance optimized
+ * - SEO friendly structure
+ * 
+ * Key Components:
+ * - HeroSection: Main value proposition
+ * - FeaturesSection: Key platform features
+ * - ProcessSection: How the platform works
+ * 
+ * @page
+ * @example
+ * URL: /
+ */
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { HeroSection } from '@/components/marketing/hero/HeroSection'

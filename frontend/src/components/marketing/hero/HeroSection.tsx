@@ -4,6 +4,33 @@ import { motion } from 'framer-motion'
 import { HeroCTA } from '@/components/marketing/hero/HeroCTA'
 import { HeroVideo } from '@/components/marketing/hero/HeroVideo'
 
+/**
+ * Hero Section Component
+ * 
+ * The main landing page hero section that introduces the video creation platform.
+ * Combines compelling copy, call-to-action, and visual demonstration.
+ * 
+ * Features:
+ * - Animated entrance effects using Framer Motion
+ * - Responsive layout for all screen sizes
+ * - Gradient text and background effects
+ * - Integration with HeroCTA and HeroVideo components
+ * - Background grid pattern with decorative elements
+ * 
+ * Layout Structure:
+ * - Header with animated badge
+ * - Main headline with gradient effect
+ * - Descriptive subheading
+ * - Call-to-action buttons
+ * - Video demonstration
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <HeroSection />
+ * ```
+ */
+
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-accent/5">
