@@ -86,7 +86,7 @@ export function HeroVideo() {
       {/* Aspect ratio container */}
       <div className="relative aspect-[9/16] rounded-xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/50 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-background/30 to-transparent z-10" />
 
         {/* Images */}
         <AnimatePresence mode="wait" initial={false}>
@@ -124,10 +124,10 @@ export function HeroVideo() {
             <motion.div 
               className={cn(
                 "absolute bottom-16 left-4 right-4",
-                "bg-background/95 backdrop-blur-md",
+                "bg-background/80 dark:bg-background/60 backdrop-blur-md",
                 "p-6 rounded-xl border border-border/50",
                 "transform transition-all duration-300",
-                "group-hover:translate-y-1 group-hover:bg-background/95",
+                "group-hover:translate-y-1 group-hover:bg-background/90 dark:group-hover:bg-background/70",
                 "shadow-lg"
               )}
               initial={{ opacity: 0, y: 20 }}
@@ -136,15 +136,15 @@ export function HeroVideo() {
             >
               {/* Category tag */}
               <div className="mb-3">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground">
                   Featured
                 </span>
               </div>
               
-              <h3 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-accent">
+              <h3 className="text-xl font-semibold text-primary dark:text-primary-foreground">
                 {DEMO_CONTENT[currentIndex].title}
               </h3>
-              <p className="text-sm text-foreground mt-2 leading-relaxed">
+              <p className="text-sm text-foreground/90 dark:text-foreground/80 mt-2 leading-relaxed">
                 {DEMO_CONTENT[currentIndex].description}
               </p>
 
