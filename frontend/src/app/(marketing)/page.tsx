@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button"
 import { HeroSection } from '@/components/marketing/hero/HeroSection'
 import { ProcessSection } from '@/components/marketing/process/ProcessSection'
 import { FeaturesSection } from '@/components/marketing/features/FeaturesSection'
+import { TestimonialsSection } from '@/components/marketing/testimonials/TestimonialsSection'
 
 export const dynamic = 'force-static'
 export const revalidate = 3600 // Revalidate every hour
@@ -49,6 +50,9 @@ export default function Home() {
 
       {/* Features Section */}
       <FeaturesSection />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
 
       {/* CTA Section */}
       <section className="py-24 bg-accent/5">

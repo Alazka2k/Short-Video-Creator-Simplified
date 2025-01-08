@@ -14,6 +14,11 @@ export function MarketingFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/showcase" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Showcase
+                </Link>
+              </li>
+              <li>
                 <Link href="/pricing" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Pricing
                 </Link>

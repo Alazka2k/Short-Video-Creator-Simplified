@@ -22,6 +22,12 @@ export function MarketingHeader() {
               Features
             </Link>
             <Link 
+              href="/showcase" 
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Showcase
+            </Link>
+            <Link 
               href="/pricing" 
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >

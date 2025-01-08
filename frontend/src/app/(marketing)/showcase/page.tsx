@@ -7,12 +7,9 @@
  * URL: /showcase
  */
 
-'use client'
-
-import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
-import { VideoCard } from '@/components/marketing/showcase/VideoCard'
 import showcaseData from '@/data/showcase-videos.json'
+import { ClientVideoGrid } from '@/components/marketing/showcase/ClientVideoGrid'
 
 // Type assertion for the imported data
 const showcaseVideos = showcaseData.videos as Array<{
@@ -24,55 +21,35 @@ const showcaseVideos = showcaseData.videos as Array<{
 
 export default function ShowcasePage() {
   return (
-    <div className="relative min-h-screen">
-      {/* Background decoration - adjusted opacity and layers */}
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background decoration */}
       <div className="absolute inset-0 bg-background">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-accent/5 to-background" />
-        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-background" />
+        <div className="absolute inset-0 bg-grid-white/[0.02]" />
+        
+        {/* Static gradient orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
       </div>
 
       <div className="container relative px-4 md:px-6 py-24">
-        {/* Page header - improved text contrast */}
+        {/* Page header */}
         <div className="text-center mb-24">
-          <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8">
             <Sparkles className="w-4 h-4" />
             <span className="text-sm font-medium">Video Showcase</span>
-          </motion.div>
+          </div>
 
-          <motion.h1 
-            className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
             Created with AI Magic
-          </motion.h1>
-          <motion.p 
-            className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
             Explore examples of engaging content created using our platform
-          </motion.p>
+          </p>
         </div>
 
         {/* Video grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {showcaseVideos.map((video, index) => (
-            <VideoCard
-              key={video.id}
-              title={video.title}
-              platform={video.platform}
-              embedUrl={video.embedUrl}
-              delay={index * 0.1}
-            />
-          ))}
-        </div>
+        <ClientVideoGrid videos={showcaseVideos} />
       </div>
     </div>
   )

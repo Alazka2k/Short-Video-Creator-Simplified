@@ -11,7 +11,23 @@ const nextConfig = {
   },
   experimental: {
     externalDir: true,
-  }
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.tiktokcdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.tiktokcdn-us.com',
+      },
+    ],
+  },
 }
 
 module.exports = nextConfig
