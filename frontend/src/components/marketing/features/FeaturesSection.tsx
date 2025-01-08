@@ -1,0 +1,134 @@
+"use client"
+
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { motion } from "framer-motion"
+import { 
+  Wand2,
+  TrendingUp,
+  Clock,
+  Layout,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react"
+
+const features = [
+  {
+    name: 'AI-Powered Creation',
+    description: 'Create professional videos in minutes using advanced AI technology.',
+    icon: Wand2,
+    gradient: "from-violet-500 to-purple-500",
+  },
+  {
+    name: 'Analytics & Insights',
+    description: 'Track performance and optimize your video content strategy.',
+    icon: TrendingUp,
+    gradient: "from-blue-500 to-violet-500",
+  },
+  {
+    name: 'Fast & Efficient',
+    description: 'Generate videos quickly with our optimized processing pipeline.',
+    icon: Clock,
+    gradient: "from-indigo-500 to-blue-500",
+  },
+  {
+    name: 'Customizable Templates',
+    description: 'Choose from a variety of templates to match your brand style.',
+    icon: Layout,
+    gradient: "from-purple-500 to-pink-500",
+  },
+]
+
+export function FeaturesSection() {
+  return (
+    <section className="relative py-32 overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+      </div>
+
+      <div className="container relative px-4 md:px-6">
+        {/* Section header */}
+        <div className="text-center mb-20">
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm font-medium">Key Features</span>
+          </motion.div>
+
+          <motion.h2 
+            className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-foreground to-primary"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            Powerful Features
+          </motion.h2>
+          <motion.p 
+            className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
+            Everything you need to create engaging social media content at scale
+          </motion.p>
+        </div>
+
+        {/* Features grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className="group relative"
+            >
+              <div className="relative p-8 rounded-2xl bg-card hover:bg-accent/5 transition-all duration-300 border border-border/50 hover:shadow-lg hover:-translate-y-1">
+                {/* Icon */}
+                <div className={cn(
+                  "w-16 h-16 rounded-2xl mb-6 flex items-center justify-center transform-gpu transition-transform group-hover:scale-110",
+                  "bg-gradient-to-br shadow-lg",
+                  feature.gradient
+                )}>
+                  <feature.icon className="w-8 h-8 text-white" />
+                </div>
+
+                <h3 className="text-2xl font-semibold mb-4">{feature.name}</h3>
+                <p className="text-muted-foreground text-lg leading-relaxed">{feature.description}</p>
+
+                {/* Hover decoration */}
+                <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/20 rounded-2xl transition-colors duration-300" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* View All Features link */}
+        <motion.div 
+          className="flex justify-center mt-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+        >
+          <Link 
+            href="/features" 
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            View All Features
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  )
+} 

@@ -17,17 +17,53 @@ export function HeroSection() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col items-start gap-4"
+            className="flex flex-col items-start gap-6 relative"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Create Engaging{' '}
-              <span className="text-primary">Social Videos</span>{' '}
-              with AI
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-[600px]">
-              Transform your ideas into professional short-form videos. Perfect for social media content creators, educators, and businesses.
-            </p>
+            {/* Decorative elements */}
+            <div className="absolute -left-8 -top-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-accent/10 rounded-full blur-2xl" />
+            
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              <span className="text-sm font-medium">AI-Powered Creation</span>
+            </motion.div>
+
+            <div className="space-y-4">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+                Create Engaging{' '}
+                <span className="relative">
+                  <span className="relative z-10 text-primary">Social Videos</span>
+                  <div className="absolute -bottom-2 left-0 right-0 h-3 bg-primary/20 -rotate-1" />
+                </span>{' '}
+                with AI
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-[600px] leading-relaxed">
+                Transform your ideas into professional short-form videos. Perfect for social media content creators, educators, and businesses.
+              </p>
+            </div>
+
             <HeroCTA />
+
+            {/* Feature tags */}
+            <div className="flex flex-wrap gap-3 mt-4">
+              {['Quick Creation', 'Professional Results', 'Multiple Styles', 'Social Media Ready'].map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 rounded-full bg-secondary/50 text-secondary-foreground text-sm"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </motion.div>
 
           {/* Right column - Video preview */}

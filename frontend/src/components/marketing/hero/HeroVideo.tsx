@@ -79,14 +79,14 @@ export function HeroVideo() {
 
   return (
     <div 
-      className="relative w-full max-w-sm mx-auto"
+      className="relative w-full max-w-sm mx-auto group"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Aspect ratio container */}
-      <div className="relative aspect-[9/16] rounded-xl overflow-hidden shadow-2xl">
+      <div className="relative aspect-[9/16] rounded-xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/50 to-transparent z-10" />
 
         {/* Images */}
         <AnimatePresence mode="wait" initial={false}>
@@ -108,28 +108,48 @@ export function HeroVideo() {
               alt={DEMO_CONTENT[currentIndex].alt}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover"
+              className={cn(
+                "object-cover",
+                "transition-all duration-300",
+                "group-hover:scale-105"
+              )}
               priority={currentIndex === 0}
               onError={() => setImageError(true)}
-            />
+              loading="eager"
+              quality={90}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkMjU1LC0yMi4xODY6NT47Pi0uRGhMS1NWV1xfOUVHSV5bYVtcXFv/2wBDARUXFx4aHR4eHFvEOC47W1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1v/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="/>
 
             {/* Title Overlay */}
             <motion.div 
               className={cn(
                 "absolute bottom-16 left-4 right-4",
-                "bg-background/80 backdrop-blur-sm",
-                "p-4 rounded-xl"
+                "bg-background/95 backdrop-blur-md",
+                "p-6 rounded-xl border border-border/50",
+                "transform transition-all duration-300",
+                "group-hover:translate-y-1 group-hover:bg-background/95",
+                "shadow-lg"
               )}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
             >
-              <h3 className="text-lg font-semibold">
+              {/* Category tag */}
+              <div className="mb-3">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  Featured
+                </span>
+              </div>
+              
+              <h3 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary to-accent">
                 {DEMO_CONTENT[currentIndex].title}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground mt-2 leading-relaxed">
                 {DEMO_CONTENT[currentIndex].description}
               </p>
+
+              {/* Visual separator */}
+              <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-primary to-accent rounded-full" />
             </motion.div>
           </motion.div>
         </AnimatePresence>
@@ -141,18 +161,18 @@ export function HeroVideo() {
           </div>
         )}
 
-        {/* Navigation buttons */}
-        <div className="absolute inset-0 flex items-center justify-between p-4 z-20">
+        {/* Navigation buttons - fade in on hover */}
+        <div className="absolute inset-0 flex items-center justify-between p-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={prev}
-            className="p-1 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/40 transition-colors"
+            className="p-2 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/40 transition-all hover:scale-110"
             aria-label="Previous slide"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={next}
-            className="p-1 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/40 transition-colors"
+            className="p-2 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/40 transition-all hover:scale-110"
             aria-label="Next slide"
           >
             <ChevronRight className="w-5 h-5" />

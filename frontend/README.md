@@ -15,7 +15,8 @@ React/Next.js frontend application for the Video Creator platform.
   - [x] Auto-rotating Image Carousel
   - [x] Responsive Layout
   - [x] Dark/Light Mode Support
-  - [x] Initial "How It Works" Section
+  - [x] "How It Works" Section with Process Steps
+  - [x] Smooth Animations and Transitions
 
 ### In Progress 🔄
 - Authentication Rework
@@ -25,7 +26,7 @@ React/Next.js frontend application for the Video Creator platform.
   - [ ] Session Handling
   - [ ] Permission System Integration
 - Landing Page Sections
-  - [ ] Features Section
+  - [ ] Features Section (Next)
   - [ ] Example Gallery
   - [ ] Testimonials
   - [ ] Pricing Preview
