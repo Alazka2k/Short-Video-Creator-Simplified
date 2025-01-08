@@ -107,6 +107,7 @@ export function HeroVideo() {
               src={DEMO_CONTENT[currentIndex].src}
               alt={DEMO_CONTENT[currentIndex].alt}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover"
               priority={currentIndex === 0}
               onError={() => setImageError(true)}

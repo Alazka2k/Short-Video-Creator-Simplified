@@ -1,6 +1,6 @@
 # MVP Development Plan
 
-## Current Status (Updated Jan 7, 2024)
+## Current Status (Updated Jan 8, 2024)
 - ✅ Basic authentication with Auth0 is working
 - ✅ Core AI services are implemented (LLM, Voice, Image, Animation, Video)
 - ✅ Image accessibility and error handling improved in Animation and Video services
@@ -14,6 +14,12 @@
   - ⏳ Testimonials
   - ⏳ Pricing Preview
   - ⏳ FAQ Section
+- 🔄 Authentication system rework needed
+  - ⏳ Social login integration (/api/auth/social)
+  - ⏳ Email registration flow (/api/auth/register)
+  - ⏳ Profile management
+  - ⏳ Session handling
+  - ⏳ Permission system integration
 - ⏳ Dashboard implementation pending
 - ⏳ Video creation flow needs improvement
 
@@ -33,14 +39,23 @@
 - ⏳ Testimonials/demo section
 - ⏳ Social proof section (Planned for post-MVP)
 
-### 1.2 Dashboard Implementation
+### 1.2 Authentication System Rework
+- Integrate new backend authentication endpoints
+- Implement social login providers
+- Add email registration flow
+- Enhance profile management
+- Implement session handling
+- Set up permission system
+- Update protected routes
+
+### 1.3 Dashboard Implementation
 - Create main dashboard layout
 - Add a button for the user to go to the video creation page
 - Add project/video list view
 - Add quick actions menu
 - Include recent activities section
 
-### 1.3 Video Creation Flow
+### 1.4 Video Creation Flow
 - Streamline input form (based on API request schema for Job endpoint)
 - Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 - Add progress visualization (can be a simple progress bar for every scene and the music generation (usually music generation is the longest part))

@@ -100,7 +100,7 @@ Staging/Production:
 - Authorization Requests: Consider enabling PAR/JAR
 ```
 
-### 4. Environment Variables
+### 4. Environment Variables in .env
 ```env
 # Development (.env.development)
 NEXT_PUBLIC_DEVELOPMENT_AUTH0_DOMAIN=dev-xxx.auth0.com
@@ -116,6 +116,14 @@ NEXT_PUBLIC_STAGING_AUTH0_AUDIENCE=https://api.staging-xxx.com
 NEXT_PUBLIC_PRODUCTION_AUTH0_DOMAIN=xxx.auth0.com
 NEXT_PUBLIC_PRODUCTION_AUTH0_CLIENT_ID=your-prod-client-id
 NEXT_PUBLIC_PRODUCTION_AUTH0_AUDIENCE=https://api.xxx.com
+```
+### 5. Environment Variables for Frontend
+```env.staging / env.production
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_AUTH0_DOMAIN=prod-domain.auth0.com
+NEXT_PUBLIC_AUTH0_CLIENT_ID=prod-client-id
+NEXT_PUBLIC_AUTH0_AUDIENCE=https://api.prod-domain.com
 ```
 
 ## Deployment Steps

@@ -2,7 +2,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Auth0ProviderWrapper } from '@/components/providers/auth0-provider';
 import { cn } from '@/lib/utils';
-import './globals.css';
+import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,8 +22,8 @@ export default function RootLayout({
           storageKey="video-creator-theme"
         >
           <Auth0ProviderWrapper>
-            <div className="main-gradient" />
-            <div className="gradient-overlay" />
+            <div className="main-gradient" suppressHydrationWarning />
+            <div className="gradient-overlay" suppressHydrationWarning />
             
             <div className="relative">
               {children}
