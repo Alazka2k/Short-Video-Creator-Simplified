@@ -1,0 +1,22 @@
+{
+  "videos": [
+    {
+      "id": 1,
+      "title": "Who is Alan Turing? - Unleashing the Hidden Power of Mathematics",
+      "platform": "youtube",
+      "embedUrl": "https://youtube.com/shorts/4_FW0rqd9Tw"
+    },
+    {
+      "id": 2,
+      "title": "Who is Stephen Hawking? - Unfolding the Master of Cosmology",
+      "platform": "youtube",
+      "embedUrl": "https://youtube.com/shorts/Xij15duuvuQ"
+    },
+    {
+      "id": 3,
+      "title": "Who is Andre-Marie Ampere? - The Pulse Behind Electromagnetism",
+      "platform": "tiktok",
+      "embedUrl": "https://www.tiktok.com/@pioneerportraits/video/7315428189721939232"
+    }
+  ]
+} 
