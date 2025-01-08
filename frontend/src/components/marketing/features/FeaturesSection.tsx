@@ -10,31 +10,34 @@ import {
   Layout,
   ChevronRight,
   Sparkles,
+  Layers,
+  Share2,
+  Sliders,
 } from "lucide-react"
 
 const features = [
   {
-    name: 'AI-Powered Creation',
-    description: 'Create professional videos in minutes using advanced AI technology.',
-    icon: Wand2,
+    name: 'Scene-Based Creation',
+    description: 'Create content scene by scene with AI-generated visuals and professional voiceovers.',
+    icon: Layers,
     gradient: "from-violet-500 to-purple-500",
   },
   {
-    name: 'Analytics & Insights',
-    description: 'Track performance and optimize your video content strategy.',
-    icon: TrendingUp,
+    name: 'AI-Powered Generation',
+    description: 'Transform your ideas into engaging content with advanced AI for visuals, voice, and music.',
+    icon: Wand2,
     gradient: "from-blue-500 to-violet-500",
   },
   {
-    name: 'Fast & Efficient',
-    description: 'Generate videos quickly with our optimized processing pipeline.',
-    icon: Clock,
+    name: 'Multi-Platform Ready',
+    description: 'Export optimized content for TikTok, Instagram, YouTube and other social platforms.',
+    icon: Share2,
     gradient: "from-indigo-500 to-blue-500",
   },
   {
-    name: 'Customizable Templates',
-    description: 'Choose from a variety of templates to match your brand style.',
-    icon: Layout,
+    name: 'Fine-Tuning Control',
+    description: 'Customize every aspect of your content from visuals to voiceovers and music.',
+    icon: Sliders,
     gradient: "from-purple-500 to-pink-500",
   },
 ]
