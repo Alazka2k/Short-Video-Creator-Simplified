@@ -1,0 +1,26 @@
+{
+  "scenes": [
+    {
+      "id": "scene_1",
+      "title": "Scene 1 - ",
+      "type": "video",
+      "mediaFile": "/features/video/discovery-scene.mp4",
+      "voiceFile": "/features/voices/discovery-voice.mp3"
+    },
+    {
+      "id": "scene_2",
+      "title": "Scene 2 - ",
+      "type": "video",
+      "mediaFile": "/features/video/impact-scene.jpg",
+      "voiceFile": "/features/voices/impact-voice.mp3"
+    },
+    {
+      "id": "scene_3",
+      "title": "Scene 3 - ",
+      "type": "video",
+      "mediaFile": "/features/video/legacy-scene.mp4",
+      "voiceFile": "/features/voices/legacy-voice.mp3"
+    }
+  ],
+  "backgroundMusic": "/features/music/background-track.mp3"
+} 

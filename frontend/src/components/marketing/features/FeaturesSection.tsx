@@ -23,138 +23,254 @@
 
 "use client"
 
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
-import { 
-  Wand2,
-  TrendingUp,
-  Clock,
-  Layout,
-  ChevronRight,
-  Sparkles,
-  Layers,
-  Share2,
-  Sliders,
-} from "lucide-react"
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Cpu, Wand2, Video, Sparkles, Brain, Share2, Clock, Settings, Mic } from 'lucide-react'
+import { FeatureCard } from './FeatureCard'
+import { FeatureDemo } from './FeatureDemo'
 
-const features = [
+interface Feature {
+  title: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+  gradient: string
+  benefits: string[]
+  demoType: 'content-generation' | 'visual-creation' | 'voice-generation' | 
+            'music-creation' | 'scene-assembly' | 'platform-optimization' | 
+            'modular-workflow' | 'fine-tuning'
+}
+
+const features: Feature[] = [
   {
-    name: 'Scene-Based Creation',
-    description: 'Create content scene by scene with AI-generated visuals and professional voiceovers.',
-    icon: Layers,
-    gradient: "from-violet-500 to-purple-500",
+    title: "AI-Powered Content Generation",
+    description: "Transform your ideas into engaging content with our advanced AI technology. Create viral-worthy videos for any platform with flexible generation options for each component.",
+    icon: Brain,
+    gradient: "from-purple-500 to-indigo-500",
+    demoType: "content-generation",
+    benefits: [
+      "Complete video generation pipeline",
+      "Flexible service selection (use any combination)",
+      "Viral-optimized content creation",
+      "Quick iterations and refinements"
+    ]
   },
   {
-    name: 'AI-Powered Generation',
-    description: 'Transform your ideas into engaging content with advanced AI for visuals, voice, and music.',
-    icon: Wand2,
-    gradient: "from-blue-500 to-violet-500",
+    title: "Visual Creation",
+    description: "Generate stunning visuals in multiple styles and formats. Choose from various artistic styles, shot types, and animation options for each scene.",
+    icon: Sparkles,
+    gradient: "from-orange-500 to-amber-500",
+    demoType: "visual-creation",
+    benefits: [
+      "Multiple artist style options",
+      "Various shot styles (photorealistic, cinematic)",
+      "Flexible aspect ratios",
+      "Custom style parameters"
+    ]
   },
   {
-    name: 'Multi-Platform Ready',
-    description: 'Export optimized content for TikTok, Instagram, YouTube and other social platforms.',
+    title: "Voice Generation",
+    description: "Access state-of-the-art AI voices for professional narration. Choose from a variety of voices and styles to match your content's tone perfectly.",
+    icon: Mic,
+    gradient: "from-pink-500 to-rose-500",
+    demoType: "voice-generation",
+    benefits: [
+      "Professional AI voices",
+      "Multiple voice options",
+      "Natural speech patterns",
+      "Voice sample preview"
+    ]
+  },
+  {
+    title: "Scene Assembly",
+    description: "Create dynamic videos with our flexible scene system. Generate and combine video segments seamlessly with smart transitions.",
+    icon: Video,
+    gradient: "from-blue-500 to-cyan-500",
+    demoType: "scene-assembly",
+    benefits: [
+      "Flexible scene ordering",
+      "Smart transitions",
+      "Audio synchronization",
+      "Duration control"
+    ]
+  },
+  {
+    title: "Platform Optimization",
+    description: "Create content perfectly formatted for any platform. Automatically optimize for YouTube Shorts, TikTok, Instagram Reels, and more.",
     icon: Share2,
-    gradient: "from-indigo-500 to-blue-500",
+    gradient: "from-green-500 to-emerald-500",
+    demoType: "platform-optimization",
+    benefits: [
+      "Multi-platform support",
+      "Automatic format optimization",
+      "Platform-specific features",
+      "Export presets"
+    ]
   },
   {
-    name: 'Fine-Tuning Control',
-    description: 'Customize every aspect of your content from visuals to voiceovers and music.',
-    icon: Sliders,
-    gradient: "from-purple-500 to-pink-500",
-  },
+    title: "Workflow Customization",
+    description: "Choose exactly what you need. Skip or include any service - from image generation to voice-over to music creation.",
+    icon: Settings,
+    gradient: "from-violet-500 to-purple-500",
+    demoType: "modular-workflow",
+    benefits: [
+      "Service selection flexibility",
+      "Component-level control",
+      "Custom workflows",
+      "Process automation"
+    ]
+  }
 ]
 
 export function FeaturesSection() {
-  return (
-    <section className="relative py-32 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-      </div>
+  const [activeFeature, setActiveFeature] = useState<number>(0)
 
-      <div className="container relative px-4 md:px-6">
-        {/* Section header */}
-        <div className="text-center mb-20">
+  return (
+    <div className="relative min-h-screen bg-background overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-grid-white/[0.02] -z-10">
+        <div className="absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+      </div>
+      
+      {/* Floating orbs */}
+      <motion.div
+        className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl"
+        animate={{
+          x: [0, 100, 0],
+          y: [0, -50, 0],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear"
+        }}
+      />
+      <motion.div
+        className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-3xl"
+        animate={{
+          x: [0, -100, 0],
+          y: [0, 50, 0],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "linear"
+        }}
+      />
+
+      <div className="container px-4 py-24 mx-auto relative">
+        {/* Header */}
+        <motion.div 
+          className="text-center max-w-3xl mx-auto mb-32"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
           <motion.div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
           >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">Key Features</span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            <span className="text-sm font-medium">Explore Our Features</span>
           </motion.div>
+          
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+            Create Content That Stands Out
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            Our AI-powered platform offers complete flexibility in video creation. Generate viral-worthy content with customizable components - use what you need, skip what you don't.
+          </p>
+        </motion.div>
 
-          <motion.h2 
-            className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary-foreground to-primary"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            Powerful Features
-          </motion.h2>
-          <motion.p 
-            className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            Everything you need to create engaging social media content at scale
-          </motion.p>
-        </div>
+        {/* Interactive Feature Showcase */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-32">
+          {/* Feature Navigation */}
+          <div className="lg:col-span-4 space-y-2">
+            {features.map((feature, index) => (
+              <FeatureCard
+                key={feature.title}
+                {...feature}
+                isActive={activeFeature === index}
+                onClick={() => setActiveFeature(index)}
+              />
+            ))}
+          </div>
 
-        {/* Features grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          {features.map((feature, index) => (
+          {/* Feature Details */}
+          <div className="lg:col-span-8">
             <motion.div
-              key={feature.name}
+              key={activeFeature}
+              className="bg-card rounded-2xl p-8 border relative overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group relative"
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
             >
-              <div className="relative p-8 rounded-2xl bg-card hover:bg-accent/5 transition-all duration-300 border border-border/50 hover:shadow-lg hover:-translate-y-1">
-                {/* Icon */}
-                <div className={cn(
-                  "w-16 h-16 rounded-2xl mb-6 flex items-center justify-center transform-gpu transition-transform group-hover:scale-110",
-                  "bg-gradient-to-br shadow-lg",
-                  feature.gradient
-                )}>
-                  <feature.icon className="w-8 h-8 text-white" />
+              {/* Gradient decoration */}
+              <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${features[activeFeature].gradient}`} />
+              
+              <div className="relative">
+                <h2 className="text-3xl font-bold mb-4">{features[activeFeature].title}</h2>
+                <p className="text-lg text-muted-foreground mb-8">
+                  {features[activeFeature].description}
+                </p>
+
+                {/* Benefits */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {features[activeFeature].benefits.map((benefit, i) => (
+                    <motion.div
+                      key={i}
+                      className="flex items-start gap-3"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                    >
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${features[activeFeature].gradient} shrink-0`}>
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <span>{benefit}</span>
+                    </motion.div>
+                  ))}
                 </div>
 
-                <h3 className="text-2xl font-semibold mb-4">{feature.name}</h3>
-                <p className="text-muted-foreground text-lg leading-relaxed">{feature.description}</p>
-
-                {/* Hover decoration */}
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/20 rounded-2xl transition-colors duration-300" />
+                {/* Interactive Demo */}
+                <FeatureDemo type={features[activeFeature].demoType} />
               </div>
             </motion.div>
-          ))}
+          </div>
         </div>
 
-        {/* View All Features link */}
+        {/* CTA Section */}
         <motion.div 
-          className="flex justify-center mt-16"
+          className="text-center relative"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
         >
-          <Link 
-            href="/features" 
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-3xl -z-10" />
+          <div className="inline-flex items-center gap-2 text-muted-foreground mb-4">
+            <Clock className="w-4 h-4" />
+            <span>Start creating videos in minutes, not hours</span>
+          </div>
+          <h2 className="text-4xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+            Ready to Transform Your Content Creation?
+          </h2>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            View All Features
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+            <a 
+              href="/signup" 
+              className="inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-primary to-accent px-8 font-medium text-white transition-all hover:shadow-lg hover:brightness-110"
+            >
+              Get Started for Free
+            </a>
+          </motion.div>
         </motion.div>
       </div>
-    </section>
+    </div>
   )
 } 

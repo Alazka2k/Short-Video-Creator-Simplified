@@ -1,0 +1,41 @@
+{
+  "sceneAmounts": [
+    { "value": "1", "label": "1 Scene" },
+    { "value": "3", "label": "3 Scenes" },
+    { "value": "5", "label": "5 Scenes" }
+  ],
+  "perspectives": [
+    { "value": "content-creator", "label": "Content Creator" },
+    { "value": "historian", "label": "Historian" },
+    { "value": "storyteller", "label": "Storyteller" }
+  ],
+  "tones": [
+    { "value": "enthusiastic", "label": "Enthusiastic" },
+    { "value": "professional", "label": "Professional" },
+    { "value": "casual", "label": "Casual" }
+  ],
+  "services": [
+    {
+      "id": "voice",
+      "label": "Voice",
+      "icon": "Mic",
+      "defaultEnabled": true,
+      "required": false
+    },
+    {
+      "id": "music",
+      "label": "Music",
+      "icon": "Music",
+      "defaultEnabled": false,
+      "required": false
+    },
+    {
+      "id": "image",
+      "label": "Image",
+      "icon": "Image",
+      "defaultEnabled": true,
+      "required": false,
+      "visualizationOptions": ["plain", "video", "animation"]
+    }
+  ]
+} 

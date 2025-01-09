@@ -39,11 +39,20 @@
 - ✅ Feature highlights with modern grid layout
 - ✅ Showcase page with real examples
 - ✅ Testimonials with success stories
+
+### 1.2 Dedicated Pages
 - ✅ Dedicated Features Page (Next Step)
 - ⏳ Pricing preview
 - ⏳ FAQ Section
+- ⏳ Some Blog Entries (Development of Alpha Version?)
+- ⏳ Link documentation page to http://localhost:4000/docs?
+- ⏳ Contact
+- ⏳ Privacy Policy
+- ⏳ Terms of Service
+- ⏳ About
+- ⏳ Remove "Careers" from the navigation
 
-### 1.2 Authentication System Rework
+### 1.3 Authentication System Rework
 - Integrate new backend authentication endpoints
 - Implement social login providers
 - Add email registration flow
@@ -52,14 +61,14 @@
 - Set up permission system
 - Update protected routes
 
-### 1.3 Dashboard Implementation
+### 1.4 Dashboard Implementation
 - Create main dashboard layout
 - Add a button for the user to go to the video creation page
 - Add project/video list view
 - Add quick actions menu
 - Include recent activities section
 
-### 1.4 Video Creation Flow
+### 1.5 Video Creation Flow
 - Streamline input form (based on API request schema for Job endpoint)
 - Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 - Add progress visualization (can be a simple progress bar for every scene and the music generation (usually music generation is the longest part))
@@ -69,7 +78,7 @@
 
 ## Phase 2: Implement Missing Core Features
 
-### 2.1 Payment / Billing / Subscription Integration System
+### 2.1 Payment / Billing / Subscription Integration System as a new Service (Backend)
 - Implement Stripe integration
 - Create simple pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand
 - Integrate additional token purchase options (e.g. 1000 tokens for $10, 5000 tokens for $50, 10000 tokens for $100, etc., exact pricing needs to be defined)
@@ -77,10 +86,10 @@
 - Setup usage tracking
 - Implement basic billing
 
-### 2.2 Video Assembly
+### 2.2 Video Assembly (Backend)
 - Improve the final video assembly service with enhanced variables (depending on json2Video)
 
-### 2.3 Video Management
+### 2.3 Video Management (Frontend)
 - Project organization
 - Download/export options
 - Video preview player

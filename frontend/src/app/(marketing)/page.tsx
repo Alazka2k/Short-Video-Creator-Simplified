@@ -33,7 +33,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { HeroSection } from '@/components/marketing/hero/HeroSection'
 import { ProcessSection } from '@/components/marketing/process/ProcessSection'
-import { FeaturesSection } from '@/components/marketing/features/FeaturesSection'
+import { LandingFeatures } from '@/components/marketing/features/LandingFeatures'
 import { TestimonialsSection } from '@/components/marketing/testimonials/TestimonialsSection'
 
 export const dynamic = 'force-static'
@@ -49,7 +49,7 @@ export default function Home() {
       <ProcessSection />
 
       {/* Features Section */}
-      <FeaturesSection />
+      <LandingFeatures />
 
       {/* Testimonials Section */}
       <TestimonialsSection />
