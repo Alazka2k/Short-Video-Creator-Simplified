@@ -7,9 +7,27 @@ import {
   Film,
   Share2,
   Clock,
-  Layout
+  Shield
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const keyFeatures = [
+  {
+    title: "AI-Powered End-to-End",
+    description: "From script to final video, our AI handles every aspect of content creation",
+    icon: Wand2
+  },
+  {
+    title: "100% Royalty-Free",
+    description: "All generated content is uniquely created for your project with full usage rights",
+    icon: Shield
+  },
+  {
+    title: "Unlimited Iterations",
+    description: "Refine and regenerate content until it's perfect, at no additional cost",
+    icon: Clock
+  }
+]
 
 const features = [
   {
@@ -28,8 +46,8 @@ const features = [
     icon: Film
   },
   {
-    name: "Multi-Platform Ready",
-    description: "Export your content optimized for different social media platforms.",
+    name: "Easy Sharing",
+    description: "Download your videos and share them directly to popular social media platforms.",
     icon: Share2
   },
   {
@@ -38,9 +56,9 @@ const features = [
     icon: Clock
   },
   {
-    name: "Flexible Components",
-    description: "Mix and match components to create unique content that fits your needs.",
-    icon: Layout
+    name: "100% Royalty-Free",
+    description: "All generated content - including images, music, and voices - is uniquely yours.",
+    icon: Shield
   }
 ]
 
