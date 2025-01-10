@@ -1,0 +1,88 @@
+{
+  "en": {
+    "auth": {
+      "login": {
+        "INVALID_CREDENTIALS": "Invalid email or password",
+        "USER_NOT_FOUND": "No account found with this email address",
+        "ACCOUNT_LOCKED": "Account is locked. Please contact support",
+        "RATE_LIMIT_EXCEEDED": "Too many login attempts. Please try again later",
+        "DEFAULT": "An unexpected error occurred. Please try again"
+      },
+      "signup": {
+        "EMAIL_EXISTS": "An account with this email already exists",
+        "INVALID_PASSWORD": "Password must be at least 8 characters and meet complexity requirements",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "TERMS_REQUIRED": "You must accept the terms and conditions",
+        "REGISTRATION_DISABLED": "Registration is currently disabled",
+        "DEFAULT": "Failed to create account. Please try again",
+        "PASSWORD_VALIDATION": {
+          "MIN_LENGTH": "At least 8 characters",
+          "COMPLEXITY": "Must meet 3 of the 4 requirements below",
+          "LOWERCASE": "Lowercase letter (a-z)",
+          "UPPERCASE": "Uppercase letter (A-Z)",
+          "NUMBER": "Number (0-9)",
+          "SPECIAL": "Special character (!@#$...)"
+        }
+      },
+      "reset": {
+        "EMAIL_SENT": "Password reset instructions sent to your email",
+        "EMAIL_NOT_FOUND": "No account found with this email",
+        "RESET_EXPIRED": "Password reset link has expired",
+        "RESET_INVALID": "Invalid password reset link",
+        "PASSWORD_MISMATCH": "Passwords do not match",
+        "DEFAULT": "Failed to reset password. Please try again"
+      },
+      "google": {
+        "EMAIL_EXISTS": "This email is already registered with a different login method",
+        "INVALID_TOKEN": "Invalid or expired Google authentication",
+        "PROVIDER_DISABLED": "Google login is currently disabled",
+        "LOGIN_INTERRUPTED": "The login process was interrupted. Please try again",
+        "PERMISSION_REQUIRED": "Please grant the required permissions to continue",
+        "DEFAULT": "An error occurred during Google login"
+      }
+    }
+  },
+  "de": {
+    "auth": {
+      "login": {
+        "INVALID_CREDENTIALS": "Ungültige E-Mail oder Passwort",
+        "USER_NOT_FOUND": "Kein Konto mit dieser E-Mail-Adresse gefunden",
+        "ACCOUNT_LOCKED": "Konto ist gesperrt. Bitte kontaktieren Sie den Support",
+        "RATE_LIMIT_EXCEEDED": "Zu viele Anmeldeversuche. Bitte versuchen Sie es später erneut",
+        "DEFAULT": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut"
+      },
+      "signup": {
+        "EMAIL_EXISTS": "Ein Konto mit dieser E-Mail existiert bereits",
+        "INVALID_PASSWORD": "Passwort muss mindestens 8 Zeichen lang sein und die Komplexitätsanforderungen erfüllen",
+        "INVALID_EMAIL": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "TERMS_REQUIRED": "Sie müssen die Nutzungsbedingungen akzeptieren",
+        "REGISTRATION_DISABLED": "Die Registrierung ist derzeit deaktiviert",
+        "DEFAULT": "Konto konnte nicht erstellt werden. Bitte versuchen Sie es erneut",
+        "PASSWORD_VALIDATION": {
+          "MIN_LENGTH": "Mindestens 8 Zeichen",
+          "COMPLEXITY": "Muss 3 der 4 Anforderungen erfüllen",
+          "LOWERCASE": "Kleinbuchstabe (a-z)",
+          "UPPERCASE": "Großbuchstabe (A-Z)",
+          "NUMBER": "Zahl (0-9)",
+          "SPECIAL": "Sonderzeichen (!@#$...)"
+        }
+      },
+      "reset": {
+        "EMAIL_SENT": "Anweisungen zum Zurücksetzen des Passworts wurden per E-Mail gesendet",
+        "EMAIL_NOT_FOUND": "Kein Konto mit dieser E-Mail gefunden",
+        "RESET_EXPIRED": "Link zum Zurücksetzen des Passworts ist abgelaufen",
+        "RESET_INVALID": "Ungültiger Link zum Zurücksetzen des Passworts",
+        "PASSWORD_MISMATCH": "Passwörter stimmen nicht überein",
+        "DEFAULT": "Passwort konnte nicht zurückgesetzt werden. Bitte versuchen Sie es erneut"
+      },
+      "google": {
+        "EMAIL_EXISTS": "Diese E-Mail ist bereits mit einer anderen Anmeldemethode registriert",
+        "INVALID_TOKEN": "Ungültige oder abgelaufene Google-Authentifizierung",
+        "PROVIDER_DISABLED": "Google-Anmeldung ist derzeit deaktiviert",
+        "LOGIN_INTERRUPTED": "Der Anmeldevorgang wurde unterbrochen. Bitte versuchen Sie es erneut",
+        "PERMISSION_REQUIRED": "Bitte gewähren Sie die erforderlichen Berechtigungen",
+        "DEFAULT": "Bei der Google-Anmeldung ist ein Fehler aufgetreten"
+      }
+    }
+  }
+} 

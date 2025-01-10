@@ -56,28 +56,28 @@ export function FeatureSlideshow() {
             }`}
           >
             <div className="h-full w-full flex flex-col items-center justify-center p-8 space-y-8">
-              <div className="rounded-full bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur-sm">
-                <Feature className="h-12 w-12 text-white" />
+              <div className="rounded-full bg-foreground/10 p-4 ring-1 ring-foreground/20 backdrop-blur-sm">
+                <Feature className="h-12 w-12 text-foreground" />
               </div>
               
               <div className="text-center space-y-4 max-w-md">
-                <h2 className="text-3xl font-bold tracking-tight text-white">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">
                   {feature.title}
                 </h2>
-                <p className="text-lg text-gray-200">
+                <p className="text-lg text-foreground/80">
                   {feature.description}
                 </p>
               </div>
 
-              <div className="mt-8 px-4 py-3 rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm">
-                <p className="text-sm text-white/90">
+              <div className="mt-8 px-4 py-3 rounded-full bg-foreground/10 ring-1 ring-foreground/20 backdrop-blur-sm">
+                <p className="text-sm text-foreground/90">
                   {feature.highlight}
                 </p>
               </div>
 
               <Button 
-                variant="ghost" 
-                className="mt-6 group text-white hover:text-white hover:bg-white/10"
+                variant="outline" 
+                className="mt-6 group border-foreground/20 hover:bg-foreground/10"
               >
                 Learn more 
                 <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -92,7 +92,7 @@ export function FeatureSlideshow() {
           <button
             key={index}
             className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentFeature ? "bg-white" : "bg-white/20"
+              index === currentFeature ? "bg-foreground" : "bg-foreground/20"
             }`}
             onClick={() => setCurrentFeature(index)}
           />
