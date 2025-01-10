@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { AuthLogger } from "@/lib/debug/auth-logger";
 
 interface User {
   user_id: number;
@@ -30,30 +31,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Enable debug mode on mount
+  useEffect(() => {
+    AuthLogger.enableDebugMode();
+    AuthLogger.log('Auth Provider initialized');
+  }, []);
+
   useEffect(() => {
     // Check if we have a token in localStorage
     const checkAuth = async () => {
       const token = localStorage.getItem("access_token");
+      AuthLogger.log('Checking authentication status', { hasToken: !!token });
+      
       if (token) {
         try {
-          const response = await fetch("/api/auth/profile", {
+          const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/profile`, {
+            method: 'GET',
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
+
           if (response.ok) {
             const data = await response.json();
+            AuthLogger.log('Profile fetch successful', { user: data.user });
             setUser(data.user);
           } else {
+            AuthLogger.warning('Profile fetch failed, attempting token refresh');
             // Token is invalid, try to refresh
             await refreshToken();
           }
         } catch (error) {
-          console.error("Auth check failed:", error);
+          AuthLogger.error('Auth check failed:', error);
           setUser(null);
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
         }
+      } else {
+        AuthLogger.log('No token found, user is not authenticated');
       }
       setIsLoading(false);
     };
@@ -64,26 +79,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshToken = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
     if (!refreshToken) {
+      AuthLogger.error('No refresh token available');
       throw new Error("No refresh token available");
     }
 
-    const response = await fetch("/api/auth/refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
+    try {
+      AuthLogger.log('Attempting token refresh');
+      const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Token refresh failed");
+      if (!response.ok) {
+        AuthLogger.error('Token refresh failed', { status: response.status });
+        throw new Error("Token refresh failed");
+      }
+
+      const data = await response.json();
+      AuthLogger.log('Token refresh successful');
+      localStorage.setItem("access_token", data.tokens.access_token);
+      localStorage.setItem("refresh_token", data.tokens.refresh_token);
+      setUser(data.user);
+    } catch (error) {
+      AuthLogger.error('Token refresh error:', error);
+      // Clear tokens on refresh failure
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      setUser(null);
+      throw error;
     }
-
-    const data = await response.json();
-    localStorage.setItem("access_token", data.tokens.access_token);
-    localStorage.setItem("refresh_token", data.tokens.refresh_token);
-    setUser(data.user);
   };
 
   const login = async (userData: User, tokens: Tokens) => {
+    AuthLogger.log('Logging in user', { userId: userData.user_id });
     setUser(userData);
     localStorage.setItem("access_token", tokens.access_token);
     localStorage.setItem("refresh_token", tokens.refresh_token);
@@ -93,13 +122,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       try {
-        await fetch("/api/auth/logout", {
+        AuthLogger.log('Logging out user');
+        await fetch(`/api/auth/proxy?endpoint=/api/auth/logout`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken }),
         });
       } catch (error) {
-        console.error("Logout error:", error);
+        AuthLogger.error('Logout error:', error);
       }
     }
     setUser(null);

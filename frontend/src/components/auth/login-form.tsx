@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
+import { AuthLogger } from "@/lib/debug/auth-logger";
 
 export function LoginForm() {
   const { loginWithRedirect, getAccessTokenSilently, user: auth0User } = useAuth0();
@@ -23,8 +24,10 @@ export function LoginForm() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    AuthLogger.log('Starting email login attempt', { email });
+
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -48,13 +51,15 @@ export function LoginForm() {
             errorKey = AuthErrorKeys.login.RATE_LIMIT_EXCEEDED;
             break;
         }
+        AuthLogger.error('Email login failed', { status: response.status, error: data.error });
         throw new Error(getAuthError(errorKey, 'login'));
       }
 
+      AuthLogger.log('Email login successful', { userId: data.user.user_id });
       await login(data.user, data.tokens);
       router.push("/dashboard");
     } catch (error: any) {
-      console.error("Login error:", error);
+      AuthLogger.error('Login error:', error);
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -67,19 +72,25 @@ export function LoginForm() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    AuthLogger.log('Starting Google login');
+    
     try {
       // First, authenticate with Google through Auth0
       await loginWithRedirect({
         authorizationParams: {
           connection: "google-oauth2",
+          prompt: "login", // Force Google to show account selection
         },
       });
 
+      AuthLogger.log('Google Auth0 redirect initiated');
+
       // Auth0 will redirect back to the app, and we'll get the token
       const accessToken = await getAccessTokenSilently();
+      AuthLogger.log('Received access token from Auth0');
 
-      // Send the token and user info to our backend
-      const response = await fetch("/api/auth/social", {
+      // Send the token and user info to our backend through proxy
+      const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/social`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -109,13 +120,15 @@ export function LoginForm() {
             errorKey = AuthErrorKeys.google.PROVIDER_DISABLED;
             break;
         }
+        AuthLogger.error('Social login failed', { status: response.status, error: data.error });
         throw new Error(getAuthError(errorKey, 'google'));
       }
 
+      AuthLogger.log('Google login successful', { userId: data.user.user_id });
       await login(data.user, data.tokens);
       router.push("/dashboard");
     } catch (error: any) {
-      console.error("Google login error:", error);
+      AuthLogger.error('Google login error:', error);
       let errorKey = AuthErrorKeys.google.DEFAULT;
       
       if (error.error === "login_required") {

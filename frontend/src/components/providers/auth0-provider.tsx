@@ -36,7 +36,7 @@ export function Auth0ProviderWrapper({ children }: { children: React.ReactNode }
       authorizationParams={{
         redirect_uri: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
         audience: audience,
-        scope: "openid profile email"
+        scope: "openid profile email offline_access"
       }}
       onRedirectCallback={onRedirectCallback}
       skipRedirectCallback={typeof window === 'undefined'}

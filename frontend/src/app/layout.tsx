@@ -3,8 +3,14 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Auth0ProviderWrapper } from '@/components/providers/auth0-provider';
 import { Toaster } from '@/components/ui/toaster';
 import '@/styles/globals.css';
+import { logEnvironmentConfig } from '@/lib/debug/env-logger';
 
 const inter = Inter({ subsets: ['latin'] });
+
+// Log environment configuration in development
+if (process.env.NODE_ENV === 'development') {
+  logEnvironmentConfig();
+}
 
 export const metadata = {
   title: 'Video Creator',
