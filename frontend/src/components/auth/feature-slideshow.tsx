@@ -1,25 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import { ArrowRightIcon, SparklesIcon, VideoCameraIcon, CursorArrowRaysIcon, RocketLaunchIcon } from "@heroicons/react/24/outline";
 
 const features = [
   {
-    title: 'AI-Powered Video Creation',
-    description: 'Transform your content into engaging videos in minutes using advanced AI technology.',
-    image: '/features/ai-creation.png'
+    title: "AI Video Creation",
+    description: "Transform any content into engaging short-form videos with our AI technology",
+    icon: SparklesIcon,
+    highlight: "Automated content transformation"
   },
   {
-    title: 'Professional Templates',
-    description: 'Choose from a variety of customizable templates designed for different use cases.',
-    image: '/features/templates.png'
+    title: "Smart Scene Selection",
+    description: "AI automatically selects the most engaging parts of your content",
+    icon: CursorArrowRaysIcon,
+    highlight: "Maximum impact, minimum effort"
   },
   {
-    title: 'Advanced Analytics',
-    description: 'Track performance and optimize your video content with detailed insights.',
-    image: '/features/analytics.png'
+    title: "Professional Templates",
+    description: "Choose from a variety of customizable templates for any platform",
+    icon: VideoCameraIcon,
+    highlight: "Perfect for every platform"
+  },
+  {
+    title: "Multi-Platform Publishing",
+    description: "Share your videos across all major social media platforms instantly",
+    icon: RocketLaunchIcon,
+    highlight: "Reach your audience everywhere"
   }
 ];
 
@@ -33,40 +41,62 @@ export function FeatureSlideshow() {
     return () => clearInterval(timer);
   }, []);
 
+  const Feature = features[currentFeature].icon;
+
   return (
-    <div className="relative w-full h-full flex items-center justify-center p-12 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-purple-500/20" />
-      
-      <div className="relative z-10 max-w-2xl text-white space-y-8">
-        <div className="space-y-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {features[currentFeature].title}
-          </h2>
-          <p className="text-lg text-white/80">
-            {features[currentFeature].description}
-          </p>
-        </div>
+    <div className="relative h-full">
+      <div className="relative h-full flex flex-col items-center justify-center p-12">
+        {features.map((feature, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+              index === currentFeature 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 translate-y-4"
+            }`}
+          >
+            <div className="h-full w-full flex flex-col items-center justify-center p-8 space-y-8">
+              <div className="rounded-full bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur-sm">
+                <Feature className="h-12 w-12 text-white" />
+              </div>
+              
+              <div className="text-center space-y-4 max-w-md">
+                <h2 className="text-3xl font-bold tracking-tight text-white">
+                  {feature.title}
+                </h2>
+                <p className="text-lg text-gray-200">
+                  {feature.description}
+                </p>
+              </div>
 
-        <div className="flex justify-center">
-          <Link href="/features">
-            <Button variant="outline" className="text-white border-white hover:bg-white/10">
-              Learn more
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+              <div className="mt-8 px-4 py-3 rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm">
+                <p className="text-sm text-white/90">
+                  {feature.highlight}
+                </p>
+              </div>
 
-        <div className="flex justify-center gap-2">
-          {features.map((_, index) => (
-            <button
-              key={index}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentFeature ? 'bg-white' : 'bg-white/30'
-              }`}
-              onClick={() => setCurrentFeature(index)}
-            />
-          ))}
-        </div>
+              <Button 
+                variant="ghost" 
+                className="mt-6 group text-white hover:text-white hover:bg-white/10"
+              >
+                Learn more 
+                <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-2">
+        {features.map((_, index) => (
+          <button
+            key={index}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              index === currentFeature ? "bg-white" : "bg-white/20"
+            }`}
+            onClick={() => setCurrentFeature(index)}
+          />
+        ))}
       </div>
     </div>
   );

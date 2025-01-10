@@ -103,7 +103,7 @@
     "jobId": "uuid",
     "text": "Text to convert to speech",
     "sceneIndex": 1,
-    "voiceId": "optional-voice-id"
+    "elevenlabsVoiceId": "optional-voice-id"
 }
 ```
 - **Response:** `200 OK`
@@ -402,7 +402,7 @@ The service supports the following video configurations:
             }
         },
         "voiceGenParams?": {           // optional, voice generation parameters
-            "voiceId": "string",      // required, select from list of voices
+            "elevenlabsVoiceId": "string",      // required, select from list of voices
             "stability?": "number",     // optional, range: 0-1
             "similarity?": "number",    // optional, range: 0-1
             "style?": "string"         // optional

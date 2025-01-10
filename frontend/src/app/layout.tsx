@@ -1,10 +1,15 @@
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Auth0ProviderWrapper } from '@/components/providers/auth0-provider';
-import { cn } from '@/lib/utils';
+import { Toaster } from '@/components/ui/toaster';
 import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'Video Creator',
+  description: 'Create engaging videos with AI',
+};
 
 export default function RootLayout({
   children,
@@ -13,23 +18,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          storageKey="video-creator-theme"
-        >
-          <Auth0ProviderWrapper>
-            <div className="main-gradient" suppressHydrationWarning />
-            <div className="gradient-overlay" suppressHydrationWarning />
-            
-            <div className="relative">
-              {children}
-            </div>
-          </Auth0ProviderWrapper>
-        </ThemeProvider>
+      <body className={inter.className}>
+        <Auth0ProviderWrapper>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+            storageKey="video-creator-theme"
+          >
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </Auth0ProviderWrapper>
       </body>
     </html>
   );

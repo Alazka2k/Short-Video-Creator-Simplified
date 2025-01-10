@@ -9,7 +9,8 @@ import {
   VideoIcon, 
   SettingsIcon,
   LayoutDashboardIcon,
-  FolderIcon
+  FolderIcon,
+  PlusCircle
 } from 'lucide-react';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -19,6 +20,11 @@ const menuItems = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboardIcon
+  },
+  {
+    title: 'Create Video',
+    href: '/create',
+    icon: PlusCircle
   },
   {
     title: 'My Videos',

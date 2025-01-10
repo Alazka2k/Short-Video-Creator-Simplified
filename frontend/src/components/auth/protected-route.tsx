@@ -1,28 +1,28 @@
 'use client';
 
-import { useAuth0 } from '@auth0/auth0-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { LoadingScreen } from '@/components/ui/loading';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [isInitializing, setIsInitializing] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading) {
-      setIsInitializing(false);
-      if (!isAuthenticated) {
-        router.replace('/');
-      }
+    if (!isLoading && !isAuthenticated) {
+      router.push(`/login?returnTo=${encodeURIComponent(pathname)}`);
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, pathname]);
 
-  // Show nothing during SSR and initial client-side render
-  if (isInitializing || isLoading) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
-  return isAuthenticated ? <>{children}</> : null;
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
 } 
