@@ -33,7 +33,7 @@ const handleRegisterCallback = async (req, res) => {
 
     // Create user in our database after Auth0 registration
     const { user, refreshToken } = await authService.handleNewUser({
-      auth0Id,
+      auth0_id: auth0Id,
       email,
       name: name || email.split('@')[0], // Use email username if no name provided
       picture: picture || null,

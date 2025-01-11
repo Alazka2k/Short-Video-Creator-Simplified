@@ -29,7 +29,7 @@ class SocialAuthService {
       
       // Create or update user in our database
       const { user, refreshToken } = await userService.handleNewUser({
-        auth0Id: profile.sub,
+        auth0_id: profile.sub,
         email: profile.email,
         name: profile.name || profile.email.split('@')[0],
         picture: profile.picture,
