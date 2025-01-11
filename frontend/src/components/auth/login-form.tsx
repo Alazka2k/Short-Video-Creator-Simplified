@@ -1,19 +1,17 @@
 "use client";
 
-import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
 import { AuthLogger } from "@/lib/debug/auth-logger";
+import { SocialAuth } from "./social-auth";
 
 export function LoginForm() {
-  const { loginWithRedirect, getAccessTokenSilently, user: auth0User } = useAuth0();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -64,83 +62,6 @@ export function LoginForm() {
         variant: "destructive",
         title: "Login failed",
         description: error.message || getAuthError(AuthErrorKeys.login.DEFAULT, 'login'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    AuthLogger.log('Starting Google login');
-    
-    try {
-      // First, authenticate with Google through Auth0
-      await loginWithRedirect({
-        authorizationParams: {
-          connection: "google-oauth2",
-          prompt: "login", // Force Google to show account selection
-        },
-      });
-
-      AuthLogger.log('Google Auth0 redirect initiated');
-
-      // Auth0 will redirect back to the app, and we'll get the token
-      const accessToken = await getAccessTokenSilently();
-      AuthLogger.log('Received access token from Auth0');
-
-      // Send the token and user info to our backend through proxy
-      const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/social`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken,
-          provider: "google",
-          profile: {
-            sub: auth0User?.sub,
-            email: auth0User?.email,
-            name: auth0User?.name,
-            picture: auth0User?.picture,
-          },
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        let errorKey = AuthErrorKeys.google.DEFAULT;
-        switch (response.status) {
-          case 409:
-            errorKey = AuthErrorKeys.google.EMAIL_EXISTS;
-            break;
-          case 400:
-            errorKey = AuthErrorKeys.google.INVALID_TOKEN;
-            break;
-          case 403:
-            errorKey = AuthErrorKeys.google.PROVIDER_DISABLED;
-            break;
-        }
-        AuthLogger.error('Social login failed', { status: response.status, error: data.error });
-        throw new Error(getAuthError(errorKey, 'google'));
-      }
-
-      AuthLogger.log('Google login successful', { userId: data.user.user_id });
-      await login(data.user, data.tokens);
-      router.push("/dashboard");
-    } catch (error: any) {
-      AuthLogger.error('Google login error:', error);
-      let errorKey = AuthErrorKeys.google.DEFAULT;
-      
-      if (error.error === "login_required") {
-        errorKey = AuthErrorKeys.google.LOGIN_INTERRUPTED;
-      } else if (error.error === "consent_required") {
-        errorKey = AuthErrorKeys.google.PERMISSION_REQUIRED;
-      }
-
-      toast({
-        variant: "destructive",
-        title: "Google login failed",
-        description: error.message || getAuthError(errorKey, 'google'),
       });
     } finally {
       setIsLoading(false);
@@ -203,25 +124,7 @@ export function LoginForm() {
           </Button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-foreground/20"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">or continue with</span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogleLogin}
-          disabled={isLoading}
-          className="w-full border-foreground/20 hover:bg-foreground/5"
-        >
-          <FcGoogle className="h-5 w-5 mr-2" />
-          Continue with Google
-        </Button>
+        <SocialAuth isLoading={isLoading} setIsLoading={setIsLoading} mode="login" />
 
         <p className="text-center text-sm text-muted-foreground">
           Don't have an account?{" "}

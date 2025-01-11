@@ -1,20 +1,18 @@
 "use client";
 
-import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
 import { PasswordValidation } from "./password-validation";
+import { SocialAuth } from "./social-auth";
 
 export function SignupForm() {
-  const { loginWithRedirect, getAccessTokenSilently, user: auth0User } = useAuth0();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -72,73 +70,6 @@ export function SignupForm() {
         variant: "destructive",
         title: "Registration failed",
         description: error.message || getAuthError(AuthErrorKeys.signup.DEFAULT, 'signup'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    try {
-      await loginWithRedirect({
-        authorizationParams: {
-          connection: "google-oauth2",
-          screen_hint: "signup",
-        },
-      });
-
-      const accessToken = await getAccessTokenSilently();
-
-      const response = await fetch("/api/auth/social", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken,
-          provider: "google",
-          profile: {
-            sub: auth0User?.sub,
-            email: auth0User?.email,
-            name: auth0User?.name,
-            picture: auth0User?.picture,
-          },
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        let errorKey = AuthErrorKeys.google.DEFAULT;
-        switch (response.status) {
-          case 409:
-            errorKey = AuthErrorKeys.google.EMAIL_EXISTS;
-            break;
-          case 400:
-            errorKey = AuthErrorKeys.google.INVALID_TOKEN;
-            break;
-          case 403:
-            errorKey = AuthErrorKeys.google.PROVIDER_DISABLED;
-            break;
-        }
-        throw new Error(getAuthError(errorKey, 'google'));
-      }
-
-      await login(data.user, data.tokens);
-      router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Google signup error:", error);
-      let errorKey = AuthErrorKeys.google.DEFAULT;
-      
-      if (error.error === "login_required") {
-        errorKey = AuthErrorKeys.google.LOGIN_INTERRUPTED;
-      } else if (error.error === "consent_required") {
-        errorKey = AuthErrorKeys.google.PERMISSION_REQUIRED;
-      }
-
-      toast({
-        variant: "destructive",
-        title: "Google signup failed",
-        description: error.message || getAuthError(errorKey, 'google'),
       });
     } finally {
       setIsLoading(false);
@@ -209,25 +140,7 @@ export function SignupForm() {
           </Button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-foreground/20"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">or continue with</span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogleSignup}
-          disabled={isLoading}
-          className="w-full border-foreground/20 hover:bg-foreground/5"
-        >
-          <FcGoogle className="h-5 w-5 mr-2" />
-          Continue with Google
-        </Button>
+        <SocialAuth isLoading={isLoading} setIsLoading={setIsLoading} mode="signup" />
 
         <div className="text-center text-sm">
           <p className="text-zinc-400">
