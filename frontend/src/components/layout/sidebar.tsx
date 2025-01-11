@@ -85,13 +85,7 @@ export function Sidebar({ className }: SidebarProps) {
       className
     )}>
       <div className="flex flex-col h-full px-4 py-6">
-        <div className="mb-8">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <span className="font-bold text-xl bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
-              Video Creator
-            </span>
-          </Link>
-        </div>
+
 
         <nav className="flex-1 space-y-1">
           {menuItems.map((item) => {

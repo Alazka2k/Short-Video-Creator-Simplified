@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth } from '@/lib/auth/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,43 +10,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserCircle, LogOut, Settings, User } from 'lucide-react';
+import { User, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { ThemeToggle } from '../theme-toggle';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
 
 export function DashboardHeader() {
-  const { user, logout } = useAuth0();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-6">
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">
-              <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
-                Video Creator
-              </span>
+            <span className="text-xl font-bold">
+              <span className="text-primary">Video Creator</span>
             </span>
           </Link>
         </div>
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => router.push("/create")}
+          >
+            Create Video
+          </Button>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                {user?.picture ? (
-                  <img 
-                    src={user.picture} 
-                    alt={user.name || 'User'} 
-                    className="h-9 w-9 rounded-full object-cover"
-                  />
-                ) : (
-                  <UserCircle className="h-6 w-6" />
-                )}
-              </Button>
+            <DropdownMenuTrigger>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.picture} alt={user?.name || "User avatar"} />
+                <AvatarFallback>
+                  <User className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
+            <DropdownMenuContent align="end">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{user?.name}</p>
@@ -54,30 +62,19 @@ export function DashboardHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => logout({ 
-                  logoutParams: { 
-                    returnTo: window.location.origin 
-                  }
-                })}
-                className="text-red-600 focus:text-red-600 focus:bg-red-50"
-              >
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </nav>
     </header>
   );
 } 

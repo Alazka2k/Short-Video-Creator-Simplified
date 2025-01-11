@@ -2,12 +2,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, TrendingUpIcon, ClockIcon, VideoIcon, BarChart3Icon } from 'lucide-react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { PlusIcon, TrendingUpIcon, ClockIcon, VideoIcon } from 'lucide-react';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
-export default function DashboardPage() {
-  const { user } = useAuth0();
+export function DashboardOverview() {
+  const { user } = useAuth();
+  const router = useRouter();
 
   return (
     <div className="space-y-12 animate-in">
@@ -30,6 +32,7 @@ export default function DashboardPage() {
             "hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]",
             "hover:scale-[1.02]"
           )}
+          onClick={() => router.push('/create')}
         >
           <PlusIcon className="mr-2 h-4 w-4" />
           Create Video
@@ -52,7 +55,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover-card border-violet-500/20">
           <CardHeader>
             <div className="flex items-center gap-4">
               <div className="p-2 bg-violet-500/10 rounded-lg">
@@ -65,8 +68,6 @@ export default function DashboardPage() {
             <div className="text-3xl font-bold">1.2m</div>
           </CardContent>
         </Card>
-
-        {/* Similar styling for other cards */}
       </div>
 
       {/* Recent activity with staggered animation */}

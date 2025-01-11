@@ -99,7 +99,29 @@
 ### 2.2 Video Assembly (Backend)
 - Improve the final video assembly service with enhanced variables (depending on json2Video)
 
-### 2.3 Video Management (Frontend)
+## 2.3 Backend API Enhancements
+
+2.3.1 Video Management
+- [ ] GET /api/videos - Fetch video list with pagination and filters
+- [ ] GET /api/videos/:id - Get single video details
+- [ ] DELETE /api/videos/:id - Delete a video
+- [ ] PATCH /api/videos/:id - Update video metadata
+
+2.3.2 Project Management
+- [ ] GET /api/projects - Fetch project list with pagination and filters
+- [ ] GET /api/projects/:id - Get single project details
+- [ ] POST /api/projects - Create new project
+- [ ] PATCH /api/projects/:id - Update project
+- [ ] DELETE /api/projects/:id - Delete project
+
+2.3.3 Token & Billing System
+- [ ] GET /api/billing/usage - Get token usage statistics
+- [ ] GET /api/billing/plans - Get available billing plans
+- [ ] GET /api/billing/transactions - Get transaction history
+- [ ] POST /api/billing/purchase - Purchase tokens
+- [ ] POST /api/billing/subscribe - Subscribe to a plan 
+
+### 2.4 Video Management (Frontend)
 - Project organization
 - Download/export options
 - Video preview player
@@ -151,3 +173,4 @@
 5. Enhanced video editing capabilities
 
 This MVP plan focuses on making the platform usable for content creation and testing, while setting up basic monetization. The timeline is approximately 6-8 weeks total. 
+
