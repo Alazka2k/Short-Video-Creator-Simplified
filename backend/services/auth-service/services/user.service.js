@@ -37,7 +37,7 @@ class UserService {
         logger.info('User not found in database, fetching from Auth0');
         const auth0User = await auth0.getUser(auth0Id);
         user = await authDataAccess.createUser({
-          auth0Id: auth0User.user_id,
+          auth0_id: auth0User.user_id,
           email: auth0User.email,
           name: auth0User.name || auth0User.email.split('@')[0],
           picture: auth0User.picture,
@@ -82,11 +82,11 @@ class UserService {
   async handleNewUser(userData) {
     try {
       // Create or update user
-      let user = await authDataAccess.findUserByAuth0Id(userData.auth0Id);
+      let user = await authDataAccess.findUserByAuth0Id(userData.auth0_id);
       
       if (!user) {
         user = await authDataAccess.createUser({
-          auth0Id: userData.auth0Id,
+          auth0_id: userData.auth0_id,
           email: userData.email,
           name: userData.name,
           picture: userData.picture,
@@ -103,7 +103,7 @@ class UserService {
       });
 
       // Get full user details
-      const userWithDetails = await authDataAccess.getUserWithRoleAndSubscription(userData.auth0Id);
+      const userWithDetails = await authDataAccess.getUserWithRoleAndSubscription(userData.auth0_id);
 
       return {
         user: userWithDetails,

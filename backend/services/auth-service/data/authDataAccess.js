@@ -35,20 +35,28 @@ class AuthDataAccess {
 
   async createUser(userData) {
     try {
+      logger.info('Starting database transaction for user creation');
+      logger.info('Input userData:', JSON.stringify(userData, null, 2));
+
       const result = await knex.transaction(async (trx) => {
         // First check if user already exists
+        logger.info('Checking for existing user with auth0_id:', userData.auth0_id);
+        
         const existingUser = await trx('users')
-          .where('auth0_id', userData.auth0Id)
+          .where('auth0_id', userData.auth0_id)
           .first();
 
         if (existingUser) {
+          logger.info('Found existing user:', JSON.stringify(existingUser, null, 2));
           return existingUser;
         }
 
+        logger.info('No existing user found, proceeding with insertion');
+        
         // Insert user and get the id
         const [newUser] = await trx('users')
           .insert({
-            auth0_id: userData.auth0Id,
+            auth0_id: userData.auth0_id,
             email: userData.email,
             full_name: userData.name,
             picture: userData.picture,
@@ -106,7 +114,7 @@ class AuthDataAccess {
       });
 
       // Get full user details after transaction
-      return this.getUserWithRoleAndSubscription(userData.auth0Id);
+      return this.getUserWithRoleAndSubscription(userData.auth0_id);
     } catch (error) {
       logger.error('Error creating user:', error);
       throw error;
@@ -127,7 +135,7 @@ class AuthDataAccess {
   async getUserWithRoleAndSubscription(auth0Id) {
     try {
       return await knex('users')
-        .where('auth0_id', auth0Id)
+        .where('users.auth0_id', auth0Id)
         .leftJoin('user_roles', 'users.user_id', 'user_roles.user_id')
         .leftJoin('roles', 'user_roles.role_id', 'roles.role_id')
         .leftJoin('user_subscriptions', 'users.user_id', 'user_subscriptions.user_id')

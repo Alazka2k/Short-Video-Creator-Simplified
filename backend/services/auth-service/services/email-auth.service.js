@@ -16,7 +16,7 @@
  * @module auth-service/services/email-auth.service
  */
 
-const { auth0, auth0Management } = require('../auth0');
+const { managementClient, authenticationClient } = require('../auth0');
 const authDataAccess = require('../data/authDataAccess');
 const { TokenService, generateToken, hashToken } = require('../utils/token');
 const logger = require('../../../shared/utils/logger');
@@ -35,7 +35,7 @@ class EmailAuthService {
         connection: 'Username-Password-Authentication'
       });
       
-      const auth0Response = await auth0Management.users.create({
+      const auth0User = await managementClient.users.create({
         email: userData.email,
         password: userData.password,
         name: userData.name,
@@ -43,29 +43,40 @@ class EmailAuthService {
         verify_email: true
       });
 
-      const auth0User = auth0Response.data;
+      logger.info('Raw Auth0 response:', auth0User);
 
-      logger.info('Auth0 user created:', {
-        auth0Id: auth0User.user_id,
-        email: auth0User.email,
-        name: auth0User.name,
-        response: JSON.stringify(auth0User)
-      });
+      // Extract user data from the nested response
+      const auth0Data = auth0User.data;
+
+      logger.info('Auth0 user data:', auth0Data);
+
+      const userDataForDb = {
+        auth0_id: auth0Data.user_id,
+        email: auth0Data.email,
+        name: auth0Data.name || userData.name || userData.email.split('@')[0],
+        picture: auth0Data.picture || null,
+        provider: 'email'
+      };
+
+      logger.info('Preparing data for database insertion:', userDataForDb);
 
       // Create user in our database
-      const user = await authDataAccess.createUser({
-        auth0Id: auth0User.user_id,
-        email: auth0User.email,
-        name: auth0User.name || userData.name || userData.email.split('@')[0],
-        picture: auth0User.picture || null,
-        provider: 'email'
+      const user = await authDataAccess.createUser(userDataForDb);
+
+      logger.info('Database insertion attempt completed');
+      logger.info('User creation result:', {
+        success: !!user,
+        user_details: user ? JSON.stringify(user, null, 2) : 'No user returned'
       });
 
-      logger.info('User created in database:', {
-        userId: user.user_id,
-        auth0Id: user.auth0_id,
-        email: user.email,
-        response: JSON.stringify(user)
+      if (!user) {
+        logger.error('User creation failed - no user returned from database');
+        throw new Error('Failed to create user in database');
+      }
+
+      logger.info('Starting session creation for user:', {
+        user_id: user.user_id,
+        auth0_id: user.auth0_id
       });
 
       // Create session and tokens
@@ -126,10 +137,10 @@ class EmailAuthService {
         if (!user) {
           logger.info('User not found in database, creating new user');
           // Get full user profile from Auth0 Management API
-          const auth0User = await auth0Management.users.get({ id: auth0UserId });
+          const auth0User = await managementClient.users.get({ id: auth0UserId });
           
           user = await authDataAccess.createUser({
-            auth0Id: auth0UserId,
+            auth0_id: auth0UserId,
             email: auth0User.email,
             name: auth0User.name || auth0User.email.split('@')[0],
             picture: auth0User.picture,
@@ -173,7 +184,7 @@ class EmailAuthService {
         
         // Check if user exists to give appropriate error message
         try {
-          const users = await auth0Management.users.getAll({
+          const users = await managementClient.users.getAll({
             q: `email:"${email}"`,
             search_engine: 'v3'
           });
@@ -201,7 +212,7 @@ class EmailAuthService {
 
   async initiatePasswordReset(email) {
     try {
-      await auth0.requestChangePasswordEmail({
+      await authenticationClient.requestChangePasswordEmail({
         email,
         connection: 'Username-Password-Authentication'
       });
@@ -213,7 +224,7 @@ class EmailAuthService {
 
   async resetPassword(token, newPassword) {
     try {
-      await auth0.resetPassword({
+      await authenticationClient.resetPassword({
         token,
         newPassword,
         connection: 'Username-Password-Authentication'
