@@ -38,13 +38,6 @@ export function DashboardHeader() {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={() => router.push("/create")}
-          >
-            Create Video
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger>
               <Avatar className="h-8 w-8">

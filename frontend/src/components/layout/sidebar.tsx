@@ -10,7 +10,8 @@ import {
   SettingsIcon,
   LayoutDashboardIcon,
   FolderIcon,
-  PlusCircle
+  PlusCircle,
+  CreditCard
 } from 'lucide-react';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -35,6 +36,11 @@ const menuItems = [
     title: 'Projects',
     href: '/dashboard/projects',
     icon: FolderIcon
+  },
+  {
+    title: 'Subscription',
+    href: '/dashboard/subscription',
+    icon: CreditCard
   },
   {
     title: 'Settings',
@@ -97,10 +103,10 @@ export function Sidebar({ className }: SidebarProps) {
                 key={item.href} 
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                   isActive 
-                    ? "bg-primary/10 text-primary hover:bg-primary/20" 
-                    : "hover:bg-muted"
+                    ? "bg-primary/10 text-primary hover:bg-primary/20 hover:scale-[1.02]" 
+                    : "hover:bg-muted hover:scale-[1.02] hover:shadow-sm"
                 )}
               >
                 <Icon className="h-4 w-4" />

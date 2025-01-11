@@ -68,13 +68,6 @@ export function NavBar() {
               >
                 Dashboard
               </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={() => router.push("/create")}
-              >
-                Create Video
-              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Avatar className="h-8 w-8">

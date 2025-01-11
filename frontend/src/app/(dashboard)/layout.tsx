@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Dashboard Layout Component
  * 
@@ -43,10 +45,16 @@ export default function DashboardLayout({
           <div className="absolute bottom-1/4 -right-1/4 w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-3xl animate-drift-slow" />
           
           {/* Grid overlay */}
-          <div className="absolute inset-0 bg-[url('/background/dashboard/grid.svg')] bg-repeat opacity-20" />
+          <div 
+            className="absolute inset-0 bg-repeat opacity-20"
+            style={{ backgroundImage: 'url("/background/dashboard/grid.svg")' }}
+          />
           
           {/* Noise effect */}
-          <div className="absolute inset-0 bg-[url('/background/dashboard/noise.svg')] opacity-[0.25] mix-blend-soft-light" />
+          <div 
+            className="absolute inset-0 opacity-25 mix-blend-soft-light"
+            style={{ backgroundImage: 'url("/background/dashboard/noise.svg")' }}
+          />
         </div>
 
         <DashboardHeader />
