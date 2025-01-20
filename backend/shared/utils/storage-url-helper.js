@@ -9,6 +9,7 @@ class StorageUrlHelper {
       }
 
       // Check if it's an S3 URL from our storage
+      // TODO: Make it work for prod / staging environments. Currently it's only working for dev since hard coded s3 bucket name.
       if (url.includes('short-video-creator-dev.s3')) {
         // Extract storage key from URL (everything after .com/)
         const urlWithoutParams = url.split('?')[0];

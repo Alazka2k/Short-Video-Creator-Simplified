@@ -19,14 +19,17 @@
   - ✅ Modern layout with animated transitions
   - ✅ Responsive design and animations
   - ✅ Benefits visualization for each feature
-- 🔄 Authentication system enhancement in progress
+- 🔄 Authentication system enhancement completed
   - ✅ Social login integration with Google
   - ✅ Debug logging system for auth flow
   - ✅ Token refresh handling
   - ✅ API proxy implementation for CORS
-  - ⏳ Email registration flow
+  - ✅ Email registration flow
+  - ✅ User database schema and migrations
+  - ✅ Session management with JWT
+  - ✅ Role and permission system
+  - ✅ Auth0 integration for social and email auth
   - ⏳ Profile management improvements
-  - ⏳ Permission system integration
 - ⏳ Dashboard implementation pending
 - ⏳ Video creation flow needs improvement
 
@@ -47,7 +50,7 @@
 - ✅ Showcase page with real examples
 - ✅ Testimonials with success stories
 
-### 1.2 Dedicated Pages
+### 1.2 Dedicated Pages (⏳ In Progress)
 - ✅ Dedicated Features Page with interactive demos
 - ⏳ Pricing preview
 - ⏳ FAQ Section
@@ -59,32 +62,38 @@
 - ⏳ About
 - ⏳ Remove "Careers" from the footer
 
-### 1.3 Authentication System Enhancement (🔄 In Progress)
+### 1.3 Authentication System Enhancement (⏳ In Progress)
 - ✅ Integrate new backend authentication endpoints
 - ✅ Implement Google social login
 - ✅ Add comprehensive auth debugging
 - ✅ Implement token refresh mechanism
 - ✅ Add API proxy for CORS handling
-- ⏳ Add email registration flow
+- ✅ Add email registration flow
+- ✅ Implement database schema and migrations
+- ✅ Set up session management with JWT
+- ✅ Implement role and permission system
+- ✅ Complete Auth0 integration
 - ⏳ Enhance profile management
-- ⏳ Implement session handling
-- ⏳ Set up permission system
 - ⏳ Update protected routes
 
 ### 1.4 Dashboard Implementation
-- Create main dashboard layout
-- Add a button for the user to go to the video creation page
-- Add project/video list view
+- ✅ Create main dashboard layout
+- ✅ Add a button for the user to go to the video creation page
+- ⏳Connect and add backend implementation for "Projects" view
+- ⏳Connect and add backend implementation for "My videos" view
+- ⏳Add project/video list view
 - Add quick actions menu
 - Include recent activities section
 
 ### 1.5 Video Creation Flow
-- Streamline input form (based on API request schema for Job endpoint)
-- Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
-- Add progress visualization (can be a simple progress bar for every scene and the music generation (usually music generation is the longest part))
-- Add basic customization options (for the assembly service of the video - e.g. cutting)
-- Add possibility to run a job and afterwards directly and automatically the assembly service (for the option the assembly parameters need to be input in the request)
-- Add a possibility to download the video
+- ⏳ Improve the /create view  
+- ⏳ Add video creation pages for "Quick Create" (/create/quick) and "Advanced Create" (/create/advanced)
+- ⏳ Streamline input form (based on API request schema for Job endpoint)
+- ⏳ Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
+- ⏳ Add progress visualization (can be a simple progress bar for every scene and the music generation (usually music generation is the longest part))
+- ⏳ Add basic customization options (for the assembly service of the video - e.g. cutting)
+- ⏳Add possibility to run a job and afterwards directly and automatically the assembly service (for the option the assembly parameters need to be input in the request)
+- ⏳Add a possibility to download the video
 
 ## Phase 2: Implement Missing Core Features
 
@@ -105,13 +114,13 @@
 - [ ] GET /api/videos - Fetch video list with pagination and filters
 - [ ] GET /api/videos/:id - Get single video details
 - [ ] DELETE /api/videos/:id - Delete a video
-- [ ] PATCH /api/videos/:id - Update video metadata
+- [ ] POST /api/videos/:id - Update video metadata
 
 2.3.2 Project Management
 - [ ] GET /api/projects - Fetch project list with pagination and filters
 - [ ] GET /api/projects/:id - Get single project details
 - [ ] POST /api/projects - Create new project
-- [ ] PATCH /api/projects/:id - Update project
+- [ ] POST /api/projects/:id - Update project
 - [ ] DELETE /api/projects/:id - Delete project
 
 2.3.3 Token & Billing System
