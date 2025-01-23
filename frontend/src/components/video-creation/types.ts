@@ -1,4 +1,4 @@
-export type VisualizationType = 'plain' | 'video' | 'animation'
+export type VisualizationType = 'image' | 'video' | 'animation'
 
 export interface ContentState {
   voice: boolean
@@ -49,6 +49,6 @@ export interface RequestParams {
       skipImage: boolean
       skipVisualization: boolean
     }
-    visualizationType: 'plain' | 'video' | 'animation'
+    visualizationType: 'image' | 'video' | 'animation'
   }
 } 

@@ -30,6 +30,7 @@ import { ScriptSettingsStep } from './steps/ScriptSettingsStep'
 import { SettingsSummary } from './sections/SettingsSummary'
 import { RequiredContentSelection } from './sections/RequiredContentSelection'
 import { VisualizationTypeSelection } from './sections/VisualizationTypeSelection'
+import { ProcessSteps } from './sections/ProcessSteps'
 
 // Import types
 import { ContentState, ScriptParams, RequestParams, VisualizationType } from './types'
@@ -151,9 +152,9 @@ export function VideoCreationFlow({
             skipVoice: !selectedContent.voice,
             skipMusic: !selectedContent.music,
             skipImage: !selectedContent.visuals,
-            skipVisualization: selectedVisualization === 'plain'
+            skipVisualization: selectedVisualization === 'image'
           },
-          visualizationType: selectedVisualization
+          visualizationType: selectedVisualization === 'image' ? undefined : selectedVisualization
         }
       }
 
@@ -242,10 +243,11 @@ export function VideoCreationFlow({
 
   const renderStepContent = (stepId: string) => {
     return (
-      <div className="grid gap-8 md:grid-cols-[2fr,1fr]">
+      <div className="grid gap-8 lg:grid-cols-[1fr,320px]">
+        {/* Main content area */}
         <div className="space-y-8">
           {stepId === 'basic' && (
-            <>
+            <div className="space-y-8">
               <BasicInformationStep
                 prompt={prompt}
                 setPrompt={setPrompt}
@@ -271,7 +273,7 @@ export function VideoCreationFlow({
                   isGenerating={isGenerating}
                 />
               )}
-            </>
+            </div>
           )}
 
           {stepId === 'script' && (
@@ -301,7 +303,8 @@ export function VideoCreationFlow({
           )}
         </div>
 
-        <div className="space-y-8">
+        {/* Settings summary - Now sticky */}
+        <div className="lg:sticky lg:top-8 space-y-8">
           <SettingsSummary 
             prompt={prompt}
             focus={focus}
@@ -311,6 +314,7 @@ export function VideoCreationFlow({
             selectedVoice={selectedVoice}
             selectedVisualization={selectedVisualization}
             visualSettings={visualSettings}
+            currentStep={stepId}
           />
         </div>
       </div>
@@ -327,17 +331,22 @@ export function VideoCreationFlow({
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-semibold">Quick Create</h1>
+          <div>
+            <h2 className="text-2xl font-semibold">Quick Create</h2>
+            <p className="text-muted-foreground mt-1">Create a video in just a few steps</p>
+          </div>
             <Button
               variant="outline"
             onClick={() => router.push('/create')}
+            className="gap-2"
             >
-              <Settings className="w-4 h-4 mr-2" />
+            <Settings className="w-4 h-4" />
               Advanced Mode
             </Button>
         </div>
 
         {/* Quick creation content */}
+        <div className="grid gap-8 lg:grid-cols-[1fr,320px]">
         <div className="space-y-8">
           <BasicInformationStep
             prompt={prompt}
@@ -355,10 +364,25 @@ export function VideoCreationFlow({
             setSelectedContent={setSelectedContent}
             isGenerating={isGenerating}
           />
+          </div>
+
+          {/* Settings summary - Sticky */}
+          <div className="lg:sticky lg:top-8 space-y-8">
+            <SettingsSummary 
+              prompt={prompt}
+              focus={focus}
+              selectedDuration={selectedDuration}
+              selectedContent={selectedContent}
+              scriptParams={scriptParams}
+              selectedVoice={selectedVoice}
+              selectedVisualization={selectedVisualization}
+              visualSettings={visualSettings}
+            />
+          </div>
       </div>
 
         {/* Actions */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 pt-4 border-t">
           <Button
             variant="outline"
             className="flex-1"
@@ -392,83 +416,86 @@ export function VideoCreationFlow({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Create Video</h1>
-        <Tabs value={activeSteps[currentStep].id} onValueChange={(value) => {
-          const newIndex = activeSteps.findIndex(step => step.id === value)
-          setCurrentStep(newIndex)
-        }}>
-          <TabsList>
-            {activeSteps.map((step) => (
-              <TabsTrigger 
-                key={step.id}
-                value={step.id}
-                disabled={isGenerating}
-                className="gap-2"
-              >
-                {React.createElement(step.icon, { className: "w-4 h-4" })}
-                {step.title}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        </div>
+      {/* Process Steps */}
+      <ProcessSteps
+        steps={activeSteps}
+        currentStep={currentStep}
+        onChange={(value) => {
+            const newIndex = activeSteps.findIndex(step => step.id === value)
+            setCurrentStep(newIndex)
+        }}
+        isGenerating={isGenerating}
+      />
 
       {/* Content */}
-      <ScrollArea className="min-h-[500px] pr-4">
-        {renderStepContent(activeSteps[currentStep].id)}
+      <ScrollArea className="min-h-[600px] px-4">
+        <div className="animate-in slide-in-from-right duration-500">
+          {renderStepContent(activeSteps[currentStep].id)}
+        </div>
       </ScrollArea>
 
       {/* Navigation */}
-      <div className="flex justify-between">
-            <Button
+      <div className="flex justify-between pt-6 border-t">
+        <Button
           variant="ghost"
-              onClick={() => setCurrentStep(prev => prev - 1)}
+          onClick={() => setCurrentStep(prev => prev - 1)}
           disabled={currentStep === 0 || isGenerating}
-          className="gap-2"
-            >
-          <ArrowLeft className="w-4 h-4" />
-          {activeSteps[currentStep - 1]?.title || 'Previous'}
-            </Button>
+          className="relative group px-6"
+        >
+          <div className="absolute inset-0 transition-colors rounded-lg group-hover:bg-primary/5" />
+          <div className="relative flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+            <span>{activeSteps[currentStep - 1]?.title || 'Previous'}</span>
+          </div>
+        </Button>
 
         {currentStep === activeSteps.length - 1 ? (
-              <div className="flex gap-4">
-                <Button
-                  variant="outline"
-                  onClick={handleCreateProject}
-                  disabled={!prompt.trim() || isGenerating}
-              className="gap-2"
-                >
-              <Download className="w-4 h-4" />
-              Save as Project
-                </Button>
-                <Button
-                  onClick={handleGenerateVideo}
-                  disabled={!prompt.trim() || isGenerating}
-              className="gap-2"
-                >
-                  {isGenerating ? (
-                    <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating Video...
-                    </>
-                  ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate Video
-                </>
-                  )}
-                </Button>
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              onClick={handleCreateProject}
+              disabled={!prompt.trim() || isGenerating}
+              className="relative group px-6"
+            >
+              <div className="absolute inset-0 transition-colors rounded-lg group-hover:bg-primary/5" />
+              <div className="relative flex items-center gap-2">
+                <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
+                <span>Save as Project</span>
               </div>
-            ) : (
-              <Button
-                onClick={() => setCurrentStep(prev => prev + 1)}
-                disabled={isGenerating}
-            className="gap-2"
-              >
-            {activeSteps[currentStep + 1]?.title || 'Continue'}
-            <ChevronRight className="w-4 h-4" />
-              </Button>
+            </Button>
+            <Button
+              onClick={handleGenerateVideo}
+              disabled={!prompt.trim() || isGenerating}
+              className="relative group px-6"
+            >
+              <div className="absolute inset-0 transition-opacity rounded-lg bg-primary group-hover:opacity-90" />
+              <div className="relative flex items-center gap-2">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Generating Video...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 transition-transform group-hover:scale-110" />
+                    <span>Generate Video</span>
+                  </>
+                )}
+              </div>
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={() => setCurrentStep(prev => prev + 1)}
+            disabled={isGenerating}
+            className="relative group px-6"
+          >
+            <div className="absolute inset-0 transition-colors rounded-lg group-hover:bg-primary/5" />
+            <div className="relative flex items-center gap-2">
+              <span>{activeSteps[currentStep + 1]?.title || 'Continue'}</span>
+              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </Button>
         )}
       </div>
     </div>
