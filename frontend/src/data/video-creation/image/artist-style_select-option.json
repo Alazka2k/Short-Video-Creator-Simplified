@@ -1,0 +1,22 @@
+{
+  "options": [
+    {
+      "id": "blomkamp-stalenhag",
+      "name": "Sci-Fi Realism",
+      "description": "Neill Blomkamp meets Simon Stålenhag - Hyper-realistic sci-fi with a touch of dystopian atmosphere",
+      "tags": ["Sci-Fi", "Realistic", "Dystopian"]
+    },
+    {
+      "id": "modern-minimal",
+      "name": "Modern Minimal",
+      "description": "Clean, minimalist style with strong emphasis on composition and color",
+      "tags": ["Minimal", "Modern", "Clean"]
+    },
+    {
+      "id": "cinematic",
+      "name": "Cinematic",
+      "description": "Movie-quality visuals with dramatic lighting and composition",
+      "tags": ["Cinematic", "Dramatic", "Professional"]
+    }
+  ]
+}

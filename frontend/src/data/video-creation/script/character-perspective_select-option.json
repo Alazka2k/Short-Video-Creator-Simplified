@@ -1,0 +1,112 @@
+{
+  "categories": [
+    {
+      "id": "documentary",
+      "name": "Documentary Videos",
+      "options": [
+        {
+          "id": "documentary-expert",
+          "name": "Expert",
+          "description": "Provides authoritative insights and analysis",
+          "examples": "Scientists, historians, industry leaders",
+          "tags": ["Authoritative", "Analytical", "Professional"]
+        },
+        {
+          "id": "documentary-eyewitness",
+          "name": "Eyewitness",
+          "description": "Offers first-hand accounts of events",
+          "examples": "Participants in historical events, local residents",
+          "tags": ["First-hand", "Personal", "Authentic"]
+        },
+        {
+          "id": "documentary-affected",
+          "name": "Affected Individual",
+          "description": "Shares personal experiences related to the topic",
+          "examples": "Patients in medical documentaries, environmental impact victims",
+          "tags": ["Personal", "Emotional", "Impacted"]
+        }
+      ]
+    },
+    {
+      "id": "educational",
+      "name": "Educational/Instructional Videos",
+      "options": [
+        {
+          "id": "educational-instructor",
+          "name": "Instructor",
+          "description": "Guides learners through concepts and skills",
+          "examples": "Teachers, trainers, coaches",
+          "tags": ["Educational", "Guiding", "Clear"]
+        },
+        {
+          "id": "educational-student",
+          "name": "Student/Learner",
+          "description": "Demonstrates the learning process, asks questions",
+          "examples": "On-screen learner, relatable character",
+          "tags": ["Learning", "Relatable", "Curious"]
+        },
+        {
+          "id": "educational-practitioner",
+          "name": "Practitioner",
+          "description": "Shows real-world application of knowledge",
+          "examples": "Professionals in their field, experienced craftspeople",
+          "tags": ["Practical", "Experienced", "Applied"]
+        }
+      ]
+    },
+    {
+      "id": "corporate",
+      "name": "Corporate/Business Videos",
+      "options": [
+        {
+          "id": "corporate-executive",
+          "name": "CEO/Executive",
+          "description": "Provides vision and leadership perspective",
+          "examples": "Company founders, top management",
+          "tags": ["Leadership", "Strategic", "Visionary"]
+        },
+        {
+          "id": "corporate-employee",
+          "name": "Employee",
+          "description": "Offers insights into company culture and operations",
+          "examples": "Team members, department heads",
+          "tags": ["Internal", "Operational", "Cultural"]
+        },
+        {
+          "id": "corporate-client",
+          "name": "Client/Partner",
+          "description": "Shares experiences of working with the company",
+          "examples": "Business partners, long-term clients",
+          "tags": ["External", "Collaborative", "Testimonial"]
+        }
+      ]
+    },
+    {
+      "id": "personal",
+      "name": "Vlogs/Personal Videos",
+      "options": [
+        {
+          "id": "personal-creator",
+          "name": "Content Creator",
+          "description": "Shares personal experiences and opinions",
+          "examples": "Vlogger, influencer",
+          "tags": ["Personal", "Authentic", "Engaging"]
+        },
+        {
+          "id": "personal-guest",
+          "name": "Guest",
+          "description": "Provides additional perspectives or expertise",
+          "examples": "Friends, collaborators, interviewees",
+          "tags": ["Collaborative", "Fresh", "Diverse"]
+        },
+        {
+          "id": "personal-audience",
+          "name": "Audience Stand-in",
+          "description": "Represents the viewer's perspective",
+          "examples": "Character asking questions viewers might have",
+          "tags": ["Relatable", "Inquisitive", "Representative"]
+        }
+      ]
+    }
+  ]
+}

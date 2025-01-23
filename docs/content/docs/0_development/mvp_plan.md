@@ -19,7 +19,7 @@
   - ✅ Modern layout with animated transitions
   - ✅ Responsive design and animations
   - ✅ Benefits visualization for each feature
-- 🔄 Authentication system enhancement completed
+- ✅ Authentication system enhancement completed
   - ✅ Social login integration with Google
   - ✅ Debug logging system for auth flow
   - ✅ Token refresh handling
@@ -29,9 +29,19 @@
   - ✅ Session management with JWT
   - ✅ Role and permission system
   - ✅ Auth0 integration for social and email auth
-  - ⏳ Profile management improvements
-- ⏳ Dashboard implementation pending
-- ⏳ Video creation flow needs improvement
+- ✅ Dashboard implementation completed
+  - ✅ Main dashboard layout
+  - ✅ Video creation navigation
+  - ✅ Project/video list view (prototype)
+  - ✅ Quick actions menu
+- ⏳ Video creation flow in progress
+  - ✅ Basic video creation form
+  - ✅ Script settings with categories
+  - ✅ Visual settings with style options
+
+  - ⏳ Settings overview panel
+  - ⏳ Progress visualization
+  - ⏳ Video assembly options
 
 ## MVP Goals
 1. Create usable content for marketing
@@ -62,7 +72,7 @@
 - ⏳ About
 - ⏳ Remove "Careers" from the footer
 
-### 1.3 Authentication System Enhancement (⏳ In Progress)
+### ✅ 1.3 Authentication System Enhancement
 - ✅ Integrate new backend authentication endpoints
 - ✅ Implement Google social login
 - ✅ Add comprehensive auth debugging
@@ -73,27 +83,31 @@
 - ✅ Set up session management with JWT
 - ✅ Implement role and permission system
 - ✅ Complete Auth0 integration
-- ⏳ Enhance profile management
-- ⏳ Update protected routes
 
-### 1.4 Dashboard Implementation
+### ✅ 1.4 Dashboard Implementation
 - ✅ Create main dashboard layout
 - ✅ Add a button for the user to go to the video creation page
-- ⏳Connect and add backend implementation for "Projects" view
-- ⏳Connect and add backend implementation for "My videos" view
-- ⏳Add project/video list view
-- Add quick actions menu
-- Include recent activities section
+- ✅ Add project/video list view (dummy)
+- ✅ Add quick actions menu for Quick Creation and Advanced Creation
 
-### 1.5 Video Creation Flow
-- ⏳ Improve the /create view  
-- ⏳ Add video creation pages for "Quick Create" (/create/quick) and "Advanced Create" (/create/advanced)
-- ⏳ Streamline input form (based on API request schema for Job endpoint)
-- ⏳ Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
-- ⏳ Add progress visualization (can be a simple progress bar for every scene and the music generation (usually music generation is the longest part))
-- ⏳ Add basic customization options (for the assembly service of the video - e.g. cutting)
-- ⏳Add possibility to run a job and afterwards directly and automatically the assembly service (for the option the assembly parameters need to be input in the request)
-- ⏳Add a possibility to download the video
+### ⏳ 1.5 Video Creation Flow
+- ✅ Implement basic video creation form
+- ✅ Add script settings with categorized options
+  - ✅ Character perspective selection
+  - ✅ Pacing structure options
+  - ✅ Script tone configuration
+  - ✅ Vocabulary settings
+- ✅ Add visual settings
+  - ✅ Visualization type selection
+  - ✅ Artist style options
+  - ✅ Aspect ratio configuration
+- ⏳ Implement settings overview panel
+- ⏳ Improve the interface for script settings
+- ⏳ Improve Visual Settings interface
+- ⏳ Add progress visualization
+- ⏳ Add video assembly options
+- ⏳ Enable direct job and assembly service execution
+- ⏳ Add video download functionality
 
 ## Phase 2: Implement Missing Core Features
 
@@ -105,35 +119,46 @@
 - Setup usage tracking
 - Implement basic billing
 
+#### 2.1.1 Token & Billing System Backend
+- [ ] GET /api/billing/usage - Get token usage statistics
+- [ ] GET /api/billing/plans - Get available billing plans
+- [ ] GET /api/billing/transactions - Get transaction history
+- [ ] POST /api/billing/subscribe - Subscribe to a plan
+- [ ] POST /api/billing/purchase - Purchase tokens
+- [ ] POST /api/billing/change - Change subscription plan
+- [ ] POST /api/billing/cancel - Cancel subscription
+- [ ] GET /api/billing/history - Get billing history
+
+#### 2.1.2 Token & Billing System Frontend
+- [ ] Enhance the /dashboard/subscription page with the new API endpoints and integrate them
+
 ### 2.2 Video Assembly (Backend)
 - Improve the final video assembly service with enhanced variables (depending on json2Video)
 
-## 2.3 Backend API Enhancements
+### 2.3 Video and Project Management Enhancements
 
-2.3.1 Video Management
+#### 2.3.1 Video Management (Backend)
 - [ ] GET /api/videos - Fetch video list with pagination and filters
 - [ ] GET /api/videos/:id - Get single video details
 - [ ] DELETE /api/videos/:id - Delete a video
 - [ ] POST /api/videos/:id - Update video metadata
 
-2.3.2 Project Management
+#### 2.3.2 Project Management (Backend)
 - [ ] GET /api/projects - Fetch project list with pagination and filters
 - [ ] GET /api/projects/:id - Get single project details
 - [ ] POST /api/projects - Create new project
 - [ ] POST /api/projects/:id - Update project
 - [ ] DELETE /api/projects/:id - Delete project
 
-2.3.3 Token & Billing System
-- [ ] GET /api/billing/usage - Get token usage statistics
-- [ ] GET /api/billing/plans - Get available billing plans
-- [ ] GET /api/billing/transactions - Get transaction history
-- [ ] POST /api/billing/purchase - Purchase tokens
-- [ ] POST /api/billing/subscribe - Subscribe to a plan 
+#### 2.3.3. Frontend Enhancements of "My Videos" and "Projects" with new API endpoints (Frontend)
+- [ ] Connect and add backend implementation for "Projects" view
+- [ ] Connect and add backend implementation for "My videos" view
 
-### 2.4 Video Management (Frontend)
-- Project organization
-- Download/export options
-- Video preview player
+#### 2.3.4. Video Assembly Enhancements (Frontend)
+- [ ] Add video assembly options
+- [ ] Add progress visualization
+- [ ] Add video download functionality
+
 
 ## Phase 3: Testing & Refinement
 - User authentication
@@ -149,23 +174,68 @@
 - Deploy to Production environment
 
 ## Phase 5: Post-MVP Enhancements
-- Implement basic analytics (videos created, usage)
-- Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0)
-- Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
-- Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
-- Implement advanced progress tracking system:
-  - Use Redis for real-time progress updates
-  - Track individual service progress (LLM, Image, Voice, Video, Music)
-  - Track scene-level progress for multi-scene videos
-  - Implement WebSocket endpoints for real-time frontend updates
-  - Add estimated time remaining based on historical data
-  - Support progress visualization in the frontend dashboard
-  - Enable progress notifications (email, in-app)
-- Optimize service startup process:
-  - Reduce redundant logging
-  - Centralize common initialization
-  - Improve configuration loading
-  - Streamline service bootstrapping
+
+### 5.1. Feature, Profile and Protected Routes Enhancements
+- [ ] Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
+- [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
+- [ ] Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
+- [ ] Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
+
+#### 5.1.1 Profile Management (Frontend?)
+- [ ] Add profile editing functionality
+- [ ] Update name/display name
+- [ ] Change profile picture
+- [ ] Manage notification preferences
+- [ ] Configure video preferences (default style, voice, resolution)
+
+#### 5.1.2 Profile Management (Backend)
+- [ ] Implement user settings API endpoints
+- [ ] POST /api/auth/profile/update - Update profile information
+- [ ] POST /api/auth/preferences/update - Update user preferences
+- [ ] POST /api/auth/notifications/update - Update notification settings
+- [ ] Create profile settings UI
+- [ ] Profile settings page (/dashboard/settings/profile)
+- [ ] Preferences management page (/dashboard/settings/preferences)
+- [ ] Add form validation and error handling
+- [ ] Implement optimistic updates for better UX
+
+#### 5.1.3 Protected Routes Enhancement
+- [ ] Implement role-based access control (RBAC)
+  - [ ] Define user roles (free, premium, admin)
+  - [ ] Add role-based route protection
+  - [ ] Implement subscription status checks
+- [ ] Add route guards for premium features
+  - [ ] Advanced video creation
+  - [ ] Analytics dashboard
+  - [ ] API access
+
+### 5.2 Authentication Flow Improvement
+- [ ] Improve authentication flow
+- [ ] Better token refresh handling
+- [ ] Loading states during auth checks
+- [ ] Proper redirects for unauthenticated users
+
+### 5.3 Enhance error handling and feedback
+- [ ] Show upgrade prompts for premium features
+- [ ] Display proper unauthorized access messages
+- [ ] Handle expired subscriptions
+
+### 5.4 Advanced Progress Tracking System
+- [ ] Use Redis for real-time progress updates
+- [ ] Track individual service progress (LLM, Image, Voice, Video, Music)
+- [ ] Track scene-level progress for multi-scene videos
+- [ ] Implement WebSocket endpoints for real-time frontend updates
+- [ ] Add estimated time remaining based on historical data
+- [ ] Support progress visualization in the frontend dashboard
+- [ ] Enable progress notifications (email, in-app)
+
+### 5.5 Optimize service startup process:
+- [ ] Reduce redundant logging
+- [ ] Centralize common initialization
+- [ ] Improve configuration loading
+- [ ] Streamline service bootstrapping
+
+
 
 ## Success Criteria for MVP
 1. Users can create videos end-to-end

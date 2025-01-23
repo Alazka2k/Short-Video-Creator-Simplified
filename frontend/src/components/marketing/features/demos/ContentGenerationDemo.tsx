@@ -13,6 +13,8 @@ const durationOptions = [
 ]
 
 export function ContentGenerationDemo() {
+  const [showFocusField, setShowFocusField] = useState(false)
+  const [focus, setFocus] = useState("")
   const [enabledServices, setEnabledServices] = useState({
     voice: true,
     music: true,
@@ -27,30 +29,56 @@ export function ContentGenerationDemo() {
       <div className="space-y-4">
         <div className="p-4 rounded-lg bg-accent/5">
           <h4 className="font-medium mb-2">Video Idea</h4>
-          <input 
-            type="text" 
-            value="Top 5 history moments"
-            readOnly
-            className="w-full bg-transparent border-none text-sm text-muted-foreground focus:outline-none"
+          <Textarea 
+            placeholder="Describe your video idea..."
+            defaultValue="Top 5 history moments"
+            className="h-32 bg-transparent border-none text-sm text-muted-foreground focus:outline-none"
           />
+          {!showFocusField && (
+            <Button
+              variant="ghost"
+              className="text-xs mt-2"
+              onClick={() => setShowFocusField(true)}
+            >
+              + Add Focus/Theme
+            </Button>
+          )}
+          {showFocusField && (
+            <Textarea
+              placeholder="Any specific focus or theme for your video..."
+              value={focus}
+              onChange={(e) => setFocus(e.target.value)}
+              className="h-20 mt-4"
+            />
+          )}
         </div>
-        <div className="p-4 rounded-lg bg-accent/5">
-          <h4 className="font-medium mb-2">Duration</h4>
-          <select 
-            value={selectedDuration.value}
-            onChange={(e) => setSelectedDuration(durationOptions.find(d => d.value === Number(e.target.value)) || durationOptions[0])}
-            className="w-full bg-transparent border-none text-sm text-muted-foreground focus:outline-none"
-          >
-            {durationOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label} (~{option.scenes} scenes)
-              </option>
+
+        {/* Duration Selection */}
+        <div className="space-y-4">
+          <h4 className="font-medium">Video Duration</h4>
+          <div className="flex gap-4">
+            {durationOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setSelectedDuration(option)}
+                className={cn(
+                  "flex-1 p-4 rounded-lg border-2 transition-colors",
+                  selectedDuration.value === option.value
+                    ? "border-primary bg-primary/5"
+                    : "border-transparent bg-accent/5 hover:bg-accent/10"
+                )}
+              >
+                <div className="font-medium">{option.label}</div>
+                <div className="text-sm text-muted-foreground">
+                  ~{option.scenes} scenes
+                </div>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       </div>
 
-      {/* Service Toggle */}
+      {/* Service Selection */}
       <div className="space-y-4">
         <div className="flex flex-wrap gap-3">
           <button
@@ -112,7 +140,7 @@ export function ContentGenerationDemo() {
               enabledServices.image ? "opacity-100" : "opacity-0"
             )} />
           </button>
-      </div>
+        </div>
 
         {/* Visualization Options */}
         {enabledServices.image && (
@@ -155,7 +183,7 @@ export function ContentGenerationDemo() {
       </div>
 
       {/* Progress Indicator */}
-        <div className="space-y-2">
+      <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Generating content...</span>
           <span className="text-primary">80%</span>
@@ -163,9 +191,9 @@ export function ContentGenerationDemo() {
         <div className="h-2 bg-accent/10 rounded-full overflow-hidden">
           <div 
             className="h-full w-4/5 bg-gradient-to-r from-primary to-accent transition-all duration-500"
-              />
-            </div>
+          />
         </div>
+      </div>
     </div>
   )
 } 

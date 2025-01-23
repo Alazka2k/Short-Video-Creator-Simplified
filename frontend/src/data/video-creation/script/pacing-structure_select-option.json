@@ -1,0 +1,104 @@
+{
+  "categories": [
+    {
+      "id": "narrative",
+      "name": "Narrative Films",
+      "options": [
+        {
+          "id": "three-act",
+          "name": "Three-Act Structure",
+          "description": "Slow build-up in Act 1, increasing tension in Act 2, and rapid climax in Act 3",
+          "examples": "Character introduction scenes, rising action sequences, climactic finale",
+          "tags": ["Structured", "Dynamic", "Progressive"]
+        },
+        {
+          "id": "varying-lengths",
+          "name": "Varying Scene Lengths",
+          "description": "Quick cuts for energy, longer takes for depth, mixing it up to prevent monotony",
+          "examples": "Action montages, emotional dialogue scenes, establishing shots",
+          "tags": ["Mixed", "Varied", "Dynamic"]
+        }
+      ]
+    },
+    {
+      "id": "documentary",
+      "name": "Documentaries",
+      "options": [
+        {
+          "id": "measured",
+          "name": "Measured Pacing",
+          "description": "Slower, more consistent rhythm to allow for information absorption",
+          "examples": "Expert interviews, detailed explanations, archival footage",
+          "tags": ["Consistent", "Informative", "Deliberate"]
+        },
+        {
+          "id": "alternating",
+          "name": "Alternating Tempos",
+          "description": "Slower rhythms for reflection, quicker tempos for high-energy segments",
+          "examples": "Contemplative nature scenes, dramatic reenactments, news footage",
+          "tags": ["Dynamic", "Balanced", "Varied"]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "name": "Action/Thriller",
+      "options": [
+        {
+          "id": "fast-paced",
+          "name": "Fast-Paced Rhythm",
+          "description": "Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension",
+          "examples": "Chase sequences, fight scenes, rapid montages",
+          "tags": ["Dynamic", "Intense", "Energetic"]
+        },
+        {
+          "id": "contrast",
+          "name": "Contrast Pacing",
+          "description": "Alternating between fast and slow pacing to create unpredictability and keep viewers engaged",
+          "examples": "Quiet character moments, sudden action bursts, suspense building",
+          "tags": ["Unpredictable", "Engaging", "Varied"]
+        }
+      ]
+    },
+    {
+      "id": "educational",
+      "name": "Educational/Training",
+      "options": [
+        {
+          "id": "balanced",
+          "name": "Balanced Pacing",
+          "description": "Alternating between fast-paced, high-energy segments and slower, more informative sections",
+          "examples": "Quick overview segments, detailed demonstrations, practice sessions",
+          "tags": ["Balanced", "Educational", "Structured"]
+        },
+        {
+          "id": "deliberate",
+          "name": "Deliberate Pacing",
+          "description": "Slower pace for complex concepts, allowing viewers to absorb information",
+          "examples": "Step-by-step tutorials, concept explanations, review sections",
+          "tags": ["Methodical", "Clear", "Thorough"]
+        }
+      ]
+    },
+    {
+      "id": "promotional",
+      "name": "Promotional Videos",
+      "options": [
+        {
+          "id": "energetic",
+          "name": "Energetic Pacing",
+          "description": "Faster and more dynamic to generate enthusiasm and encourage action",
+          "examples": "Product highlights, testimonial montages, call-to-action sequences",
+          "tags": ["Dynamic", "Engaging", "Action-oriented"]
+        },
+        {
+          "id": "music-driven",
+          "name": "Music-Driven Rhythm",
+          "description": "Using upbeat music combined with quick-paced editing to create momentum",
+          "examples": "Brand montages, lifestyle sequences, product demonstrations",
+          "tags": ["Rhythmic", "Upbeat", "Flowing"]
+        }
+      ]
+    }
+  ]
+}

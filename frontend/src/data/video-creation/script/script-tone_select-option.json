@@ -1,0 +1,166 @@
+{
+  "categories": [
+    {
+      "id": "documentary",
+      "name": "Documentary Videos",
+      "options": [
+        {
+          "id": "authoritative",
+          "name": "Authoritative",
+          "description": "Convey expertise and credibility",
+          "examples": "Confident statements, well-researched facts",
+          "tags": ["Expert", "Credible", "Factual"]
+        },
+        {
+          "id": "objective",
+          "name": "Objective",
+          "description": "Present information impartially, avoiding bias",
+          "examples": "Balanced perspectives, neutral language",
+          "tags": ["Impartial", "Balanced", "Neutral"]
+        },
+        {
+          "id": "inquisitive",
+          "name": "Inquisitive",
+          "description": "Foster curiosity and critical thinking",
+          "examples": "Thought-provoking questions, exploratory language",
+          "tags": ["Curious", "Exploratory", "Engaging"]
+        }
+      ]
+    },
+    {
+      "id": "educational",
+      "name": "Educational/Instructional",
+      "options": [
+        {
+          "id": "encouraging",
+          "name": "Encouraging",
+          "description": "Motivate and support learners",
+          "examples": "Positive reinforcement, empathetic language",
+          "tags": ["Supportive", "Positive", "Motivating"]
+        },
+        {
+          "id": "patient",
+          "name": "Patient",
+          "description": "Explain concepts thoroughly without rushing",
+          "examples": "Step-by-step instructions, repeated key points",
+          "tags": ["Thorough", "Clear", "Methodical"]
+        },
+        {
+          "id": "enthusiastic",
+          "name": "Enthusiastic",
+          "description": "Show passion for the subject matter",
+          "examples": "Energetic delivery, expressing genuine interest",
+          "tags": ["Passionate", "Energetic", "Engaging"]
+        }
+      ]
+    },
+    {
+      "id": "promotional",
+      "name": "Promotional Videos",
+      "options": [
+        {
+          "id": "exciting",
+          "name": "Exciting",
+          "description": "Generate enthusiasm and interest",
+          "examples": "Upbeat language, dynamic pacing",
+          "tags": ["Dynamic", "Enthusiastic", "Engaging"]
+        },
+        {
+          "id": "persuasive",
+          "name": "Persuasive",
+          "description": "Convince the audience to take action",
+          "examples": "Emphasizing benefits, creating urgency",
+          "tags": ["Convincing", "Action-oriented", "Compelling"]
+        },
+        {
+          "id": "confident",
+          "name": "Confident",
+          "description": "Project assurance in the product or service",
+          "examples": "Authoritative statements, positive predictions",
+          "tags": ["Assured", "Authoritative", "Positive"]
+        }
+      ]
+    },
+    {
+      "id": "narrative",
+      "name": "Narrative Films",
+      "options": [
+        {
+          "id": "emotive",
+          "name": "Emotive",
+          "description": "Convey and evoke emotions",
+          "examples": "Dramatic language, expressive dialogue",
+          "tags": ["Emotional", "Dramatic", "Expressive"]
+        },
+        {
+          "id": "atmospheric",
+          "name": "Atmospheric",
+          "description": "Create mood and ambiance",
+          "examples": "Descriptive narration, tone-setting dialogue",
+          "tags": ["Moody", "Descriptive", "Ambient"]
+        },
+        {
+          "id": "character-driven",
+          "name": "Character-Driven",
+          "description": "Reflect individual personalities",
+          "examples": "Unique speech patterns, character-specific attitudes",
+          "tags": ["Personal", "Unique", "Authentic"]
+        }
+      ]
+    },
+    {
+      "id": "corporate",
+      "name": "Corporate/Business",
+      "options": [
+        {
+          "id": "professional",
+          "name": "Professional",
+          "description": "Maintain a polished, business-appropriate tone",
+          "examples": "Formal language, respectful address",
+          "tags": ["Polished", "Formal", "Respectful"]
+        },
+        {
+          "id": "informative",
+          "name": "Informative",
+          "description": "Focus on clear communication of facts and data",
+          "examples": "Concise explanations, relevant statistics",
+          "tags": ["Clear", "Factual", "Concise"]
+        },
+        {
+          "id": "aspirational",
+          "name": "Aspirational",
+          "description": "Inspire confidence and ambition",
+          "examples": "Future-oriented language, success-focused narrative",
+          "tags": ["Inspiring", "Ambitious", "Forward-looking"]
+        }
+      ]
+    },
+    {
+      "id": "personal",
+      "name": "Vlogs/Personal",
+      "options": [
+        {
+          "id": "casual",
+          "name": "Casual",
+          "description": "Create a relaxed, friendly atmosphere",
+          "examples": "Conversational language, personal anecdotes",
+          "tags": ["Relaxed", "Friendly", "Natural"]
+        },
+        {
+          "id": "authentic",
+          "name": "Authentic",
+          "description": "Project genuineness and relatability",
+          "examples": "Honest reflections, sharing real experiences",
+          "tags": ["Genuine", "Relatable", "Honest"]
+        },
+        {
+          "id": "interactive",
+          "name": "Interactive",
+          "description": "Engage directly with the audience",
+          "examples": "Asking for opinions, responding to comments",
+          "tags": ["Engaging", "Interactive", "Responsive"]
+        }
+      ]
+    }
+  ]
+}

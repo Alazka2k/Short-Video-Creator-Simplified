@@ -1,0 +1,28 @@
+{
+  "options": [
+    {
+      "id": "9:16",
+      "name": "Vertical (9:16)",
+      "description": "Perfect for Stories, Reels, and TikTok",
+      "width": 9,
+      "height": 16,
+      "preview": "/images/aspect-ratios/9-16.jpg"
+    },
+    {
+      "id": "16:9",
+      "name": "Landscape (16:9)",
+      "description": "Standard widescreen format for YouTube",
+      "width": 16,
+      "height": 9,
+      "preview": "/images/aspect-ratios/16-9.jpg"
+    },
+    {
+      "id": "1:1",
+      "name": "Square (1:1)",
+      "description": "Ideal for Instagram feed posts",
+      "width": 1,
+      "height": 1,
+      "preview": "/images/aspect-ratios/1-1.jpg"
+    }
+  ]
+}

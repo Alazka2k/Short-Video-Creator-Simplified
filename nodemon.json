@@ -1,0 +1,16 @@
+{
+  "watch": ["backend"],
+  "ext": "js,json",
+  "ignore": [
+    "*.test.js",
+    "*.spec.js",
+    "node_modules/**/node_modules",
+    "logs/*",
+    "*.log",
+    ".git",
+    "public/*"
+  ],
+  "env": {
+    "NODE_ENV": "development"
+  }
+} 

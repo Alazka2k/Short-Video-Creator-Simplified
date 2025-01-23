@@ -1,0 +1,166 @@
+{
+  "categories": [
+    {
+      "id": "documentary",
+      "name": "Documentary Videos",
+      "options": [
+        {
+          "id": "descriptive",
+          "name": "Descriptive Language",
+          "description": "Use vivid adjectives and adverbs to paint a picture",
+          "examples": "Lush landscapes, gripping stories",
+          "tags": ["Vivid", "Descriptive", "Engaging"]
+        },
+        {
+          "id": "informative",
+          "name": "Informative Tone",
+          "description": "Focus on clarity and factual information",
+          "examples": "According to recent studies...",
+          "tags": ["Clear", "Factual", "Precise"]
+        },
+        {
+          "id": "engaging-questions",
+          "name": "Engaging Questions",
+          "description": "Pose rhetorical questions to provoke thought",
+          "examples": "What drives human curiosity?",
+          "tags": ["Thought-provoking", "Interactive", "Engaging"]
+        }
+      ]
+    },
+    {
+      "id": "educational",
+      "name": "Educational/Instructional",
+      "options": [
+        {
+          "id": "clear-concise",
+          "name": "Clear and Concise",
+          "description": "Use straightforward vocabulary",
+          "examples": "Let's explore, In this lesson, we will...",
+          "tags": ["Simple", "Direct", "Clear"]
+        },
+        {
+          "id": "technical",
+          "name": "Technical Terms",
+          "description": "Introduce jargon but provide definitions",
+          "examples": "Photosynthesis is the process by which...",
+          "tags": ["Technical", "Educational", "Defined"]
+        },
+        {
+          "id": "encouraging",
+          "name": "Encouraging Phrases",
+          "description": "Use motivational language",
+          "examples": "You can do this!, Let's dive deeper!",
+          "tags": ["Motivational", "Supportive", "Positive"]
+        }
+      ]
+    },
+    {
+      "id": "promotional",
+      "name": "Promotional Videos",
+      "options": [
+        {
+          "id": "persuasive",
+          "name": "Persuasive Language",
+          "description": "Use compelling adjectives and action verbs",
+          "examples": "Transform your life with..., Discover the benefits of...",
+          "tags": ["Compelling", "Action-oriented", "Persuasive"]
+        },
+        {
+          "id": "call-to-action",
+          "name": "Call to Action",
+          "description": "Direct phrases urging immediate response",
+          "examples": "Sign up today!, Don't miss out!",
+          "tags": ["Urgent", "Direct", "Actionable"]
+        },
+        {
+          "id": "positive",
+          "name": "Positive Tone",
+          "description": "Emphasize benefits and positive outcomes",
+          "examples": "Join our community of satisfied customers!",
+          "tags": ["Positive", "Beneficial", "Uplifting"]
+        }
+      ]
+    },
+    {
+      "id": "narrative",
+      "name": "Narrative Films",
+      "options": [
+        {
+          "id": "character-specific",
+          "name": "Character-Specific",
+          "description": "Tailor language to reflect character backgrounds and personalities",
+          "examples": "Formal language for noble characters, slang for streetwise characters",
+          "tags": ["Tailored", "Authentic", "Character-driven"]
+        },
+        {
+          "id": "emotional",
+          "name": "Emotional Expression",
+          "description": "Use expressive language to convey feelings",
+          "examples": "I can't believe this is happening!",
+          "tags": ["Expressive", "Emotional", "Impactful"]
+        },
+        {
+          "id": "imagery",
+          "name": "Imagery and Metaphors",
+          "description": "Employ figurative language to enhance storytelling",
+          "examples": "Her smile was like sunshine on a rainy day",
+          "tags": ["Figurative", "Creative", "Descriptive"]
+        }
+      ]
+    },
+    {
+      "id": "corporate",
+      "name": "Corporate/Business",
+  "options": [
+    {
+          "id": "professional",
+          "name": "Professional Tone",
+          "description": "Use formal vocabulary suitable for a corporate audience",
+          "examples": "We aim to enhance productivity through...",
+          "tags": ["Professional", "Formal", "Business"]
+        },
+        {
+          "id": "industry-jargon",
+          "name": "Industry Jargon",
+          "description": "Incorporate relevant terminology that resonates with the target audience",
+          "examples": "Synergy, ROI",
+          "tags": ["Technical", "Industry-specific", "Professional"]
+        },
+        {
+          "id": "clear-objectives",
+          "name": "Clear Objectives",
+          "description": "State goals clearly",
+          "examples": "Our mission is to..., We strive to achieve...",
+          "tags": ["Clear", "Goal-oriented", "Direct"]
+        }
+      ]
+    },
+    {
+      "id": "personal",
+      "name": "Vlogs/Personal",
+      "options": [
+        {
+          "id": "conversational",
+          "name": "Conversational Language",
+          "description": "Use informal, relatable vocabulary",
+          "examples": "Hey everyone!, I just wanted to share...",
+          "tags": ["Informal", "Relatable", "Natural"]
+        },
+        {
+          "id": "personal-anecdotes",
+          "name": "Personal Anecdotes",
+          "description": "Include personal stories or experiences for relatability",
+          "examples": "The other day, I realized...",
+          "tags": ["Personal", "Relatable", "Authentic"]
+        },
+        {
+          "id": "engagement",
+          "name": "Engagement Prompts",
+          "description": "Encourage interaction with viewers",
+          "examples": "Let me know what you think in the comments!",
+          "tags": ["Interactive", "Engaging", "Community"]
+        }
+      ]
+    }
+  ]
+}
