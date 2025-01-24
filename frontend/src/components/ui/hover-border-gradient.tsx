@@ -36,13 +36,13 @@ export function HoverBorderGradient({
   };
 
   const movingMap: Record<Direction, string> = {
-    TOP: "radial-gradient(30% 100% at 50% 0%, hsl(0 0% 100% / 0.15) 0%, transparent 50%)",
-    LEFT: "radial-gradient(100% 30% at 0% 50%, hsl(0 0% 100% / 0.15) 0%, transparent 50%)",
-    BOTTOM: "radial-gradient(30% 100% at 50% 100%, hsl(0 0% 100% / 0.15) 0%, transparent 50%)",
-    RIGHT: "radial-gradient(100% 30% at 100% 50%, hsl(0 0% 100% / 0.15) 0%, transparent 50%)",
+    TOP: "radial-gradient(30% 100% at 50% 0%, hsl(0 0% 100% / 0.5) 0%, transparent 70%)",
+    LEFT: "radial-gradient(100% 30% at 0% 50%, hsl(0 0% 100% / 0.5) 0%, transparent 70%)",
+    BOTTOM: "radial-gradient(30% 100% at 50% 100%, hsl(0 0% 100% / 0.5) 0%, transparent 70%)",
+    RIGHT: "radial-gradient(100% 30% at 100% 50%, hsl(0 0% 100% / 0.5) 0%, transparent 70%)",
   };
 
-  const highlight = "radial-gradient(50% 200% at 50% 50%, hsl(0 0% 100% / 0.2) 0%, transparent 40%)";
+  const highlight = "radial-gradient(50% 200% at 50% 50%, hsl(0 0% 100% / 0.6) 0%, transparent 80%)";
 
   useEffect(() => {
     if (!hovered) {
@@ -69,7 +69,8 @@ export function HoverBorderGradient({
       <motion.div
         className="absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
         style={{
-          filter: "blur(8px)",
+          filter: "blur(5px)",
+          mixBlendMode: "soft-light"
         }}
         initial={{ background: movingMap[direction] }}
         animate={{
