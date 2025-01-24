@@ -154,7 +154,7 @@ export function VideoCreationFlow({
             skipImage: !selectedContent.visuals,
             skipVisualization: selectedVisualization === 'image'
           },
-          visualizationType: selectedVisualization === 'image' ? undefined : selectedVisualization
+          visualizationType: selectedVisualization === 'image' ? 'image' : selectedVisualization
         }
       }
 
@@ -210,9 +210,9 @@ export function VideoCreationFlow({
             skipVoice: !selectedContent.voice,
             skipMusic: !selectedContent.music,
             skipImage: !selectedContent.visuals,
-            skipVisualization: selectedVisualization === 'plain'
+            skipVisualization: selectedVisualization === 'image'
           },
-          visualizationType: selectedVisualization
+          visualizationType: selectedVisualization === 'image' ? 'image' : selectedVisualization
         }
       }
 
@@ -243,11 +243,11 @@ export function VideoCreationFlow({
 
   const renderStepContent = (stepId: string) => {
     return (
-      <div className="grid gap-8 lg:grid-cols-[1fr,320px]">
+      <div className="grid gap-8 lg:grid-cols-[1fr,320px] px-4">
         {/* Main content area */}
-        <div className="space-y-8">
+        <div className="space-y-8 overflow-visible">
           {stepId === 'basic' && (
-            <div className="space-y-8">
+            <div className="space-y-8 overflow-visible">
               <BasicInformationStep
                 prompt={prompt}
                 setPrompt={setPrompt}
@@ -428,7 +428,7 @@ export function VideoCreationFlow({
       />
 
       {/* Content */}
-      <ScrollArea className="min-h-[600px] px-4">
+      <ScrollArea className="min-h-[600px]">
         <div className="animate-in slide-in-from-right duration-500">
           {renderStepContent(activeSteps[currentStep].id)}
         </div>

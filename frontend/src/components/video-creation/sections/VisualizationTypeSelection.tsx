@@ -47,16 +47,16 @@ export function VisualizationTypeSelection({
   const [hoveredCard, setHoveredCard] = React.useState<string | null>(null);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-8">
       <h3 className="text-sm font-medium">Visualization Type</h3>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-3 p-1">
         {visualizationTypes.map((type) => (
           <Card 
             key={type.id} 
             className={cn(
-              "cursor-pointer transition-all hover:scale-[1.02] overflow-hidden",
+              "cursor-pointer transition-all hover:scale-[1.02]",
               selectedVisualization === type.id 
-                ? "ring-2 ring-primary ring-offset-4 ring-offset-background" 
+                ? "ring-2 ring-primary ring-offset-8 ring-offset-background" 
                 : "hover:border-primary/50"
             )}
             onClick={() => !isGenerating && setSelectedVisualization(type.id as 'image' | 'video' | 'animation')}
