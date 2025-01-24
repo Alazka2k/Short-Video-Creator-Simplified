@@ -2,6 +2,7 @@
 
 import { VideoCreationFlow } from '@/components/video-creation/VideoCreationFlow'
 import { useSearchParams } from 'next/navigation'
+import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
 
 export default function CreatePage() {
   const searchParams = useSearchParams()
@@ -30,9 +31,25 @@ export default function CreatePage() {
             </div>
 
             {/* Video creation interface */}
-            <div className="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 rounded-xl border shadow-2xl">
-              <div className="p-8">
-                <VideoCreationFlow mode={mode} />
+            <div className="relative">
+              {/* Main interface */}
+              <div className="relative z-10 bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+                <div className="p-8">
+                  <VideoCreationFlow mode={mode} />
+                </div>
+              </div>
+              {/* Border gradient effect */}
+              <div className="absolute inset-0 -z-10 rounded-xl">
+                <div className="absolute inset-[-2px] rounded-xl">
+                  <HoverBorderGradient
+                    as="div"
+                    containerClassName="w-full h-full"
+                    className="bg-transparent"
+                    duration={2}
+                  />
+                </div>
+                {/* Inner mask to hide gradient from center */}
+                <div className="absolute inset-0 bg-background rounded-xl" />
               </div>
             </div>
           </div>
