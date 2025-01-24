@@ -48,22 +48,19 @@ export function BasicInformationStep({
         />
         <div>
           <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs flex items-center gap-1"
-            onClick={() => {
-              setShowFocusField(!showFocusField)
-              if (!showFocusField) setFocus('')
-            }}
+            variant="outline"
+            onClick={() => setShowFocusField(!showFocusField)}
+            disabled={isGenerating}
+            className="border-border"
           >
             {showFocusField ? (
               <>
-                <ChevronUp className="w-3 h-3" />
+                <ChevronUp className="w-4 h-4 mr-2" />
                 Hide Focus/Theme
               </>
             ) : (
               <>
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="w-4 h-4 mr-2" />
                 Add Focus/Theme
               </>
             )}

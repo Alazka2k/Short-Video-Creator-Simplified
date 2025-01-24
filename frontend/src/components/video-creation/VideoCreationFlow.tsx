@@ -437,12 +437,11 @@ export function VideoCreationFlow({
       {/* Navigation */}
       <div className="flex justify-between pt-6 border-t">
         <Button
-          variant="ghost"
+          variant="outline"
           onClick={() => setCurrentStep(prev => prev - 1)}
           disabled={currentStep === 0 || isGenerating}
-          className="relative group px-6"
+          className="relative group px-6 border-border"
         >
-          <div className="absolute inset-0 transition-colors rounded-lg group-hover:bg-primary/5" />
           <div className="relative flex items-center gap-2">
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             <span>{activeSteps[currentStep - 1]?.title || 'Previous'}</span>
@@ -455,9 +454,8 @@ export function VideoCreationFlow({
               variant="outline"
               onClick={handleCreateProject}
               disabled={!prompt.trim() || isGenerating}
-              className="relative group px-6"
+              className="relative group px-6 border-border"
             >
-              <div className="absolute inset-0 transition-colors rounded-lg group-hover:bg-primary/5" />
               <div className="relative flex items-center gap-2">
                 <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
                 <span>Save as Project</span>
@@ -468,7 +466,6 @@ export function VideoCreationFlow({
               disabled={!prompt.trim() || isGenerating}
               className="relative group px-6"
             >
-              <div className="absolute inset-0 transition-opacity rounded-lg bg-primary group-hover:opacity-90" />
               <div className="relative flex items-center gap-2">
                 {isGenerating ? (
                   <>
@@ -486,11 +483,11 @@ export function VideoCreationFlow({
           </div>
         ) : (
           <Button
+            variant="outline"
             onClick={() => setCurrentStep(prev => prev + 1)}
             disabled={isGenerating}
-            className="relative group px-6"
+            className="relative group px-6 border-border"
           >
-            <div className="absolute inset-0 transition-colors rounded-lg group-hover:bg-primary/5" />
             <div className="relative flex items-center gap-2">
               <span>{activeSteps[currentStep + 1]?.title || 'Continue'}</span>
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />

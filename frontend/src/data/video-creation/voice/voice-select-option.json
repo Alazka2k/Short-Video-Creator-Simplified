@@ -1,0 +1,57 @@
+{
+    "categories": [
+        {
+            "id": "professional",
+            "name": "Professional Voices",
+            "options": [
+                {
+                    "id": "business-narrator",
+                    "name": "Business Narrator",
+                    "description": "Clear and professional voice perfect for corporate videos",
+                    "preview": "/creation/voice-selection-preview/business-narrator.mp3",
+                    "tags": ["Professional", "Clear", "Corporate"]
+                },
+                {
+                    "id": "documentary-expert",
+                    "name": "Documentary Expert",
+                    "description": "Authoritative voice ideal for documentaries and educational content",
+                    "preview": "/creation/voice-selection-preview/documentary-expert.mp3",
+                    "tags": ["Authoritative", "Educational", "Engaging"]
+                }
+            ]
+        },
+        {
+            "id": "entertainment",
+            "name": "Entertainment Voices",
+            "options": [
+                {
+                    "id": "movie-trailer",
+                    "name": "Movie Trailer Voice",
+                    "description": "Epic and dramatic voice for trailers and promos",
+                    "preview": "/creation/voice-selection-preview/movie-trailer.mp3",
+                    "tags": ["Epic", "Dramatic", "Energetic"]
+                },
+                {
+                    "id": "storyteller",
+                    "name": "Storyteller",
+                    "description": "Warm and engaging voice for narratives and stories",
+                    "preview": "/creation/voice-selection-preview/storyteller.mp3",
+                    "tags": ["Warm", "Engaging", "Natural"]
+                }
+            ]
+        },
+        {
+            "id": "casual",
+            "name": "Casual Voices",
+            "options": [
+                {
+                    "id": "friendly-presenter",
+                    "name": "Friendly Presenter",
+                    "description": "Approachable and conversational voice for vlogs and casual content",
+                    "preview": "/creation/voice-selection-preview/friendly-presenter.mp3",
+                    "tags": ["Friendly", "Casual", "Conversational"]
+                }
+            ]
+        }
+    ]
+}

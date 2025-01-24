@@ -1,22 +1,57 @@
 {
-  "options": [
-    {
-      "id": "blomkamp-stalenhag",
-      "name": "Sci-Fi Realism",
-      "description": "Neill Blomkamp meets Simon Stålenhag - Hyper-realistic sci-fi with a touch of dystopian atmosphere",
-      "tags": ["Sci-Fi", "Realistic", "Dystopian"]
-    },
-    {
-      "id": "modern-minimal",
-      "name": "Modern Minimal",
-      "description": "Clean, minimalist style with strong emphasis on composition and color",
-      "tags": ["Minimal", "Modern", "Clean"]
-    },
+  "categories": [
     {
       "id": "cinematic",
-      "name": "Cinematic",
-      "description": "Movie-quality visuals with dramatic lighting and composition",
-      "tags": ["Cinematic", "Dramatic", "Professional"]
+      "name": "Cinematic Styles",
+      "options": [
+        {
+          "id": "blomkamp-stalenhag",
+          "name": "Sci-Fi Realism",
+          "description": "Neill Blomkamp meets Simon Stålenhag - Hyper-realistic sci-fi with a touch of dystopian atmosphere",
+          "preview": "/creation/style-selection-preview/scifi-realism.jpg",
+          "tags": ["Sci-Fi", "Realistic", "Dystopian"]
+        },
+        {
+          "id": "cinematic-drama",
+          "name": "Cinematic Drama",
+          "description": "Movie-quality visuals with dramatic lighting and composition",
+          "preview": "/creation/style-selection-preview/cinematic-drama.jpg",
+          "tags": ["Cinematic", "Dramatic", "Professional"]
+        }
+      ]
+    },
+    {
+      "id": "modern",
+      "name": "Modern Styles",
+      "options": [
+        {
+          "id": "modern-minimal",
+          "name": "Modern Minimal",
+          "description": "Clean, minimalist style with strong emphasis on composition and color",
+          "preview": "/creation/style-selection-preview/modern-minimal.jpg",
+          "tags": ["Minimal", "Modern", "Clean"]
+        },
+        {
+          "id": "tech-future",
+          "name": "Tech Future",
+          "description": "Modern technology aesthetic with sleek and futuristic elements",
+          "preview": "/creation/style-selection-preview/tech-future.jpg",
+          "tags": ["Futuristic", "Technical", "Sleek"]
+        }
+      ]
+    },
+    {
+      "id": "artistic",
+      "name": "Artistic Styles",
+      "options": [
+        {
+          "id": "abstract-dynamic",
+          "name": "Abstract Dynamic",
+          "description": "Bold, abstract compositions with dynamic energy and movement",
+          "preview": "/creation/style-selection-preview/abstract-dynamic.jpg",
+          "tags": ["Abstract", "Dynamic", "Bold"]
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,57 @@
+{
+  "categories": [
+    {
+      "id": "cinematic",
+      "name": "Cinematic Shots",
+      "options": [
+        {
+          "id": "wide-establishing",
+          "name": "Wide Establishing",
+          "description": "Expansive shots that set the scene and show the environment",
+          "preview": "/creation/shot-selection-preview/wide-establishing.jpg",
+          "tags": ["Wide", "Establishing", "Scenic"]
+        },
+        {
+          "id": "dramatic-closeup",
+          "name": "Dramatic Close-up",
+          "description": "Intimate close-up shots with dramatic lighting and focus",
+          "preview": "/creation/shot-selection-preview/dramatic-closeup.jpg",
+          "tags": ["Close-up", "Dramatic", "Intimate"]
+        }
+      ]
+    },
+    {
+      "id": "documentary",
+      "name": "Documentary Shots",
+      "options": [
+        {
+          "id": "observational",
+          "name": "Observational",
+          "description": "Natural, unobtrusive shots that capture real moments",
+          "preview": "/creation/shot-selection-preview/observational.jpg",
+          "tags": ["Natural", "Authentic", "Candid"]
+        },
+        {
+          "id": "interview-style",
+          "name": "Interview Style",
+          "description": "Professional framing for interviews and talking heads",
+          "preview": "/creation/shot-selection-preview/interview.jpg",
+          "tags": ["Professional", "Interview", "Formal"]
+        }
+      ]
+    },
+    {
+      "id": "creative",
+      "name": "Creative Shots",
+      "options": [
+        {
+          "id": "dynamic-motion",
+          "name": "Dynamic Motion",
+          "description": "Shots with creative movement and dynamic composition",
+          "preview": "/creation/shot-selection-preview/dynamic-motion.jpg",
+          "tags": ["Dynamic", "Movement", "Creative"]
+        }
+      ]
+    }
+  ]
+}

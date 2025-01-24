@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Image as ImageIcon, Film, Box } from 'lucide-react'
@@ -45,6 +45,23 @@ export function VisualizationTypeSelection({
   isGenerating
 }: VisualizationTypeSelectionProps) {
   const [hoveredCard, setHoveredCard] = React.useState<string | null>(null);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+
+  useEffect(() => {
+    visualizationTypes.forEach(type => {
+      if (type.type === 'video') {
+        const video = videoRefs.current[type.id];
+        if (video) {
+          if (hoveredCard === type.id || selectedVisualization === type.id) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+            video.currentTime = 0;
+          }
+        }
+      }
+    });
+  }, [hoveredCard, selectedVisualization]);
 
   return (
     <div className="space-y-4 pb-8">
@@ -76,8 +93,10 @@ export function VisualizationTypeSelection({
                   />
                 ) : (
                   <video
+                    ref={(el) => {
+                      if (el) videoRefs.current[type.id] = el;
+                    }}
                     src={type.preview}
-                    autoPlay={hoveredCard === type.id || selectedVisualization === type.id}
                     loop
                     muted
                     playsInline
