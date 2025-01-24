@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface Step {
@@ -17,7 +17,7 @@ interface ProcessStepsProps {
   isGenerating: boolean
 }
 
-export function ProcessSteps({
+export function ProcessSteps({ 
   steps,
   currentStep,
   onChange,
@@ -25,46 +25,61 @@ export function ProcessSteps({
 }: ProcessStepsProps) {
   return (
     <div className="flex items-center justify-center">
-      <div className="w-full max-w-3xl relative">
-        <div className="absolute h-0.5 bg-muted top-[45px] left-0 right-0 -z-10">
+      <div className="w-full max-w-3xl relative space-y-4">
+        {/* Navbar Switches */}
+        <div className="flex items-center gap-3 bg-background/5 border border-border backdrop-blur-lg py-1 px-1 rounded-full">
+          {steps.map((step, index) => {
+            const Icon = step.icon
+            const isActive = index === currentStep
+            const isPast = index < currentStep
+
+            return (
+              <button
+                key={step.id}
+                onClick={() => !isGenerating && onChange(step.id)}
+                disabled={isGenerating}
+                className={cn(
+                  "relative cursor-pointer text-sm font-medium px-6 py-2 rounded-full transition-colors flex items-center gap-2 flex-1",
+                  "text-muted-foreground hover:text-foreground",
+                  isActive && "bg-muted text-foreground"
+                )}
+              >
+                <div className="flex items-center gap-2 justify-center w-full">
+                  <Icon className="w-4 h-4" />
+                  <span>{step.title}</span>
+                </div>
+                {isActive && (
+                  <motion.div
+                    layoutId="process-step-lamp"
+                    className="absolute inset-0 w-full bg-muted rounded-full -z-10"
+                    initial={false}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30
+                    }}
+                  >
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-foreground rounded-t-full">
+                      <div className="absolute w-12 h-6 bg-foreground/20 rounded-full blur-md -top-2 -left-2" />
+                      <div className="absolute w-8 h-6 bg-foreground/20 rounded-full blur-md -top-1" />
+                      <div className="absolute w-4 h-4 bg-foreground/20 rounded-full blur-sm top-0 left-2" />
+                    </div>
+                  </motion.div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Progress Bar */}
+        <div className="h-0.5 bg-muted rounded-full overflow-hidden mx-2">
           <div 
-            className="absolute h-full bg-blue-500 transition-all duration-500 ease-out"
+            className="h-full bg-muted-foreground transition-all duration-500 ease-out"
             style={{ 
               width: `${(currentStep / (steps.length - 1)) * 100}%`
             }}
           />
         </div>
-        <Tabs value={steps[currentStep].id} onValueChange={onChange}>
-          <TabsList className="w-full flex bg-transparent justify-between p-0 gap-4">
-            {steps.map((step, index) => (
-              <TabsTrigger 
-                key={step.id}
-                value={step.id}
-                disabled={isGenerating}
-                className={cn(
-                  "flex-1 relative py-4 border-none",
-                  "transition-all duration-200",
-                  index < currentStep ? "text-blue-500" :
-                  index === currentStep ? "text-blue-600" :
-                  "text-muted-foreground"
-                )}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center text-sm transition-all duration-300",
-                    "border-2",
-                    index < currentStep ? "bg-blue-500 border-blue-500 text-white" :
-                    index === currentStep ? "border-blue-500 bg-blue-50 text-blue-600" :
-                    "border-muted-foreground/30 text-muted-foreground"
-                  )}>
-                    {index + 1}
-                  </div>
-                  <span className="font-medium">{step.title}</span>
-                </div>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
       </div>
     </div>
   )
