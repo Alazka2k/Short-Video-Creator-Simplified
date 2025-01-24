@@ -130,45 +130,6 @@ export function ScriptPreviewPanel({
             )}
           </div>
         </motion.div>
-
-        {/* Progress Indicator */}
-        {(settings.characterPerspective || settings.pacingStructure || 
-          settings.scriptTone || settings.vocabulary) && (
-          <motion.div 
-            className="mt-6 pt-4 border-t"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-muted-foreground">
-                Script Settings Complete
-              </div>
-              <div className="text-sm font-medium">
-                {[
-                  settings.characterPerspective,
-                  settings.pacingStructure,
-                  settings.scriptTone,
-                  settings.vocabulary
-                ].filter(Boolean).length} / 4
-              </div>
-            </div>
-            <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-primary"
-                initial={{ width: "0%" }}
-                animate={{ 
-                  width: `${[
-                    settings.characterPerspective,
-                    settings.pacingStructure,
-                    settings.scriptTone,
-                    settings.vocabulary
-                  ].filter(Boolean).length * 25}%` 
-                }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </motion.div>
-        )}
       </div>
     </Card>
   )

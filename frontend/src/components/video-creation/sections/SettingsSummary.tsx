@@ -264,7 +264,7 @@ export function SettingsSummary({
                   </Badge>
                 )}
               </div>
-              <div className="pl-6 space-y-2">
+              <div className="p-3 space-y-2">
                 {characterPerspectiveDisplay && (
                   <Tooltip>
                     <TooltipTrigger asChild>

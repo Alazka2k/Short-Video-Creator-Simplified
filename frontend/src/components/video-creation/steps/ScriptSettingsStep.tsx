@@ -105,7 +105,7 @@ export function ScriptSettingsStep({
         {steps.map((s, index) => (
           <motion.button
             key={s.id}
-            className="flex flex-col items-center"
+            className="flex flex-col items-center w-[120px] sm:w-[150px]"
             onClick={() => !isGenerating && setCurrentStep(index)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -130,7 +130,9 @@ export function ScriptSettingsStep({
             >
               {index + 1}
             </motion.div>
-            <div className="text-xs font-medium">{s.title}</div>
+            <div className="text-xs font-medium text-center px-1 truncate w-full">
+              {s.title}
+            </div>
           </motion.button>
         ))}
       </div>

@@ -6,6 +6,7 @@ import { TextGenerateEffect } from '@/components/ui/text-generate-effect'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect, useId } from 'react'
+import { Switch } from '@/components/ui/switch'
 
 // Import example prompts
 import promptExamples from '@/data/video-creation/basic/input-prompt.json'
@@ -29,6 +30,10 @@ interface BasicInformationStepProps {
   selectedDuration: typeof durationOptions[0]
   setSelectedDuration: (value: typeof durationOptions[0]) => void
   isGenerating: boolean
+  hasVisualContent: boolean
+  setHasVisualContent: (value: boolean) => void
+  selectedVisualization: string
+  setSelectedVisualization: (value: string) => void
 }
 
 export function BasicInformationStep({
@@ -40,7 +45,11 @@ export function BasicInformationStep({
   setShowFocusField,
   selectedDuration,
   setSelectedDuration,
-  isGenerating
+  isGenerating,
+  hasVisualContent,
+  setHasVisualContent,
+  selectedVisualization,
+  setSelectedVisualization
 }: BasicInformationStepProps) {
   const [isFocused, setIsFocused] = useState(false)
   const [isFocusFieldFocused, setIsFocusFieldFocused] = useState(false)
@@ -72,6 +81,14 @@ export function BasicInformationStep({
       return () => clearInterval(interval)
     }
   }, [isFocusFieldFocused, focus, showFocusField])
+
+  const handleVisualContentChange = (value: boolean) => {
+    setHasVisualContent(value);
+    if (value) {
+      // Auto-select image visualization type when visual content is selected
+      setSelectedVisualization('image');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -186,6 +203,15 @@ export function BasicInformationStep({
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Visual Content</h2>
+        <Switch
+          checked={hasVisualContent}
+          onCheckedChange={handleVisualContentChange}
+          disabled={isGenerating}
+        />
       </div>
     </div>
   )
