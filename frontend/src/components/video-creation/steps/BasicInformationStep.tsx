@@ -2,8 +2,14 @@
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { TextGenerateEffect } from '@/components/ui/text-generate-effect'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect, useId } from 'react'
+
+// Import example prompts
+import promptExamples from '@/data/video-creation/basic/input-prompt.json'
+import focusExamples from '@/data/video-creation/basic/focus-prompt.json'
 
 export const durationOptions = [
   // TODO: Remove this test option before go-live
@@ -36,22 +42,77 @@ export function BasicInformationStep({
   setSelectedDuration,
   isGenerating
 }: BasicInformationStepProps) {
+  const [isFocused, setIsFocused] = useState(false)
+  const [isFocusFieldFocused, setIsFocusFieldFocused] = useState(false)
+  const [currentExampleIndex, setCurrentExampleIndex] = useState(0)
+  const [currentFocusExampleIndex, setCurrentFocusExampleIndex] = useState(0)
+  const promptId = useId()
+  const focusId = useId()
+
+  // Rotate through examples
+  useEffect(() => {
+    if (!isFocused && !prompt) {
+      const interval = setInterval(() => {
+        setCurrentExampleIndex((prev) => 
+          (prev + 1) % promptExamples.examples.length
+        )
+      }, 8000)
+      return () => clearInterval(interval)
+    }
+  }, [isFocused, prompt])
+
+  // Rotate through focus examples
+  useEffect(() => {
+    if (!isFocusFieldFocused && !focus && showFocusField) {
+      const interval = setInterval(() => {
+        setCurrentFocusExampleIndex((prev) => 
+          (prev + 1) % focusExamples.examples.length
+        )
+      }, 8000)
+      return () => clearInterval(interval)
+    }
+  }, [isFocusFieldFocused, focus, showFocusField])
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <Textarea
-          placeholder="Describe your video idea..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="h-32"
-          disabled={isGenerating}
-        />
-        <div>
+        <div className="group relative mt-8 pt-2">
+          <label
+            htmlFor={promptId}
+            className={cn(
+              "absolute -top-7 left-0 z-20 origin-left text-lg font-semibold transition-all duration-300",
+              prompt || isFocused
+                ? "-translate-y-1.5 scale-90 text-foreground"
+                : "text-muted-foreground"
+            )}
+          >
+            Describe your video idea
+          </label>
+          <Textarea
+            id={promptId}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="h-32 resize-none bg-background focus-visible:ring-0 focus-visible:ring-offset-0 border-input text-sm"
+            disabled={isGenerating}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+          />
+          {!prompt && !isFocused && (
+            <div className="absolute inset-[1px] pointer-events-none flex items-start p-3">
+              <TextGenerateEffect
+                words={promptExamples.examples[currentExampleIndex]}
+                className="!m-0 !p-0 !text-sm !font-normal text-muted-foreground/50"
+                duration={2}
+              />
+            </div>
+          )}
+        </div>
+        <div className="relative pt-4">
           <Button
             variant="outline"
             onClick={() => setShowFocusField(!showFocusField)}
             disabled={isGenerating}
-            className="border-border"
+            className="border border-input hover:bg-accent hover:text-accent-foreground"
           >
             {showFocusField ? (
               <>
@@ -66,14 +127,38 @@ export function BasicInformationStep({
             )}
           </Button>
           {showFocusField && (
-            <div className="mt-2">
-              <Textarea
-                placeholder="Any specific focus or theme for your video..."
-                value={focus}
-                onChange={(e) => setFocus(e.target.value)}
-                className="h-20"
-                disabled={isGenerating}
-              />
+            <div className="mt-8 pt-2">
+              <div className="group relative">
+                <label
+                  htmlFor={focusId}
+                  className={cn(
+                    "absolute -top-7 left-0 z-20 origin-left text-lg font-semibold transition-all duration-300",
+                    focus || isFocusFieldFocused
+                      ? "-translate-y-1.5 scale-90 text-foreground"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  Focus/Theme
+                </label>
+                <Textarea
+                  id={focusId}
+                  value={focus}
+                  onChange={(e) => setFocus(e.target.value)}
+                  className="h-20 resize-none bg-background focus-visible:ring-0 focus-visible:ring-offset-0 border-input text-sm"
+                  disabled={isGenerating}
+                  onFocus={() => setIsFocusFieldFocused(true)}
+                  onBlur={() => setIsFocusFieldFocused(false)}
+                />
+                {!focus && !isFocusFieldFocused && (
+                  <div className="absolute inset-[1px] pointer-events-none flex items-start p-3">
+                    <TextGenerateEffect
+                      words={focusExamples.examples[currentFocusExampleIndex]}
+                      className="!m-0 !p-0 !text-sm !font-normal text-muted-foreground/50"
+                      duration={2}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

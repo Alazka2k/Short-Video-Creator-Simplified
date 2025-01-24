@@ -110,7 +110,7 @@ export function SettingsSummary({
             <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
               <Settings2 className="w-5 h-5 text-primary" />
             </div>
-            <div>
+        <div>
               <CardTitle className="text-lg font-semibold">Current Settings</CardTitle>
               <p className="text-sm text-muted-foreground">Your selected options and preferences</p>
             </div>
@@ -151,8 +151,8 @@ export function SettingsSummary({
                     <div className="text-muted-foreground line-clamp-2">
                       {focus}
                     </div>
-                  </div>
-                </div>
+          </div>
+        </div>
               )}
               <div className="flex items-center gap-2 text-muted-foreground bg-accent/5 p-3 rounded-md">
                 <Clock className="w-4 h-4 shrink-0" />
@@ -174,7 +174,7 @@ export function SettingsSummary({
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <div className="font-medium">Selected Content</div>
-              </div>
+        </div>
               {currentStep === 'basic' && (
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
                   Current Tab
@@ -240,10 +240,10 @@ export function SettingsSummary({
                   <Badge variant="outline" className="bg-primary/5 border-primary/20">
                     {visualizationNames[selectedVisualization]}
                   </Badge>
-                )}
-              </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
           {/* Script Style */}
           {Object.values(scriptParams).some(Boolean) && (
@@ -315,7 +315,7 @@ export function SettingsSummary({
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="bg-primary/5 border-primary/20 cursor-help">
                         {pacingStructureDisplay.name}
-                      </Badge>
+            </Badge>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-[300px]">
                       <p className="font-medium">{pacingStructureDisplay.description}</p>
@@ -326,8 +326,8 @@ export function SettingsSummary({
                   </Tooltip>
                 )}
               </div>
-            </div>
-          )}
+          </div>
+        )}
 
           {/* Voice Settings */}
           {selectedContent.voice && (
@@ -426,11 +426,11 @@ export function SettingsSummary({
                     )}
                   </div>
                 )}
-              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </CardContent>
+    </Card>
     </TooltipProvider>
   )
 } 
