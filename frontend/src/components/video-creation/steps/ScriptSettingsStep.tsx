@@ -1,14 +1,15 @@
 'use client'
 
 import React, { useState } from 'react'
-import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 import characterPerspectives from '@/data/video-creation/script/character-perspective_select-option.json'
 import pacingStructures from '@/data/video-creation/script/pacing-structure_select-option.json'
 import scriptTones from '@/data/video-creation/script/script-tone_select-option.json'
 import vocabularyOptions from '@/data/video-creation/script/vocabulary_select-option.json'
-import { Card, CardContent } from '@/components/ui/card'
+import { ScriptPreviewPanel } from '../sections/ScriptPreviewPanel'
 import { Button } from '@/components/ui/button'
-import { Check, ChevronDown } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface ScriptSettingsStepProps {
   scriptParams: {
@@ -26,314 +27,208 @@ interface ScriptSettingsStepProps {
   isGenerating: boolean
 }
 
+const steps = [
+  {
+    id: 'character',
+    title: 'Character Perspective',
+    description: 'Choose who will tell your story (optional)',
+    data: characterPerspectives,
+    paramKey: 'characterPerspective' as const
+  },
+  {
+    id: 'pacing',
+    title: 'Pacing & Structure',
+    description: 'Set the rhythm and flow of your script (optional)',
+    data: pacingStructures,
+    paramKey: 'pacingStructure' as const
+  },
+  {
+    id: 'tone',
+    title: 'Script Tone',
+    description: 'Define the mood and style (optional)',
+    data: scriptTones,
+    paramKey: 'scriptTone' as const
+  },
+  {
+    id: 'vocabulary',
+    title: 'Vocabulary Style',
+    description: 'Choose your language level (optional)',
+    data: vocabularyOptions,
+    paramKey: 'vocabulary' as const
+  }
+]
+
 export function ScriptSettingsStep({
   scriptParams,
   setScriptParams,
   isGenerating
 }: ScriptSettingsStepProps) {
-  const [expandedCategories, setExpandedCategories] = useState<{
-    character: string | null
-    pacing: string | null
-    tone: string | null
-    vocabulary: string | null
-  }>({
-    character: null,
-    pacing: null,
-    tone: null,
-    vocabulary: null
-  })
+  const [currentStep, setCurrentStep] = useState(0)
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
+
+  const step = steps[currentStep]
+  const isLastStep = currentStep === steps.length - 1
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    )
+  }
+
+  // Helper to check if a category has a selected option
+  const isCategorySelected = (category: any) => {
+    return category.options.some((option: any) => option.id === scriptParams[step.paramKey])
+  }
 
   return (
     <div className="space-y-8">
-      <h2 className="text-lg font-semibold">Script Settings</h2>
-
-      {/* Character Perspective */}
-      <div>
-        <h3 className="text-sm font-medium mb-3">Character Perspective</h3>
-        <div className="space-y-3">
-          {characterPerspectives.categories.map((category) => (
-            <Card key={category.id} className="overflow-hidden">
-              <button
-                className="w-full p-4 flex items-center justify-between hover:bg-accent/5 transition-colors"
-                onClick={() => setExpandedCategories(prev => ({
-                  ...prev,
-                  character: prev.character === category.id ? null : category.id
-                }))}
-                disabled={isGenerating}
-              >
-                <span className="font-medium">{category.name}</span>
-                <ChevronDown className={cn(
-                  "w-4 h-4 transition-transform",
-                  expandedCategories.character === category.id && "transform rotate-180"
-                )} />
-              </button>
-              {expandedCategories.character === category.id && (
-                <CardContent className="pt-0">
-                  <div className="grid gap-2">
-                    {category.options.map((option) => (
-                      <button
-                        key={option.id}
-                        className={cn(
-                          "w-full p-4 rounded-lg text-left transition-colors",
-                          scriptParams.characterPerspective === option.id
-                            ? "bg-primary/20"
-                            : "hover:bg-accent/5"
-                        )}
-                        onClick={() => setScriptParams(prev => ({
-                          ...prev,
-                          characterPerspective: option.id
-                        }))}
-                        disabled={isGenerating}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{option.name}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {option.description}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Examples: {option.examples}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {option.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-xs px-2 py-0.5 rounded-full bg-accent/10"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          {scriptParams.characterPerspective === option.id && (
-                            <Check className="w-4 h-4 text-primary shrink-0 ml-4" />
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
+      {/* Live Preview Panel - Moved to top */}
+      <div className="px-4">
+        <ScriptPreviewPanel
+          settings={{
+            characterPerspective: scriptParams.characterPerspective || null,
+            pacingStructure: scriptParams.pacingStructure || null,
+            scriptTone: scriptParams.scriptTone || null,
+            vocabulary: scriptParams.vocabulary || null
+          }}
+          characterData={characterPerspectives}
+          pacingData={pacingStructures}
+          toneData={scriptTones}
+          vocabularyData={vocabularyOptions}
+        />
       </div>
 
-      {/* Pacing Structure */}
-      <div>
-        <h3 className="text-sm font-medium mb-3">Pacing Structure</h3>
-        <div className="space-y-3">
-          {pacingStructures.categories.map((category) => (
-            <Card key={category.id} className="overflow-hidden">
-              <button
-                className="w-full p-4 flex items-center justify-between hover:bg-accent/5 transition-colors"
-                onClick={() => setExpandedCategories(prev => ({
-                  ...prev,
-                  pacing: prev.pacing === category.id ? null : category.id
-                }))}
-                disabled={isGenerating}
-              >
-                <span className="font-medium">{category.name}</span>
-                <ChevronDown className={cn(
-                  "w-4 h-4 transition-transform",
-                  expandedCategories.pacing === category.id && "transform rotate-180"
-                )} />
-              </button>
-              {expandedCategories.pacing === category.id && (
-                <CardContent className="pt-0">
-                  <div className="grid gap-2">
-                    {category.options.map((option) => (
-                      <button
-                        key={option.id}
-                        className={cn(
-                          "w-full p-4 rounded-lg text-left transition-colors",
-                          scriptParams.pacingStructure === option.id
-                            ? "bg-primary/20"
-                            : "hover:bg-accent/5"
-                        )}
-                        onClick={() => setScriptParams(prev => ({
-                          ...prev,
-                          pacingStructure: option.id
-                        }))}
-                        disabled={isGenerating}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{option.name}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {option.description}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Examples: {option.examples}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {option.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-xs px-2 py-0.5 rounded-full bg-accent/10"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          {scriptParams.pacingStructure === option.id && (
-                            <Check className="w-4 h-4 text-primary shrink-0 ml-4" />
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
+      {/* Progress Steps */}
+      <div className="flex items-center justify-between mb-8 px-4 pt-4">
+        {steps.map((s, index) => (
+          <motion.button
+            key={s.id}
+            className="flex flex-col items-center"
+            onClick={() => !isGenerating && setCurrentStep(index)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={isGenerating}
+          >
+            <motion.div 
+              className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium mb-2
+                ${index === currentStep 
+                  ? 'bg-primary text-primary-foreground' 
+                  : index < currentStep
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              animate={{
+                scale: index === currentStep ? 1.1 : 1,
+                backgroundColor: index === currentStep 
+                  ? 'hsl(var(--primary))' 
+                  : index < currentStep
+                    ? 'hsla(var(--primary) / 0.2)'
+                    : 'hsl(var(--muted))'
+              }}
+            >
+              {index + 1}
+            </motion.div>
+            <div className="text-xs font-medium">{s.title}</div>
+          </motion.button>
+        ))}
       </div>
 
-      {/* Script Tone */}
-      <div>
-        <h3 className="text-sm font-medium mb-3">Script Tone</h3>
-        <div className="space-y-3">
-          {scriptTones.categories.map((category) => (
-            <Card key={category.id} className="overflow-hidden">
-              <button
-                className="w-full p-4 flex items-center justify-between hover:bg-accent/5 transition-colors"
-                onClick={() => setExpandedCategories(prev => ({
-                  ...prev,
-                  tone: prev.tone === category.id ? null : category.id
-                }))}
-                disabled={isGenerating}
-              >
-                <span className="font-medium">{category.name}</span>
-                <ChevronDown className={cn(
-                  "w-4 h-4 transition-transform",
-                  expandedCategories.tone === category.id && "transform rotate-180"
-                )} />
-              </button>
-              {expandedCategories.tone === category.id && (
-                <CardContent className="pt-0">
-                  <div className="grid gap-2">
-                    {category.options.map((option) => (
-                      <button
-                        key={option.id}
-                        className={cn(
-                          "w-full p-4 rounded-lg text-left transition-colors",
-                          scriptParams.scriptTone === option.id
-                            ? "bg-primary/20"
-                            : "hover:bg-accent/5"
-                        )}
-                        onClick={() => setScriptParams(prev => ({
-                          ...prev,
-                          scriptTone: option.id
-                        }))}
-                        disabled={isGenerating}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{option.name}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {option.description}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Examples: {option.examples}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {option.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-xs px-2 py-0.5 rounded-full bg-accent/10"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          {scriptParams.scriptTone === option.id && (
-                            <Check className="w-4 h-4 text-primary shrink-0 ml-4" />
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* Current Step Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step.id}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="px-4"
+        >
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold">{step.title}</h2>
+            <p className="text-sm text-muted-foreground">{step.description}</p>
+          </div>
 
-      {/* Vocabulary */}
-      <div>
-        <h3 className="text-sm font-medium mb-3">Vocabulary Style</h3>
-        <div className="space-y-3">
-          {vocabularyOptions.categories.map((category) => (
-            <Card key={category.id} className="overflow-hidden">
-              <button
-                className="w-full p-4 flex items-center justify-between hover:bg-accent/5 transition-colors"
-                onClick={() => setExpandedCategories(prev => ({
-                  ...prev,
-                  vocabulary: prev.vocabulary === category.id ? null : category.id
-                }))}
-                disabled={isGenerating}
+          <div className="grid gap-4">
+            {step.data.categories.map((category) => (
+              <Card 
+                key={category.id} 
+                className={`p-4 transition-colors ${
+                  isCategorySelected(category) ? 'ring-1 ring-primary bg-primary/5' : ''
+                }`}
               >
-                <span className="font-medium">{category.name}</span>
-                <ChevronDown className={cn(
-                  "w-4 h-4 transition-transform",
-                  expandedCategories.vocabulary === category.id && "transform rotate-180"
-                )} />
-              </button>
-              {expandedCategories.vocabulary === category.id && (
-                <CardContent className="pt-0">
-                  <div className="grid gap-2">
+                <button
+                  className="w-full flex justify-between items-center font-medium mb-4"
+                  onClick={() => toggleCategory(category.id)}
+                >
+                  <span className={isCategorySelected(category) ? 'text-primary' : ''}>
+                    {category.name}
+                  </span>
+                  {expandedCategories.includes(category.id) ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
+                
+                {expandedCategories.includes(category.id) && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="grid grid-cols-2 gap-3"
+                  >
                     {category.options.map((option) => (
-                      <button
+                      <motion.button
                         key={option.id}
-                        className={cn(
-                          "w-full p-4 rounded-lg text-left transition-colors",
-                          scriptParams.vocabulary === option.id
-                            ? "bg-primary/20"
-                            : "hover:bg-accent/5"
-                        )}
+                        className={`p-4 rounded-lg text-left transition-colors relative overflow-hidden
+                          ${scriptParams[step.paramKey] === option.id
+                            ? 'bg-primary/20 ring-2 ring-primary'
+                            : 'hover:bg-accent/5'
+                          }`}
                         onClick={() => setScriptParams(prev => ({
                           ...prev,
-                          vocabulary: option.id
+                          [step.paramKey]: prev[step.paramKey] === option.id ? '' : option.id
                         }))}
                         disabled={isGenerating}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{option.name}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {option.description}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Examples: {option.examples}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {option.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-xs px-2 py-0.5 rounded-full bg-accent/10"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          {scriptParams.vocabulary === option.id && (
-                            <Check className="w-4 h-4 text-primary shrink-0 ml-4" />
-                          )}
+                        <div className="font-medium mb-1">{option.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {option.description}
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
-      </div>
+                  </motion.div>
+                )}
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex justify-between mt-8">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setCurrentStep(prev => prev - 1)}
+              disabled={currentStep === 0 || isGenerating}
+              className="min-w-[120px]"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => setCurrentStep(prev => prev + 1)}
+              disabled={isGenerating || isLastStep}
+              className="min-w-[120px] bg-primary"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   )
 } 
