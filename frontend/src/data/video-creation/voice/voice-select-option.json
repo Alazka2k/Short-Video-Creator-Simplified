@@ -1,65 +1,110 @@
 {
     "categories": [
         {
-            "id": "professional",
-            "name": "Professional Voices",
-            "options": [
-                {
-                    "id": "business-narrator",
-                    "name": "Business Narrator",
-                    "description": "Clear and professional voice perfect for corporate videos",
-                    "tags": ["Professional", "Clear", "Corporate"],
-                    "elevenlabsVoiceId": "2EiwWnXFnvU5JabPnv8n",
-                    "previewUrl": "/creation/voice-selection-preview/business-narrator.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/business-narrator.png"
-                },
-                {
-                    "id": "documentary-expert",
-                    "name": "Documentary Expert",
-                    "description": "Authoritative voice ideal for documentaries and educational content",
-                    "tags": ["Authoritative", "Educational", "Engaging"],
-                    "elevenlabsVoiceId": "jsCqWAovK2JbxVtS9RpB",
-                    "previewUrl": "/creation/voice-selection-preview/documentary-expert.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/documentary-expert.png"
-                }
-            ]
-        },
-        {
             "id": "entertainment",
             "name": "Entertainment Voices",
             "options": [
                 {
-                    "id": "movie-trailer",
-                    "name": "Movie Trailer Voice",
-                    "description": "Epic and dramatic voice for trailers and promos",
-                    "tags": ["Epic", "Dramatic", "Energetic"],
-                    "elevenlabsVoiceId": "pNInz6obpgDQGcFmaJgB",
-                    "previewUrl": "/creation/voice-selection-preview/movie-trailer.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/movie-trailer.png"
+                    "id": "epic-movie-narrator",
+                    "name": "Epic Movie Narrator",
+                    "description": "Middle-aged male with a deep voice, suitable for entertainment and TV.",
+                    "tags": ["Epic", "Deep", "Dramatic", "Male"],
+                    "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/FF7KdobWPaiR0vkcALHF/M0VmTmIFXsie1kg33XBh.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/epic-movie-narrator.png"
                 },
                 {
-                    "id": "storyteller",
-                    "name": "Storyteller",
-                    "description": "Warm and engaging voice for narratives and stories",
-                    "tags": ["Warm", "Engaging", "Natural"],
-                    "elevenlabsVoiceId": "pNInz6obpgDQGcFmaJgB",
-                    "previewUrl": "/creation/voice-selection-preview/storyteller.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/storyteller.png"
+                    "id": "villainous-character",
+                    "name": "Villainous Character",
+                    "description": "The Villain! Wickedly eloquent. Calculating. Cruel and calm.",
+                    "tags": ["Villainous", "Eloquent", "Wicked", "Female"],
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/user/yA8yDNUx4dZ4gwL9ztbTpUEIyR12/voices/flHkNRp1BlvT73UL6gyz/Wi2FL0vNQp7bJAeSrJaz.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/villainous-character.png"
+                },
+                {
+                    "id": "mountain-king",
+                    "name": "The King of Narrators",
+                    "description": "Middle-aged American male. Voice is rich, smooth, & rugged. Each syllable lingers on the palate, leaving a tantalizing trail of sensation in its wake. Perfect for animated characters.",
+                    "tags": ["Rich", "Rugged", "Characters", "Male"],
+                    "elevenlabsVoiceId": "qNkzaJoHLLdpvgh5tISm",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/qNkzaJoHLLdpvgh5tISm/N0JJBx37oVjY5Juzh0QY.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/mountain-king.png"
                 }
             ]
         },
         {
-            "id": "casual",
-            "name": "Casual Voices",
+            "id": "narrative",
+            "name": "Narrative Voices",
             "options": [
                 {
-                    "id": "friendly-presenter",
-                    "name": "Friendly Presenter",
-                    "description": "Approachable and conversational voice for vlogs and casual content",
-                    "tags": ["Friendly", "Casual", "Conversational"],
-                    "elevenlabsVoiceId": "pNInz6obpgDQGcFmaJgB",
-                    "previewUrl": "/creation/voice-selection-preview/friendly-presenter.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/friendly-presenter.png"
+                    "id": "mystery-storyteller",
+                    "name": "Mystery Storyteller",
+                    "description": "Middle-aged American male voice, great for storytelling, mystery, and horror.",
+                    "tags": ["Storytelling", "Mystery", "Horror", "Male"],
+                    "elevenlabsVoiceId": "Q5MjmdN1UsXgfT32Cj3T",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/Q5MjmdN1UsXgfT32Cj3T/NQj8eAyRKLtfH7yVTb72.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/mystery-storyteller.png"
+                },
+                {
+                    "id": "suspense-narrator",
+                    "name": "Suspense Narrator",
+                    "description": "A middle-aged American voice which captures the tone and pace of your favorite mystery or suspense novel. Great for audiobooks and True Crime content.",
+                    "tags": ["Suspense", "Mystery", "Audiobooks", "Male"],
+                    "elevenlabsVoiceId": "e5WNhrdI30aXpS2RSGm1",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/user/T7bhqxLyENgRaSgfnqhPa6vPSID2/voices/e5WNhrdI30aXpS2RSGm1/irZ6ZTbGVA5WjVAwnZcJ.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/suspense-narrator.png"
+                },
+                {
+                    "id": "calm-meditator",
+                    "name": "Calm Meditator",
+                    "description": "A calm and relaxing female voice, ideal for meditation and self-reflection. The tone is smooth and measured, painting a clear picture for the listener with a youthful, vibrant voice.",
+                    "tags": ["Calm", "Relaxing", "Meditation", "Female"],
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/pjcYQlDFKMbcOUp6F5GD/5zLsYiRlHlqOzAHAmJT0.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/calm-meditator.png"
+                }
+            ]
+        },
+        {
+            "id": "conversational",
+            "name": "Conversational Voices",
+            "options": [
+                {
+                    "id": "casual-conversationalist",
+                    "name": "Casual Conversationalist",
+                    "description": "A well-connected, young conversational male that's perfect for podcasting or casual discussions.",
+                    "tags": ["Casual", "Upbeat", "Conversational", "Male"],
+                    "elevenlabsVoiceId": "vBKc2FfBKJfcZNyEt1n6",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/user/ADR2AWeKFkRKlDnDaxjgPlol7Zx1/voices/vBKc2FfBKJfcZNyEt1n6/o4o4mqfdaIsxzmOipiS9.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/casual-conversationalist.png"
+                },
+                {
+                    "id": "natural-conversationalist",
+                    "name": "Natural Conversationalist",
+                    "description": "A casual, young-adult voice that's relatable and easy to listen to, perfect for storytelling or friendly interactions.",
+                    "tags": ["Casual", "Natural", "Friendly", "Male"],
+                    "elevenlabsVoiceId": "UgBBYS2sOqTuMpoF3BR0",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/user/y7Wmp2r8nCeGkLiXiwMOVWktro13/voices/UgBBYS2sOqTuMpoF3BR0/0Oc7jiXwWN9kRTXfQsmw.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/natural-conversationalist.png"
+                },
+                {
+                    "id": "classy-podcaster",
+                    "name": "Classy Podcaster",
+                    "description": "A classy podcaster with a resonant, strong tone.",
+                    "tags": ["Classy", "Resonant", "Strong", "Male"],
+                    "elevenlabsVoiceId": "gs0tAILXbY5DNrJrsM6F",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/gs0tAILXbY5DNrJrsM6F/c5nAdT1KCXzAiRK7CUhs.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/classy-podcaster.png"
+                },
+                {
+                    "id": "german-moderator",
+                    "name": "German Moderator",
+                    "description": "Relaxed German voice - perfect for Moderation, Narratives, Sports & News.",
+                    "tags": ["Relaxed", "German", "Narrative", "Male"],
+                    "elevenlabsVoiceId": "ElaIVWtKNkyhZOf2vCbL",
+                    "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/user/h3pqFGl1GscyJ34SamXrTsFt6bJ2/voices/ElaIVWtKNkyhZOf2vCbL/hWHyhTWTULBa2AKEFtqn.mp3",
+                    "personaUrl": "/creation/voice-selection-persona/german-moderator.png"
                 }
             ]
         }
