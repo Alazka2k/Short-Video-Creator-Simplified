@@ -258,12 +258,18 @@ export function VideoCreationFlow({
                 selectedDuration={selectedDuration}
                 setSelectedDuration={setSelectedDuration}
                 isGenerating={isGenerating}
+                hasVisualContent={selectedContent.visuals}
+                setHasVisualContent={(value) => setSelectedContent(prev => ({ ...prev, visuals: value }))}
+                selectedVisualization={selectedVisualization}
+                setSelectedVisualization={setSelectedVisualization}
               />
               
               <RequiredContentSelection
                 selectedContent={selectedContent}
                 setSelectedContent={setSelectedContent}
                 isGenerating={isGenerating}
+                selectedVisualization={selectedVisualization}
+                setSelectedVisualization={setSelectedVisualization}
               />
 
               {selectedContent.visuals && (
@@ -358,11 +364,17 @@ export function VideoCreationFlow({
             selectedDuration={selectedDuration}
             setSelectedDuration={setSelectedDuration}
             isGenerating={isGenerating}
+            hasVisualContent={selectedContent.visuals}
+            setHasVisualContent={(value) => setSelectedContent(prev => ({ ...prev, visuals: value }))}
+            selectedVisualization={selectedVisualization}
+            setSelectedVisualization={setSelectedVisualization}
           />
           <RequiredContentSelection
             selectedContent={selectedContent}
             setSelectedContent={setSelectedContent}
             isGenerating={isGenerating}
+            selectedVisualization={selectedVisualization}
+            setSelectedVisualization={setSelectedVisualization}
           />
           </div>
 

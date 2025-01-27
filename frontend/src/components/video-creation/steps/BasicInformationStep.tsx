@@ -6,7 +6,7 @@ import { TextGenerateEffect } from '@/components/ui/text-generate-effect'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect, useId } from 'react'
-import { Switch } from '@/components/ui/switch'
+import { VisualizationType } from '@/components/video-creation/types'
 
 // Import example prompts
 import promptExamples from '@/data/video-creation/basic/input-prompt.json'
@@ -32,8 +32,8 @@ interface BasicInformationStepProps {
   isGenerating: boolean
   hasVisualContent: boolean
   setHasVisualContent: (value: boolean) => void
-  selectedVisualization: string
-  setSelectedVisualization: (value: string) => void
+  selectedVisualization: VisualizationType
+  setSelectedVisualization: (value: VisualizationType) => void
 }
 
 export function BasicInformationStep({
@@ -81,14 +81,6 @@ export function BasicInformationStep({
       return () => clearInterval(interval)
     }
   }, [isFocusFieldFocused, focus, showFocusField])
-
-  const handleVisualContentChange = (value: boolean) => {
-    setHasVisualContent(value);
-    if (value) {
-      // Auto-select image visualization type when visual content is selected
-      setSelectedVisualization('image');
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -203,15 +195,6 @@ export function BasicInformationStep({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Visual Content</h2>
-        <Switch
-          checked={hasVisualContent}
-          onCheckedChange={handleVisualContentChange}
-          disabled={isGenerating}
-        />
       </div>
     </div>
   )
