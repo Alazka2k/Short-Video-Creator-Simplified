@@ -92,7 +92,7 @@ export function VideoCreationFlow({
 
   // Advanced options
   const [selectedVoice, setSelectedVoice] = useState(defaultValues?.voice || voiceData.voices[0].id)
-  const [selectedVisualization, setSelectedVisualization] = useState<VisualizationType>(defaultValues?.visualization || 'plain')
+  const [selectedVisualization, setSelectedVisualization] = useState<VisualizationType>(defaultValues?.visualization || 'image')
   const [visualSettings, setVisualSettings] = useState({
     artistStyle: defaultValues?.artistStyle || visualConfig.artistStyles[0].id,
     shotStyle: defaultValues?.shotStyle || visualConfig.shotStyles[0].id,

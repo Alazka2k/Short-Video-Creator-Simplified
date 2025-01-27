@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Mic, Music, Image } from 'lucide-react'
@@ -21,11 +22,16 @@ export function RequiredContentSelection({
   setSelectedVisualization
 }: RequiredContentSelectionProps) {
 
+  useEffect(() => {
+    if (selectedContent.visuals) {
+      setSelectedVisualization('image')
+    }
+  }, [selectedContent.visuals, setSelectedVisualization])
+
   const handleVisualContentChange = () => {
     if (!isGenerating) {
       setSelectedContent(prev => {
         const newVisuals = !prev.visuals;
-        // Auto-select image visualization type when visual content is selected
         if (newVisuals) {
           setSelectedVisualization('image');
         }
