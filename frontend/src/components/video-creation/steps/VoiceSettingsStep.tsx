@@ -146,11 +146,19 @@ export function VoiceSettingsStep({
               onClick={() => !isGenerating && setSelectedVoice(voice.id)}
             >
               <div className="flex items-start gap-4">
-                <img
-                  src={voice.personaUrl}
-                  alt={voice.name}
-                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                />
+                <div className="relative group">
+                  <motion.img
+                    src={voice.personaUrl}
+                    alt={voice.name}
+                    className="w-16 h-16 rounded-full object-cover flex-shrink-0 cursor-pointer"
+                    whileHover={{ 
+                      scale: 2,
+                      zIndex: 50,
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)"
+                    }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </div>
                 
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-center justify-between gap-2">
