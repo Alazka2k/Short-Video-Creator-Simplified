@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles, Clock, Mic, Image as ImageIcon, Music, Settings2, Type, ChevronDown, ChevronUp } from 'lucide-react'
-import voiceData from '@/data/features/voices.json'
+import voiceData from '@/data/video-creation/voice/voice-select-option.json'
 import characterPerspectiveData from '@/data/video-creation/script/character-perspective_select-option.json'
 import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
@@ -20,6 +20,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import summaryLabels from '@/data/video-creation/summary/summary-labels.json'
 
 interface SettingsSummaryProps {
   prompt: string
@@ -71,6 +77,9 @@ const formatSettingDisplay = (option: any) => {
   }
 }
 
+// Update all TooltipContent components
+const tooltipContentClass = "bg-background border border-border max-w-[300px]"
+
 export function SettingsSummary({ 
   prompt,
   focus,
@@ -102,6 +111,11 @@ export function SettingsSummary({
   )
   const aspectRatioDisplay = findOptionData(aspectRatioData, visualSettings.aspectRatio)
 
+  // Get selected voice details
+  const selectedVoiceDetails = voiceData.categories
+    .flatMap(category => category.options)
+    .find(voice => voice.id === selectedVoice)
+
   return (
     <TooltipProvider>
       <Card className="bg-card border-primary/20 shadow-md overflow-hidden">
@@ -111,8 +125,8 @@ export function SettingsSummary({
               <Settings2 className="w-5 h-5 text-primary" />
             </div>
         <div>
-              <CardTitle className="text-lg font-semibold">Current Settings</CardTitle>
-              <p className="text-sm text-muted-foreground">Your selected options and preferences</p>
+              <CardTitle className="text-lg font-semibold">{summaryLabels.title}</CardTitle>
+              <p className="text-sm text-muted-foreground">{summaryLabels.subtitle}</p>
             </div>
           </div>
         </CardHeader>
@@ -127,7 +141,7 @@ export function SettingsSummary({
             <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Type className="w-4 h-4 text-primary" />
-                <div className="font-medium">Content Idea</div>
+                <div className="font-medium">{summaryLabels.sections.basicInformation.title}</div>
               </div>
               {currentStep === 'basic' && (
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -173,7 +187,7 @@ export function SettingsSummary({
             <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
-                <div className="font-medium">Selected Content</div>
+                <div className="font-medium">{summaryLabels.sections.contentSelection.title}</div>
         </div>
               {currentStep === 'basic' && (
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -184,26 +198,26 @@ export function SettingsSummary({
             <div className="p-3">
               {!selectedContent.voice && !selectedContent.visuals && !selectedContent.music ? (
                 <div className="text-sm text-muted-foreground italic">
-                  No content types selected yet
+                  {summaryLabels.sections.contentSelection.noContent}
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {selectedContent.voice && (
                     <Badge variant="outline" className="bg-primary/5 border-primary/20 flex items-center">
                       <Mic className="w-4 h-4 mr-2 text-primary" />
-                      Voice
+                      {summaryLabels.sections.contentSelection.badges.voice}
                     </Badge>
                   )}
                   {selectedContent.visuals && (
                     <Badge variant="outline" className="bg-primary/5 border-primary/20 flex items-center">
                       <ImageIcon className="w-4 h-4 mr-2 text-primary" />
-                      Visuals
+                      {summaryLabels.sections.contentSelection.badges.visuals}
                     </Badge>
                   )}
                   {selectedContent.music && (
                     <Badge variant="outline" className="bg-primary/5 border-primary/20 flex items-center">
                       <Music className="w-4 h-4 mr-2 text-primary" />
-                      Music
+                      {summaryLabels.sections.contentSelection.badges.music}
                     </Badge>
                   )}
                 </div>
@@ -211,7 +225,7 @@ export function SettingsSummary({
             </div>
           </div>
 
-          {/* Visualization Type - Only show if visuals are selected */}
+          {/* Visualization Type */}
           {selectedContent.visuals && (
             <div className={cn(
               "space-y-3 rounded-lg transition-colors border",
@@ -222,7 +236,7 @@ export function SettingsSummary({
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-primary" />
-                  <div className="font-medium">Visualization Type</div>
+                  <div className="font-medium">{summaryLabels.sections.visualizationType.title}</div>
                 </div>
                 {currentStep === 'basic' && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -234,15 +248,24 @@ export function SettingsSummary({
                 {!selectedVisualization ? (
                   <div className="text-sm text-yellow-500 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                    Please select a visualization type
+                    {summaryLabels.sections.visualizationType.noSelection}
                   </div>
                 ) : (
-                  <Badge variant="outline" className="bg-primary/5 border-primary/20">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="bg-primary/5 border-primary/20 cursor-help">
                     {visualizationNames[selectedVisualization]}
                   </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent className={tooltipContentClass}>
+                      <p className="font-medium">
+                      {summaryLabels.sections.visualizationType.descriptions[selectedVisualization]}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
               )}
+              </div>
             </div>
-          </div>
         )}
 
           {/* Script Style */}
@@ -256,7 +279,7 @@ export function SettingsSummary({
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
-                  <div className="font-medium">Script Style</div>
+                  <div className="font-medium">{summaryLabels.sections.scriptStyle.title}</div>
                 </div>
                 {currentStep === 'script' && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -272,7 +295,7 @@ export function SettingsSummary({
                         {characterPerspectiveDisplay.name}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px]">
+                    <TooltipContent className={tooltipContentClass}>
                       <p className="font-medium">{characterPerspectiveDisplay.description}</p>
                       {characterPerspectiveDisplay.tags && (
                         <p className="text-xs text-muted-foreground mt-1">{characterPerspectiveDisplay.tags}</p>
@@ -287,7 +310,7 @@ export function SettingsSummary({
                         {scriptToneDisplay.name}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px]">
+                    <TooltipContent className={tooltipContentClass}>
                       <p className="font-medium">{scriptToneDisplay.description}</p>
                       {scriptToneDisplay.tags && (
                         <p className="text-xs text-muted-foreground mt-1">{scriptToneDisplay.tags}</p>
@@ -302,7 +325,7 @@ export function SettingsSummary({
                         {vocabularyDisplay.name}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px]">
+                    <TooltipContent className={tooltipContentClass}>
                       <p className="font-medium">{vocabularyDisplay.description}</p>
                       {vocabularyDisplay.tags && (
                         <p className="text-xs text-muted-foreground mt-1">{vocabularyDisplay.tags}</p>
@@ -317,7 +340,7 @@ export function SettingsSummary({
                         {pacingStructureDisplay.name}
             </Badge>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-[300px]">
+                    <TooltipContent className={tooltipContentClass}>
                       <p className="font-medium">{pacingStructureDisplay.description}</p>
                       {pacingStructureDisplay.tags && (
                         <p className="text-xs text-muted-foreground mt-1">{pacingStructureDisplay.tags}</p>
@@ -340,7 +363,7 @@ export function SettingsSummary({
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
                   <Mic className="w-4 h-4 text-primary" />
-                  <div className="font-medium">Voice</div>
+                  <div className="font-medium">{summaryLabels.sections.voice.title}</div>
                 </div>
                 {currentStep === 'voice' && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -352,17 +375,20 @@ export function SettingsSummary({
                 {!selectedVoice ? (
                   <div className="text-sm text-yellow-500 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                    Please select a voice in the Voice Settings tab
+                    {summaryLabels.sections.voice.noSelection}
                   </div>
                 ) : (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="bg-primary/5 border-primary/20 cursor-help">
-                        {voiceData.voices?.find(v => v.id === selectedVoice)?.name || selectedVoice}
+                        {selectedVoiceDetails?.name || summaryLabels.sections.voice.noSelection}
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{voiceData.voices?.find(v => v.id === selectedVoice)?.description || 'Voice description will be available soon'}</p>
+                    <TooltipContent className={tooltipContentClass}>
+                      <p className="font-medium">{selectedVoiceDetails?.description}</p>
+                      {selectedVoiceDetails?.tags && (
+                        <p className="text-xs text-muted-foreground mt-1">{selectedVoiceDetails.tags.join(' • ')}</p>
+                      )}
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -381,7 +407,7 @@ export function SettingsSummary({
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-primary" />
-                  <div className="font-medium">Visual Style</div>
+                  <div className="font-medium">{summaryLabels.sections.visualStyle.title}</div>
                 </div>
                 {currentStep === 'visuals' && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
@@ -393,7 +419,7 @@ export function SettingsSummary({
                 {!visualSettings.artistStyle ? (
                   <div className="text-sm text-yellow-500 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                    Please select visual settings in the Visual Settings tab
+                    {summaryLabels.sections.visualStyle.noSelection}
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -404,7 +430,7 @@ export function SettingsSummary({
                             {artistStyleDisplay.name}
                           </Badge>
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent className={tooltipContentClass}>
                           <p className="font-medium">{artistStyleDisplay.description}</p>
                           {artistStyleDisplay.tags && (
                             <p className="text-xs text-muted-foreground mt-1">{artistStyleDisplay.tags}</p>
@@ -419,18 +445,18 @@ export function SettingsSummary({
                             {aspectRatioDisplay.name}
                           </Badge>
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent className={tooltipContentClass}>
                           <p>{aspectRatioDisplay.description}</p>
                         </TooltipContent>
                       </Tooltip>
                     )}
                   </div>
                 )}
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
     </TooltipProvider>
   )
 } 

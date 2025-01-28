@@ -1,0 +1,49 @@
+{
+  "title": "Current Settings",
+  "subtitle": "Your selected options and preferences",
+  "sections": {
+    "basicInformation": {
+      "title": "Basic Information",
+      "noContent": "No content idea provided yet"
+    },
+    "contentSelection": {
+      "title": "Selected Content",
+      "noContent": "No content types selected yet",
+      "badges": {
+        "voice": "Voice",
+        "visuals": "Visuals",
+        "music": "Music"
+      }
+    },
+    "selectedContent": {
+      "title": "Selected Content",
+      "noContent": "No content types selected yet",
+      "badges": {
+        "voice": "Voice",
+        "visuals": "Visuals",
+        "music": "Music"
+      }
+    },
+    "visualizationType": {
+      "title": "Visualization Type",
+      "noSelection": "No visualization type selected",
+      "descriptions": {
+        "image": "Static AI-generated images for each scene",
+        "video": "Seamless video transitions between scenes",
+        "animation": "Smooth 3D animated transitions between scenes"
+      }
+    },
+    "scriptStyle": {
+      "title": "Script Style",
+      "noSelection": "No script style selected"
+    },
+    "voice": {
+      "title": "Voice",
+      "noSelection": "No voice settings selected"
+    },
+    "visualStyle": {
+      "title": "Visual Style",
+      "noSelection": "No visual style selected"
+    }
+  }
+}
