@@ -93,10 +93,14 @@ export function VideoCreationFlow({
   // Advanced options
   const [selectedVoice, setSelectedVoice] = useState(defaultValues?.voice || voiceData.voices[0].id)
   const [selectedVisualization, setSelectedVisualization] = useState<VisualizationType>(defaultValues?.visualization || 'image')
-  const [visualSettings, setVisualSettings] = useState({
-    artistStyle: defaultValues?.artistStyle || visualConfig.artistStyles[0].id,
-    shotStyle: defaultValues?.shotStyle || visualConfig.shotStyles[0].id,
-    aspectRatio: defaultValues?.aspectRatio || visualConfig.aspectRatios[0].id
+  const [visualSettings, setVisualSettings] = useState<{
+    artistStyle: string
+    shotStyle: string
+    aspectRatio: string
+  }>({
+    artistStyle: defaultValues?.artistStyle || '',
+    shotStyle: defaultValues?.shotStyle || '',
+    aspectRatio: defaultValues?.aspectRatio || '9:16'
   })
 
   // Script parameters
@@ -118,6 +122,12 @@ export function VideoCreationFlow({
       default:
         return `${duration.value} seconds with first 3 seconds containing the hook`
     }
+  }
+
+  // Helper function to invert aspect ratio (e.g., "9:16" -> "16:9")
+  const invertAspectRatio = (ratio: string): string => {
+    const [width, height] = ratio.split(':')
+    return `${height}:${width}`
   }
 
   const handleCreateProject = async () => {
@@ -146,7 +156,9 @@ export function VideoCreationFlow({
           imageGenParams: {},
           animationGenParams: {},
           videoGenParams: {
-            aspectRatio: visualSettings.aspectRatio
+            aspectRatio: selectedVisualization === 'video' 
+              ? invertAspectRatio(visualSettings.aspectRatio)
+              : visualSettings.aspectRatio
           },
           serviceConfig: {
             skipVoice: !selectedContent.voice,
@@ -204,7 +216,9 @@ export function VideoCreationFlow({
           imageGenParams: {},
           animationGenParams: {},
           videoGenParams: {
-            aspectRatio: visualSettings.aspectRatio
+            aspectRatio: selectedVisualization === 'video' 
+              ? invertAspectRatio(visualSettings.aspectRatio)
+              : visualSettings.aspectRatio
           },
           serviceConfig: {
             skipVoice: !selectedContent.voice,
@@ -300,10 +314,9 @@ export function VideoCreationFlow({
 
           {stepId === 'visuals' && selectedContent.visuals && (
             <VisualSettingsStep
-              selectedVisualization={selectedVisualization}
-              setSelectedVisualization={(value) => setSelectedVisualization(value)}
               visualSettings={visualSettings}
               setVisualSettings={setVisualSettings}
+              selectedVisualization={selectedVisualization}
               isGenerating={isGenerating}
             />
           )}

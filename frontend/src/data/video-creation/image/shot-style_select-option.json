@@ -1,55 +1,95 @@
 {
   "categories": [
     {
-      "id": "cinematic",
-      "name": "Cinematic Shots",
+      "id": "realistic",
+      "name": "Realistic",
       "options": [
         {
-          "id": "wide-establishing",
-          "name": "Wide Establishing",
-          "description": "Expansive shots that set the scene and show the environment",
-          "preview": "/creation/shot-selection-preview/wide-establishing.jpg",
-          "tags": ["Wide", "Establishing", "Scenic"]
+          "id": "cinematic",
+          "name": "Cinematic",
+          "description": "Professional cinematic shots with dramatic lighting and composition",
+          "tags": ["Professional", "Dramatic", "High-quality"],
+          "promptDefinition": "--sref 3326977824",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/cinematic/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/cinematic/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/cinematic/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/cinematic/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/cinematic/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/cinematic/preview6.png"
+          ]
         },
         {
-          "id": "dramatic-closeup",
-          "name": "Dramatic Close-up",
-          "description": "Intimate close-up shots with dramatic lighting and focus",
-          "preview": "/creation/shot-selection-preview/dramatic-closeup.jpg",
-          "tags": ["Close-up", "Dramatic", "Intimate"]
+          "id": "blackwhite",
+          "name": "Black & White",
+          "description": "Classic monochrome photography with rich contrast",
+          "tags": ["Monochrome", "Classic", "Timeless"],
+          "promptDefinition": "--sref 20240813",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/blackwhite/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite/preview6.png"
+          ]
+        },
+        {
+          "id": "vintage",
+          "name": "Vintage",
+          "description": "Retro-styled photography with nostalgic color grading",
+          "tags": ["Retro", "Nostalgic", "Warm"],
+          "promptDefinition": "--sref 20240806",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/vintage/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/vintage/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/vintage/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/vintage/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/vintage/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/vintage/preview6.png"
+          ]
         }
       ]
     },
     {
-      "id": "documentary",
-      "name": "Documentary Shots",
+      "id": "stylized",
+      "name": "Stylized",
       "options": [
         {
-          "id": "observational",
-          "name": "Observational",
-          "description": "Natural, unobtrusive shots that capture real moments",
-          "preview": "/creation/shot-selection-preview/observational.jpg",
-          "tags": ["Natural", "Authentic", "Candid"]
+          "id": "anime",
+          "name": "Anime",
+          "description": "Japanese animation style with distinctive aesthetics",
+          "tags": ["Animation", "Stylized", "Vibrant"],
+          "promptDefinition": "--sref 1872206423",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/stylized/anime/preview1.png",
+            "/creation/visual-settings/shot-style/stylized/anime/preview2.png",
+            "/creation/visual-settings/shot-style/stylized/anime/preview3.png"
+          ]
         },
         {
-          "id": "interview-style",
-          "name": "Interview Style",
-          "description": "Professional framing for interviews and talking heads",
-          "preview": "/creation/shot-selection-preview/interview.jpg",
-          "tags": ["Professional", "Interview", "Formal"]
-        }
-      ]
-    },
-    {
-      "id": "creative",
-      "name": "Creative Shots",
-      "options": [
+          "id": "3d",
+          "name": "3D Rendered",
+          "description": "Modern 3D computer graphics with realistic materials",
+          "tags": ["3D", "Modern", "Polished"],
+          "promptDefinition": "--sref 1872206424",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/stylized/3d/preview1.png",
+            "/creation/visual-settings/shot-style/stylized/3d/preview2.png",
+            "/creation/visual-settings/shot-style/stylized/3d/preview3.png"
+          ]
+        },
         {
-          "id": "dynamic-motion",
-          "name": "Dynamic Motion",
-          "description": "Shots with creative movement and dynamic composition",
-          "preview": "/creation/shot-selection-preview/dynamic-motion.jpg",
-          "tags": ["Dynamic", "Movement", "Creative"]
+          "id": "cartoon",
+          "name": "Cartoon",
+          "description": "Playful cartoon style with bold colors and simple shapes",
+          "tags": ["Cartoon", "Playful", "Colorful"],
+          "promptDefinition": "--sref 1872206425",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview1.png",
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview2.png",
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview3.png"
+          ]
         }
       ]
     }
