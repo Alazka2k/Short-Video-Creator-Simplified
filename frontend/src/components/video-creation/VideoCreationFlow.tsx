@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { 
@@ -19,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import voiceData from '@/data/features/voices.json'
 import visualConfig from '@/data/features/visual-creation.json'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useVideoCreationState } from '@/lib/hooks/useVideoCreationState'
 
 // Import step components
 import { BasicInformationStep, durationOptions } from './steps/BasicInformationStep'
@@ -76,40 +77,64 @@ export function VideoCreationFlow({
   isDemo = false 
 }: VideoCreationFlowProps) {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(0)
+  const { state, updateState } = useVideoCreationState(defaultValues)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [showFocusField, setShowFocusField] = useState(false)
 
-  // Form state
-  const [prompt, setPrompt] = useState(defaultValues?.prompt || '')
-  const [focus, setFocus] = useState(defaultValues?.focus || '')
-  const [selectedDuration, setSelectedDuration] = useState(defaultValues?.duration || durationOptions[0])
-  const [selectedContent, setSelectedContent] = useState<ContentState>({
-    voice: true,
-    visuals: true,
-    music: true
-  })
+  // Destructure state for easier access
+  const {
+    currentStep,
+    prompt,
+    focus,
+    selectedDuration,
+    selectedContent,
+    selectedVoice,
+    selectedVisualization,
+    visualSettings,
+    scriptParams,
+    showFocusField
+  } = state
 
-  // Advanced options
-  const [selectedVoice, setSelectedVoice] = useState(defaultValues?.voice || voiceData.voices[0].id)
-  const [selectedVisualization, setSelectedVisualization] = useState<VisualizationType>(defaultValues?.visualization || 'image')
-  const [visualSettings, setVisualSettings] = useState<{
-    artistStyle: string
-    shotStyle: string
-    aspectRatio: string
-  }>({
-    artistStyle: defaultValues?.artistStyle || '',
-    shotStyle: defaultValues?.shotStyle || '',
-    aspectRatio: defaultValues?.aspectRatio || '9:16'
-  })
+  // Update functions with proper typing
+  const setCurrentStep = useCallback((step: number) => updateState({ currentStep: step }), [updateState])
+  const setPrompt = useCallback((value: string) => updateState({ prompt: value }), [updateState])
+  const setFocus = useCallback((value: string) => updateState({ focus: value }), [updateState])
+  const setSelectedDuration = useCallback((value: typeof durationOptions[0]) => updateState({ selectedDuration: value }), [updateState])
+  
+  const setSelectedContent = useCallback((value: ContentState | ((prev: ContentState) => ContentState)) => {
+    if (typeof value === 'function') {
+      updateState({ selectedContent: value(selectedContent) })
+    } else {
+      updateState({ selectedContent: value })
+    }
+  }, [updateState, selectedContent])
 
-  // Script parameters
-  const [scriptParams, setScriptParams] = useState<ScriptParams>({
-    characterPerspective: defaultValues?.characterPerspective || '',
-    pacingStructure: defaultValues?.pacingStructure || '',
-    scriptTone: defaultValues?.scriptTone || '',
-    vocabulary: defaultValues?.vocabulary || ''
-  })
+  const setSelectedVoice = useCallback((value: string) => updateState({ selectedVoice: value }), [updateState])
+  
+  const setSelectedVisualization = useCallback((value: VisualizationType | ((prev: VisualizationType) => VisualizationType)) => {
+    if (typeof value === 'function') {
+      updateState({ selectedVisualization: value(selectedVisualization) })
+    } else {
+      updateState({ selectedVisualization: value })
+    }
+  }, [updateState, selectedVisualization])
+
+  const setVisualSettings = useCallback((value: typeof visualSettings | ((prev: typeof visualSettings) => typeof visualSettings)) => {
+    if (typeof value === 'function') {
+      updateState({ visualSettings: value(visualSettings) })
+    } else {
+      updateState({ visualSettings: value })
+    }
+  }, [updateState, visualSettings])
+
+  const setScriptParams = useCallback((value: ScriptParams | ((prev: ScriptParams) => ScriptParams)) => {
+    if (typeof value === 'function') {
+      updateState({ scriptParams: value(scriptParams) })
+    } else {
+      updateState({ scriptParams: value })
+    }
+  }, [updateState, scriptParams])
+
+  const setShowFocusField = useCallback((value: boolean) => updateState({ showFocusField: value }), [updateState])
 
   const getDurationDescription = (duration: typeof durationOptions[0]): string => {
     switch(duration.value) {

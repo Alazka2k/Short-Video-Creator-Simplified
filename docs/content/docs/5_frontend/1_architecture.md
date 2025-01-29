@@ -23,6 +23,10 @@ frontend/src/
 │   ├── layout/           # Layout components
 │   ├── marketing/        # Marketing components
 │   ├── providers/        # Context providers
+│   ├── video-creation/  # Video creation components
+│   │   ├── sections/     # Video creation sections
+│   │   ├── steps/        # Video creation steps
+│   │   ├── videocreationflow.tsx 
 │   └── ui/              # UI component library
 ├── lib/                  # Utility functions and hooks
 ├── styles/              # Global styles

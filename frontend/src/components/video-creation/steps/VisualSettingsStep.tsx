@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
@@ -46,7 +46,17 @@ export function VisualSettingsStep({
   isGenerating
 }: VisualSettingsStepProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(() => {
+    // Initialize expanded categories based on selected shot style
+    if (!visualSettings.shotStyle) return []
+    
+    // Find which category contains the selected style
+    const selectedCategory = shotStyleData.categories.find(category =>
+      category.options.some(option => option.id === visualSettings.shotStyle)
+    )
+    
+    return selectedCategory ? [selectedCategory.id] : []
+  })
 
   const step = steps[currentStep]
   const isLastStep = currentStep === steps.length - 1
@@ -69,10 +79,23 @@ export function VisualSettingsStep({
     .flatMap(cat => cat.options)
     .find(opt => opt.id === visualSettings.shotStyle)
 
+  // Effect to expand category when an option is selected
+  useEffect(() => {
+    if (visualSettings.shotStyle) {
+      const selectedCategory = shotStyleData.categories.find(category =>
+        category.options.some(option => option.id === visualSettings.shotStyle)
+      )
+      
+      if (selectedCategory && !expandedCategories.includes(selectedCategory.id)) {
+        setExpandedCategories(prev => [...prev, selectedCategory.id])
+      }
+    }
+  }, [visualSettings.shotStyle, expandedCategories])
+
   return (
-    <div className="space-y-8 max-w-[1200px] mx-auto">
+    <div className="space-y-8 max-w-[1200px] mx-auto pt-4">
       {/* Progress Steps */}
-      <div className="flex justify-center gap-4 mb-8">
+      <div className="flex justify-center gap-4 mb-8 px-4">
         {steps.map((s, index) => (
           <motion.button
             key={s.id}

@@ -1,6 +1,8 @@
 import { motion } from "framer-motion"
 import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
+
+const IMAGE_CACHE_KEY = 'video_creation_image_cache'
 
 interface VisualStyleCarouselProps {
   previewImages: string[]
@@ -11,37 +13,100 @@ export function VisualStyleCarousel({ previewImages }: VisualStyleCarouselProps)
   const [loadingErrors, setLoadingErrors] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    console.log("Starting to load images:", previewImages)
-    setIsLoading(true)
-    setLoadedImages([])
-    setLoadingErrors([])
+  // Get and set image cache from localStorage
+  const getImageCache = useCallback(() => {
+    try {
+      return JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}')
+    } catch {
+      return {}
+    }
+  }, [])
 
-    const loadImage = (src: string) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => {
-          console.log("Successfully loaded:", src)
-          setLoadedImages(prev => [...prev, src])
-          resolve(src)
-        }
-        img.onerror = (error) => {
-          console.error("Failed to load:", src, error)
-          setLoadingErrors(prev => [...prev, src])
-          reject(error)
-        }
-        img.src = src
-      })
+  const setImageCache = useCallback((cache: Record<string, string>) => {
+    localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(cache))
+  }, [])
+
+  // Memoize the image loading function
+  const loadImage = useCallback((src: string) => {
+    return new Promise((resolve, reject) => {
+      const imageCache = getImageCache()
+      
+      // If image is already cached, resolve immediately
+      if (imageCache[src]) {
+        resolve(src)
+        return
+      }
+
+      const img = new Image()
+      img.onload = () => {
+        // Update cache with new image
+        const updatedCache = { ...imageCache, [src]: src }
+        setImageCache(updatedCache)
+        resolve(src)
+      }
+      img.onerror = (error) => {
+        console.error("Failed to load:", src, error)
+        reject(error)
+      }
+      img.src = src
+    })
+  }, [getImageCache, setImageCache])
+
+  // Initialize from cache on mount
+  useEffect(() => {
+    const imageCache = getImageCache()
+    const cachedImages = previewImages.filter(img => imageCache[img])
+    if (cachedImages.length > 0) {
+      setLoadedImages(cachedImages)
+      if (cachedImages.length === previewImages.length) {
+        setIsLoading(false)
+      }
+    }
+  }, [previewImages, getImageCache])
+
+  // Load any uncached images
+  const loadImages = useCallback(async () => {
+    const imageCache = getImageCache()
+    const uncachedImages = previewImages.filter(img => !imageCache[img])
+    
+    if (uncachedImages.length === 0) {
+      return
     }
 
-    Promise.all(previewImages.map(src => loadImage(src).catch(err => err)))
-      .finally(() => {
-        setIsLoading(false)
-        console.log("Finished loading attempt")
-      })
-  }, [previewImages])
+    console.log("Loading uncached images:", uncachedImages)
+    setIsLoading(true)
+
+    try {
+      const loadedResults = await Promise.all(
+        uncachedImages.map(src => 
+          loadImage(src)
+            .then(result => {
+              setLoadedImages(prev => [...prev, src])
+              return result
+            })
+            .catch(error => {
+              setLoadingErrors(prev => [...prev, src])
+              return error
+            })
+        )
+      )
+      console.log("All images processed:", loadedResults)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [previewImages, loadImage, getImageCache])
+
+  // Effect to trigger loading of uncached images
+  useEffect(() => {
+    if (previewImages.length > 0) {
+      loadImages()
+    }
+  }, [previewImages, loadImages])
 
   const allImagesLoaded = loadedImages.length === previewImages.length
+
+  // Memoize the loaded images array to prevent unnecessary re-renders
+  const cachedImages = useMemo(() => loadedImages, [loadedImages])
 
   return (
     <motion.div
@@ -54,7 +119,7 @@ export function VisualStyleCarousel({ previewImages }: VisualStyleCarouselProps)
         {allImagesLoaded ? (
           <div className="h-[250px] relative">
             <ThreeDPhotoCarousel
-              images={loadedImages}
+              images={cachedImages}
               onSelect={() => {}}
             />
           </div>
