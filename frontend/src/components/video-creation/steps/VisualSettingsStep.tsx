@@ -70,13 +70,13 @@ export function VisualSettingsStep({
     .find(opt => opt.id === visualSettings.shotStyle)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-[1200px] mx-auto">
       {/* Progress Steps */}
-      <div className="flex items-center justify-between mb-8 px-4 pt-4">
+      <div className="flex justify-center gap-4 mb-8">
         {steps.map((s, index) => (
           <motion.button
             key={s.id}
-            className="flex flex-col items-center w-[120px] sm:w-[150px]"
+            className="flex flex-col items-center w-[120px]"
             onClick={() => !isGenerating && setCurrentStep(index)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -101,7 +101,7 @@ export function VisualSettingsStep({
             >
               {index + 1}
             </motion.div>
-            <div className="text-xs font-medium text-center px-1 truncate w-full">
+            <div className="text-xs font-medium text-center">
               {s.title}
             </div>
           </motion.button>
@@ -115,7 +115,7 @@ export function VisualSettingsStep({
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
-          className="px-4"
+          className="w-full"
         >
           <div className="mb-6">
             <h2 className="text-lg font-semibold">{step.title}</h2>
@@ -189,7 +189,9 @@ export function VisualSettingsStep({
 
                       {/* Show carousel for the selected style within this category */}
                       {selectedStyle && category.options.some(opt => opt.id === selectedStyle.id) && (
+                        <div className="w-full overflow-hidden">
                         <VisualStyleCarousel previewImages={selectedStyle.previewImages} />
+                        </div>
                       )}
                     </motion.div>
                   )}

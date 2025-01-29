@@ -48,37 +48,41 @@ export function VisualStyleCarousel({ previewImages }: VisualStyleCarouselProps)
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="mt-4 bg-black/5 rounded-xl overflow-hidden"
+      className="mt-4 w-full max-w-full overflow-hidden"
     >
-      {allImagesLoaded ? (
-        <ThreeDPhotoCarousel
-          images={loadedImages}
-          onSelect={() => {}}
-        />
-      ) : (
-        <div className="h-[500px] flex items-center justify-center flex-col gap-4">
-          <div className="text-muted-foreground">
-            Loading previews... ({loadedImages.length}/{previewImages.length})
+      <div className="max-w-[600px] mx-auto">
+        {allImagesLoaded ? (
+          <div className="h-[250px] relative">
+            <ThreeDPhotoCarousel
+              images={loadedImages}
+              onSelect={() => {}}
+            />
           </div>
-          {loadingErrors.length > 0 && (
-            <div className="text-red-500 text-sm space-y-2">
-              <div>Failed to load {loadingErrors.length} images</div>
-              <div className="text-xs">
-                First error: {loadingErrors[0]}
-              </div>
+        ) : (
+          <div className="h-[250px] flex items-center justify-center flex-col gap-4">
+            <div className="text-muted-foreground">
+              Loading previews... ({loadedImages.length}/{previewImages.length})
             </div>
-          )}
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div>Attempting to load:</div>
-            {previewImages.slice(0, 2).map((path, i) => (
-              <div key={i} className="font-mono">{path}</div>
-            ))}
-            {previewImages.length > 2 && (
-              <div>...and {previewImages.length - 2} more</div>
+            {loadingErrors.length > 0 && (
+              <div className="text-red-500 text-sm space-y-2">
+                <div>Failed to load {loadingErrors.length} images</div>
+                <div className="text-xs">
+                  First error: {loadingErrors[0]}
+                </div>
+              </div>
             )}
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>Attempting to load:</div>
+              {previewImages.slice(0, 2).map((path, i) => (
+                <div key={i} className="font-mono">{path}</div>
+              ))}
+              {previewImages.length > 2 && (
+                <div>...and {previewImages.length - 2} more</div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </motion.div>
   )
 } 
