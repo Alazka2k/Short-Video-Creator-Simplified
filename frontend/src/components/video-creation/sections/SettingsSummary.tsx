@@ -10,6 +10,7 @@ import vocabularyData from '@/data/video-creation/script/vocabulary_select-optio
 import pacingStructureData from '@/data/video-creation/script/pacing-structure_select-option.json'
 import artistStyleData from '@/data/video-creation/image/artist-style_select-option.json'
 import aspectRatioData from '@/data/video-creation/image/aspect-ratio_select-option.json'
+import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
 import { ContentState } from '../types'
 import { cn } from '@/lib/utils'
 import React from 'react'
@@ -40,6 +41,7 @@ interface SettingsSummaryProps {
   selectedVisualization: 'image' | 'video' | 'animation'
   visualSettings: {
     artistStyle: string
+    shotStyle: string
     aspectRatio: string
   }
   currentStep?: string
@@ -109,6 +111,11 @@ export function SettingsSummary({
   const selectedVoiceDetails = voiceData.categories
     .flatMap(category => category.options)
     .find(voice => voice.id === selectedVoice)
+
+  // Get selected shot style details
+  const selectedStyle = shotStyleData.categories
+    .flatMap(category => category.options)
+    .find(style => style.id === visualSettings.shotStyle)
 
   return (
     <TooltipProvider>
@@ -371,16 +378,21 @@ export function SettingsSummary({
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
                     Please select a voice in the Voice Settings tab
                   </div>
+                ) : !selectedVoiceDetails ? (
+                  <div className="text-sm text-yellow-500 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                    Please select a Voice to generate Voice Content.
+                  </div>
                 ) : (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="bg-primary/5 border-primary/20 cursor-help">
-                        {selectedVoiceDetails?.name || 'No voice selected'}
+                        {selectedVoiceDetails.name}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent className={tooltipContentClass}>
-                      <p className="font-medium">{selectedVoiceDetails?.description}</p>
-                      {selectedVoiceDetails?.tags && (
+                      <p className="font-medium">{selectedVoiceDetails.description}</p>
+                      {selectedVoiceDetails.tags && (
                         <p className="text-xs text-muted-foreground mt-1">{selectedVoiceDetails.tags.join(' • ')}</p>
                       )}
                     </TooltipContent>
@@ -410,28 +422,31 @@ export function SettingsSummary({
                 )}
               </div>
               <div className="p-3">
-                {!visualSettings.artistStyle ? (
+                {!visualSettings.shotStyle ? (
                   <div className="text-sm text-yellow-500 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                    Please select visual settings in the Visual Settings tab
+                    Please select your visual settings in the Visual Settings tab.
+                  </div>
+                ) : !selectedStyle ? (
+                  <div className="text-sm text-yellow-500 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                    Selected style not found. Please select a different style.
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {artistStyleDisplay && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="bg-primary/5 border-primary/20 cursor-help">
-                            {artistStyleDisplay.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent className={tooltipContentClass}>
-                          <p className="font-medium">{artistStyleDisplay.description}</p>
-                          {artistStyleDisplay.tags && (
-                            <p className="text-xs text-muted-foreground mt-1">{artistStyleDisplay.tags}</p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="bg-primary/5 border-primary/20 cursor-help">
+                          {selectedStyle.name}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent className={tooltipContentClass}>
+                        <p className="font-medium">{selectedStyle.description}</p>
+                        {selectedStyle.tags && (
+                          <p className="text-xs text-muted-foreground mt-1">{selectedStyle.tags.join(' • ')}</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
                     {aspectRatioDisplay && (
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -446,11 +461,11 @@ export function SettingsSummary({
                     )}
                   </div>
                 )}
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
     </TooltipProvider>
   )
 } 
