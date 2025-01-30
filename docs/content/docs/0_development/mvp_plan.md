@@ -38,10 +38,16 @@
   - ✅ Basic video creation form
   - ✅ Script settings with categories
   - ✅ Visual settings with style options
-
-  - ⏳ Settings overview panel
-  - ⏳ Progress visualization
+  - ✅ Format selection interface
+  - ✅ Visual style selection
+  - ✅ Content type selection
+  - ✅ Visualization type selection
+  - ✅ Real-time settings summary
   - ⏳ Video assembly options
+  - ⏳ Preview generation system
+  - ⏳ Advanced format options
+  - ⏳ Custom style presets
+  - ⏳ Batch processing support
 
 ## MVP Goals
 1. Create usable content for marketing
@@ -101,13 +107,26 @@
   - ✅ Visualization type selection
   - ✅ Artist style options
   - ✅ Aspect ratio configuration
-- ⏳ Implement settings overview panel
-- ⏳ Improve the interface for script settings
-- ⏳ Improve Visual Settings interface
-- ⏳ Add progress visualization
-- ⏳ Add video assembly options
-- ⏳ Enable direct job and assembly service execution
-- ⏳ Add video download functionality
+  - ✅ Format selection interface
+  - ✅ Visual style selection with carousel
+  - ✅ Content type selection
+- ✅ Add settings overview panel
+  - ✅ Real-time settings summary
+  - ✅ Format preview
+  - ✅ Style preview
+- ⏳ Content Creation Overview & Dashboard
+  - [ ] Overview Dashboard for current projects/jobs
+  - [ ] Detailed job run information
+  - [ ] Content recreation options (voice, music, visual)
+  - [ ] Content download functionality
+  - [ ] Video creation flow continuation
+- ⏳ Video Assembly Interface
+  - [ ] Content selection for video creation
+  - [ ] Transition selection from JSON2Video
+  - [ ] Preview generation system
+  - [ ] Advanced format options
+  - [ ] Custom style presets
+  - [ ] Batch processing support
 
 ## Phase 2: Implement Missing Core Features
 
