@@ -488,7 +488,7 @@ export function VideoCreationFlow({
       <div className="flex justify-between pt-6 border-t">
         <Button
           variant="outline"
-          onClick={() => setCurrentStep(prev => prev - 1)}
+          onClick={() => setCurrentStep(currentStep - 1)}
           disabled={currentStep === 0 || isGenerating}
           className="relative group px-6 border-border"
         >
@@ -534,7 +534,7 @@ export function VideoCreationFlow({
         ) : (
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(prev => prev + 1)}
+            onClick={() => setCurrentStep(currentStep + 1)}
             disabled={isGenerating}
             className="relative group px-6 border-border"
           >

@@ -30,14 +30,27 @@ React/Next.js frontend application for the Video Creator platform.
   - [x] Navigation Structure
   - [x] Project/Video List View (Prototype)
   - [x] Quick Actions Menu
-
-### In Progress 🔄
-- Video Creation Flow
+- Content Creation Flow
   - [x] Basic Creation Form
   - [x] Script Settings Implementation
   - [x] Visual Settings Implementation
-  - [ ] Settings Overview Panel
-  - [ ] Progress Visualization
+  - [x] Settings Overview Panel
+  - [x] Progress Visualization
+  - [x] Format Selection Interface
+  - [x] Visual Style Selection
+  - [x] Content Type Selection
+  - [x] Visualization Type Selection
+  - [x] Real-time Settings Summary
+
+### In Progress 🔄
+- Content Creation Overview & Dashboard (Job Run)
+  - [ ] Overview Dashboard about current projects / jobs
+  - [ ] Open each job run to see more details about the content created
+  - [ ] Possibility to recreate or add certain parts of the content (voice, music, visual) -> In the database we have a array for every job run (service_sequence table)
+  - [ ] Possibility to download the content as a zip file or each single file
+  - [ ] Possibility to go on with the video creation flow process
+- Video Creation Flow
+  - [ ] Possibility to further move to the video creation interface -> Where the user can select the content again which should be used for the video creation and the possible transitions from JSON2Video
   - [ ] Video Assembly Options
 - Landing Page Sections
   - [ ] Pricing Preview
@@ -48,9 +61,8 @@ React/Next.js frontend application for the Video Creator platform.
   - [ ] Error Handling Enhancements
 
 ### Next Phase 📝
-- Dashboard Implementation
+- GeneralDashboard Enhancement
   - [ ] Project Management
-  - [ ] Video Creation Flow
   - [ ] Job Management
   - [ ] User Settings
 - Advanced Features
@@ -63,14 +75,20 @@ React/Next.js frontend application for the Video Creator platform.
 ├── public/                                                       # Static assets
 │   ├── testimonials/                                               # Testimonial images
 │   ├── channels/                                                   # Channel icons
+│   ├── creation/                                                   # Creation assets
+│   │   ├── aspect-ratio/                                             # Aspect ratio previews
+│   │   ├── visual-settings/                                          # Visual settings assets
+│   │   │   └── shot-styles/                                            # Shot style previews
+│   │   ├── visualization-type-preview/                               # Visualization type previews
+│   │   └── voice-selection-persona/                                  # Voice selection persona
 │   ├── features/                                                   # Feature icons
 │   │   ├── visual/                                                   # Visual on Visual Creation (png)
-│   │   │   ├── artist-samples/                                       # Artist Samples (png)
-│   │   │   ├── aspect-ratios/                                        # Aspect Ratios (png)
-│   │   │   └── shot-style-samples/                                   # Shot Style Samples (png)
-│   │   ├── voice-samples/                                            # Voice Samples on Voice Generation (mp3)
+│   │   │   ├── artist-samples/                                         # Artist Samples (png)
+│   │   │   ├── aspect-ratios/                                          # Aspect Ratios (png)
+│   │   │   └── shot-style-samples/                                     # Shot Style Samples (png)
+│   │   ├── voice-samples/                                            # Voice Samples (mp3)
 │   │   ├── music/                                                    # Music on Scene Assembly (mp3)
-│   │   ├── video/                                                    # Video on Scene Assembly (mp4)
+│   │   └── video/                                                    # Video on Scene Assembly (mp4)
 │   ├── demo/                                                       # Demo content
 │   ├── login/                                                      # Login Image
 │   ├── reset-password/                                             # Reset Password Image
@@ -139,11 +157,11 @@ React/Next.js frontend application for the Video Creator platform.
 │   │   ├── marketing/                                                # Marketing components
 │   │   │   ├── features/                                               # Features site
 │   │   │   │   ├── demos/                                                # Features demo components
-│   │   │   │   │   └── ContentGenerationDemo.tsx                         # Content Generation Demo
-│   │   │   │   │   └── ModularWorkflowDemo.tsx                           # Modular Workflow Demo
-│   │   │   │   │   └── PlatformOptimizationDemo.tsx                      # Platform Optimization Demo
-│   │   │   │   │   └── SceneAssemblyDemo.tsx                             # Scene Assembly Demo
-│   │   │   │   │   └── VisualCreationDemo.tsx                            # Visual Creation Demo
+│   │   │   │   │   ├── ContentGenerationDemo.tsx                         # Content Generation Demo
+│   │   │   │   │   ├── ModularWorkflowDemo.tsx                           # Modular Workflow Demo
+│   │   │   │   │   ├── PlatformOptimizationDemo.tsx                      # Platform Optimization Demo
+│   │   │   │   │   ├── SceneAssemblyDemo.tsx                             # Scene Assembly Demo
+│   │   │   │   │   ├── VisualCreationDemo.tsx                            # Visual Creation Demo
 │   │   │   │   │   └── VoiceGenerationDemo.tsx                           # Voice Generation Demo
 │   │   │   │   ├── FeaturesCard.tsx                                    # Features card
 │   │   │   │   ├── FeaturesDemo.tsx                                    # Features demo
@@ -168,37 +186,52 @@ React/Next.js frontend application for the Video Creator platform.
 │   │   ├── providers/                                              # Context providers
 │   │   │   ├── auth0-provider.tsx                                    # Auth0 provider
 │   │   │   └── theme-provider.tsx                                    # Theme provider
-│   │   ├── ui/                                                     # Shared UI components
-│   │   │   ├── avatar.tsx                                            # Avatar component
-│   │   │   ├── button.tsx                                            # Button component
-│   │   │   ├── card.tsx                                              # Card component
-│   │   │   ├── checkbox.tsx                                          # Checkbox component
-│   │   │   ├── dialog.tsx                                            # Dialog component
-│   │   │   ├── dropdown-menu.tsx                                     # Dropdown menu
-│   │   │   ├── index.ts                                              # UI barrel file
-│   │   │   ├── input.tsx                                             # Input component
-│   │   │   ├── loading-spinner.tsx                                   # Loading spinner
-│   │   │   ├── loading.tsx                                           # Loading state
-│   │   │   ├── slider.tsx                                            # Slider component
-│   │   │   ├── switch.tsx                                            # Switch component
-│   │   │   ├── textarea.tsx                                          # Textarea component
-│   │   │   ├── toast.tsx                                             # Toast component
-│   │   │   ├── toaster.tsx                                           # Toaster component
-│   │   │   └── use-toast.tsx                                         # Toast hook
+│   │   ├── ui/
+│   │   │   ├── 3d-carousel.tsx
+│   │   │   ├── aspect-ratio.tsx
+│   │   │   ├── badge.tsx
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── checkbox.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── hover-border-gradient.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── loading-spinner.tsx
+│   │   │   ├── loading.tsx
+│   │   │   ├── progress.tsx
+│   │   │   ├── scroll-area.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   ├── slider.tsx
+│   │   │   ├── switch.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   ├── text-generate-effect.tsx
+│   │   │   ├── textarea.tsx
+│   │   │   ├── toast.tsx
+│   │   │   ├── toaster.tsx
+│   │   │   ├── tooltip.tsx
+│   │   │   ├── tubelight-navbar.tsx
+│   │   │   └── use-toast.tsx
 │   │   ├── video/                                                  # Video components
 │   │   │   └── creation-form.tsx                                     # Video creation form
 │   │   ├── video-creation/                                          # Video creation components
 │   │   │   ├── sections/                                             # Creation flow sections
 │   │   │   │   ├── RequiredContentSelection.tsx                       # Basic info section
-│   │   │   │   ├── SettingsSummary.tsx                                # Settings summary
+│   │   │   │   ├── FormatSelection.tsx                               # Format selection
+│   │   │   │   ├── ProcessSteps.tsx                                 # Process steps
+│   │   │   │   ├── ScriptPreviewPanel.tsx                           # Script preview panel
+│   │   │   │   ├── SettingsSummary.tsx                               # Settings summary
+│   │   │   │   ├── VisualStyleCarrousel.tsx                        # Visual style carrousel
 │   │   │   │   └── VisualizationTypeSelection.tsx                     # Visualization type selection
 │   │   │   ├── steps/                                                # Creation flow steps
 │   │   │   │   ├── BasicInformationStep.tsx                           # Basic info step
 │   │   │   │   ├── ContentSelectionStep.tsx                           # Content settings step
-│   │   │   │   ├── MusicSettingsStep.tsx                            # Music settings step
+│   │   │   │   ├── MusicSettingsStep.tsx                            # Music settings step (not in use)
 │   │   │   │   ├── ScriptSettingsStep.tsx                            # Script settings step
 │   │   │   │   ├── VisualSettingsStep.tsx                            # Visual settings step
-│   │   │   │   └──  VoiceSettingsStep.tsx                            # Voice settings step
+│   │   │   │   └── VoiceSettingsStep.tsx                            # Voice settings step
 │   │   │   ├── types.ts                                              # Video creation types
 │   │   │   └── VideoCreationFlow.tsx                                 # Main creation flow
 │   │   └── theme-toggle.tsx                                        # Theme toggle
@@ -211,12 +244,23 @@ React/Next.js frontend application for the Video Creator platform.
 │   │   │   ├── visual-creation.json                                  # Visual Creation configuration
 │   │   │   └── voices.json                                           # Voices configuration
 │   │   ├── video-creation/                                        # Video creation data
-│   │   │   └── script/                                             # Script settings data
-│   │   │       ├── character-perspective_select-option.json          # Character options
-│   │   │       ├── pacing-structure_select-option.json              # Pacing options
-│   │   │       ├── script-tone_select-option.json                   # Tone options
-│   │   │       └── vocabulary_select-option.json                    # Vocabulary options
-│   │   ├── showcase-videos.json                                    # Showcase videos configuration
+│   │   │   ├── basic/                                             # Basic video creation data
+│   │   │   │   ├── focus-prompt.json                                 # Focus prompt
+│   │   │   │   └── input-prompt.json                                 # Input prompt
+│   │   │   └── image/                                             # Image settings data
+│   │   │   │   ├── artist-style_select-options.json                  # Artist style options
+│   │   │   │   ├── aspect-ratio_select-options.json                  # Aspect ratio options
+│   │   │   │   └── shot-style_select-options.json                    # Shot style options
+│   │   │   └── script/                                            # Script settings data
+│   │   │   │   ├── character-perspective_select-option.json          # Character options
+│   │   │   │   ├── pacing-structure_select-option.json               # Pacing options
+│   │   │   │   ├── script-tone_select-option.json                    # Tone options
+│   │   │   │   └── vocabulary_select-option.json                     # Vocabulary options
+│   │   │   └── summary/                                            # Summary settings data
+│   │   │   │   └── summary-labels.json                             # Summary labels
+│   │   │   └── voice/                                              # Voice settings data
+│   │   │   │   └── voice-select-options.json                         # Voice select options
+│   │   └── showcase-videos.json                                    # Showcase videos configuration
 │   │   └── testimonials.json                                       # Testimonials configuration
 │   ├── lib/                                                      # Shared utilities
 │   │   ├── auth/                                                   # Auth utilities
@@ -232,6 +276,7 @@ React/Next.js frontend application for the Video Creator platform.
 │   │   │   └── withAuth.tsx                                          # Auth HOC
 │   │   ├── hooks/                                                  # Hooks
 │   │   │   └── useAuth.tsx                                           # Auth hook
+│   │   │   └── useVideoCreationState.tsx                             # Video creation state hook
 │   │   ├── types/                                                  # TypeScript types
 │   │   │   └── protected-component.ts                                # Protected component type
 │   │   ├── auth.ts                                                 # Auth state utility functions
@@ -239,15 +284,6 @@ React/Next.js frontend application for the Video Creator platform.
 │   │   └── utils.ts                                                # Utility functions
 │   ├── styles/                                                   # Styling
 │   │   └── globals.css                                             # Global styles
-│   ├── components/                                                 # React components
-│   │   ├── video-creation/                                          # Video creation components
-│   │   │   ├── steps/                                                # Creation flow steps
-│   │   │   │   ├── BasicInformationStep.tsx                           # Basic info step
-│   │   │   │   ├── ScriptSettingsStep.tsx                            # Script settings step
-│   │   │   │   └── VisualSettingsStep.tsx                            # Visual settings step
-│   │   │   ├── types.ts                                              # Video creation types
-│   │   │   └── VideoCreationFlow.tsx                                 # Main creation flow
-│   │   └── theme-toggle.tsx                                        # Theme toggle
 │   ├── data/                                                     # Data configurations (json)
 │   │   ├── error/                                                  # Error configuration
 │   │   │   └── login.json                                            # Login configuration

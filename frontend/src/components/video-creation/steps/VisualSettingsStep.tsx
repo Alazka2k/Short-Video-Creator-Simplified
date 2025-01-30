@@ -17,10 +17,12 @@ interface VisualSettingsStepProps {
   visualSettings: {
     shotStyle: string
     aspectRatio: string
+    artistStyle: string
   }
   setVisualSettings: (value: {
     shotStyle: string
     aspectRatio: string
+    artistStyle: string
   }) => void
   selectedVisualization: 'image' | 'video' | 'animation'
   isGenerating: boolean
@@ -93,7 +95,19 @@ export function VisualSettingsStep({
         setExpandedCategories(prev => [...prev, selectedCategory.id])
       }
     }
-  }, [visualSettings.shotStyle, expandedCategories])
+  }, [visualSettings.shotStyle])
+
+  // Handle option selection
+  const handleOptionSelect = (categoryId: string, optionId: string) => {
+    if (!isGenerating) {
+      setVisualSettings({
+        ...visualSettings,
+        shotStyle: visualSettings.shotStyle === optionId ? '' : optionId
+      })
+      // Close the category after selection
+      setExpandedCategories(prev => prev.filter(id => id !== categoryId))
+    }
+  }
 
   return (
     <div className="space-y-8 max-w-[1200px] mx-auto pt-4">
@@ -155,24 +169,32 @@ export function VisualSettingsStep({
                 {shotStyleData.categories.map((category) => (
                   <Card
                     key={category.id} 
-                    className={`p-4 transition-colors ${
-                      isCategorySelected(category) ? 'ring-1 ring-primary bg-primary/5' : ''
-                    }`}
+                    className={cn(
+                      "transition-colors",
+                      !expandedCategories.includes(category.id) && isCategorySelected(category)
+                        ? "ring-1 ring-primary bg-primary/5"
+                        : "hover:bg-accent/5"
+                    )}
                   >
-                    <button
-                      className="w-full flex justify-between items-center font-medium mb-4"
-                      onClick={() => toggleCategory(category.id)}
-                      disabled={isGenerating}
-                    >
-                      <span className={isCategorySelected(category) ? 'text-primary' : ''}>
-                        {category.name}
-                      </span>
-                      {expandedCategories.includes(category.id) ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </button>
+                    <div className="p-4 border-b border-border/50">
+                      <button
+                        className={cn(
+                          "w-full flex justify-between items-center",
+                          !expandedCategories.includes(category.id) && isCategorySelected(category)
+                            ? "text-primary font-medium"
+                            : "text-foreground font-medium"
+                        )}
+                        onClick={() => toggleCategory(category.id)}
+                        disabled={isGenerating}
+                      >
+                        <span>{category.name}</span>
+                        {expandedCategories.includes(category.id) ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                     
                     <AnimatePresence initial={false}>
                       {expandedCategories.includes(category.id) && (
@@ -181,21 +203,19 @@ export function VisualSettingsStep({
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="space-y-6"
+                          className="p-4 space-y-6 bg-accent/5"
                         >
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {category.options.map((option) => (
                               <motion.button
                                 key={option.id}
-                                className={`p-4 rounded-lg text-left transition-colors relative overflow-hidden
-                                  ${visualSettings.shotStyle === option.id
-                                    ? 'bg-primary/20 ring-2 ring-primary'
-                                    : 'hover:bg-accent/5'
-                                  }`}
-                                onClick={() => setVisualSettings({
-                                  ...visualSettings,
-                                  shotStyle: visualSettings.shotStyle === option.id ? '' : option.id
-                                })}
+                                className={cn(
+                                  "p-4 rounded-lg text-left transition-colors relative overflow-hidden bg-background border border-border/50",
+                                  visualSettings.shotStyle === option.id
+                                    ? "ring-2 ring-primary bg-primary/5"
+                                    : "hover:border-primary/50"
+                                )}
+                                onClick={() => handleOptionSelect(category.id, option.id)}
                                 disabled={isGenerating}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}

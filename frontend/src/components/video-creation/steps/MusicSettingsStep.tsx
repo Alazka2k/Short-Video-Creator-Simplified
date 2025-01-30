@@ -3,6 +3,13 @@
 import { cn } from '@/lib/utils'
 import { Music } from 'lucide-react'
 
+/**
+ * Note: The music settings functionality is currently not in use.
+ * The backend for defining music options in a job is not ready yet.
+ * This placeholder is for future implementation when the backend is available.
+ */
+
+
 // This is a placeholder until we have the actual music configuration
 const musicStyles = [
   { id: 'upbeat', name: 'Upbeat', description: 'Energetic and positive music' },
