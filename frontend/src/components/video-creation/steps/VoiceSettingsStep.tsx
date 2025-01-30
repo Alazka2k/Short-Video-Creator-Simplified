@@ -106,7 +106,12 @@ export function VoiceSettingsStep({
             variant={currentCategory === category.id ? "default" : "outline"}
             onClick={() => setCurrentCategory(category.id)}
             disabled={isGenerating}
-            className="flex-1 min-w-[120px] max-w-[200px]"
+            className={cn(
+              "flex-1 min-w-[120px] max-w-[200px]",
+              currentCategory === category.id 
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-primary/20 hover:bg-accent/5"
+            )}
           >
             {category.name}
           </Button>
@@ -143,7 +148,7 @@ export function VoiceSettingsStep({
                   ? "ring-2 ring-primary bg-primary/5"
                   : "hover:bg-accent/5"
               )}
-              onClick={() => !isGenerating && setSelectedVoice(voice.id)}
+              onClick={() => !isGenerating && setSelectedVoice(selectedVoice === voice.id ? '' : voice.id)}
             >
               <div className="flex items-start gap-4">
                 <div className="relative group">

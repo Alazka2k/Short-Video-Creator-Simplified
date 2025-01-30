@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
 import { 
   Sparkles, 
   Video, 
@@ -371,6 +372,18 @@ export function VideoCreationFlow({
     return true
   })
 
+  // Add validation check for Create Content button
+  const canCreateContent = useMemo(() => {
+    return (
+      prompt.trim() !== '' && // Has prompt
+      selectedDuration && // Has duration selected
+      selectedContent && // Has content type selected
+      (selectedContent.voice ? selectedVoice !== '' : true) && // Has voice if voice is selected
+      (selectedContent.visuals ? visualSettings.aspectRatio !== '' : true) && // Has aspect ratio if visuals selected
+      !isGenerating // Not currently generating
+    )
+  }, [prompt, selectedDuration, selectedContent, selectedVoice, visualSettings, isGenerating])
+
   if (mode === 'quick') {
   return (
     <div className="space-y-8">
@@ -466,13 +479,54 @@ export function VideoCreationFlow({
 
   return (
     <div className="space-y-8">
+      {/* Header with Create Button */}
+      <div className="flex flex-col items-center gap-4 pb-6 border-b">
+        <div className="relative">
+          <Button
+            onClick={handleGenerateVideo}
+            disabled={!canCreateContent}
+            className={cn(
+              "relative px-16 py-6 w-[600px] z-10",
+              "bg-dark dark:bg-slate-900",
+              "hover:bg-accent/5 dark:hover:bg-slate-900",
+              "transition-all duration-300",
+              "shadow-lg hover:shadow-xl",
+              !canCreateContent && "opacity-50"
+            )}
+            size="lg"
+          >
+            <div className="relative flex items-center justify-center gap-3">
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin text-foreground dark:text-white" />
+                  <span className="text-lg font-medium text-foreground dark:text-white">Creating Content...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5 text-foreground dark:text-white" />
+                  <span className="text-lg font-medium text-foreground dark:text-white">Create Content</span>
+                </>
+              )}
+            </div>
+          </Button>
+          <div className="absolute inset-[-2px] -z-10 rounded-lg overflow-hidden">
+            <HoverBorderGradient
+              as="div"
+              containerClassName="w-full h-full"
+              className="bg-transparent"
+              duration={3}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Process Steps */}
       <ProcessSteps
-        steps={activeSteps}
+        steps={STEPS}
         currentStep={currentStep}
         onChange={(value) => {
-            const newIndex = activeSteps.findIndex(step => step.id === value)
-            setCurrentStep(newIndex)
+          const newIndex = STEPS.findIndex(step => step.id === value)
+          setCurrentStep(newIndex)
         }}
         isGenerating={isGenerating}
       />
@@ -480,7 +534,7 @@ export function VideoCreationFlow({
       {/* Content */}
       <ScrollArea className="min-h-[600px]">
         <div className="animate-in slide-in-from-right duration-500">
-          {renderStepContent(activeSteps[currentStep].id)}
+          {renderStepContent(STEPS[currentStep].id)}
         </div>
       </ScrollArea>
 
@@ -490,56 +544,23 @@ export function VideoCreationFlow({
           variant="outline"
           onClick={() => setCurrentStep(currentStep - 1)}
           disabled={currentStep === 0 || isGenerating}
-          className="relative group px-6 border-border"
+          className="relative group"
         >
           <div className="relative flex items-center gap-2">
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>{activeSteps[currentStep - 1]?.title || 'Previous'}</span>
+            <span>{STEPS[currentStep - 1]?.title || 'Previous'}</span>
           </div>
         </Button>
 
-        {currentStep === activeSteps.length - 1 ? (
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              onClick={handleCreateProject}
-              disabled={!prompt.trim() || isGenerating}
-              className="relative group px-6 border-border"
-            >
-              <div className="relative flex items-center gap-2">
-                <Download className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-                <span>Save as Project</span>
-              </div>
-            </Button>
-            <Button
-              onClick={handleGenerateVideo}
-              disabled={!prompt.trim() || isGenerating}
-              className="relative group px-6"
-            >
-              <div className="relative flex items-center gap-2">
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Generating Video...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 transition-transform group-hover:scale-110" />
-                    <span>Generate Video</span>
-                  </>
-                )}
-              </div>
-            </Button>
-          </div>
-        ) : (
+        {currentStep < STEPS.length - 1 && (
           <Button
             variant="outline"
             onClick={() => setCurrentStep(currentStep + 1)}
             disabled={isGenerating}
-            className="relative group px-6 border-border"
+            className="relative group"
           >
             <div className="relative flex items-center gap-2">
-              <span>{activeSteps[currentStep + 1]?.title || 'Continue'}</span>
+              <span>{STEPS[currentStep + 1]?.title || 'Next'}</span>
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </div>
           </Button>

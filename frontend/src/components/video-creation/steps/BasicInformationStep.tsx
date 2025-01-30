@@ -179,10 +179,10 @@ export function BasicInformationStep({
           {durationOptions.map((option) => (
             <button
               key={option.value}
-              onClick={() => setSelectedDuration(option)}
+              onClick={() => setSelectedDuration(selectedDuration?.value === option.value ? null : option)}
               className={cn(
                 "flex-1 p-4 rounded-lg border-2 transition-colors",
-                selectedDuration.value === option.value
+                selectedDuration?.value === option.value
                   ? "border-primary bg-primary/5"
                   : "border-transparent bg-accent/5 hover:bg-accent/10"
               )}

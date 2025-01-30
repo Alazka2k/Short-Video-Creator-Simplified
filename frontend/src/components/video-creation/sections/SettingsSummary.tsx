@@ -117,6 +117,24 @@ export function SettingsSummary({
     .flatMap(category => category.options)
     .find(style => style.id === visualSettings.shotStyle)
 
+  // Add validation status indicators
+  const getValidationStatus = (field: string) => {
+    switch(field) {
+      case 'prompt':
+        return !prompt.trim() ? 'Required: Add a content idea' : null;
+      case 'duration':
+        return !selectedDuration ? 'Required: Select duration' : null;
+      case 'content':
+        return !selectedContent ? 'Required: Select content type' : null;
+      case 'voice':
+        return selectedContent?.voice && !selectedVoice ? 'Required: Select voice' : null;
+      case 'visuals':
+        return selectedContent?.visuals && !visualSettings.aspectRatio ? 'Required: Select aspect ratio' : null;
+      default:
+        return null;
+    }
+  }
+
   return (
     <TooltipProvider>
       <Card className="bg-card border-primary/20 shadow-md overflow-hidden">
@@ -137,7 +155,8 @@ export function SettingsSummary({
             "space-y-3 rounded-lg transition-colors border",
             currentStep === 'basic' 
               ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20" 
-              : "border-muted/50 bg-muted/5"
+              : "border-muted/50 bg-muted/5",
+            getValidationStatus('prompt') && "border-yellow-500/50"
           )}>
             <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
               <div className="flex items-center gap-2">
@@ -151,13 +170,33 @@ export function SettingsSummary({
               )}
             </div>
             <div className="pl-6 space-y-3">
-              <div className="bg-accent/5 p-3 rounded-md">
-                <div className="flex items-start gap-2">
-                  <Type className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <div className="text-muted-foreground line-clamp-4">
-                    {prompt || 'No content idea provided yet...'}
+              <div className={cn(
+                "bg-accent/5 p-3 rounded-md",
+                (!prompt.trim() || !selectedDuration) && "border border-yellow-500/50"
+              )}>
+                {!prompt.trim() && !selectedDuration ? (
+                  <div className="text-sm text-yellow-500 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                    A content idea and duration is required to create content
                   </div>
-                </div>
+                ) : !prompt.trim() ? (
+                  <div className="text-sm text-yellow-500 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                    A general idea is required to create content
+                  </div>
+                ) : !selectedDuration ? (
+                  <div className="text-sm text-yellow-500 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                    The duration is required to create content
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <Type className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div className="text-muted-foreground line-clamp-4">
+                      {prompt}
+                    </div>
+                  </div>
+                )}
               </div>
               {focus && (
                 <div className="bg-accent/5 p-3 rounded-md">
@@ -166,15 +205,19 @@ export function SettingsSummary({
                     <div className="text-muted-foreground line-clamp-2">
                       {focus}
                     </div>
-          </div>
-        </div>
+                  </div>
+                </div>
               )}
-              <div className="flex items-center gap-2 text-muted-foreground bg-accent/5 p-3 rounded-md">
-                <Clock className="w-4 h-4 shrink-0" />
-                <span>{selectedDuration.label}</span>
-                <span className="text-muted-foreground/60">•</span>
-                <span className="text-muted-foreground/80">~{selectedDuration.scenes} scenes</span>
-              </div>
+              {selectedDuration && (
+                <div className="bg-accent/5 p-3 rounded-md">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4 shrink-0" />
+                    <span>{selectedDuration.label}</span>
+                    <span className="text-muted-foreground/60">•</span>
+                    <span className="text-muted-foreground/80">~{selectedDuration.scenes} scenes</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
@@ -183,7 +226,8 @@ export function SettingsSummary({
             "space-y-3 rounded-lg transition-colors border",
             currentStep === 'basic' 
               ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20" 
-              : "border-muted/50 bg-muted/5"
+              : "border-muted/50 bg-muted/5",
+            getValidationStatus('content') && "border-yellow-500/50"
           )}>
             <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
               <div className="flex items-center gap-2">
@@ -223,6 +267,9 @@ export function SettingsSummary({
                   )}
                 </div>
               )}
+              {getValidationStatus('content') && (
+                <p className="text-yellow-500 text-xs px-3 pb-3">{getValidationStatus('content')}</p>
+              )}
             </div>
           </div>
 
@@ -232,7 +279,8 @@ export function SettingsSummary({
               "space-y-3 rounded-lg transition-colors border",
               currentStep === 'basic' 
                 ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20" 
-                : "border-muted/50 bg-muted/5"
+                : "border-muted/50 bg-muted/5",
+              getValidationStatus('visuals') && "border-yellow-500/50"
             )}>
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
@@ -266,6 +314,9 @@ export function SettingsSummary({
                   </Tooltip>
               )}
               </div>
+              {getValidationStatus('visuals') && (
+                <p className="text-yellow-500 text-xs px-3 pb-3">{getValidationStatus('visuals')}</p>
+              )}
             </div>
         )}
 
@@ -359,7 +410,8 @@ export function SettingsSummary({
               "space-y-3 rounded-lg transition-colors border",
               currentStep === 'voice' 
                 ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20" 
-                : "border-muted/50 bg-muted/5"
+                : "border-muted/50 bg-muted/5",
+              !selectedVoice && "border-yellow-500/50"
             )}>
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
@@ -376,12 +428,12 @@ export function SettingsSummary({
                 {!selectedVoice ? (
                   <div className="text-sm text-yellow-500 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                    Please select a voice in the Voice Settings tab
+                    A voice setting is required for voice content
                   </div>
                 ) : !selectedVoiceDetails ? (
                   <div className="text-sm text-yellow-500 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                    Please select a Voice to generate Voice Content.
+                    Selected voice not found. Please select a different voice.
                   </div>
                 ) : (
                   <Tooltip>
@@ -408,7 +460,8 @@ export function SettingsSummary({
               "space-y-3 rounded-lg transition-colors border",
               currentStep === 'visuals' 
                 ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20" 
-                : "border-muted/50 bg-muted/5"
+                : "border-muted/50 bg-muted/5",
+              getValidationStatus('visuals') && "border-yellow-500/50"
             )}>
               <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
                 <div className="flex items-center gap-2">
@@ -460,6 +513,9 @@ export function SettingsSummary({
                       </Tooltip>
                     )}
                   </div>
+                )}
+                {getValidationStatus('visuals') && (
+                  <p className="text-yellow-500 text-xs px-3 pb-3">{getValidationStatus('visuals')}</p>
                 )}
               </div>
             </div>
