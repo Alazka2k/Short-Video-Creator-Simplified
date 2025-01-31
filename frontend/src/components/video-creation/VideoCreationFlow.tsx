@@ -192,9 +192,9 @@ export function VideoCreationFlow({
     return (
       <div className="grid gap-8 lg:grid-cols-[1fr,320px] px-4">
         {/* Main content area */}
-        <div className="space-y-8 overflow-visible">
+        <div className="space-y-8 min-h-0">
           {stepId === 'basic' && (
-            <div className="space-y-8 overflow-visible">
+            <div className="space-y-8 overflow-visible pb-8">
               <BasicInformationStep
                 prompt={prompt}
                 setPrompt={setPrompt}
@@ -420,11 +420,13 @@ export function VideoCreationFlow({
 
       {/* Process Steps */}
       <ProcessSteps
-        steps={STEPS}
+        steps={activeSteps}
         currentStep={currentStep}
         onChange={(value) => {
           const newIndex = STEPS.findIndex(step => step.id === value)
-          setCurrentStep(newIndex)
+          if (newIndex !== -1 && activeSteps.some(step => step.id === STEPS[newIndex].id)) {
+            setCurrentStep(newIndex)
+          }
         }}
         isGenerating={isGenerating}
       />
