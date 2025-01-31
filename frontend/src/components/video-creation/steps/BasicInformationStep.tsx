@@ -31,7 +31,7 @@ const durationSelectOptions = videoDurationData.options.map(option => ({
   id: option.name,
   label: option.name,
   value: String(option.sceneAmount * 10),
-  description: option.lengthDescription,
+  description: option.description,
   custom: option.icon ? (
     <div className="flex h-12 w-12 items-center justify-center">
       <img src={option.icon} alt={option.name} className="w-8 h-8 object-contain" />

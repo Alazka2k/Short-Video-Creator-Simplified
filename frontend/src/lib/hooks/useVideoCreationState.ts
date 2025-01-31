@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { ContentState, ScriptParams, VisualizationType, RequestParams } from '@/components/video-creation/types'
 import { durationOptions } from '@/components/video-creation/steps/BasicInformationStep'
-import voiceData from '@/data/features/voices.json'
+import voiceData from '@/data/video-creation/voice/voice-select-option.json'
 import videoDurationData from '@/data/video-creation/basic/video-duration-prompt.json'
 import characterPerspectiveData from '@/data/video-creation/script/character-perspective_select-option.json'
 import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
@@ -78,10 +78,23 @@ export function useVideoCreationState(defaultValues?: any) {
     })
   }, [])
 
+  const findVoiceId = (selectedId: string): string => {
+    if (!selectedId) return '';
+    const voice = voiceData.categories
+      ?.flatMap(category => category.options)
+      .find(option => option.id === selectedId);
+    return voice?.elevenlabsVoiceId || '';
+  }
+
   const constructRequestBody = useCallback((): RequestParams => {
     if (!state.prompt || !state.selectedDuration) {
       throw new Error('Missing required fields')
     }
+
+    // Find shot style prompt definition
+    const shotStylePrompt = findPromptDefinition(shotStyleData, state.visualSettings.shotStyle);
+    // Find voice ID
+    const voiceId = findVoiceId(state.selectedVoice);
 
     return {
       prompt: state.prompt,
@@ -101,11 +114,11 @@ export function useVideoCreationState(defaultValues?: any) {
           image: {
             aspectRatio: state.visualSettings.aspectRatio,
             sValue: "500",
-            shotStyle: findPromptDefinition(shotStyleData, state.visualSettings.shotStyle)
+            shotStyle: shotStylePrompt
           }
         },
         voiceGenParams: {
-          elevenlabsVoiceId: state.selectedVoice
+          elevenlabsVoiceId: voiceId
         },
         imageGenParams: {},
         animationGenParams: {},
@@ -166,12 +179,7 @@ export function useVideoCreationState(defaultValues?: any) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          ...requestBody,
-          assemblyConfig: {
-            immediate: true
-          }
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
@@ -203,6 +211,8 @@ export function useVideoCreationState(defaultValues?: any) {
 
 // Helper function to get default state
 function getDefaultState(defaultValues?: any): VideoCreationState {
+  const defaultVoice = voiceData.categories[0]?.options[0]?.id || '';
+  
   return {
     currentStep: 0,
     prompt: defaultValues?.prompt || '',
@@ -213,7 +223,7 @@ function getDefaultState(defaultValues?: any): VideoCreationState {
       visuals: false,
       music: false
     },
-    selectedVoice: defaultValues?.voice || voiceData.voices[0].id,
+    selectedVoice: defaultValues?.voice || defaultVoice,
     selectedVisualization: defaultValues?.visualization || 'image',
     visualSettings: {
       shotStyle: defaultValues?.shotStyle || '',
@@ -231,10 +241,11 @@ function getDefaultState(defaultValues?: any): VideoCreationState {
 
 // Helper to find prompt definition
 const findPromptDefinition = (data: any, selectedId: string): string => {
+  if (!selectedId) return '';
   const option = data.categories
     ?.flatMap((category: any) => category.options)
     .find((option: any) => option.id === selectedId)
-  return option?.prompt || ''
+  return option?.promptDefinition || option?.prompt || ''
 }
 
 // Helper to find duration option

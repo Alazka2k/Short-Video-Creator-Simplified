@@ -2,51 +2,51 @@
   "options": [
     {
         "sceneAmount": 1,
+        "description": "This option is a test option.",
         "lengthDescription": "Maximum 5-10 seconds video for testing purposes",
         "name": "Test Option",
-        "description": "This option is a test option.",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
         "icon": "/creation/duration-icons/test.png"
     },
     {
         "sceneAmount": 6,
+        "description": "A short video teaser, perfect for capturing attention quickly.",
         "lengthDescription": "15 seconds with the first 5 seconds containing the hook",
         "name": "Video Teaser",
-        "description": "A short video teaser, perfect for capturing attention quickly.",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
         "icon": "/creation/duration-icons/video-teaser.png"
     },
     {
         "sceneAmount": 9,
+        "description": "A concise video, ideal for YouTube Shorts. Monetization is possible.",
         "lengthDescription": "Under one minute content for short videos. Monetization with YouTube Shorts is possible.",
         "name": "YouTube Short",
-        "description": "A concise video, ideal for YouTube Shorts. Monetization is possible.",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
         "icon": "/creation/duration-icons/youtube-shorts.png"
-
     },
     {
         "sceneAmount": 13,
+        "description": "A concise video, ideal for TikTok. Monetization is possible.",
         "lengthDescription": "Over one minute content for short videos. Monetization with Tiktok is possible.",
         "name": "Short TikTok Video",
-        "description": "A longer TikTok video, suitable for more detailed content. Monetization is possible.",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
         "icon": "/creation/duration-icons/tiktok.png"
     },
     {
         "sceneAmount": 20,
+        "description": "A long image-based story, great for storytelling. Can be used for Instagram Feeds.",
         "lengthDescription": "A long image-based story, great for storytelling. Can be used for Instagram Feeds.",
         "name": "Long Image Story",
-        "description": "A long image-based story, great for storytelling.",
         "serviceRestrictions": ["image", "voice", "music"],
         "icon": "/creation/duration-icons/image-series.png"
+
     },
 
     {
         "sceneAmount": 50,
+        "description": "A podcast format, ideal for in-depth discussions.",
         "lengthDescription": "A long podcast format, ideal for in-depth discussions or learning audio content.",
         "name": "Podcast",
-        "description": "A podcast format, ideal for in-depth discussions.",
         "serviceRestrictions": ["voice"],
         "icon": "/creation/duration-icons/podcast.png"
     }
