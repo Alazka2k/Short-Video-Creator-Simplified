@@ -75,14 +75,14 @@ const Select = ({
             <motion.div
               whileTap={{ scale: 0.95 }}
               animate={{
-                borderRadius: 30,
+                borderRadius: 16,
               }}
               layout
               layoutId="dropdown"
               onClick={() => setOpen(true)}
               className={cn(
-                "overflow-hidden rounded-[30px] border border-input hover:border-purple-500/50 bg-background shadow-sm w-full py-2",
-                selected && "border-purple-500/50 bg-purple-500/5",
+                "overflow-hidden rounded-lg border border-input hover:border-primary/50 bg-background shadow-sm w-full py-2",
+                selected && "border-primary bg-primary/5",
                 className
               )}
             >
@@ -92,17 +92,17 @@ const Select = ({
             <motion.div
               layout
               animate={{
-                borderRadius: 20,
+                borderRadius: 16,
               }}
               layoutId="dropdown"
               className={cn(
-                "overflow-hidden rounded-[20px] w-full border border-input hover:border-purple-500/50 bg-background py-2 shadow-md",
+                "overflow-hidden rounded-lg w-full border border-input hover:border-primary/50 bg-background py-2 shadow-md",
                 className
               )}
               ref={ref}
             >
               <Head title={title} setOpen={setOpen} />
-              <div className="w-full overflow-y-auto max-h-[300px] divide-y divide-purple-500/10">
+              <div className="w-full overflow-y-auto max-h-[300px] divide-y divide-primary/10">
                 {data?.map((item) => (
                   <SelectItem
                     order={item?.value}
@@ -192,11 +192,17 @@ const SelectItem = ({
   onChange,
   isSelected
 }: SelectItemProps) => {
+  const iconClasses = cn(
+    "flex items-center justify-center rounded-full border",
+    isSelected ? "border-primary bg-primary/10" : "border-primary/20 bg-primary/5",
+    item?.custom ? "h-12 w-12" : "h-10 w-10"
+  );
+
   return (
     <motion.div
       className={cn(
-        "group flex cursor-pointer items-center justify-between gap-2 p-4 py-3 hover:bg-purple-500/5",
-        isSelected && "bg-purple-500/5",
+        "group flex cursor-pointer items-center justify-between gap-2 p-4 py-3 hover:bg-primary/5",
+        isSelected && "bg-primary/5",
         noDescription && "!p-2"
       )}
       variants={animation}
@@ -211,12 +217,9 @@ const SelectItem = ({
         <motion.div
           layout
           layoutId={`icon-${item?.id}`}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full border",
-            isSelected ? "border-purple-500 bg-purple-500/10" : "border-purple-500/20 bg-purple-500/5"
-          )}
+          className={iconClasses}
         >
-          {item?.icon}
+          {item?.custom || item?.icon}
         </motion.div>
         <motion.div layout className="flex flex-col space-y-1">
           <motion.strong
@@ -237,7 +240,7 @@ const SelectItem = ({
           layout
           className="flex items-center justify-center gap-2 pr-3"
         >
-          <ChevronDownIcon className="text-purple-500" size={20} />
+          <ChevronDownIcon className="text-primary" size={20} />
         </motion.div>
       ) : null}
     </motion.div>

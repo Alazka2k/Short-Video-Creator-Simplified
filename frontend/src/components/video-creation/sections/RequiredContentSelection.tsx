@@ -27,47 +27,22 @@ export function RequiredContentSelection({
 }: RequiredContentSelectionProps) {
 
   const isServiceAllowed = (service: string) => {
-    console.log('Checking service:', {
-      service,
-      restrictions: selectedDuration?.serviceRestrictions,
-      hasRestrictions: !!selectedDuration?.serviceRestrictions
-    });
-    
     if (!selectedDuration?.serviceRestrictions) return true;
     
     const restrictions = selectedDuration.serviceRestrictions.map(r => r.toLowerCase());
     
     // For visual content, check if any visual type is allowed
     if (service === 'visuals') {
-      const isAllowed = restrictions.some(r => 
+      return restrictions.some(r => 
         ['image', 'video', 'animation'].includes(r)
       );
-      console.log('Visual service check:', {
-        isAllowed,
-        matchingTypes: restrictions.filter(r => 
-          ['image', 'video', 'animation'].includes(r)
-        )
-      });
-      return isAllowed;
     }
     
-    const isAllowed = restrictions.includes(service.toLowerCase());
-    console.log('Regular service check:', {
-      service: service.toLowerCase(),
-      isAllowed,
-      restrictions
-    });
-    return isAllowed;
+    return restrictions.includes(service.toLowerCase());
   }
 
   const handleVisualContentChange = () => {
     const isAllowed = isServiceAllowed('visuals');
-    console.log('Visual content change attempted', {
-      isGenerating,
-      isAllowed,
-      currentState: selectedContent.visuals,
-      restrictions: selectedDuration?.serviceRestrictions
-    });
     if (!isGenerating && isAllowed) {
       const newVisuals = !selectedContent.visuals;
       setSelectedContent({
@@ -84,12 +59,6 @@ export function RequiredContentSelection({
 
   const handleVoiceContentChange = () => {
     const isAllowed = isServiceAllowed('voice');
-    console.log('Voice content change attempted', {
-      isGenerating,
-      isAllowed,
-      currentState: selectedContent.voice,
-      restrictions: selectedDuration?.serviceRestrictions
-    });
     if (!isGenerating && isAllowed) {
       setSelectedContent({
         ...selectedContent,
@@ -100,12 +69,6 @@ export function RequiredContentSelection({
 
   const handleMusicContentChange = () => {
     const isAllowed = isServiceAllowed('music');
-    console.log('Music content change attempted', {
-      isGenerating,
-      isAllowed,
-      currentState: selectedContent.music,
-      restrictions: selectedDuration?.serviceRestrictions
-    });
     if (!isGenerating && isAllowed) {
       setSelectedContent({
         ...selectedContent,
@@ -114,10 +77,8 @@ export function RequiredContentSelection({
     }
   }
 
-  // Add effect to monitor content changes
-  useEffect(() => {
-    console.log('Content state changed:', selectedContent);
-  }, [selectedContent]);
+  // Remove monitoring effect
+  useEffect(() => {}, [selectedContent]);
 
   return (
     <div className="space-y-4">
@@ -129,7 +90,6 @@ export function RequiredContentSelection({
           !isServiceAllowed('voice') && "opacity-50 cursor-not-allowed"
         )}
         onClick={(e) => {
-          console.log('Voice card clicked');
           e.preventDefault();
           handleVoiceContentChange();
         }}
@@ -152,7 +112,6 @@ export function RequiredContentSelection({
           !isServiceAllowed('visuals') && "opacity-50 cursor-not-allowed"
         )}
         onClick={(e) => {
-          console.log('Visuals card clicked');
           e.preventDefault();
           handleVisualContentChange();
         }}
@@ -175,7 +134,6 @@ export function RequiredContentSelection({
           !isServiceAllowed('music') && "opacity-50 cursor-not-allowed"
         )}
         onClick={(e) => {
-          console.log('Music card clicked');
           e.preventDefault();
           handleMusicContentChange();
         }}

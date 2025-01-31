@@ -32,7 +32,15 @@ const durationSelectOptions = videoDurationData.options.map(option => ({
   label: option.name,
   value: String(option.sceneAmount * 10),
   description: option.lengthDescription,
-  icon: "⏱️"
+  custom: option.icon ? (
+    <div className="flex h-12 w-12 items-center justify-center">
+      <img src={option.icon} alt={option.name} className="w-8 h-8 object-contain" />
+    </div>
+  ) : (
+    <div className="flex h-12 w-12 items-center justify-center">
+      <span className="text-xl">⏱️</span>
+    </div>
+  )
 }))
 
 interface BasicInformationStepProps {
@@ -143,15 +151,6 @@ export function BasicInformationStep({
   }
 
   const handleContentChange = (content: ContentState) => {
-    console.log('Content change received in BasicInformationStep:', {
-      newContent: content,
-      currentState: {
-        voice: hasVoiceContent,
-        visuals: hasVisualContent,
-        music: hasMusicContent
-      }
-    });
-
     // Update each state based on the incoming content
     if (content.voice !== hasVoiceContent) {
       setHasVoiceContent(content.voice);
@@ -269,7 +268,7 @@ export function BasicInformationStep({
             onChange={handleDurationChange}
             title="Choose Duration"
             allowDeselect={true}
-            className="border-purple-500/50"
+            className="!rounded-lg border-input hover:border-primary/50 [&.border-purple-500\/50]:border-primary [&.bg-purple-500\/5]:bg-primary/5"
           />
         </div>
       </div>
