@@ -6,19 +6,34 @@ import { TextGenerateEffect } from '@/components/ui/text-generate-effect'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect, useId } from 'react'
-import { VisualizationType } from '@/components/video-creation/types'
+import { VisualizationType, ContentState } from '@/components/video-creation/types'
+import Select from '@/components/ui/select'
+import { RequiredContentSelection } from '../sections/RequiredContentSelection'
+import { VisualizationTypeSelection } from '../sections/VisualizationTypeSelection'
 
 // Import example prompts
 import promptExamples from '@/data/video-creation/basic/input-prompt.json'
 import focusExamples from '@/data/video-creation/basic/focus-prompt.json'
+import videoDurationData from '@/data/video-creation/basic/video-duration-prompt.json'
 
-export const durationOptions = [
-  // TODO: Remove this test option before go-live
-  { label: 'Test (1 Scene)', value: 10, scenes: 1 },
-  { label: '0-30 Seconds', value: 30, scenes: 5 },
-  { label: '30-60 Seconds', value: 60, scenes: 9 },
-  { label: 'Up to 90 Seconds', value: 90, scenes: 13 }
-]
+// Map duration options from the new format
+export const durationOptions = videoDurationData.options.map(option => ({
+  label: option.name,
+  value: option.sceneAmount * 10,
+  scenes: option.sceneAmount,
+  description: option.description,
+  lengthDescription: option.lengthDescription,
+  serviceRestrictions: option.serviceRestrictions
+}))
+
+// Map duration options to the format expected by the Select component
+const durationSelectOptions = videoDurationData.options.map(option => ({
+  id: option.name,
+  label: option.name,
+  value: String(option.sceneAmount * 10),
+  description: option.lengthDescription,
+  icon: "⏱️"
+}))
 
 interface BasicInformationStepProps {
   prompt: string
@@ -27,11 +42,15 @@ interface BasicInformationStepProps {
   setFocus: (value: string) => void
   showFocusField: boolean
   setShowFocusField: (value: boolean) => void
-  selectedDuration: typeof durationOptions[0]
-  setSelectedDuration: (value: typeof durationOptions[0]) => void
+  selectedDuration: typeof durationOptions[0] | null | undefined
+  setSelectedDuration: (value: typeof durationOptions[0] | null | undefined) => void
   isGenerating: boolean
   hasVisualContent: boolean
   setHasVisualContent: (value: boolean) => void
+  hasVoiceContent: boolean
+  setHasVoiceContent: (value: boolean) => void
+  hasMusicContent: boolean
+  setHasMusicContent: (value: boolean) => void
   selectedVisualization: VisualizationType
   setSelectedVisualization: (value: VisualizationType) => void
 }
@@ -48,6 +67,10 @@ export function BasicInformationStep({
   isGenerating,
   hasVisualContent,
   setHasVisualContent,
+  hasVoiceContent,
+  setHasVoiceContent,
+  hasMusicContent,
+  setHasMusicContent,
   selectedVisualization,
   setSelectedVisualization
 }: BasicInformationStepProps) {
@@ -81,6 +104,70 @@ export function BasicInformationStep({
       return () => clearInterval(interval)
     }
   }, [isFocusFieldFocused, focus, showFocusField])
+
+  const handleDurationChange = (value: string | null) => {
+    if (!value) {
+      setSelectedDuration(undefined)
+      return
+    }
+
+    const option = durationOptions.find(opt => String(opt.value) === value)
+    if (!option) {
+      setSelectedDuration(undefined)
+      return
+    }
+
+    setSelectedDuration(option)
+      
+    // After setting duration, update content selection based on service restrictions
+    if (option.serviceRestrictions?.length > 0) {
+      const allowedServices = new Set(option.serviceRestrictions.map(s => s.toLowerCase()))
+      
+      // Disable voice if not allowed
+      if (hasVoiceContent && !allowedServices.has('voice')) {
+        setHasVoiceContent(false)
+      }
+      
+      // Disable visuals if no visual service is allowed
+      const hasVisualService = ['image', 'video', 'animation'].some(service => allowedServices.has(service))
+      if (hasVisualContent && !hasVisualService) {
+        setHasVisualContent(false)
+        setSelectedVisualization('image')
+      }
+      
+      // Disable music if not allowed
+      if (hasMusicContent && !allowedServices.has('music')) {
+        setHasMusicContent(false)
+      }
+    }
+  }
+
+  const handleContentChange = (content: ContentState) => {
+    console.log('Content change received in BasicInformationStep:', {
+      newContent: content,
+      currentState: {
+        voice: hasVoiceContent,
+        visuals: hasVisualContent,
+        music: hasMusicContent
+      }
+    });
+
+    // Update each state based on the incoming content
+    if (content.voice !== hasVoiceContent) {
+      setHasVoiceContent(content.voice);
+    }
+    if (content.visuals !== hasVisualContent) {
+      setHasVisualContent(content.visuals);
+    }
+    if (content.music !== hasMusicContent) {
+      setHasMusicContent(content.music);
+    }
+
+    // If visuals are disabled, reset visualization type to image
+    if (!content.visuals) {
+      setSelectedVisualization('image');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -175,27 +262,39 @@ export function BasicInformationStep({
 
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Video Duration</h2>
-        <div className="flex gap-4">
-          {durationOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setSelectedDuration(selectedDuration?.value === option.value ? null : option)}
-              className={cn(
-                "flex-1 p-4 rounded-lg border-2 transition-colors",
-                selectedDuration?.value === option.value
-                  ? "border-primary bg-primary/5"
-                  : "border-transparent bg-accent/5 hover:bg-accent/10"
-              )}
-              disabled={isGenerating}
-            >
-              <div className="font-medium">{option.label}</div>
-              <div className="text-sm text-muted-foreground">
-                ~{option.scenes} scenes
-              </div>
-            </button>
-          ))}
+        <div className="w-full">
+          <Select 
+            data={durationSelectOptions}
+            value={selectedDuration ? String(selectedDuration.value) : undefined}
+            onChange={handleDurationChange}
+            title="Choose Duration"
+            allowDeselect={true}
+            className="border-purple-500/50"
+          />
         </div>
       </div>
+
+      <RequiredContentSelection
+        selectedContent={{
+          voice: hasVoiceContent,
+          visuals: hasVisualContent,
+          music: hasMusicContent
+        }}
+        setSelectedContent={handleContentChange}
+        isGenerating={isGenerating}
+        selectedVisualization={selectedVisualization}
+        setSelectedVisualization={setSelectedVisualization}
+        selectedDuration={selectedDuration}
+      />
+
+      {hasVisualContent && (
+        <VisualizationTypeSelection
+          selectedVisualization={selectedVisualization}
+          setSelectedVisualization={setSelectedVisualization}
+          isGenerating={isGenerating}
+          selectedDuration={selectedDuration}
+        />
+      )}
     </div>
   )
 } 

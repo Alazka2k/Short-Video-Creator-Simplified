@@ -9,21 +9,24 @@
           "name": "Descriptive Language",
           "description": "Use vivid adjectives and adverbs to paint a picture",
           "examples": "Lush landscapes, gripping stories",
-          "tags": ["Vivid", "Descriptive", "Engaging"]
+          "tags": ["Vivid", "Descriptive", "Engaging"],
+          "prompt": "Descriptive Language: Use vivid adjectives and adverbs to paint a picture. For example a lush landscape, a gripping story."
         },
         {
           "id": "informative",
           "name": "Informative Tone",
           "description": "Focus on clarity and factual information",
           "examples": "According to recent studies...",
-          "tags": ["Clear", "Factual", "Precise"]
+          "tags": ["Clear", "Factual", "Precise"],
+          "prompt": "Informative Tone: Focus on clarity and factual information. For example according to recent studies."
         },
         {
           "id": "engaging-questions",
           "name": "Engaging Questions",
           "description": "Pose rhetorical questions to provoke thought",
           "examples": "What drives human curiosity?",
-          "tags": ["Thought-provoking", "Interactive", "Engaging"]
+          "tags": ["Thought-provoking", "Interactive", "Engaging"],
+          "prompt": "Engaging Questions: Pose rhetorical questions to provoke thought. For example what drives human curiosity?"
         }
       ]
     },
@@ -36,21 +39,24 @@
           "name": "Clear and Concise",
           "description": "Use straightforward vocabulary",
           "examples": "Let's explore, In this lesson, we will...",
-          "tags": ["Simple", "Direct", "Clear"]
+          "tags": ["Simple", "Direct", "Clear"],
+          "prompt": "Clear and Concise: Use straightforward vocabulary. For example let's explore, in this lesson, we will..."
         },
         {
           "id": "technical",
           "name": "Technical Terms",
           "description": "Introduce jargon but provide definitions",
           "examples": "Photosynthesis is the process by which...",
-          "tags": ["Technical", "Educational", "Defined"]
+          "tags": ["Technical", "Educational", "Defined"],
+          "prompt": "Technical Terms: Introduce jargon but provide definitions. For example photosynthesis is the process by which..."
         },
         {
           "id": "encouraging",
           "name": "Encouraging Phrases",
           "description": "Use motivational language",
           "examples": "You can do this!, Let's dive deeper!",
-          "tags": ["Motivational", "Supportive", "Positive"]
+          "tags": ["Motivational", "Supportive", "Positive"],
+          "prompt": "Encouraging Phrases: Use motivational language. For example you can do this!, let's dive deeper!"
         }
       ]
     },
@@ -63,21 +69,24 @@
           "name": "Persuasive Language",
           "description": "Use compelling adjectives and action verbs",
           "examples": "Transform your life with..., Discover the benefits of...",
-          "tags": ["Compelling", "Action-oriented", "Persuasive"]
+          "tags": ["Compelling", "Action-oriented", "Persuasive"],
+          "prompt": "Persuasive Language: Use compelling adjectives and action verbs. For example transform your life with..., discover the benefits of..."
         },
         {
           "id": "call-to-action",
           "name": "Call to Action",
           "description": "Direct phrases urging immediate response",
           "examples": "Sign up today!, Don't miss out!",
-          "tags": ["Urgent", "Direct", "Actionable"]
+          "tags": ["Urgent", "Direct", "Actionable"],
+          "prompt": "Call to Action: Direct phrases urging immediate response. For example sign up today!, don't miss out!"
         },
         {
           "id": "positive",
           "name": "Positive Tone",
           "description": "Emphasize benefits and positive outcomes",
           "examples": "Join our community of satisfied customers!",
-          "tags": ["Positive", "Beneficial", "Uplifting"]
+          "tags": ["Positive", "Beneficial", "Uplifting"],
+          "prompt": "Positive Tone: Emphasize benefits and positive outcomes. For example join our community of satisfied customers!"
         }
       ]
     },
@@ -90,21 +99,24 @@
           "name": "Character-Specific",
           "description": "Tailor language to reflect character backgrounds and personalities",
           "examples": "Formal language for noble characters, slang for streetwise characters",
-          "tags": ["Tailored", "Authentic", "Character-driven"]
+          "tags": ["Tailored", "Authentic", "Character-driven"],
+          "prompt": "Character-Specific: Tailor language to reflect character backgrounds and personalities. For example formal language for noble characters, slang for streetwise characters."
         },
         {
           "id": "emotional",
           "name": "Emotional Expression",
           "description": "Use expressive language to convey feelings",
           "examples": "I can't believe this is happening!",
-          "tags": ["Expressive", "Emotional", "Impactful"]
+          "tags": ["Expressive", "Emotional", "Impactful"],
+          "prompt": "Emotional Expression: Use expressive language to convey feelings. For example I can't believe this is happening!"
         },
         {
           "id": "imagery",
           "name": "Imagery and Metaphors",
           "description": "Employ figurative language to enhance storytelling",
           "examples": "Her smile was like sunshine on a rainy day",
-          "tags": ["Figurative", "Creative", "Descriptive"]
+          "tags": ["Figurative", "Creative", "Descriptive"],
+          "prompt": "Imagery and Metaphors: Employ figurative language to enhance storytelling. For example her smile was like sunshine on a rainy day."
         }
       ]
     },
@@ -117,21 +129,24 @@
           "name": "Professional Tone",
           "description": "Use formal vocabulary suitable for a corporate audience",
           "examples": "We aim to enhance productivity through...",
-          "tags": ["Professional", "Formal", "Business"]
+          "tags": ["Professional", "Formal", "Business"],
+          "prompt": "Professional Tone: Use formal vocabulary suitable for a corporate audience. For example we aim to enhance productivity through..."
         },
         {
           "id": "industry-jargon",
           "name": "Industry Jargon",
           "description": "Incorporate relevant terminology that resonates with the target audience",
           "examples": "Synergy, ROI",
-          "tags": ["Technical", "Industry-specific", "Professional"]
+          "tags": ["Technical", "Industry-specific", "Professional"],
+          "prompt": "Industry Jargon: Incorporate relevant terminology that resonates with the target audience. For example synergy, ROI."
         },
         {
           "id": "clear-objectives",
           "name": "Clear Objectives",
           "description": "State goals clearly",
           "examples": "Our mission is to..., We strive to achieve...",
-          "tags": ["Clear", "Goal-oriented", "Direct"]
+          "tags": ["Clear", "Goal-oriented", "Direct"],
+          "prompt": "Clear Objectives: State goals clearly. For example our mission is to..., we strive to achieve..."
         }
       ]
     },
@@ -144,21 +159,24 @@
           "name": "Conversational Language",
           "description": "Use informal, relatable vocabulary",
           "examples": "Hey everyone!, I just wanted to share...",
-          "tags": ["Informal", "Relatable", "Natural"]
+          "tags": ["Informal", "Relatable", "Natural"],
+          "prompt": "Conversational Language: Use informal, relatable vocabulary. For example hey everyone!, i just wanted to share..."
         },
         {
           "id": "personal-anecdotes",
           "name": "Personal Anecdotes",
           "description": "Include personal stories or experiences for relatability",
           "examples": "The other day, I realized...",
-          "tags": ["Personal", "Relatable", "Authentic"]
+          "tags": ["Personal", "Relatable", "Authentic"],
+          "prompt": "Personal Anecdotes: Include personal stories or experiences for relatability. For example the other day, i realized..."
         },
         {
           "id": "engagement",
           "name": "Engagement Prompts",
           "description": "Encourage interaction with viewers",
           "examples": "Let me know what you think in the comments!",
-          "tags": ["Interactive", "Engaging", "Community"]
+          "tags": ["Interactive", "Engaging", "Community"],
+          "prompt": "Engagement Prompts: Encourage interaction with viewers. For example let me know what you think in the comments!"
         }
       ]
     }

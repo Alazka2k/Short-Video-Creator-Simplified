@@ -8,10 +8,13 @@ import { ContentState, VisualizationType } from '../types'
 
 interface RequiredContentSelectionProps {
   selectedContent: ContentState
-  setSelectedContent: React.Dispatch<React.SetStateAction<ContentState>>
+  setSelectedContent: (content: ContentState) => void
   isGenerating: boolean
   selectedVisualization: VisualizationType
-  setSelectedVisualization: React.Dispatch<React.SetStateAction<VisualizationType>>
+  setSelectedVisualization: (value: VisualizationType) => void
+  selectedDuration?: {
+    serviceRestrictions?: string[]
+  } | null
 }
 
 export function RequiredContentSelection({
@@ -19,26 +22,102 @@ export function RequiredContentSelection({
   setSelectedContent,
   isGenerating,
   selectedVisualization,
-  setSelectedVisualization
+  setSelectedVisualization,
+  selectedDuration
 }: RequiredContentSelectionProps) {
 
-  useEffect(() => {
-    if (selectedContent.visuals) {
-      setSelectedVisualization('image')
+  const isServiceAllowed = (service: string) => {
+    console.log('Checking service:', {
+      service,
+      restrictions: selectedDuration?.serviceRestrictions,
+      hasRestrictions: !!selectedDuration?.serviceRestrictions
+    });
+    
+    if (!selectedDuration?.serviceRestrictions) return true;
+    
+    const restrictions = selectedDuration.serviceRestrictions.map(r => r.toLowerCase());
+    
+    // For visual content, check if any visual type is allowed
+    if (service === 'visuals') {
+      const isAllowed = restrictions.some(r => 
+        ['image', 'video', 'animation'].includes(r)
+      );
+      console.log('Visual service check:', {
+        isAllowed,
+        matchingTypes: restrictions.filter(r => 
+          ['image', 'video', 'animation'].includes(r)
+        )
+      });
+      return isAllowed;
     }
-  }, [selectedContent.visuals, setSelectedVisualization])
+    
+    const isAllowed = restrictions.includes(service.toLowerCase());
+    console.log('Regular service check:', {
+      service: service.toLowerCase(),
+      isAllowed,
+      restrictions
+    });
+    return isAllowed;
+  }
 
   const handleVisualContentChange = () => {
-    if (!isGenerating) {
-      setSelectedContent(prev => {
-        const newVisuals = !prev.visuals;
-        if (newVisuals) {
-          setSelectedVisualization('image');
-        }
-        return { ...prev, visuals: newVisuals };
+    const isAllowed = isServiceAllowed('visuals');
+    console.log('Visual content change attempted', {
+      isGenerating,
+      isAllowed,
+      currentState: selectedContent.visuals,
+      restrictions: selectedDuration?.serviceRestrictions
+    });
+    if (!isGenerating && isAllowed) {
+      const newVisuals = !selectedContent.visuals;
+      setSelectedContent({
+        ...selectedContent,
+        visuals: newVisuals
+      });
+      
+      // If disabling visuals, reset visualization type
+      if (!newVisuals) {
+        setSelectedVisualization('image');
+      }
+    }
+  }
+
+  const handleVoiceContentChange = () => {
+    const isAllowed = isServiceAllowed('voice');
+    console.log('Voice content change attempted', {
+      isGenerating,
+      isAllowed,
+      currentState: selectedContent.voice,
+      restrictions: selectedDuration?.serviceRestrictions
+    });
+    if (!isGenerating && isAllowed) {
+      setSelectedContent({
+        ...selectedContent,
+        voice: !selectedContent.voice
       });
     }
-  };
+  }
+
+  const handleMusicContentChange = () => {
+    const isAllowed = isServiceAllowed('music');
+    console.log('Music content change attempted', {
+      isGenerating,
+      isAllowed,
+      currentState: selectedContent.music,
+      restrictions: selectedDuration?.serviceRestrictions
+    });
+    if (!isGenerating && isAllowed) {
+      setSelectedContent({
+        ...selectedContent,
+        music: !selectedContent.music
+      });
+    }
+  }
+
+  // Add effect to monitor content changes
+  useEffect(() => {
+    console.log('Content state changed:', selectedContent);
+  }, [selectedContent]);
 
   return (
     <div className="space-y-4">
@@ -46,9 +125,14 @@ export function RequiredContentSelection({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className={cn(
           "cursor-pointer transition-colors",
-          selectedContent.voice ? "border-primary" : "hover:border-primary/50"
+          selectedContent.voice ? "border-primary" : "hover:border-primary/50",
+          !isServiceAllowed('voice') && "opacity-50 cursor-not-allowed"
         )}
-        onClick={() => !isGenerating && setSelectedContent(prev => ({ ...prev, voice: !prev.voice }))}
+        onClick={(e) => {
+          console.log('Voice card clicked');
+          e.preventDefault();
+          handleVoiceContentChange();
+        }}
         >
           <CardContent className="p-4 flex items-center gap-4">
             <Mic className={cn(
@@ -64,9 +148,14 @@ export function RequiredContentSelection({
 
         <Card className={cn(
           "cursor-pointer transition-colors",
-          selectedContent.visuals ? "border-primary" : "hover:border-primary/50"
+          selectedContent.visuals ? "border-primary" : "hover:border-primary/50",
+          !isServiceAllowed('visuals') && "opacity-50 cursor-not-allowed"
         )}
-        onClick={handleVisualContentChange}
+        onClick={(e) => {
+          console.log('Visuals card clicked');
+          e.preventDefault();
+          handleVisualContentChange();
+        }}
         >
           <CardContent className="p-4 flex items-center gap-4">
             <Image className={cn(
@@ -82,9 +171,14 @@ export function RequiredContentSelection({
 
         <Card className={cn(
           "cursor-pointer transition-colors",
-          selectedContent.music ? "border-primary" : "hover:border-primary/50"
+          selectedContent.music ? "border-primary" : "hover:border-primary/50",
+          !isServiceAllowed('music') && "opacity-50 cursor-not-allowed"
         )}
-        onClick={() => !isGenerating && setSelectedContent(prev => ({ ...prev, music: !prev.music }))}
+        onClick={(e) => {
+          console.log('Music card clicked');
+          e.preventDefault();
+          handleMusicContentChange();
+        }}
         >
           <CardContent className="p-4 flex items-center gap-4">
             <Music className={cn(

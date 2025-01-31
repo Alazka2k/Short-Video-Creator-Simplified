@@ -14,7 +14,6 @@ export interface ScriptParams {
 }
 
 export interface VisualSettings {
-  artistStyle: string
   shotStyle: string
   aspectRatio: string
 }
@@ -30,7 +29,7 @@ export interface RequestParams {
       }
       script: ScriptParams
       image: {
-        artistStyle: string
+        shotStyle: string
         aspectRatio: string
         sValue: string
       }

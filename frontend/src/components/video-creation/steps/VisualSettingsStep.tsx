@@ -17,12 +17,10 @@ interface VisualSettingsStepProps {
   visualSettings: {
     shotStyle: string
     aspectRatio: string
-    artistStyle: string
   }
   setVisualSettings: (value: {
     shotStyle: string
     aspectRatio: string
-    artistStyle: string
   }) => void
   selectedVisualization: 'image' | 'video' | 'animation'
   isGenerating: boolean

@@ -9,14 +9,16 @@
           "name": "Three-Act Structure",
           "description": "Slow build-up in Act 1, increasing tension in Act 2, and rapid climax in Act 3",
           "examples": "Character introduction scenes, rising action sequences, climactic finale",
-          "tags": ["Structured", "Dynamic", "Progressive"]
+          "tags": ["Structured", "Dynamic", "Progressive"],
+          "prompt": "Three-Act Structure: Slow build-up in Act 1, increasing tension in Act 2, and rapid climax in Act 3. For example a character introduction scene, a rising action sequence, a climactic finale."
         },
         {
           "id": "varying-lengths",
           "name": "Varying Scene Lengths",
           "description": "Quick cuts for energy, longer takes for depth, mixing it up to prevent monotony",
           "examples": "Action montages, emotional dialogue scenes, establishing shots",
-          "tags": ["Mixed", "Varied", "Dynamic"]
+          "tags": ["Mixed", "Varied", "Dynamic"],
+          "prompt": "Varying Scene Lengths: Quick cuts for energy, longer takes for depth, mixing it up to prevent monotony. For example an action montage, an emotional dialogue scene, an establishing shot."
         }
       ]
     },
@@ -29,14 +31,16 @@
           "name": "Measured Pacing",
           "description": "Slower, more consistent rhythm to allow for information absorption",
           "examples": "Expert interviews, detailed explanations, archival footage",
-          "tags": ["Consistent", "Informative", "Deliberate"]
+          "tags": ["Consistent", "Informative", "Deliberate"],
+          "prompt": "Measured Pacing: Slower, more consistent rhythm to allow for information absorption. For example an expert interview, a detailed explanation, an archival footage."
         },
         {
           "id": "alternating",
           "name": "Alternating Tempos",
           "description": "Slower rhythms for reflection, quicker tempos for high-energy segments",
           "examples": "Contemplative nature scenes, dramatic reenactments, news footage",
-          "tags": ["Dynamic", "Balanced", "Varied"]
+          "tags": ["Dynamic", "Balanced", "Varied"],
+          "prompt": "Alternating Tempos: Slower rhythms for reflection, quicker tempos for high-energy segments. For example a contemplative nature scene, a dramatic reenactment, a news footage."
         }
       ]
     },
@@ -49,14 +53,16 @@
           "name": "Fast-Paced Rhythm",
           "description": "Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension",
           "examples": "Chase sequences, fight scenes, rapid montages",
-          "tags": ["Dynamic", "Intense", "Energetic"]
+          "tags": ["Dynamic", "Intense", "Energetic"],
+          "prompt": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension. For example a chase sequence, a fight scene, a rapid montage."
         },
         {
           "id": "contrast",
           "name": "Contrast Pacing",
           "description": "Alternating between fast and slow pacing to create unpredictability and keep viewers engaged",
           "examples": "Quiet character moments, sudden action bursts, suspense building",
-          "tags": ["Unpredictable", "Engaging", "Varied"]
+          "tags": ["Unpredictable", "Engaging", "Varied"],
+          "prompt": "Contrast Pacing: Alternating between fast and slow pacing to create unpredictability and keep viewers engaged. For example a quiet character moment, a sudden action burst, a suspense building."
         }
       ]
     },
@@ -69,14 +75,16 @@
           "name": "Balanced Pacing",
           "description": "Alternating between fast-paced, high-energy segments and slower, more informative sections",
           "examples": "Quick overview segments, detailed demonstrations, practice sessions",
-          "tags": ["Balanced", "Educational", "Structured"]
+          "tags": ["Balanced", "Educational", "Structured"],
+          "prompt": "Balanced Pacing: Alternating between fast-paced, high-energy segments and slower, more informative sections. For example a quick overview segment, a detailed demonstration, a practice session."
         },
         {
           "id": "deliberate",
           "name": "Deliberate Pacing",
           "description": "Slower pace for complex concepts, allowing viewers to absorb information",
           "examples": "Step-by-step tutorials, concept explanations, review sections",
-          "tags": ["Methodical", "Clear", "Thorough"]
+          "tags": ["Methodical", "Clear", "Thorough"],
+          "prompt": "Deliberate Pacing: Slower pace for complex concepts, allowing viewers to absorb information. For example a step-by-step tutorial, a concept explanation, a review section."
         }
       ]
     },
@@ -89,14 +97,16 @@
           "name": "Energetic Pacing",
           "description": "Faster and more dynamic to generate enthusiasm and encourage action",
           "examples": "Product highlights, testimonial montages, call-to-action sequences",
-          "tags": ["Dynamic", "Engaging", "Action-oriented"]
+          "tags": ["Dynamic", "Engaging", "Action-oriented"],
+          "prompt": "Energetic Pacing: Faster and more dynamic to generate enthusiasm and encourage action. For example a product highlight, a testimonial montage, a call-to-action sequence."
         },
         {
           "id": "music-driven",
           "name": "Music-Driven Rhythm",
           "description": "Using upbeat music combined with quick-paced editing to create momentum",
           "examples": "Brand montages, lifestyle sequences, product demonstrations",
-          "tags": ["Rhythmic", "Upbeat", "Flowing"]
+          "tags": ["Rhythmic", "Upbeat", "Flowing"],
+          "prompt": "Music-Driven Rhythm: Using upbeat music combined with quick-paced editing to create momentum. For example a brand montage, a lifestyle sequence, a product demonstration."
         }
       ]
     }

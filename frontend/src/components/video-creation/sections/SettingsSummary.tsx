@@ -8,7 +8,6 @@ import characterPerspectiveData from '@/data/video-creation/script/character-per
 import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
 import pacingStructureData from '@/data/video-creation/script/pacing-structure_select-option.json'
-import artistStyleData from '@/data/video-creation/image/artist-style_select-option.json'
 import aspectRatioData from '@/data/video-creation/image/aspect-ratio_select-option.json'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
 import { ContentState } from '../types'
@@ -29,7 +28,10 @@ interface SettingsSummaryProps {
     label: string
     value: number
     scenes: number
-  }
+    description: string
+    lengthDescription: string
+    serviceRestrictions: string[]
+  } | null | undefined
   selectedContent: ContentState
   scriptParams: {
     characterPerspective: string
@@ -40,7 +42,6 @@ interface SettingsSummaryProps {
   selectedVoice: string
   selectedVisualization: 'image' | 'video' | 'animation'
   visualSettings: {
-    artistStyle: string
     shotStyle: string
     aspectRatio: string
   }
@@ -102,8 +103,8 @@ export function SettingsSummary({
   )
 
   // Format visual settings data
-  const artistStyleDisplay = formatSettingDisplay(
-    findOptionData(artistStyleData, visualSettings.artistStyle)
+  const shotStyleDisplay = formatSettingDisplay(
+    findOptionData(shotStyleData, visualSettings.shotStyle)
   )
   const aspectRatioDisplay = findOptionData(aspectRatioData, visualSettings.aspectRatio)
 
@@ -213,8 +214,6 @@ export function SettingsSummary({
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-4 h-4 shrink-0" />
                     <span>{selectedDuration.label}</span>
-                    <span className="text-muted-foreground/60">•</span>
-                    <span className="text-muted-foreground/80">~{selectedDuration.scenes} scenes</span>
                   </div>
                 </div>
               )}

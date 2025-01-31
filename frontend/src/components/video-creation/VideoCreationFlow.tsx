@@ -71,6 +71,19 @@ const STEPS = [
   }
 ]
 
+interface State {
+  currentStep: number
+  prompt: string
+  focus: string
+  selectedDuration: typeof durationOptions[0] | null | undefined
+  selectedContent: ContentState
+  selectedVoice: string
+  selectedVisualization: VisualizationType
+  visualSettings: any
+  scriptParams: ScriptParams
+  showFocusField: boolean
+}
+
 export function VideoCreationFlow({ 
   mode, 
   onSubmit, 
@@ -78,8 +91,7 @@ export function VideoCreationFlow({
   isDemo = false 
 }: VideoCreationFlowProps) {
   const router = useRouter()
-  const { state, updateState } = useVideoCreationState(defaultValues)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const { state, updateState, handleGenerateVideo, handleCreateProject, isGenerating } = useVideoCreationState(defaultValues)
 
   // Destructure state for easier access
   const {
@@ -99,7 +111,7 @@ export function VideoCreationFlow({
   const setCurrentStep = useCallback((step: number) => updateState({ currentStep: step }), [updateState])
   const setPrompt = useCallback((value: string) => updateState({ prompt: value }), [updateState])
   const setFocus = useCallback((value: string) => updateState({ focus: value }), [updateState])
-  const setSelectedDuration = useCallback((value: typeof durationOptions[0]) => updateState({ selectedDuration: value }), [updateState])
+  const setSelectedDuration = useCallback((value: typeof durationOptions[0] | null | undefined) => updateState({ selectedDuration: value }), [updateState])
   
   const setSelectedContent = useCallback((value: ContentState | ((prev: ContentState) => ContentState)) => {
     if (typeof value === 'function') {
@@ -156,128 +168,23 @@ export function VideoCreationFlow({
     return `${height}:${width}`
   }
 
-  const handleCreateProject = async () => {
+  const onCreateProject = async () => {
     if (isDemo) return
-
     try {
-      const requestBody: RequestParams = {
-        prompt,
-        parameters: {
-          llmGenParams: {
-            general: {
-              sceneAmount: selectedDuration.scenes,
-              lengthDescription: getDurationDescription(selectedDuration),
-              generalDescription: focus || undefined
-            },
-            script: scriptParams,
-            image: {
-              artistStyle: visualSettings.artistStyle,
-              aspectRatio: visualSettings.aspectRatio,
-              sValue: "500" // Default value for now
-            }
-          },
-          voiceGenParams: {
-            elevenlabsVoiceId: selectedVoice
-          },
-          imageGenParams: {},
-          animationGenParams: {},
-          videoGenParams: {
-            aspectRatio: selectedVisualization === 'video' 
-              ? invertAspectRatio(visualSettings.aspectRatio)
-              : visualSettings.aspectRatio
-          },
-          serviceConfig: {
-            skipVoice: !selectedContent.voice,
-            skipMusic: !selectedContent.music,
-            skipImage: !selectedContent.visuals,
-            skipVisualization: selectedVisualization === 'image'
-          },
-          visualizationType: selectedVisualization === 'image' ? 'image' : selectedVisualization
-        }
-      }
-
-      const response = await fetch('/api/job/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create project')
-      }
-
-      const data = await response.json()
-      router.push(`/projects/${data.result.jobId}`)
+      const jobId = await handleCreateProject()
+      router.push(`/projects/${jobId}`)
     } catch (error) {
       console.error('Error creating project:', error)
     }
   }
 
-  const handleGenerateVideo = async () => {
+  const onGenerateVideo = async () => {
     if (isDemo) return
-
-    setIsGenerating(true)
     try {
-      const requestBody: RequestParams = {
-        prompt,
-        parameters: {
-          llmGenParams: {
-            general: {
-              sceneAmount: selectedDuration.scenes,
-              lengthDescription: getDurationDescription(selectedDuration),
-              generalDescription: focus || undefined
-            },
-            script: scriptParams,
-            image: {
-              artistStyle: visualSettings.artistStyle,
-              aspectRatio: visualSettings.aspectRatio,
-              sValue: "500" // Default value for now
-            }
-          },
-          voiceGenParams: {
-            elevenlabsVoiceId: selectedVoice
-          },
-          imageGenParams: {},
-          animationGenParams: {},
-          videoGenParams: {
-            aspectRatio: selectedVisualization === 'video' 
-              ? invertAspectRatio(visualSettings.aspectRatio)
-              : visualSettings.aspectRatio
-          },
-          serviceConfig: {
-            skipVoice: !selectedContent.voice,
-            skipMusic: !selectedContent.music,
-            skipImage: !selectedContent.visuals,
-            skipVisualization: selectedVisualization === 'image'
-          },
-          visualizationType: selectedVisualization === 'image' ? 'image' : selectedVisualization
-        }
-      }
-
-      const response = await fetch('/api/job/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...requestBody,
-          assemblyConfig: {
-            immediate: true
-          }
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate video')
-      }
-
-      const data = await response.json()
-      router.push(`/videos/${data.result.jobId}`)
+      const jobId = await handleGenerateVideo()
+      router.push(`/videos/${jobId}`)
     } catch (error) {
       console.error('Error generating video:', error)
-      setIsGenerating(false)
     }
   }
 
@@ -300,25 +207,13 @@ export function VideoCreationFlow({
                 isGenerating={isGenerating}
                 hasVisualContent={selectedContent.visuals}
                 setHasVisualContent={(value) => setSelectedContent(prev => ({ ...prev, visuals: value }))}
+                hasVoiceContent={selectedContent.voice}
+                setHasVoiceContent={(value) => setSelectedContent(prev => ({ ...prev, voice: value }))}
+                hasMusicContent={selectedContent.music}
+                setHasMusicContent={(value) => setSelectedContent(prev => ({ ...prev, music: value }))}
                 selectedVisualization={selectedVisualization}
                 setSelectedVisualization={setSelectedVisualization}
               />
-              
-              <RequiredContentSelection
-                selectedContent={selectedContent}
-                setSelectedContent={setSelectedContent}
-                isGenerating={isGenerating}
-                selectedVisualization={selectedVisualization}
-                setSelectedVisualization={setSelectedVisualization}
-              />
-
-              {selectedContent.visuals && (
-                <VisualizationTypeSelection
-                  selectedVisualization={selectedVisualization}
-                  setSelectedVisualization={setSelectedVisualization}
-                  isGenerating={isGenerating}
-                />
-              )}
             </div>
           )}
 
@@ -404,29 +299,26 @@ export function VideoCreationFlow({
 
         {/* Quick creation content */}
         <div className="grid gap-8 lg:grid-cols-[1fr,320px]">
-        <div className="space-y-8">
-          <BasicInformationStep
-            prompt={prompt}
-            setPrompt={setPrompt}
-            focus={focus}
-            setFocus={setFocus}
-            showFocusField={showFocusField}
-            setShowFocusField={setShowFocusField}
-            selectedDuration={selectedDuration}
-            setSelectedDuration={setSelectedDuration}
-            isGenerating={isGenerating}
-            hasVisualContent={selectedContent.visuals}
-            setHasVisualContent={(value) => setSelectedContent(prev => ({ ...prev, visuals: value }))}
-            selectedVisualization={selectedVisualization}
-            setSelectedVisualization={setSelectedVisualization}
-          />
-          <RequiredContentSelection
-            selectedContent={selectedContent}
-            setSelectedContent={setSelectedContent}
-            isGenerating={isGenerating}
-            selectedVisualization={selectedVisualization}
-            setSelectedVisualization={setSelectedVisualization}
-          />
+          <div className="space-y-8">
+            <BasicInformationStep
+              prompt={prompt}
+              setPrompt={setPrompt}
+              focus={focus}
+              setFocus={setFocus}
+              showFocusField={showFocusField}
+              setShowFocusField={setShowFocusField}
+              selectedDuration={selectedDuration}
+              setSelectedDuration={setSelectedDuration}
+              isGenerating={isGenerating}
+              hasVisualContent={selectedContent.visuals}
+              setHasVisualContent={(value) => setSelectedContent(prev => ({ ...prev, visuals: value }))}
+              hasVoiceContent={selectedContent.voice}
+              setHasVoiceContent={(value) => setSelectedContent(prev => ({ ...prev, voice: value }))}
+              hasMusicContent={selectedContent.music}
+              setHasMusicContent={(value) => setSelectedContent(prev => ({ ...prev, music: value }))}
+              selectedVisualization={selectedVisualization}
+              setSelectedVisualization={setSelectedVisualization}
+            />
           </div>
 
           {/* Settings summary - Sticky */}
@@ -442,14 +334,14 @@ export function VideoCreationFlow({
               visualSettings={visualSettings}
             />
           </div>
-      </div>
+        </div>
 
         {/* Actions */}
         <div className="flex gap-4 pt-4 border-t">
           <Button
             variant="outline"
             className="flex-1"
-            onClick={handleCreateProject}
+            onClick={onCreateProject}
             disabled={!prompt.trim() || isGenerating}
           >
             <Download className="w-4 h-4 mr-2" />
@@ -457,7 +349,7 @@ export function VideoCreationFlow({
           </Button>
           <Button
             className="flex-1"
-            onClick={handleGenerateVideo}
+            onClick={onGenerateVideo}
             disabled={!prompt.trim() || isGenerating}
           >
             {isGenerating ? (
@@ -483,28 +375,31 @@ export function VideoCreationFlow({
       <div className="flex flex-col items-center gap-4 pb-6 border-b">
         <div className="relative">
           <Button
-            onClick={handleGenerateVideo}
+            onClick={onGenerateVideo}
             disabled={!canCreateContent}
             className={cn(
               "relative px-16 py-6 w-[600px] z-10",
-              "bg-dark dark:bg-slate-900",
-              "hover:bg-accent/5 dark:hover:bg-slate-900",
+              "bg-gradient-to-r from-background via-accent/5 to-background",
+              "dark:from-slate-900 dark:via-slate-800 dark:to-slate-900",
+              "hover:from-accent/5 hover:via-accent/10 hover:to-accent/5",
+              "dark:hover:from-slate-800 dark:hover:via-slate-700 dark:hover:to-slate-800",
               "transition-all duration-300",
               "shadow-lg hover:shadow-xl",
-              !canCreateContent && "opacity-50"
+              "border border-border/50",
+              !canCreateContent && "opacity-50 cursor-not-allowed hover:from-background hover:via-accent/5 hover:to-background dark:hover:from-slate-900 dark:hover:via-slate-800 dark:hover:to-slate-900"
             )}
             size="lg"
           >
             <div className="relative flex items-center justify-center gap-3">
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin text-foreground dark:text-white" />
-                  <span className="text-lg font-medium text-foreground dark:text-white">Creating Content...</span>
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <span className="text-lg font-medium text-primary">Creating Content...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5 text-foreground dark:text-white" />
-                  <span className="text-lg font-medium text-foreground dark:text-white">Create Content</span>
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span className="text-lg font-medium text-primary">Create Content</span>
                 </>
               )}
             </div>
@@ -513,7 +408,10 @@ export function VideoCreationFlow({
             <HoverBorderGradient
               as="div"
               containerClassName="w-full h-full"
-              className="bg-transparent"
+              className={cn(
+                "bg-transparent transition-opacity duration-300",
+                !canCreateContent && "opacity-30"
+              )}
               duration={3}
             />
           </div>

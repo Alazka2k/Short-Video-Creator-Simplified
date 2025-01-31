@@ -5,42 +5,42 @@
         "lengthDescription": "Maximum 5-10 seconds video for testing purposes",
         "name": "Test Option",
         "description": "This option is a test option.",
-        "serviceRestrictions": ["Image", "Voice", "Video", "Music", "Animation"]
+        "serviceRestrictions": ["image", "voice", "video", "music", "animation"]
     },
     {
         "sceneAmount": 6,
         "lengthDescription": "15 seconds with the first 5 seconds containing the hook",
         "name": "Video Teaser",
         "description": "A short video teaser, perfect for capturing attention quickly.",
-        "serviceRestrictions": ["Image", "Voice", "Video", "Music", "Animation"]
+        "serviceRestrictions": ["image", "voice", "video", "music", "animation"]
     },
     {
         "sceneAmount": 9,
         "lengthDescription": "50 seconds with the first 10 seconds containing the hook",
         "name": "YouTube Short",
         "description": "A concise video, ideal for YouTube Shorts. Monetization is possible.",
-        "serviceRestrictions": ["Image", "Voice", "Video", "Music", "Animation"]
+        "serviceRestrictions": ["image", "voice", "video", "music", "animation"]
     },
     {
         "sceneAmount": 13,
         "lengthDescription": "Over one minute with the first 20 seconds containing the hook",
         "name": "Short TikTok Video",
         "description": "A longer TikTok video, suitable for more detailed content. Monetization is possible.",
-        "serviceRestrictions": ["Image", "Voice", "Video", "Music", "Animation"]
+        "serviceRestrictions": ["image", "voice", "video", "music", "animation"]
     },
     {
         "sceneAmount": 20,
         "lengthDescription": "2 minutes with the first 30 seconds containing the hook",
         "name": "Long Image Story",
         "description": "A long image-based story, great for storytelling.",
-        "serviceRestrictions": ["Image", "Voice", "Music"]
+        "serviceRestrictions": ["image", "voice", "music"]
     },
     {
         "sceneAmount": 50,
         "lengthDescription": "5 minutes with the first 1 minute containing the hook",
         "name": "Podcast",
         "description": "A podcast format, ideal for in-depth discussions.",
-        "serviceRestrictions": ["Voice"]
+        "serviceRestrictions": ["voice"]
     }
   ]
 }

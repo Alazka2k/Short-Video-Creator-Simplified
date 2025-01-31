@@ -9,21 +9,24 @@
           "name": "Expert",
           "description": "Provides authoritative insights and analysis",
           "examples": "Scientists, historians, industry leaders",
-          "tags": ["Authoritative", "Analytical", "Professional"]
+          "tags": ["Authoritative", "Analytical", "Professional"],
+          "prompt": "Expert: Provides authoritative insights and analysis. For example a Scientists, historians, industry leaders."
         },
         {
           "id": "documentary-eyewitness",
           "name": "Eyewitness",
           "description": "Offers first-hand accounts of events",
           "examples": "Participants in historical events, local residents",
-          "tags": ["First-hand", "Personal", "Authentic"]
+          "tags": ["First-hand", "Personal", "Authentic"],
+          "prompt": "Eyewitness: Offers first-hand accounts of events. For example a participant in a historical event, a local resident."
         },
         {
           "id": "documentary-affected",
           "name": "Affected Individual",
           "description": "Shares personal experiences related to the topic",
           "examples": "Patients in medical documentaries, environmental impact victims",
-          "tags": ["Personal", "Emotional", "Impacted"]
+          "tags": ["Personal", "Emotional", "Impacted"],
+          "prompt": "Affected Individual: Shares personal experiences related to the topic. For example a patient in a medical documentary, an environmental impact victim."
         }
       ]
     },
@@ -36,21 +39,24 @@
           "name": "Instructor",
           "description": "Guides learners through concepts and skills",
           "examples": "Teachers, trainers, coaches",
-          "tags": ["Educational", "Guiding", "Clear"]
+          "tags": ["Educational", "Guiding", "Clear"],
+          "prompt": "Instructor: Guides learners through concepts and skills. For example a teacher, a trainer, a coach."
         },
         {
           "id": "educational-student",
           "name": "Student/Learner",
           "description": "Demonstrates the learning process, asks questions",
           "examples": "On-screen learner, relatable character",
-          "tags": ["Learning", "Relatable", "Curious"]
+          "tags": ["Learning", "Relatable", "Curious"],
+          "prompt": "Student/Learner: Demonstrates the learning process, asks questions. For example an on-screen learner, a relatable character."
         },
         {
           "id": "educational-practitioner",
           "name": "Practitioner",
           "description": "Shows real-world application of knowledge",
           "examples": "Professionals in their field, experienced craftspeople",
-          "tags": ["Practical", "Experienced", "Applied"]
+          "tags": ["Practical", "Experienced", "Applied"],
+          "prompt": "Practitioner: Shows real-world application of knowledge. For example a professional in their field, an experienced craftsperson."
         }
       ]
     },
@@ -63,21 +69,24 @@
           "name": "CEO/Executive",
           "description": "Provides vision and leadership perspective",
           "examples": "Company founders, top management",
-          "tags": ["Leadership", "Strategic", "Visionary"]
+          "tags": ["Leadership", "Strategic", "Visionary"],
+          "prompt": "CEO/Executive: Provides vision and leadership perspective. For example a company founder, top management."
         },
         {
           "id": "corporate-employee",
           "name": "Employee",
           "description": "Offers insights into company culture and operations",
           "examples": "Team members, department heads",
-          "tags": ["Internal", "Operational", "Cultural"]
+          "tags": ["Internal", "Operational", "Cultural"],
+          "prompt": "Employee: Offers insights into company culture and operations. For example a team member, a department head."
         },
         {
           "id": "corporate-client",
           "name": "Client/Partner",
           "description": "Shares experiences of working with the company",
           "examples": "Business partners, long-term clients",
-          "tags": ["External", "Collaborative", "Testimonial"]
+          "tags": ["External", "Collaborative", "Testimonial"],
+          "prompt": "Client/Partner: Shares experiences of working with the company. For example a business partner, a long-term client."
         }
       ]
     },
@@ -90,21 +99,24 @@
           "name": "Content Creator",
           "description": "Shares personal experiences and opinions",
           "examples": "Vlogger, influencer",
-          "tags": ["Personal", "Authentic", "Engaging"]
+          "tags": ["Personal", "Authentic", "Engaging"],
+          "prompt": "Content Creator: Shares personal experiences and opinions. For example a vlogger, an influencer."
         },
         {
           "id": "personal-guest",
           "name": "Guest",
           "description": "Provides additional perspectives or expertise",
           "examples": "Friends, collaborators, interviewees",
-          "tags": ["Collaborative", "Fresh", "Diverse"]
+          "tags": ["Collaborative", "Fresh", "Diverse"],
+          "prompt": "Guest: Provides additional perspectives or expertise. For example a friend, a collaborator, an interviewee."
         },
         {
           "id": "personal-audience",
           "name": "Audience Stand-in",
           "description": "Represents the viewer's perspective",
           "examples": "Character asking questions viewers might have",
-          "tags": ["Relatable", "Inquisitive", "Representative"]
+          "tags": ["Relatable", "Inquisitive", "Representative"],
+          "prompt": "Audience Stand-in: Represents the viewer's perspective. For example a character asking questions viewers might have."
         }
       ]
     }

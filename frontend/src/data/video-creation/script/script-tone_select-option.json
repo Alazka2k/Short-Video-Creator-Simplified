@@ -9,21 +9,24 @@
           "name": "Authoritative",
           "description": "Convey expertise and credibility",
           "examples": "Confident statements, well-researched facts",
-          "tags": ["Expert", "Credible", "Factual"]
+          "tags": ["Expert", "Credible", "Factual"],
+          "prompt": "Authoritative: Convey expertise and credibility. For example a confident statement, a well-researched fact."
         },
         {
           "id": "objective",
           "name": "Objective",
           "description": "Present information impartially, avoiding bias",
           "examples": "Balanced perspectives, neutral language",
-          "tags": ["Impartial", "Balanced", "Neutral"]
+          "tags": ["Impartial", "Balanced", "Neutral"],
+          "prompt": "Objective: Present information impartially, avoiding bias. For example a balanced perspective, a neutral language."
         },
         {
           "id": "inquisitive",
           "name": "Inquisitive",
           "description": "Foster curiosity and critical thinking",
           "examples": "Thought-provoking questions, exploratory language",
-          "tags": ["Curious", "Exploratory", "Engaging"]
+          "tags": ["Curious", "Exploratory", "Engaging"],
+          "prompt": "Inquisitive: Foster curiosity and critical thinking. For example a thought-provoking question, an exploratory language."
         }
       ]
     },
@@ -36,21 +39,24 @@
           "name": "Encouraging",
           "description": "Motivate and support learners",
           "examples": "Positive reinforcement, empathetic language",
-          "tags": ["Supportive", "Positive", "Motivating"]
+          "tags": ["Supportive", "Positive", "Motivating"],
+          "prompt": "Encouraging: Motivate and support learners. For example a positive reinforcement, an empathetic language."
         },
         {
           "id": "patient",
           "name": "Patient",
           "description": "Explain concepts thoroughly without rushing",
           "examples": "Step-by-step instructions, repeated key points",
-          "tags": ["Thorough", "Clear", "Methodical"]
+          "tags": ["Thorough", "Clear", "Methodical"],
+          "prompt": "Patient: Explain concepts thoroughly without rushing. For example a step-by-step instruction, a repeated key point."
         },
         {
           "id": "enthusiastic",
           "name": "Enthusiastic",
           "description": "Show passion for the subject matter",
           "examples": "Energetic delivery, expressing genuine interest",
-          "tags": ["Passionate", "Energetic", "Engaging"]
+          "tags": ["Passionate", "Energetic", "Engaging"],
+          "prompt": "Enthusiastic: Show passion for the subject matter. For example an energetic delivery, an expressing genuine interest."
         }
       ]
     },
@@ -63,21 +69,24 @@
           "name": "Exciting",
           "description": "Generate enthusiasm and interest",
           "examples": "Upbeat language, dynamic pacing",
-          "tags": ["Dynamic", "Enthusiastic", "Engaging"]
+          "tags": ["Dynamic", "Enthusiastic", "Engaging"],
+          "prompt": "Exciting: Generate enthusiasm and interest. For example an upbeat language, a dynamic pacing."
         },
         {
           "id": "persuasive",
           "name": "Persuasive",
           "description": "Convince the audience to take action",
           "examples": "Emphasizing benefits, creating urgency",
-          "tags": ["Convincing", "Action-oriented", "Compelling"]
+          "tags": ["Convincing", "Action-oriented", "Compelling"],
+          "prompt": "Persuasive: Convince the audience to take action. For example emphasizing benefits, creating urgency."
         },
         {
           "id": "confident",
           "name": "Confident",
           "description": "Project assurance in the product or service",
           "examples": "Authoritative statements, positive predictions",
-          "tags": ["Assured", "Authoritative", "Positive"]
+          "tags": ["Assured", "Authoritative", "Positive"],
+          "prompt": "Confident: Project assurance in the product or service. For example an authoritative statement, a positive prediction."
         }
       ]
     },
@@ -90,21 +99,24 @@
           "name": "Emotive",
           "description": "Convey and evoke emotions",
           "examples": "Dramatic language, expressive dialogue",
-          "tags": ["Emotional", "Dramatic", "Expressive"]
+          "tags": ["Emotional", "Dramatic", "Expressive"],
+          "prompt": "Emotive: Convey and evoke emotions. For example a dramatic language, an expressive dialogue."
         },
         {
           "id": "atmospheric",
           "name": "Atmospheric",
           "description": "Create mood and ambiance",
           "examples": "Descriptive narration, tone-setting dialogue",
-          "tags": ["Moody", "Descriptive", "Ambient"]
+          "tags": ["Moody", "Descriptive", "Ambient"],
+          "prompt": "Atmospheric: Create mood and ambiance. For example a descriptive narration, a tone-setting dialogue."
         },
         {
           "id": "character-driven",
           "name": "Character-Driven",
           "description": "Reflect individual personalities",
           "examples": "Unique speech patterns, character-specific attitudes",
-          "tags": ["Personal", "Unique", "Authentic"]
+          "tags": ["Personal", "Unique", "Authentic"],
+          "prompt": "Character-Driven: Reflect individual personalities. For example a unique speech pattern, a character-specific attitude."
         }
       ]
     },
@@ -117,21 +129,24 @@
           "name": "Professional",
           "description": "Maintain a polished, business-appropriate tone",
           "examples": "Formal language, respectful address",
-          "tags": ["Polished", "Formal", "Respectful"]
+          "tags": ["Polished", "Formal", "Respectful"],
+          "prompt": "Professional: Maintain a polished, business-appropriate tone. For example a formal language, a respectful address."
         },
         {
           "id": "informative",
           "name": "Informative",
           "description": "Focus on clear communication of facts and data",
           "examples": "Concise explanations, relevant statistics",
-          "tags": ["Clear", "Factual", "Concise"]
+          "tags": ["Clear", "Factual", "Concise"],
+          "prompt": "Informative: Focus on clear communication of facts and data. For example a concise explanation, a relevant statistic."
         },
         {
           "id": "aspirational",
           "name": "Aspirational",
           "description": "Inspire confidence and ambition",
           "examples": "Future-oriented language, success-focused narrative",
-          "tags": ["Inspiring", "Ambitious", "Forward-looking"]
+          "tags": ["Inspiring", "Ambitious", "Forward-looking"],
+          "prompt": "Aspirational: Inspire confidence and ambition. For example a future-oriented language, a success-focused narrative."
         }
       ]
     },
@@ -144,21 +159,24 @@
           "name": "Casual",
           "description": "Create a relaxed, friendly atmosphere",
           "examples": "Conversational language, personal anecdotes",
-          "tags": ["Relaxed", "Friendly", "Natural"]
+          "tags": ["Relaxed", "Friendly", "Natural"],
+          "prompt": "Casual: Create a relaxed, friendly atmosphere. For example a conversational language, a personal anecdote."
         },
         {
           "id": "authentic",
           "name": "Authentic",
           "description": "Project genuineness and relatability",
           "examples": "Honest reflections, sharing real experiences",
-          "tags": ["Genuine", "Relatable", "Honest"]
+          "tags": ["Genuine", "Relatable", "Honest"],
+          "prompt": "Authentic: Project genuineness and relatability. For example an honest reflection, a sharing real experiences."
         },
         {
           "id": "interactive",
           "name": "Interactive",
           "description": "Engage directly with the audience",
           "examples": "Asking for opinions, responding to comments",
-          "tags": ["Engaging", "Interactive", "Responsive"]
+          "tags": ["Engaging", "Interactive", "Responsive"],
+          "prompt": "Interactive: Engage directly with the audience. For example asking for opinions, responding to comments."
         }
       ]
     }
