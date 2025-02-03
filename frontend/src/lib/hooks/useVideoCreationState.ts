@@ -8,9 +8,17 @@ import scriptToneData from '@/data/video-creation/script/script-tone_select-opti
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
 import pacingStructureData from '@/data/video-creation/script/pacing-structure_select-option.json'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
+import { useAuth } from '@/lib/auth/AuthContext'
+import { apiClient } from '@/lib/api/apiClient'
 
 const STORAGE_KEY = 'video_creation_state'
 const IMAGE_CACHE_KEY = 'video_creation_image_cache'
+const M2M_TOKEN_KEY = 'video_creation_m2m_token'
+
+interface M2MTokenData {
+  access_token: string;
+  expires_at: number; // timestamp when token expires
+}
 
 interface VideoCreationState {
   currentStep: number
@@ -29,7 +37,9 @@ interface VideoCreationState {
 }
 
 export function useVideoCreationState(defaultValues?: any) {
+  const { getM2MToken } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false)
+  const [m2mToken, setM2MToken] = useState<string | null>(null)
   // Initialize state from localStorage or default values
   const [state, setState] = useState<VideoCreationState>(() => {
     if (typeof window === 'undefined') return getDefaultState(defaultValues)
@@ -77,6 +87,11 @@ export function useVideoCreationState(defaultValues?: any) {
       return JSON.stringify(newState) !== JSON.stringify(prev) ? newState : prev
     })
   }, [])
+
+  // Initialize M2M token
+  useEffect(() => {
+    getM2MToken().then(token => setM2MToken(token));
+  }, [getM2MToken]);
 
   const findVoiceId = (selectedId: string): string => {
     if (!selectedId) return '';
@@ -150,20 +165,8 @@ export function useVideoCreationState(defaultValues?: any) {
   const handleCreateProject = useCallback(async () => {
     try {
       const requestBody = constructRequestBody()
-      const response = await fetch('/api/job/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create project')
-      }
-
-      const data = await response.json()
-      return data.result.jobId
+      const response = await apiClient.post<{ result: { jobId: string } }>('/api/job/generate', requestBody);
+      return response.result.jobId;
     } catch (error) {
       console.error('Error creating project:', error)
       throw error
@@ -174,20 +177,8 @@ export function useVideoCreationState(defaultValues?: any) {
     setIsGenerating(true)
     try {
       const requestBody = constructRequestBody()
-      const response = await fetch('/api/job/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate video')
-      }
-
-      const data = await response.json()
-      return data.result.jobId
+      const response = await apiClient.post<{ result: { jobId: string } }>('/api/job/generate', requestBody);
+      return response.result.jobId;
     } catch (error) {
       console.error('Error generating video:', error)
       throw error

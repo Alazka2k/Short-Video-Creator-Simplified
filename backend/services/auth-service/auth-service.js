@@ -22,6 +22,7 @@ const userService = require('./services/user.service');
 const socialAuthService = require('./services/social-auth.service');
 const { TokenService } = require('./utils/token');
 const logger = require('../../shared/utils/logger');
+const axios = require('axios');
 
 class AuthService {
   // User management
@@ -70,6 +71,72 @@ class AuthService {
   // Social authentication
   async handleSocialLogin(provider, profile) {
     return socialAuthService.handleSocialLogin(provider, profile);
+  }
+
+  // M2M Authentication
+  async getM2MToken({ clientId, clientSecret, audience }) {
+    try {
+      const envPrefix = process.env.NODE_ENV?.toUpperCase();
+      const auth0Domain = process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`];
+      
+      if (!auth0Domain) {
+        logger.error('Auth0 domain not configured:', {
+          environment: process.env.NODE_ENV,
+          envPrefix,
+          availableEnvVars: Object.keys(process.env).filter(key => key.includes('AUTH0'))
+        });
+        throw new Error('Auth0 domain not configured');
+      }
+
+      logger.info('Requesting M2M token from Auth0', { 
+        domain: auth0Domain,
+        audience,
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret,
+        environment: process.env.NODE_ENV
+      });
+
+      const tokenUrl = `https://${auth0Domain}/oauth/token`;
+      const requestBody = {
+        client_id: clientId,
+        client_secret: clientSecret,
+        audience: audience,
+        grant_type: 'client_credentials'
+      };
+
+      logger.debug('Making token request to Auth0', { 
+        url: tokenUrl,
+        environment: process.env.NODE_ENV
+      });
+      
+      const response = await axios.post(tokenUrl, requestBody);
+
+      if (!response.data?.access_token) {
+        logger.error('Invalid response from Auth0:', response.data);
+        throw new Error('Invalid response from Auth0');
+      }
+
+      logger.info('Successfully obtained M2M token');
+      
+      return {
+        access_token: response.data.access_token,
+        token_type: response.data.token_type,
+        expires_in: response.data.expires_in
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        logger.error('Auth0 API error:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+          environment: process.env.NODE_ENV
+        });
+        throw new Error(`Auth0 API error: ${error.response?.data?.error_description || error.message}`);
+      }
+      
+      logger.error('Error getting M2M token:', error);
+      throw error;
+    }
   }
 }
 

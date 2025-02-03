@@ -10,24 +10,42 @@ interface AuthLogEntry {
 }
 
 export const AuthLogger = {
-  clear: () => {
+  debugMode: false,
+
+  setDebugMode(enabled: boolean) {
+    this.debugMode = enabled;
+    if (!enabled) {
+      this.clearAll();
+    }
+  },
+
+  clearAll() {
+    // Clear localStorage
     localStorage.removeItem(AUTH_LOG_KEY);
-    console.log('[Auth] Logs cleared');
+    // Clear console
+    console.clear();
+    // Reset internal state
+    this.debugMode = false;
+    // Clear any existing console groups
+    console.groupEnd();
+    console.log('[Auth] All logs cleared and debugging disabled');
   },
 
-  log: (message: string, data?: any) => {
-    AuthLogger._addEntry('info', message, data);
+  log(message: string, data?: any) {
+    this._addEntry('info', message, data);
   },
 
-  error: (message: string, error?: any) => {
-    AuthLogger._addEntry('error', message, error);
+  error(message: string, error?: any) {
+    this._addEntry('error', message, error);
   },
 
-  warning: (message: string, data?: any) => {
-    AuthLogger._addEntry('warning', message, data);
+  warning(message: string, data?: any) {
+    this._addEntry('warning', message, data);
   },
 
-  _addEntry: (type: AuthLogEntry['type'], message: string, data?: any) => {
+  _addEntry(type: AuthLogEntry['type'], message: string, data?: any) {
+    if (!this.debugMode) return; // Don't log if debug mode is disabled
+
     const timestamp = new Date().toISOString();
     const logEntry: AuthLogEntry = {
       timestamp,
@@ -55,22 +73,17 @@ export const AuthLogger = {
                    'color: blue';
       
       console.log(`%c[Auth] ${message}`, style, data);
-
-      // If in debug mode, show all logs after each new entry
-      if (DEBUG_MODE) {
-        AuthLogger.showInConsole();
-      }
     } catch (error) {
       console.error('[Auth Logger Error]', error);
     }
   },
 
-  getAll: () => {
+  getAll() {
     return JSON.parse(localStorage.getItem(AUTH_LOG_KEY) || '[]') as AuthLogEntry[];
   },
 
-  showInConsole: () => {
-    const logs = AuthLogger.getAll();
+  showInConsole() {
+    const logs = this.getAll();
     console.group('Auth Debug Logs (Most Recent First)');
     console.log('----------------------------------------');
     [...logs].reverse().forEach((log: AuthLogEntry) => {
@@ -88,9 +101,9 @@ export const AuthLogger = {
   },
 
   // Helper to expose logger to window for debugging
-  enableDebugMode: () => {
+  exposeToWindow() {
     if (typeof window !== 'undefined') {
-      (window as any).AuthLogger = AuthLogger;
+      (window as any).AuthLogger = this;
       console.log('Auth Logger available globally as window.AuthLogger');
       console.log('Try: window.AuthLogger.showInConsole()');
     }

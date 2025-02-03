@@ -4,6 +4,7 @@ import { Auth0ProviderWrapper } from '@/components/providers/auth0-provider';
 import { Toaster } from '@/components/ui/toaster';
 import '@/styles/globals.css';
 import { logEnvironmentConfig } from '@/lib/debug/env-logger';
+import { ApiProvider } from '@/components/providers/api-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,7 +34,9 @@ export default function RootLayout({
             disableTransitionOnChange
             storageKey="video-creator-theme"
           >
-            {children}
+            <ApiProvider>
+              {children}
+            </ApiProvider>
             <Toaster />
           </ThemeProvider>
         </Auth0ProviderWrapper>

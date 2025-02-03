@@ -20,14 +20,15 @@ const jwksRsa = require('jwks-rsa');
 
 // Get environment-specific Auth0 configuration
 const envPrefix = process.env.NODE_ENV?.toUpperCase();
-const auth0Domain = process.env[`${envPrefix}_AUTH0_DOMAIN`];
-const auth0Audience = process.env[`${envPrefix}_AUTH0_AUDIENCE`];
+const auth0Domain = process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`];
+const auth0Audience = process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`];
 
 // Log Auth0 configuration
 logger.info('Auth0 Configuration:', {
   domain: auth0Domain,
   audience: auth0Audience,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
+  envPrefix
 });
 
 // Initialize JWKS client for Auth0 public key retrieval
@@ -46,21 +47,52 @@ async function verifyAuth0Token(req, res, next) {
       throw new Error('No token provided');
     }
 
+    logger.info('Attempting to verify token with Auth0:', {
+      hasToken: !!token,
+      domain: auth0Domain,
+      audience: auth0Audience
+    });
+
     // Decode token header to get key ID
     const decoded = jwt.decode(token, { complete: true });
     if (!decoded || !decoded.header || !decoded.header.kid) {
+      logger.error('Token decode failed:', {
+        hasDecoded: !!decoded,
+        hasHeader: !!decoded?.header,
+        hasKid: !!decoded?.header?.kid
+      });
       throw new Error('Invalid token format');
     }
 
+    logger.info('Token decoded successfully:', {
+      kid: decoded.header.kid,
+      alg: decoded.header.alg,
+      tokenIssuer: decoded.payload.iss,
+      expectedIssuer: `https://${auth0Domain}/`
+    });
+
     // Get signing key from Auth0
+    logger.info('Fetching signing key from Auth0:', {
+      jwksUri: `https://${auth0Domain}/.well-known/jwks.json`,
+      kid: decoded.header.kid
+    });
+
     const signingKey = await jwksClient.getSigningKey(decoded.header.kid);
     const publicKey = signingKey.getPublicKey();
+
+    logger.info('Successfully retrieved signing key');
 
     // Verify token
     const verifiedToken = jwt.verify(token, publicKey, {
       audience: auth0Audience,
       issuer: `https://${auth0Domain}/`,
       algorithms: ['RS256']
+    });
+
+    logger.info('Token verified successfully:', {
+      sub: verifiedToken.sub,
+      gty: verifiedToken.gty,
+      hasScope: !!verifiedToken.scope
     });
 
     req.user = verifiedToken;
@@ -70,7 +102,9 @@ async function verifyAuth0Token(req, res, next) {
       error: error.message,
       stack: error.stack,
       domain: auth0Domain,
-      audience: auth0Audience
+      audience: auth0Audience,
+      errorName: error.name,
+      errorCode: error.code
     });
     res.status(401).json({ error: 'Please authenticate' });
   }

@@ -146,13 +146,13 @@ function loadConfig() {
   // Log the merged configuration
   logger.info('Merged configuration:', JSON.stringify(config, null, 2));
 
-  // Auth0 config
+  // Auth0 M2M config from .env root
   config.auth = {
     auth0: {
-      domain: process.env[`${envPrefix}_AUTH0_DOMAIN`],
-      clientId: process.env[`${envPrefix}_AUTH0_CLIENT_ID`],
-      clientSecret: process.env[`${envPrefix}_AUTH0_CLIENT_SECRET`],
-      audience: process.env[`${envPrefix}_AUTH0_AUDIENCE`]
+      domain: process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`],
+      clientId: process.env[`${envPrefix}_AUTH0_M2M_CLIENT_ID`],
+      clientSecret: process.env[`${envPrefix}_AUTH0_M2M_CLIENT_SECRET`],
+      audience: process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`]
     },
     jwt: {
       secret: process.env[`${envPrefix}_JWT_SECRET`],
@@ -163,9 +163,10 @@ function loadConfig() {
 
   // Validate Auth0 configuration
   if (!config.auth.auth0.clientSecret) {
-    logger.error('AUTH0_CLIENT_SECRET is not set. This is required for Auth0 authentication.');
+    logger.error('AUTH0_M2M_CLIENT_SECRET is not set. This is required for Auth0 authentication.');
     process.exit(1);
   }
+
 
   // Validate JWT configuration
   if (!config.auth.jwt.secret) {

@@ -7,17 +7,23 @@ export function logEnvironmentConfig() {
   
   console.log('\nAuth0 Configuration:');
   console.log('- Domain:', process.env.NEXT_PUBLIC_AUTH0_DOMAIN);
-  console.log('- Client ID:', process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID);
   console.log('- Audience:', process.env.NEXT_PUBLIC_AUTH0_AUDIENCE);
-  
+  console.log('\n SPA application variables:');  
+  console.log('- Client ID:', process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID);
+  console.log('\n M2M application variables:');  
+  console.log('- Client ID:', process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID);
+  console.log('- Client Secret:', process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET);
+
   // Add validation warnings
   console.log('\nConfiguration Status:');
   const requiredVars = {
     'NEXT_PUBLIC_APP_URL': process.env.NEXT_PUBLIC_APP_URL,
-    'NEXT_PUBLIC_API_URL': process.env.NEXT_PUBLIC_API_URL,
     'NEXT_PUBLIC_AUTH0_DOMAIN': process.env.NEXT_PUBLIC_AUTH0_DOMAIN,
-    'NEXT_PUBLIC_AUTH0_CLIENT_ID': process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID,
-    'NEXT_PUBLIC_AUTH0_AUDIENCE': process.env.NEXT_PUBLIC_AUTH0_AUDIENCE
+    'NEXT_PUBLIC_AUTH0_AUDIENCE': process.env.NEXT_PUBLIC_AUTH0_AUDIENCE,
+    'NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID': process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID,
+    'NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID': process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID,
+    'NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET': process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET
+
   };
 
   let allConfigured = true;

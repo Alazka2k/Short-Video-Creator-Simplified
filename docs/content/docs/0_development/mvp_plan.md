@@ -2,7 +2,14 @@
 
 ## Current Status (Updated Jan 11, 2025)
 - ✅ Basic authentication with Auth0 is working
+  - ✅ M2M token flow implemented (Initial implementation for /job endpoint)
+  - ✅ API proxy for CORS handling
+  - ✅ Token verification and refresh
+  - ⏳ Extend M2M token flow to all services
 - ✅ Core AI services are implemented (LLM, Voice, Image, Animation, Video)
+  - ✅ Basic job creation pipeline
+  - ✅ Content generation service integration
+  - ✅ Job service with metadata handling
 - ✅ Image accessibility and error handling improved in Animation and Video services
 - ✅ Job service updated with metadata-based configuration
 - ✅ Landing page modernization completed
@@ -114,7 +121,12 @@
   - ✅ Real-time settings summary
   - ✅ Format preview
   - ✅ Style preview
+- ✅ Basic job creation and processing
+  - ✅ Job service integration
+  - ✅ Content generation pipeline
+  - ✅ Job status tracking
 - ⏳ Content Creation Overview & Dashboard
+  - [ ] Video details page (/videos/:id)
   - [ ] Overview Dashboard for current projects/jobs
   - [ ] Detailed job run information
   - [ ] Content recreation options (voice, music, visual)

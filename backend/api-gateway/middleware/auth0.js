@@ -40,21 +40,28 @@ const { auth } = require('express-oauth2-jwt-bearer');
 const logger = require('../../shared/utils/logger');
 const authService = require('../../services/auth-service/auth-service');
 
-// Get environment-specific Auth0 configuration
+// Get environment-specific Auth0 M2M configuration
 const envPrefix = process.env.NODE_ENV?.toUpperCase();
-const auth0Domain = process.env[`${envPrefix}_AUTH0_DOMAIN`];
-const auth0Audience = process.env[`${envPrefix}_AUTH0_AUDIENCE`];
+const auth0Domain = process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`];
+const auth0Audience = process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`];
 
 // Log configuration (without sensitive data)
 logger.info('Auth0 Gateway Configuration:', {
   domain: auth0Domain,
   audience: auth0Audience,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
+  envPrefix
 });
 
 // Validate Auth0 configuration
 if (!auth0Domain || !auth0Audience) {
-  logger.error('Auth0 configuration missing. Please check your environment variables.');
+  logger.error('Auth0 M2M configuration missing or incorrect:', {
+    environment: process.env.NODE_ENV,
+    envPrefix,
+    hasDomain: !!auth0Domain,
+    hasAudience: !!auth0Audience,
+    availableEnvVars: Object.keys(process.env).filter(key => key.includes('AUTH0'))
+  });
   process.exit(1);
 }
 

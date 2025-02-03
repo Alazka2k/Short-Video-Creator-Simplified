@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const axios = require('axios');
 const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
@@ -10,7 +11,8 @@ const { verifyAuth0Token, checkPermission } = require('../services/auth-service/
 const authRoutes = require('./routes/auth');
 const docsRoutes = require('./routes/docs');
 
-console.log('Current Environment:', {
+// Log environment configuration
+logger.info('Environment Configuration:', {
   NODE_ENV: process.env.NODE_ENV,
   isDefined: process.env.NODE_ENV !== undefined,
   type: typeof process.env.NODE_ENV
@@ -18,6 +20,64 @@ console.log('Current Environment:', {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// CORS configuration
+const getFrontendUrl = () => {
+  const env = process.env.NODE_ENV || 'development';
+  
+  // Log available frontend URLs for debugging
+  logger.info('Available Frontend URLs:', {
+    development: process.env.DEVELOPMENT_FRONTEND_URL || `http://localhost:${process.env.DEVELOPMENT_FRONTEND_PORT || 4000}`,
+    staging: process.env.STAGING_FRONTEND_URL,
+    production: process.env.PRODUCTION_FRONTEND_URL
+  });
+
+  switch (env) {
+    case 'development':
+      return process.env.DEVELOPMENT_FRONTEND_URL || `http://localhost:${process.env.DEVELOPMENT_FRONTEND_PORT || 4000}`;
+    case 'staging':
+      return process.env.STAGING_FRONTEND_URL;
+    case 'production':
+      return process.env.PRODUCTION_FRONTEND_URL;
+    default:
+      return `http://localhost:4000`; // Fallback for safety
+  }
+};
+
+const frontendUrl = getFrontendUrl();
+
+logger.info('CORS Configuration:', {
+  currentEnvironment: process.env.NODE_ENV,
+  selectedFrontendUrl: frontendUrl,
+  port: PORT
+});
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Log the incoming origin for debugging
+    logger.info('Incoming request origin:', { origin });
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (origin === frontendUrl) {
+      logger.info('CORS: Origin allowed:', { origin });
+      callback(null, true);
+    } else {
+      logger.warn('CORS: Origin rejected:', { 
+        origin,
+        expectedOrigin: frontendUrl,
+        environment: process.env.NODE_ENV 
+      });
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

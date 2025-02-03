@@ -11,8 +11,13 @@ export function Auth0ProviderWrapper({ children }: { children: React.ReactNode }
   const router = useRouter();
 
   const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
-  const clientId = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID;
   const audience = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE;
+  const clientId = process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID;
+  console.log('domain', domain);
+  console.log('clientId', clientId);
+  console.log('audience', audience);
+
+
 
   if (!(domain && clientId && audience)) {
     debug.error('Auth0 configuration missing');

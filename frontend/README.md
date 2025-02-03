@@ -10,6 +10,8 @@ React/Next.js frontend application for the Video Creator platform.
   - [x] Auth0 Integration
   - [x] Protected Routes
   - [x] Basic User Profile
+  - [x] M2M Token Flow (Initial implementation for /job endpoint)
+  - [x] API Proxy Implementation
 - Landing Page
   - [x] Modern Hero Section
   - [x] Auto-rotating Image Carousel
@@ -44,9 +46,13 @@ React/Next.js frontend application for the Video Creator platform.
 
 ### In Progress 🔄
 - Content Creation Overview & Dashboard (Job Run)
+  - [x] Basic job creation and processing
+  - [x] Job service integration
+  - [x] Content generation pipeline
+  - [ ] Video details page (/videos/:id)
   - [ ] Overview Dashboard about current projects / jobs
   - [ ] Open each job run to see more details about the content created
-  - [ ] Possibility to recreate or add certain parts of the content (voice, music, visual) -> In the database we have a array for every job run (service_sequence table)
+  - [ ] Possibility to recreate or add certain parts of the content (voice, music, visual)
   - [ ] Possibility to download the content as a zip file or each single file
   - [ ] Possibility to go on with the video creation flow process
 - Video Creation Flow
@@ -59,6 +65,7 @@ React/Next.js frontend application for the Video Creator platform.
   - [ ] Styling System Refinement
   - [ ] Component Architecture Improvements
   - [ ] Error Handling Enhancements
+  - [ ] Extend M2M token flow to all service endpoints
 
 ### Next Phase 📝
 - GeneralDashboard Enhancement
@@ -320,11 +327,16 @@ React/Next.js frontend application for the Video Creator platform.
 ### Environment Setup
 1. Create `.env.development`:
 ```bash
+# Single Page Application Credentials   
 NEXT_PUBLIC_APP_URL=http://localhost:4000
 NEXT_PUBLIC_API_URL=http://localhost:3000
 NEXT_PUBLIC_AUTH0_DOMAIN=your-dev-domain.auth0.com
-NEXT_PUBLIC_AUTH0_CLIENT_ID=your-dev-client-id
-NEXT_PUBLIC_AUTH0_AUDIENCE=your-dev-audience 
+NEXT_PUBLIC_AUTH0_AUDIENCE=your-dev-audience
+# SPA Application Credentials
+NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID=your-dev-spa-client-id
+# M2M Application Credentials
+NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID=your-dev-m2m-client-id
+NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET=your-dev-m2m-client-secret
 ```
 
 ### Running Locally

@@ -7,7 +7,7 @@
  * 
  * Key Features:
  * 1. Management API Client - For user/role/permission management
- * 2. Authentication Client - For login, signup, and token operations
+ * 2. Authentication API Client - For login, signup, and token operations
  * 
  * Usage:
  * - Management API: Used for admin operations (create users, assign roles, etc.)
@@ -16,18 +16,18 @@
  * @module auth-service/auth0-service
  */
 
-const { ManagementClient } = require('auth0');
-const { AuthenticationClient } = require('auth0');
+const { ManagementClient, AuthenticationClient } = require('auth0');
 const logger = require('../../shared/utils/logger');
 
-// Get environment-specific Auth0 configuration
+// Get environment-specific M2M Auth0 configuration 
 const envPrefix = process.env.NODE_ENV?.toUpperCase();
 const auth0Config = {
-  domain: process.env[`${envPrefix}_AUTH0_DOMAIN`],
-  clientId: process.env[`${envPrefix}_AUTH0_CLIENT_ID`],
-  clientSecret: process.env[`${envPrefix}_AUTH0_CLIENT_SECRET`],
-  audience: process.env[`${envPrefix}_AUTH0_AUDIENCE`]
+  domain: process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`],
+  clientId: process.env[`${envPrefix}_AUTH0_M2M_CLIENT_ID`],
+  clientSecret: process.env[`${envPrefix}_AUTH0_M2M_CLIENT_SECRET`],
+  audience: process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`]
 };
+
 
 // Log configuration (without sensitive data)
 logger.info('Auth0 Service Configuration:', {

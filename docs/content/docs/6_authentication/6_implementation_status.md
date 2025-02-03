@@ -31,6 +31,19 @@ This document outlines the current status of authentication features and planned
 - ✅ Auth0 integration for identity management
 - ✅ Role-based access control
 
+### M2M Authentication
+- ✅ Auth0 M2M token generation
+- ✅ Token caching with expiration
+- ✅ Automatic token refresh
+- ✅ Scope-based permissions
+- ✅ Rate limiting for M2M operations
+- ✅ Service endpoint protection
+- ✅ Secure credential management
+- ✅ Centralized API client with TypeScript support
+- ✅ Request/Response interceptors
+- ✅ Basic error handling and logging
+- ✅ Request timing monitoring
+
 ## Planned Features
 
 ### Additional Social Providers
@@ -60,12 +73,35 @@ This document outlines the current status of authentication features and planned
   - Login attempt notifications
   - Password change alerts
   - New device login alerts
+- 🔄 API Security Enhancements
+  - Request signing and encryption
+  - CSRF protection
+  - API key rotation
+  - Request/Response validation
 
 ### Profile Enhancements
 - 🔄 Enhanced profile management
   - Custom profile fields
   - Profile verification badges
   - Social links integration
+
+### M2M Enhancements
+- 🔄 Enhanced M2M features
+  - Token usage analytics
+  - Rate limit configuration UI
+  - Scope management interface
+  - Service health monitoring
+  - Automated credential rotation
+  - Enhanced error reporting
+  - Usage quotas and limits
+  - Service-level agreements (SLA) monitoring
+- 🔄 API Client Improvements
+  - Advanced error handling with retries
+  - Response caching strategies
+  - Performance metrics collection
+  - Request batching
+  - Development tools and mocking
+  - Offline support
 
 ## Legend
 - ✅ Implemented and tested
