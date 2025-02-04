@@ -4,6 +4,7 @@ const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const path = require('path');
 const fs = require('fs').promises;
+require('dotenv').config();
 
 class LLMServiceInterface {
   constructor() {
@@ -40,12 +41,15 @@ class LLMServiceInterface {
 
   async loadPromptsFromCsv(csvPath) {
     logger.info(`Loading prompts from CSV: ${csvPath}`);
-    return await this.service.loadPromptsFromCsv(csvPath);
+    return await this.llmService.loadPromptsFromCsv(csvPath);
   }
 
   async generateDocContent(prompt) {
     logger.info('Generating doc content', { prompt });
-    return await this.service.generateDocContent(prompt);
+    if (!this.llmService) {
+      throw new Error('LLM Service not initialized');
+    }
+    return await this.llmService.generateDocContent(prompt);
   }
 
   async saveOutput(output, fileName, isTest = false) {
@@ -60,7 +64,10 @@ class LLMServiceInterface {
 
   async processAllPrompts(csvPath, llmGenParams) {
     logger.info('Processing all prompts', { csvPath, llmGenParams });
-    const prompts = await this.loadPromptsFromCsv(csvPath);
+    if (!this.llmService) {
+      throw new Error('LLM Service not initialized');
+    }
+    const prompts = await this.llmService.loadPromptsFromCsv(csvPath);
     const results = [];
 
     for (const prompt of prompts) {
@@ -72,30 +79,44 @@ class LLMServiceInterface {
   }
 
   startServer() {
-    const PORT = process.env.LLM_SERVICE_PORT || 3001;
+    const env = process.env.NODE_ENV || 'development';
+    const envPrefix = env.toUpperCase();
+    
+    // Get port from environment variables based on environment
+    const port = process.env.PORT || 3001;
+
     const app = createServer(this);
     
     app.use((req, res, next) => {
-      logger.info(`Received ${req.method} request on ${req.path}`);
+      logger.info(`Received ${req.method} request on ${req.path}`, {
+        environment: env,
+        serviceUrl: process.env[`${envPrefix}_LLM_SERVICE_URL`]
+      });
       next();
     });
 
-    app.listen(PORT, () => {
-      logger.info(`LLM Service running on port ${PORT}`);
+    app.listen(port, () => {
+      logger.info(`LLM Service running in ${env} environment`, {
+        port,
+        serviceUrl: process.env[`${envPrefix}_LLM_SERVICE_URL`]
+      });
     });
   }
 }
 
+// Create and export a singleton instance
 const llmServiceInterface = new LLMServiceInterface();
 
-// Initialize and start the server
+// Initialize and start the server if this is the main module
 if (require.main === module) {
-  llmServiceInterface.initialize().then(() => {
-    llmServiceInterface.startServer();
-  }).catch(error => {
-    logger.error('Failed to initialize LLM Service:', error);
-    process.exit(1);
-  });
+  llmServiceInterface.initialize()
+    .then(() => {
+      llmServiceInterface.startServer();
+    })
+    .catch(error => {
+      logger.error('Failed to initialize LLM Service:', error);
+      process.exit(1);
+    });
 }
 
 module.exports = llmServiceInterface;

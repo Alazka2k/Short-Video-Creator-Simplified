@@ -4,6 +4,21 @@ const config = require('../../../shared/utils/config');
 const logger = require('../../../shared/utils/logger');
 
 class FileManager {
+  constructor() {
+    // Ensure base output directory exists
+    this.baseOutputDir = path.resolve(process.cwd(), 'data', 'output');
+    this.ensureDirectoryExists(this.baseOutputDir);
+  }
+
+  async ensureDirectoryExists(dirPath) {
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+    } catch (error) {
+      logger.error('Error creating directory:', { dirPath, error });
+      throw error;
+    }
+  }
+
   getOutputPaths(sceneIndex, jobId, isTest = false) {
     if (isTest) {
       return this.getTestPaths(sceneIndex);
@@ -12,7 +27,7 @@ class FileManager {
   }
 
   getTestPaths(sceneIndex) {
-    const testOutputDir = path.join(__dirname, '..', '..', '..', '..', 'tests', 'test_output', 'image');
+    const testOutputDir = path.join(process.cwd(), 'tests', 'test_output', 'image');
     const testFolderPath = path.join(testOutputDir, `output_test_${sceneIndex}`);
     return {
       imageFilePath: path.join(testFolderPath, `image_scene_${sceneIndex}.png`),
@@ -21,8 +36,13 @@ class FileManager {
   }
 
   getProductionPaths(sceneIndex, jobId) {
+    if (!sceneIndex || !jobId) {
+      throw new Error('Scene index and job ID are required for production paths');
+    }
+
     const dateString = new Date().toISOString().split('T')[0];
-    const folderPath = path.join(config.output.directory, 'image', dateString, jobId, `scene_${sceneIndex}`);
+    const folderPath = path.join(this.baseOutputDir, 'image', dateString, jobId, `scene_${sceneIndex}`);
+    
     return {
       imageFilePath: path.join(folderPath, `image_scene_${sceneIndex}.png`),
       metadataPath: path.join(folderPath, 'metadata.json')
@@ -31,7 +51,7 @@ class FileManager {
 
   async saveMetadata(metadataPath, sceneIndex, metadata) {
     try {
-      await fs.mkdir(path.dirname(metadataPath), { recursive: true });
+      await this.ensureDirectoryExists(path.dirname(metadataPath));
       const metadataContent = {
         [`scene_${sceneIndex}`]: metadata
       };

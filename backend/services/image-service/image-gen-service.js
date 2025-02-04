@@ -25,7 +25,23 @@ class ImageGenService {
 
   async generateImage(prompt, sceneIndex = null, jobId = null) {
     try {
-      logger.info(`Generating image for prompt: "${prompt}"`);
+      logger.info(`Generating image for prompt: "${prompt}"`, {
+        sceneIndex,
+        jobId
+      });
+      
+      // Validate required parameters
+      if (!prompt) {
+        throw new Error('Prompt is required for image generation');
+      }
+
+      if (!sceneIndex) {
+        sceneIndex = 1; // Default to scene 1 if not provided
+      }
+
+      if (!jobId) {
+        jobId = Date.now().toString(); // Generate a timestamp-based ID if not provided
+      }
       
       const result = await this.client.generateImage(prompt, (uri, progress) => {
         logger.info(`Image generation progress: ${progress}%`);

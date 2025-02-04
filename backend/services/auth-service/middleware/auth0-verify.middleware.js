@@ -17,6 +17,8 @@ const { auth0 } = require('../auth0');
 const logger = require('../../../shared/utils/logger');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
+const config = require('../../../shared/utils/config');
+const { getRequiredPermission } = require('../../../api-gateway/config/permissions');
 
 // Get environment-specific Auth0 configuration
 const envPrefix = process.env.NODE_ENV?.toUpperCase();
@@ -111,70 +113,60 @@ async function verifyAuth0Token(req, res, next) {
 }
 
 /**
- * Checks if the authenticated user has the required permission
- * @param {string} requiredPermission - The permission to check for
+ * Checks if the token has the required permission
+ * @param {string} requiredPermission - The required permission
  */
-const checkPermission = (requiredPermission) => async (req, res, next) => {
-  try {
-    // Check if this is a client credentials token
-    if (req.user.gty === 'client-credentials') {
-      // For M2M applications, check token scopes
-      const scopes = (req.user.scope || '').split(' ');
-      logger.info('M2M token scopes:', { scopes, requiredPermission });
+function checkPermission(endpoint) {
+  return async (req, res, next) => {
+    try {
+      const permission = getRequiredPermission(endpoint);
       
-      // Convert permission to scope format (e.g., create_video -> create:videos)
-      const requiredScope = requiredPermission
-        .replace('_', ':') // convert create_video to create:video
-        .replace(/^create:video$/, 'create:videos') // make videos plural
-        .replace(/^create:jobs?$/, 'create:jobs'); // handle both singular and plural forms of jobs
+      if (!permission) {
+        logger.warn('No permission configured for endpoint:', { endpoint });
+        return next();
+      }
+      
+      logger.info('Checking permission:', {
+        endpoint,
+        requiredPermission: permission
+      });
+
+      const scopes = (req.user.scope || '').split(' ');
+      
+      logger.info('Token scopes:', {
+        requiredPermission: permission,
+        scopes
+      });
+
+      // Convert permission format if needed (e.g., create_jobs to create:jobs)
+      const convertedPermission = permission.replace('_', ':');
       
       logger.info('Permission conversion:', {
-        original: requiredPermission,
-        converted: requiredScope
+        converted: convertedPermission,
+        original: permission
       });
-      
-      if (!scopes.includes(requiredScope)) {
-        logger.warn('M2M token missing required scope:', {
-          requiredScope,
+
+      if (!scopes.includes(convertedPermission)) {
+        logger.error('Permission denied:', {
+          requiredPermission: convertedPermission,
           availableScopes: scopes
         });
+        
         return res.status(403).json({
           error: 'Insufficient scope',
-          message: `Missing required scope: ${requiredScope}`,
-          requiredScope,
+          message: `Missing required scope: ${convertedPermission}`,
+          requiredScope: convertedPermission,
           availableScopes: scopes
         });
       }
-      
-      return next();
-    }
 
-    // For regular user tokens, check permissions in the database
-    const auth0Id = req.user.sub;
-    const authDataAccess = require('../data/authDataAccess');
-    
-    const permissions = await authDataAccess.getUserPermissions(auth0Id);
-    const hasPermission = permissions.some(p => p.name === requiredPermission);
-    
-    if (!hasPermission) {
-      return res.status(403).json({ 
-        error: 'Insufficient permissions',
-        requiredPermission,
-        message: 'You do not have permission to access this feature'
-      });
+      next();
+    } catch (error) {
+      logger.error('Permission check error:', error);
+      res.status(500).json({ error: 'Permission check failed' });
     }
-    
-    next();
-  } catch (error) {
-    logger.error('Permission check error:', {
-      error: error.message,
-      stack: error.stack,
-      isM2M: req.user?.gty === 'client-credentials',
-      scopes: req.user?.scope
-    });
-    res.status(500).json({ error: 'Permission check failed' });
-  }
-};
+  };
+}
 
 module.exports = {
   verifyAuth0Token,

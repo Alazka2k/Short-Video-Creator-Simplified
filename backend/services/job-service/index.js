@@ -3,8 +3,8 @@
 const JobPipelineService = require('./job-pipeline-service');
 const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
-const LLMServiceInterface = require('../llm-service');
-const { ImageServiceInterface } = require('../image-service');
+const llmService = require('../llm-service');
+const imageService = require('../image-service');
 const { VoiceServiceInterface } = require('../voice-service');
 const { MusicServiceInterface } = require('../music-service');
 const { AnimationServiceInterface } = require('../animation-service');
@@ -18,29 +18,35 @@ class JobServiceInterface {
   async initialize() {
     logger.info('Initializing Job Service and dependencies...');
 
-    // Initialize all required services
-    this.services.llm = LLMServiceInterface;
-    await this.services.llm.initialize();
+    try {
+      // Initialize singleton services
+      this.services.llm = llmService;
+      await this.services.llm.initialize();
 
-    this.services.image = new ImageServiceInterface();
-    await this.services.image.initialize();
+      this.services.image = imageService;
+      await this.services.image.initialize();
 
-    this.services.voice = new VoiceServiceInterface();
-    await this.services.voice.initialize();
+      // Initialize services that need instantiation
+      this.services.voice = new VoiceServiceInterface();
+      await this.services.voice.initialize();
 
-    this.services.animation = new AnimationServiceInterface();
-    await this.services.animation.initialize();
+      this.services.music = new MusicServiceInterface();
+      await this.services.music.initialize();
 
-    this.services.video = new VideoServiceInterface();
-    await this.services.video.initialize();
+      this.services.animation = new AnimationServiceInterface();
+      await this.services.animation.initialize();
 
-    this.services.music = new MusicServiceInterface();
-    await this.services.music.initialize();
+      this.services.video = new VideoServiceInterface();
+      await this.services.video.initialize();
 
-    // Initialize job pipeline service
-    this.jobPipeline = new JobPipelineService(this.services);
+      // Initialize job pipeline service
+      this.jobPipeline = new JobPipelineService(this.services);
 
-    logger.info('Job Service initialized successfully');
+      logger.info('Job Service initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize Job Service:', error);
+      throw error;
+    }
   }
 
   async process(prompt, parameters = {}, visualizationType = 'animation') {
@@ -76,9 +82,9 @@ class JobServiceInterface {
     await Promise.all([
       this.services.image.cleanup(),
       this.services.voice.cleanup(),
+      this.services.music.cleanup(),
       this.services.animation.cleanup(),
-      this.services.video.cleanup(),
-      this.services.music.cleanup()
+      this.services.video.cleanup()
     ]);
     logger.info('Job Service cleanup completed');
   }

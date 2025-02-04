@@ -11,13 +11,14 @@ Machine-to-Machine applications need to request specific scopes when obtaining a
 | Scope | Description | Endpoints |
 |-------|-------------|-----------|
 | `create:llm` | Access to LLM generation | `/api/llm/*` |
-| `create:images` | Access to image generation | `/api/image/*` |
+| `create:image` | Access to image generation | `/api/image/*` |
 | `create:voice` | Access to voice synthesis | `/api/voice/*` |
-| `create:animations` | Access to animation generation | `/api/animation/*` |
-| `create:videos` | Access to video processing | `/api/video/*` |
+| `create:animation` | Access to animation generation | `/api/animation/*` |
+| `create:video` | Access to video processing | `/api/video/*` |
 | `create:music` | Access to music generation | `/api/music/*` |
 | `create:assembly` | Access to assembly operations | `/api/assembly/*` |
-| `manage:jobs` | Access to job management | `/api/job/*` |
+| `create:job` | Access to job management | `/api/job/*` |
+
 
 ### Configuring M2M Scopes in Auth0
 
@@ -35,8 +36,14 @@ User permissions are stored in the database and are typically assigned through r
 
 | Permission | Description | Default Roles |
 |------------|-------------|---------------|
-| `create_video` | Create and edit videos | Free, Pro, Business |
-| `delete_video` | Delete videos | Free, Pro, Business |
+| `create:job` | Create content jobs | Free, Pro, Business |
+| `create:image` | Create images | Free, Pro, Business |
+| `create:voice` | Create voiceover | Free, Pro, Business |
+| `create:music` | Create music | Free, Pro, Business |
+| `create:animation` | Read animations from images | Free, Pro, Business |
+| `create:video` | Create videos from images | Free, Pro, Business |
+| `create:assembly` | Create and edit complete videos | Free, Pro, Business |
+| `delete:video` | Delete videos | Free, Pro, Business |
 | `manage_projects` | Manage project settings | Pro, Business |
 | `use_templates` | Access premium templates | Pro, Business |
 | `api_access` | Access API endpoints | Business |
@@ -72,8 +79,8 @@ To test M2M endpoints with all permissions:
 1. Create an M2M application in Auth0
 2. Assign all required scopes:
    ```
-   create:llm create:images create:voice create:animations 
-   create:videos create:music create:assembly manage:jobs
+   create:llm create:image create:voice create:animations 
+   create:video create:music create:assembly manage:job
    ```
 3. Request a token with these scopes
 4. Use the token in your API requests
@@ -101,9 +108,9 @@ The API returns specific error messages for permission issues:
 ```json
 {
   "error": "Insufficient scope",
-  "message": "Missing required scope: create:videos",
-  "requiredScope": "create:videos",
-  "availableScopes": ["create:llm", "create:images"]
+  "message": "Missing required scope: create:video",
+  "requiredScope": "create:video",
+  "availableScopes": ["create:llm", "create:image"]
 }
 ```
 

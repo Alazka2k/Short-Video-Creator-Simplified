@@ -166,13 +166,13 @@ const checkPermission = (requiredPermission) => {
 ### 4. Service Endpoints
 The following endpoints allow M2M access with appropriate scopes:
 - `/api/llm` - LLM service endpoints (create:llm)
-- `/api/image` - Image generation endpoints (create:images)
+- `/api/image` - Image generation endpoints (create:image)
 - `/api/voice` - Voice synthesis endpoints (create:voice)
-- `/api/animation` - Animation generation endpoints (create:animations)
-- `/api/video` - Video processing endpoints (create:videos)
+- `/api/animation` - Animation generation endpoints (create:animation)
+- `/api/video` - Video processing endpoints (create:video) 
 - `/api/music` - Music generation endpoints (create:music)
 - `/api/assembly` - Assembly service endpoints (create:assembly)
-- `/api/job` - Job management endpoints (create:jobs)
+- `/api/job` - Job management endpoints (create:job)
 
 ## Error Handling
 
@@ -279,9 +279,14 @@ const m2mTokenLimiter = rateLimit({
 ```javascript
 const requiredScopes = [
   'create:llm',
-  'create:images',
+  'create:image',
   'create:voice',
-  // ...
+  'create:animation',
+  'create:video',
+  'create:music',
+  'create:assembly',
+  'create:job',   
+  // ...  
 ];
 
 const hasRequiredScopes = scopes.every(scope => 

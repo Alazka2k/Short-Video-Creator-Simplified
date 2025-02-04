@@ -15,23 +15,23 @@
  * Service Endpoints:
  * These endpoints allow M2M access with appropriate scopes:
  * - /api/llm - LLM service endpoints (create:llm)
- * - /api/image - Image generation endpoints (create:images)
+ * - /api/image - Image generation endpoints (create:image)
  * - /api/voice - Voice synthesis endpoints (create:voice)
- * - /api/animation - Animation generation endpoints (create:animations)
- * - /api/video - Video processing endpoints (create:videos)
+ * - /api/animation - Animation generation endpoints (create:animation)
+ * - /api/video - Video processing endpoints (create:video)
  * - /api/music - Music generation endpoints (create:music)
  * - /api/assembly - Assembly service endpoints (create:assembly)
- * - /api/job - Job management endpoints (manage:jobs)
+ * - /api/job - Job management endpoints (create:job)
  * 
  * Required M2M Scopes:
  * - create:llm - Access to LLM generation
- * - create:images - Access to image generation
+ * - create:image - Access to image generation
  * - create:voice - Access to voice synthesis
- * - create:animations - Access to animation generation
- * - create:videos - Access to video processing
+ * - create:animation - Access to animation generation
+ * - create:video - Access to video processing
  * - create:music - Access to music generation
  * - create:assembly - Access to assembly operations
- * - manage:jobs - Access to job management
+ * - create:job - Access to job management
  * 
  * @module api-gateway/middleware/auth0
  */
@@ -121,10 +121,8 @@ const checkPermission = (requiredPermission) => {
           });
         }
 
-        // Convert permission to scope format (e.g., create_video -> create:videos)
-        const requiredScope = requiredPermission
-          .replace('_', ':')
-          .replace('video', 'videos');
+        // Convert permission to scope format (e.g., create_video -> create:video)
+        const requiredScope = requiredPermission.replace('_', ':');
 
         const scopes = (payload.scope || '').split(' ');
         if (!scopes.includes(requiredScope)) {
