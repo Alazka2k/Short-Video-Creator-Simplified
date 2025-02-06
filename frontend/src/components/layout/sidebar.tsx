@@ -28,14 +28,14 @@ const menuItems = [
     icon: PlusCircle
   },
   {
+    title: 'Content Workbench',
+    href: '/workbench',
+    icon: FolderIcon
+  },
+  {
     title: 'My Videos',
     href: '/dashboard/videos',
     icon: VideoIcon
-  },
-  {
-    title: 'Projects',
-    href: '/dashboard/projects',
-    icon: FolderIcon
   },
   {
     title: 'Subscription',

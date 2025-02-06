@@ -5,14 +5,16 @@
   - ✅ M2M token flow implemented (Initial implementation for /job endpoint)
   - ✅ API proxy for CORS handling
   - ✅ Token verification and refresh
-  - ⏳ Extend M2M token flow to all services
+  - ✅ Fix user ID handling between Auth0 and database
+  - ✅ Extend M2M token flow to all services
 - ✅ Core AI services are implemented (LLM, Voice, Image, Animation, Video)
   - ✅ Basic job creation pipeline
   - ✅ Content generation service integration
   - ✅ Job service with metadata handling
+  - ✅ Fix user ID association with jobs
 - ✅ Image accessibility and error handling improved in Animation and Video services
 - ✅ Job service updated with metadata-based configuration
-- ✅ Landing page modernization completed
+- ✅✅anding page modernization completed
   - ✅ Modern hero section with auto-rotating carousel
   - ✅ Responsive layout and animations
   - ✅ How It Works section with process steps
@@ -36,6 +38,7 @@
   - ✅ Session management with JWT
   - ✅ Role and permission system
   - ✅ Auth0 integration for social and email auth
+  - ✅ Fix M2M vs user authentication handling
 - ✅ Dashboard implementation completed
   - ✅ Main dashboard layout
   - ✅ Video creation navigation
@@ -55,6 +58,23 @@
   - ⏳ Advanced format options
   - ⏳ Custom style presets
   - ⏳ Batch processing support
+- ⏳ Content Creation Overview & Dashboard
+  - ✅ Basic job creation and processing
+  - ✅ Job service integration
+  - ✅ Content generation pipeline
+  - ✅ Basic workbench page layout (/workbench)
+  - ✅ Initial job listing implementation
+  - ✅ Basic routing structure
+  - ✅ Fix user ID association with jobs
+  - ⏳ Job details page (/workbench/:jobId)
+  - ⏳ Loading mechanism during job generation
+  - ⏳ Pagination for job listing
+  - ⏳ Filtering and sorting options
+  - ⏳ Content preview functionality
+  - ⏳ Content recreation options (voice, music, visual)
+  - ⏳ Content download functionality
+  - ⏳ Transition selection between scenes
+  - ⏳ Enhanced job status tracking
 
 ## MVP Goals
 1. Create usable content for marketing
@@ -125,20 +145,19 @@
   - ✅ Job service integration
   - ✅ Content generation pipeline
   - ✅ Job status tracking
+  - ✅ Store the user id for each job run (currently it is (null) in the database)
 - ⏳ Content Creation Overview & Dashboard
-  - [ ] Video details page (/videos/:id)
-  - [ ] Overview Dashboard for current projects/jobs
-  - [ ] Detailed job run information
-  - [ ] Content recreation options (voice, music, visual)
-  - [ ] Content download functionality
-  - [ ] Video creation flow continuation
-- ⏳ Video Assembly Interface
-  - [ ] Content selection for video creation
-  - [ ] Transition selection from JSON2Video
-  - [ ] Preview generation system
-  - [ ] Advanced format options
-  - [ ] Custom style presets
-  - [ ] Batch processing support
+  - [ ] Overview Dashboard for current jobs
+  - [ ] Job details page (/job/:id) / -> Automatic forwarding after job execution request to job/generate
+  - [ ] Loading mechanism until response is received from job/generate
+  - [ ] Updated rename "Projects" to "Content Workbench" page tab on the left side
+  - [ ] List all content pieces in a visual appealing process like a video cutting tool from the first response of job/generate   
+  - [ ] Content recreation options (voice, music, visual) -> Has to send a request to each service, e.g. voice/generate with the job id
+  - [ ] Only show the latest content after content recreation option for a job run. We may need to enhance the get job information endpoint as a query. For a certain job_id and scene_id in each content table we have to query the latest content piece. 
+  - [ ] Content download functionality (all, select option for each content piece)
+  - [ ] Transition selection between scenes
+- ⏳ My Videos dashboard
+  - [ ] Overview Dashboard of all finalized videos (asssembly_outputs table)
 
 ## Phase 2: Implement Missing Core Features
 
@@ -174,13 +193,6 @@
 - [ ] DELETE /api/videos/:id - Delete a video
 - [ ] POST /api/videos/:id - Update video metadata
 
-#### 2.3.2 Project Management (Backend)
-- [ ] GET /api/projects - Fetch project list with pagination and filters
-- [ ] GET /api/projects/:id - Get single project details
-- [ ] POST /api/projects - Create new project
-- [ ] POST /api/projects/:id - Update project
-- [ ] DELETE /api/projects/:id - Delete project
-
 #### 2.3.3. Frontend Enhancements of "My Videos" and "Projects" with new API endpoints (Frontend)
 - [ ] Connect and add backend implementation for "Projects" view
 - [ ] Connect and add backend implementation for "My videos" view
@@ -189,6 +201,16 @@
 - [ ] Add video assembly options
 - [ ] Add progress visualization
 - [ ] Add video download functionality
+
+## Phase 3: Fix known bugs and security issues
+
+### 3.1. Fix known bugs
+- [ ] Fix the social login which is not working right now
+- [ ] Fix the refresh of the links to the files from the s3 bucket cloud. Right now the won´t be visible anymore after 30mins on the dashboard
+- [ ] Job Service with Animation is not working and gives an error
+
+### 3.2. Security issues
+- [ ] Fix the encryption of password and username from the frontend (currently it is visible in the network tab of the browser)
 
 
 ## Phase 3: Testing & Refinement
@@ -206,31 +228,38 @@
 
 ## Phase 5: Post-MVP Enhancements
 
-### 5.1. Feature, Profile and Protected Routes Enhancements
+### 5.1. Important and Critical Enhancements
+- [ ] Music Generation with lyrics
+- [ ] Direct upload functionality in My Video Dashboard
+- [ ] Exchange functionality of content (e.g. add a video scene in the content creation interface)
+- [ ] Select Option for Video Duration is not working well
+
+### 5.2. Feature, Profile and Protected Routes Enhancements
 - [ ] Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
 - [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
 - [ ] Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
 - [ ] Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 
-#### 5.1.1 Profile Management (Frontend?)
+#### 5.2.1 Profile Management (Frontend?)
 - [ ] Add profile editing functionality
 - [ ] Update name/display name
 - [ ] Change profile picture
 - [ ] Manage notification preferences
 - [ ] Configure video preferences (default style, voice, resolution)
 
-#### 5.1.2 Profile Management (Backend)
+#### 5.2.2 Profile Management (Backend)
 - [ ] Implement user settings API endpoints
 - [ ] POST /api/auth/profile/update - Update profile information
 - [ ] POST /api/auth/preferences/update - Update user preferences
 - [ ] POST /api/auth/notifications/update - Update notification settings
 - [ ] Create profile settings UI
+
 - [ ] Profile settings page (/dashboard/settings/profile)
 - [ ] Preferences management page (/dashboard/settings/preferences)
 - [ ] Add form validation and error handling
 - [ ] Implement optimistic updates for better UX
 
-#### 5.1.3 Protected Routes Enhancement
+#### 5.2.3 Protected Routes Enhancement
 - [ ] Implement role-based access control (RBAC)
   - [ ] Define user roles (free, premium, admin)
   - [ ] Add role-based route protection
@@ -240,18 +269,19 @@
   - [ ] Analytics dashboard
   - [ ] API access
 
-### 5.2 Authentication Flow Improvement
+### 5.3 Authentication Flow Improvement
 - [ ] Improve authentication flow
 - [ ] Better token refresh handling
 - [ ] Loading states during auth checks
 - [ ] Proper redirects for unauthenticated users
 
-### 5.3 Enhance error handling and feedback
+
+### 5.4 Enhance error handling and feedback
 - [ ] Show upgrade prompts for premium features
 - [ ] Display proper unauthorized access messages
 - [ ] Handle expired subscriptions
 
-### 5.4 Advanced Progress Tracking System
+### 5.5 Advanced Progress Tracking System
 - [ ] Use Redis for real-time progress updates
 - [ ] Track individual service progress (LLM, Image, Voice, Video, Music)
 - [ ] Track scene-level progress for multi-scene videos

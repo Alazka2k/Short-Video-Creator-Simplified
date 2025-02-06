@@ -28,14 +28,14 @@ function createServer(jobService) {
     }, 1800000); // 30 minutes timeout
 
     try {
-      const { prompt, parameters, visualizationType } = req.body;
+      const { prompt, parameters, visualizationType, userId } = req.body;
       
       if (!prompt) {
         throw new Error('prompt is required');
       }
 
-      logger.info(`Job Service: Starting content generation for prompt: ${prompt}`);
-      const result = await jobService.process(prompt, parameters, visualizationType);
+      logger.info(`Job Service: Starting content generation for prompt: ${prompt}`, { userId });
+      const result = await jobService.process(prompt, parameters, visualizationType, userId);
       
       clearTimeout(requestTimeout);
 

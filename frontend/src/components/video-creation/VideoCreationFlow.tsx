@@ -21,6 +21,7 @@ import voiceData from '@/data/features/voices.json'
 import visualConfig from '@/data/features/visual-creation.json'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useVideoCreationState } from '@/lib/hooks/useVideoCreationState'
+import { useToast } from '@/components/ui/use-toast'
 
 // Import step components
 import { BasicInformationStep, durationOptions } from './steps/BasicInformationStep'
@@ -92,6 +93,7 @@ export function VideoCreationFlow({
 }: VideoCreationFlowProps) {
   const router = useRouter()
   const { state, updateState, handleGenerateVideo, handleCreateProject, isGenerating } = useVideoCreationState(defaultValues)
+  const { toast } = useToast()
 
   // Destructure state for easier access
   const {
@@ -169,22 +171,38 @@ export function VideoCreationFlow({
   }
 
   const onCreateProject = async () => {
-    if (isDemo) return
     try {
       const jobId = await handleCreateProject()
-      router.push(`/projects/${jobId}`)
+      toast({
+        title: "Content Creation Started",
+        description: `Job ID: ${jobId}. You can check the status in the Content Workbench.`,
+        duration: 5000,
+      })
     } catch (error) {
-      console.error('Error creating project:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create content",
+        variant: "destructive",
+        duration: 5000,
+      })
     }
   }
 
   const onGenerateVideo = async () => {
-    if (isDemo) return
     try {
       const jobId = await handleGenerateVideo()
-      router.push(`/videos/${jobId}`)
+      toast({
+        title: "Content Creation Started",
+        description: `Job ID: ${jobId}. You can check the status in the Content Workbench.`,
+        duration: 5000,
+      })
     } catch (error) {
-      console.error('Error generating video:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate content",
+        variant: "destructive",
+        duration: 5000,
+      })
     }
   }
 

@@ -47,45 +47,6 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
     AuthLogger.log('Auth Provider initialized');
   }, []);
 
-  useEffect(() => {
-    // Check if we have a token in localStorage
-    const checkAuth = async () => {
-      const token = localStorage.getItem("access_token");
-      AuthLogger.log('Checking authentication status', { hasToken: !!token });
-      
-      if (token) {
-        try {
-          const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/profile`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            AuthLogger.log('Profile fetch successful', { user: data.user });
-            setUser(data.user);
-          } else {
-            AuthLogger.warning('Profile fetch failed, attempting token refresh');
-            // Token is invalid, try to refresh
-            await refreshToken();
-          }
-        } catch (error) {
-          AuthLogger.error('Auth check failed:', error);
-          setUser(null);
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-        }
-      } else {
-        AuthLogger.log('No token found, user is not authenticated');
-      }
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, []);
-
   const refreshToken = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
     if (!refreshToken) {
@@ -111,6 +72,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       localStorage.setItem("access_token", data.tokens.access_token);
       localStorage.setItem("refresh_token", data.tokens.refresh_token);
       setUser(data.user);
+      return data.tokens.access_token;
     } catch (error) {
       AuthLogger.error('Token refresh error:', error);
       // Clear tokens on refresh failure
@@ -120,6 +82,65 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       throw error;
     }
   };
+
+  useEffect(() => {
+    // Check if we have a token in localStorage
+    const checkAuth = async () => {
+      const token = localStorage.getItem("access_token");
+      AuthLogger.log('Checking authentication status', { hasToken: !!token });
+      
+      if (token) {
+        try {
+          // Validate token before using it
+          const tokenData = JSON.parse(atob(token.split('.')[1]));
+          const isExpired = tokenData.exp * 1000 <= Date.now();
+          
+          if (isExpired) {
+            AuthLogger.warning('Token expired, attempting refresh');
+            try {
+              await refreshToken();
+            } catch (refreshError) {
+              AuthLogger.error('Token refresh failed:', refreshError);
+              setUser(null);
+              setIsLoading(false);
+              return;
+            }
+          }
+
+          const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/profile`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${isExpired ? await refreshToken() : token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            AuthLogger.log('Profile fetch successful', { user: data.user });
+            setUser(data.user);
+          } else {
+            AuthLogger.warning('Profile fetch failed, attempting token refresh');
+            try {
+              await refreshToken();
+            } catch (refreshError) {
+              AuthLogger.error('Token refresh failed after profile fetch error:', refreshError);
+              setUser(null);
+            }
+          }
+        } catch (error) {
+          AuthLogger.error('Auth check failed:', error);
+          setUser(null);
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
+      } else {
+        AuthLogger.log('No token found, user is not authenticated');
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (userData: User, tokens: Tokens) => {
     AuthLogger.log('Logging in user', { userId: userData.user_id });

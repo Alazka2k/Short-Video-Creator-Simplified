@@ -38,7 +38,8 @@ interface VideoCreationState {
 
 export function useVideoCreationState(defaultValues?: any) {
   const { getM2MToken } = useAuth();
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [m2mToken, setM2MToken] = useState<string | null>(null)
   // Initialize state from localStorage or default values
   const [state, setState] = useState<VideoCreationState>(() => {
@@ -163,29 +164,71 @@ export function useVideoCreationState(defaultValues?: any) {
   ])
 
   const handleCreateProject = useCallback(async () => {
+    setError(null);
     try {
-      const requestBody = constructRequestBody()
-      const response = await apiClient.post<{ result: { jobId: string } }>('/api/job/generate', requestBody);
+      const requestBody = constructRequestBody();
+      
+      // Get both tokens
+      const userToken = localStorage.getItem("access_token");
+      const m2mToken = await getM2MToken();
+      
+      // Set up headers with both tokens
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${m2mToken}`,
+      };
+      if (userToken) {
+        headers['x-user-token'] = userToken;
+      }
+      
+      const response = await apiClient.post<{ result: { jobId: string } }>(
+        '/api/job/generate', 
+        requestBody,
+        { headers }
+      );
+
+      // Just return the jobId without navigating
       return response.result.jobId;
     } catch (error) {
-      console.error('Error creating project:', error)
-      throw error
+      console.error('Error creating project:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred while creating the project');
+      throw error;
     }
-  }, [constructRequestBody])
+  }, [constructRequestBody, getM2MToken]);
 
   const handleGenerateVideo = useCallback(async () => {
-    setIsGenerating(true)
+    setIsGenerating(true);
+    setError(null);
     try {
-      const requestBody = constructRequestBody()
-      const response = await apiClient.post<{ result: { jobId: string } }>('/api/job/generate', requestBody);
+      const requestBody = constructRequestBody();
+      
+      // Get both tokens
+      const userToken = localStorage.getItem("access_token");
+      const m2mToken = await getM2MToken();
+      
+      // Set up headers with both tokens
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${m2mToken}`,
+      };
+      if (userToken) {
+        headers['x-user-token'] = userToken;
+      }
+      
+      const response = await apiClient.post<{ result: { jobId: string } }>(
+        '/api/job/generate', 
+        requestBody,
+        { headers }
+      );
+
+      // Just return the jobId without navigating
       return response.result.jobId;
     } catch (error) {
-      console.error('Error generating video:', error)
-      throw error
+      console.error('Error generating video:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred while generating the video');
+      throw error;
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }, [constructRequestBody])
+  }, [constructRequestBody, getM2MToken]);
 
   return {
     state,
@@ -195,6 +238,7 @@ export function useVideoCreationState(defaultValues?: any) {
       set: setImageCache
     },
     isGenerating,
+    error,
     handleGenerateVideo,
     handleCreateProject
   }

@@ -82,8 +82,14 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-user-token',
+    'x-forwarded-user-token'
+  ],
+  credentials: true,
+  maxAge: 86400 // 24 hours
 };
 
 app.use(cors(corsOptions));

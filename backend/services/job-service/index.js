@@ -49,9 +49,9 @@ class JobServiceInterface {
     }
   }
 
-  async process(prompt, parameters = {}, visualizationType = 'animation') {
+  async process(prompt, parameters = {}, visualizationType = 'animation', userId = null) {
     try {
-      const result = await this.jobPipeline.generateContent(prompt, parameters, visualizationType);
+      const result = await this.jobPipeline.generateContent(prompt, parameters, visualizationType, userId);
       
       // Log appropriate message based on status
       if (result.status === 'failed') {

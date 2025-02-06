@@ -17,7 +17,8 @@ class JobDataAccess {
         status, 
         parameters = {}, 
         visualizationType,
-        serviceConfig = {} 
+        serviceConfig = {},
+        userId = null
       } = jobData;
 
       // Validate jobId
@@ -43,22 +44,26 @@ class JobDataAccess {
         visualizationType: parameters.visualizationType || visualizationType || null
       };
 
-      // Create job record
-      const [jobRecord] = await knex('jobs')
-        .insert({
-          job_id: jobId,
-          prompt,
-          status,
-          service_sequence: JSON.stringify(serviceSequence),
-          metadata: JSON.stringify(metadata)
-        })
-        .returning('*');
-
-      logger.info(`Created job record: ${jobRecord.job_id}`, {
+      logger.info(`Creating job record for jobId: ${jobId}`, { 
+        userId,
         serviceConfig: serviceConfigFromParams,
         visualizationType: metadata.visualizationType,
         serviceSequence
       });
+
+      // Create job record
+      const [jobRecord] = await knex('jobs')
+        .insert({
+          job_id: jobId,
+          user_id: userId,
+          prompt,
+          status,
+          service_sequence: JSON.stringify(serviceSequence),
+          metadata: JSON.stringify(metadata),
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+        .returning('*');
 
       return jobRecord;
     } catch (error) {
@@ -187,15 +192,19 @@ class JobDataAccess {
         query = query.where('status', filters.status);
       }
 
+      if (filters.userId) {
+        query = query.where('user_id', filters.userId);
+      }
+
       const jobs = await query.orderBy('created_at', 'desc');
 
       return jobs.map(job => ({
         ...job,
-        service_sequence: JSON.parse(job.service_sequence || '[]'),
-        metadata: JSON.parse(job.metadata || '{}')
+        service_sequence: this.safeJsonParse(job.service_sequence) || [],
+        metadata: this.safeJsonParse(job.metadata) || {}
       }));
     } catch (error) {
-      logger.error('Error getting all jobs:', error);
+      logger.error('Error getting jobs:', error);
       throw error;
     }
   }

@@ -52,12 +52,12 @@ class JobPipelineService {
     }
   }
 
-  async generateContent(prompt, parameters = {}) {
+  async generateContent(prompt, parameters = {}, visualizationType = 'animation', userId = null) {
     const jobId = uuidv4();
     const jobOutputDir = this.getJobOutputPath(jobId);
     
     try {
-      logger.info(`Starting content generation job ${jobId} for prompt: ${prompt}`);
+      logger.info(`Starting content generation job ${jobId} for prompt: ${prompt}`, { userId });
       
       // Get and validate service configuration
       const serviceConfig = {
@@ -81,13 +81,15 @@ class JobPipelineService {
         logger.info(`Using visualization type: ${visualizationType}`);
       }
 
-      // Create initial job record
+      // Create initial job record with userId
       await this.jobDataAccess.createJob({
         jobId,
         prompt,
         status: 'in_progress',
         parameters,
-        visualizationType
+        visualizationType,
+        serviceConfig,
+        userId
       });
 
       // Step 1: Generate LLM content (blocking)
