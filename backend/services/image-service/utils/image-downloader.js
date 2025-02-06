@@ -5,8 +5,26 @@ const logger = require('../../../shared/utils/logger');
 
 class ImageDownloader {
   async downloadImage(url, outputPath) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({
+      headless: false,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--window-size=1920,1080'
+      ]
+    });
+    
     const page = await browser.newPage();
+    
+    // Set a desktop-like viewport
+    await page.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 1,
+    });
+
+    // Set a common user agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
   
     try {
       await fs.mkdir(path.dirname(outputPath), { recursive: true });

@@ -7,6 +7,7 @@ const { verifyAuth0Token, checkPermission } = require('../../services/auth-servi
 const serviceAuthMiddleware = require('../middleware/serviceAuth');
 const authDataAccess = require('../../services/auth-service/data/authDataAccess');
 const jwt = require('jsonwebtoken');
+const extractUserFromToken = require('../middleware/userTokenExtractor');
 
 /**
  * @route POST /api/job/generate
@@ -252,6 +253,7 @@ router.get('/jobs/:jobId',
   verifyAuth0Token,
   checkPermission('/api/job/jobs'),
   serviceAuthMiddleware,
+  extractUserFromToken,
   async (req, res) => {
     try {
       const userId = req.user.databaseUser.userId;
@@ -301,26 +303,60 @@ router.get('/jobs/:jobId',
 
 /**
  * @route GET /api/job/jobs
- * @description Get list of all jobs
+ * @description Get list of all jobs with pagination and filtering
  * @access Protected - requires read:job permission
  */
 router.get('/jobs',
   verifyAuth0Token,
   checkPermission('/api/job/jobs'),
   serviceAuthMiddleware,
+  extractUserFromToken,
   async (req, res) => {
     try {
-      const userId = req.user.databaseUser.userId;
-      const isApiUser = req.user.databaseUser.isApiUser;
+      // Try to get user ID from x-user-token if present
+      let userId = req.user.databaseUser.userId;
+      let isApiUser = req.user.databaseUser.isApiUser;
+
+      const userToken = req.header('x-user-token');
+      if (userToken) {
+        try {
+          const decodedUserToken = jwt.decode(userToken);
+          if (decodedUserToken?.auth0_id) {
+            const user = await authDataAccess.findUserByAuth0Id(decodedUserToken.auth0_id);
+            if (user) {
+              userId = user.user_id;
+              isApiUser = false;
+            }
+          }
+        } catch (tokenError) {
+          logger.warn('Error decoding user token:', tokenError);
+        }
+      }
 
       logger.info('Processing get jobs request', {
         userId,
-        isApiUser
+        isApiUser,
+        query: req.query
       });
 
-      // Only filter by userId if not an API user
+      // Extract query parameters
+      const {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        services,
+        status
+      } = req.query;
+
+      // Build filters object
       const filters = {
-        ...req.query,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        status,
+        ...(services ? { services: services.split(',') } : {}),
         ...(isApiUser ? {} : { userId: userId.toString() })
       };
 
@@ -335,10 +371,36 @@ router.get('/jobs',
         hasData: !!response.data,
         userId,
         isApiUser,
-        jobCount: response.data?.length || 0
+        jobCount: response.data?.data?.length || 0,
+        pagination: response.data?.pagination
       });
 
-      res.json(response.data);
+      // Process URLs in the response data
+      const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+      const processedData = await Promise.all(response.data.data.map(async job => {
+        if (job.metadata?.scenes) {
+          for (const scene of job.metadata.scenes) {
+            if (scene.image) {
+              scene.image = await StorageUrlHelper.refreshUrlsInObject(scene.image);
+            }
+            if (scene.video) {
+              scene.video = await StorageUrlHelper.refreshUrlsInObject(scene.video);
+            }
+            if (scene.voice) {
+              scene.voice = await StorageUrlHelper.refreshUrlsInObject(scene.voice);
+            }
+          }
+          if (job.metadata.music) {
+            job.metadata.music = await StorageUrlHelper.refreshUrlsInObject(job.metadata.music);
+          }
+        }
+        return job;
+      }));
+
+      res.json({
+        data: processedData,
+        pagination: response.data.pagination
+      });
     } catch (error) {
       logger.error('Jobs list request error:', {
         error: error.message,

@@ -188,6 +188,7 @@ class JobDataAccess {
     try {
       let query = knex('jobs');
 
+      // Apply filters
       if (filters.status) {
         query = query.where('status', filters.status);
       }
@@ -196,13 +197,45 @@ class JobDataAccess {
         query = query.where('user_id', filters.userId);
       }
 
-      const jobs = await query.orderBy('created_at', 'desc');
+      // Filter by services in service_sequence
+      if (filters.services && Array.isArray(filters.services)) {
+        query = query.whereRaw('service_sequence ?& ?', [filters.services]);
+      }
 
-      return jobs.map(job => ({
+      // Get total count before pagination
+      const [{ count }] = await query.clone().count();
+
+      // Apply sorting
+      const sortBy = filters.sortBy || 'created_at';
+      const sortOrder = filters.sortOrder?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+      query = query.orderBy(sortBy, sortOrder);
+
+      // Apply pagination
+      const page = parseInt(filters.page) || 1;
+      const limit = parseInt(filters.limit) || 20;
+      const offset = (page - 1) * limit;
+      query = query.offset(offset).limit(limit);
+
+      // Execute query
+      const jobs = await query;
+
+      // Process results
+      const processedJobs = jobs.map(job => ({
         ...job,
         service_sequence: this.safeJsonParse(job.service_sequence) || [],
         metadata: this.safeJsonParse(job.metadata) || {}
       }));
+
+      // Return paginated response
+      return {
+        data: processedJobs,
+        pagination: {
+          total: parseInt(count),
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit)
+        }
+      };
     } catch (error) {
       logger.error('Error getting jobs:', error);
       throw error;

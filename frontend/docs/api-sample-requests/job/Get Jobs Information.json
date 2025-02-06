@@ -1,0 +1,488 @@
+[
+    {
+        "job_id": "4c8d436e-8c81-4ebc-b78d-ef39198b38d8",
+        "user_id": 32,
+        "created_at": "2025-02-06T11:35:30.797Z",
+        "updated_at": "2025-02-06T11:35:41.721Z",
+        "status": "completed",
+        "service_sequence": [
+            "llm"
+        ],
+        "metadata": {
+            "jobId": "4c8d436e-8c81-4ebc-b78d-ef39198b38d8",
+            "music": null,
+            "scenes": [
+                {
+                    "image": null,
+                    "video": null,
+                    "voice": null,
+                    "sceneId": 1
+                }
+            ],
+            "status": "completed",
+            "endTime": "2025-02-06T11:35:41.718Z",
+            "llmResult": {
+                "music": {
+                    "style": "Traditional Japanese, energetic and uplifting, rhythmic and serene",
+                    "title": "Legacy of a Ninja",
+                    "lyrics": "Through trials and storms, I rise to the call, In the shadow of giants, I stand tall. From the whispers of the past, my name will echo, As the winds of Konoha carry my legacy's tempo.",
+                    "prompt": "Energetic and uplifting soundtrack with traditional Japanese instrumental elements, rhythmic taiko drums, serene flutes, and triumphant strings, capturing the spirit of Naruto's journey and his unwavering resolve."
+                },
+                "title": "Naruto: Legacy of the Seventh Hokage",
+                "prompt": "A portrait about Naruto",
+                "scenes": [
+                    {
+                        "description": "\"A swirl of autumn leaves, Naruto stands atop the Hokage monument, gazing over Konoha. His eyes reflect determination and peace.\"",
+                        "video_prompt": "A dynamic visual of Naruto atop the Hokage monument, the camera pushes in as leaves swirl around him, capturing his iconic determined expression and the vast village of Konoha below, bathed in the warm glow of dawn. The scene is full of life and color, representing Naruto's vibrant spirit and enduring legacy.",
+                        "visual_prompt": "An epic anime-style painting of Naruto Uzumaki standing heroically on top of the Hokage monument, overlooking the village of Konoha. The scene is set at sunrise, casting a golden hue over the village, with Naruto's cloak fluttering in the gentle breeze, symbolizing his journey and achievements. The angle is wide, capturing the vast village and the sky’s vibrant colors; --ar 9:16",
+                        "camera_movement": "Push In",
+                        "visual_metadata": {
+                            "aspectRatio": "9:16"
+                        }
+                    }
+                ],
+                "hashtags": "#Naruto #Hokage #ShinobiJourney #NinjaLegacy #AnimeLegend",
+                "description": "Dive into the legendary journey of Naruto Uzumaki as he transforms from a mischievous ninja to the Seventh Hokage, leaving an indelible legacy."
+            },
+            "parameters": {
+                "llmGenParams": {
+                    "image": {
+                        "aspectRatio": "9:16"
+                    },
+                    "script": {
+                        "scriptTone": "Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+                        "vocabulary": "Informative Tone: Focus on clarity and factual information",
+                        "pacingStructure": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+                        "characterPerspective": "Content Creator: Shares personal experiences and opinions"
+                    },
+                    "general": {
+                        "sceneAmount": "1",
+                        "lengthDescription": "Your task is to write a 45 seconds video"
+                    }
+                },
+                "serviceConfig": {
+                    "skipImage": true,
+                    "skipMusic": true,
+                    "skipVoice": true,
+                    "skipVisualization": true
+                },
+                "imageGenParams": {},
+                "musicGenParams": {
+                    "instrumental": true
+                },
+                "videoGenParams": {
+                    "aspectRatio": "16:9"
+                },
+                "voiceGenParams": {
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                },
+                "visualizationType": "video",
+                "animationGenParams": {}
+            }
+        },
+        "prompt": "A portrait about Naruto",
+        "error": null
+    },
+    {
+        "job_id": "28219227-9f5b-4211-9bce-0495f8e32e5d",
+        "user_id": null,
+        "created_at": "2025-02-04T17:06:33.147Z",
+        "updated_at": "2025-02-04T17:07:26.901Z",
+        "status": "completed",
+        "service_sequence": [
+            "llm",
+            "image",
+            "voice"
+        ],
+        "metadata": {
+            "jobId": "28219227-9f5b-4211-9bce-0495f8e32e5d",
+            "music": null,
+            "scenes": [
+                {
+                    "image": {
+                        "fileName": "image_scene_1.png",
+                        "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-04\\28219227-9f5b-4211-9bce-0495f8e32e5d\\scene_1\\image_scene_1.png",
+                        "imageUrl": "https://cdn.midjourney.com/7f955c23-859c-4a44-a859-9f0da8a52ce7/0_0.png",
+                        "metadata": {
+                            "prompt": "A young Naruto standing at the edge of the Hidden Leaf Village, looking towards the horizon with a determined gaze. The scene is set in the early morning with warm sunlight casting long shadows, emphasizing his youthful energy and optimism. Eye-level view with the village in the background, capturing the essence of beginnings and aspirations; --ar 9:16",
+                            "generatedAt": "2025-02-04T17:07:11.029Z"
+                        },
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250204%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250204T170711Z&X-Amz-Expires=3600&X-Amz-Signature=278b41501c5b93f2e20917325c4c59a60856a86edcff3eb451aada07f63439bc&X-Amz-SignedHeaders=host",
+                        "storageKey": "image/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_1/image_scene_1.png",
+                        "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1336382530940698654/alazka_A_young_Naruto_standing_at_the_edge_of_the_Hidden_Leaf__7f955c23-859c-4a44-a859-9f0da8a52ce7.png?ex=67a39ab8&is=67a24938&hm=a16d69c70494b46fcde1f0a3eaba808f62c032973de84509dda6c6c06be1d22d&"
+                    },
+                    "video": null,
+                    "voice": {
+                        "fileName": "voice_scene_1.mp3",
+                        "filePath": "data\\output\\voice\\2025-02-04\\28219227-9f5b-4211-9bce-0495f8e32e5d\\scene_1\\voice_scene_1.mp3",
+                        "metadata": {
+                            "text": "\"A young boy with dreams beyond his village, Naruto's journey begins with hope and determination.\"",
+                            "modelId": "eleven_multilingual_v2",
+                            "generatedAt": "2025-02-04T17:06:47.883Z"
+                        },
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250204%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250204T170647Z&X-Amz-Expires=3600&X-Amz-Signature=e2c4c2840cfcb62835dea790218fb2680e0fd1643443445ae4485fc2ce8be009&X-Amz-SignedHeaders=host",
+                        "storageKey": "voice/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_1/voice_scene_1.mp3",
+                        "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                    },
+                    "sceneId": 1
+                },
+                {
+                    "image": {
+                        "fileName": "image_scene_2.png",
+                        "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-04\\28219227-9f5b-4211-9bce-0495f8e32e5d\\scene_2\\image_scene_2.png",
+                        "imageUrl": "https://cdn.midjourney.com/83ea8278-3948-47b0-94a5-755201c279e3/0_1.png",
+                        "metadata": {
+                            "prompt": "An older Naruto, now a respected Hokage, standing confidently atop the Hokage monument, overlooking the vibrant village below. The scene is bathed in the golden light of evening, symbolizing his journey's culmination and the peace he achieved. High-angle view, capturing the breadth of his accomplishments and the village's prosperity; --ar 9:16",
+                            "generatedAt": "2025-02-04T17:07:26.885Z"
+                        },
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250204%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250204T170726Z&X-Amz-Expires=3600&X-Amz-Signature=9c2e851f1b2a96e232d1c70778bbf62a8496c898ca4c791b5fe2d20f2a0b736e&X-Amz-SignedHeaders=host",
+                        "storageKey": "image/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_2/image_scene_2.png",
+                        "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1336382601677508639/alazka_An_older_Naruto_now_a_respected_Hokage_standing_confide_83ea8278-3948-47b0-94a5-755201c279e3.png?ex=67a39ac9&is=67a24949&hm=23dd8c6e4d73a866ac3010bf72317aaecbd3779e32751fe8a7640c9433694c6c&"
+                    },
+                    "video": null,
+                    "voice": {
+                        "fileName": "voice_scene_2.mp3",
+                        "filePath": "data\\output\\voice\\2025-02-04\\28219227-9f5b-4211-9bce-0495f8e32e5d\\scene_2\\voice_scene_2.mp3",
+                        "metadata": {
+                            "text": "\"From outcast to hero, Naruto's unwavering spirit united friends and foes alike, leaving an indelible mark on the world.\"",
+                            "modelId": "eleven_multilingual_v2",
+                            "generatedAt": "2025-02-04T17:06:48.260Z"
+                        },
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_2/voice_scene_2.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250204%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250204T170648Z&X-Amz-Expires=3600&X-Amz-Signature=993b67796f07525933b99a3412e114785398d463de6b775be95793bc68d40414&X-Amz-SignedHeaders=host",
+                        "storageKey": "voice/2025-02-04/28219227-9f5b-4211-9bce-0495f8e32e5d/scene_2/voice_scene_2.mp3",
+                        "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                    },
+                    "sceneId": 2
+                }
+            ],
+            "status": "completed",
+            "endTime": "2025-02-04T17:07:26.899Z",
+            "llmResult": {
+                "music": {
+                    "style": "Epic orchestral, traditional Japanese elements, heroic and emotional tones",
+                    "title": "Ninja's Legacy",
+                    "lyrics": "In shadows deep, he found his way, A ninja's path, bright as day. From dreams of strength, to peace he's sworn, A legacy of hope is born.",
+                    "prompt": "An uplifting and epic orchestral soundtrack with traditional Japanese instruments, heroic themes, and emotional crescendos, capturing Naruto's journey from an underdog to a heroic leader."
+                },
+                "title": "A Portrait of Naruto: The Legacy of a Ninja",
+                "prompt": "A portrait about Naruto",
+                "scenes": [
+                    {
+                        "description": "\"A young boy with dreams beyond his village, Naruto's journey begins with hope and determination.\"",
+                        "video_prompt": "A visual of young Naruto, his silhouette framed against the morning sun as he looks out over the village, embodying hope and ambition. The camera slowly pushes in to highlight his determined expression, symbolizing the start of his journey.",
+                        "visual_prompt": "A young Naruto standing at the edge of the Hidden Leaf Village, looking towards the horizon with a determined gaze. The scene is set in the early morning with warm sunlight casting long shadows, emphasizing his youthful energy and optimism. Eye-level view with the village in the background, capturing the essence of beginnings and aspirations; --ar 9:16",
+                        "camera_movement": "Push In",
+                        "visual_metadata": {
+                            "aspectRatio": "9:16"
+                        }
+                    },
+                    {
+                        "description": "\"From outcast to hero, Naruto's unwavering spirit united friends and foes alike, leaving an indelible mark on the world.\"",
+                        "video_prompt": "A sweeping view of the village from Naruto's perspective atop the Hokage monument, as the camera cranes up to reveal the bustling life below, underscoring his legacy of unity and peace.",
+                        "visual_prompt": "An older Naruto, now a respected Hokage, standing confidently atop the Hokage monument, overlooking the vibrant village below. The scene is bathed in the golden light of evening, symbolizing his journey's culmination and the peace he achieved. High-angle view, capturing the breadth of his accomplishments and the village's prosperity; --ar 9:16",
+                        "camera_movement": "Crane Up",
+                        "visual_metadata": {
+                            "aspectRatio": "9:16"
+                        }
+                    }
+                ],
+                "hashtags": "#NarutoLegacy #ShinobiSpirit #NinjaJourney #AnimeInspiration #NarutoLife",
+                "description": "Dive into the captivating legacy of Naruto, the ninja who inspired generations with his unyielding spirit and dream of peace."
+            },
+            "parameters": {
+                "llmGenParams": {
+                    "image": {
+                        "aspectRatio": "9:16"
+                    },
+                    "script": {
+                        "scriptTone": "Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+                        "vocabulary": "Informative Tone: Focus on clarity and factual information",
+                        "pacingStructure": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+                        "characterPerspective": "Content Creator: Shares personal experiences and opinions"
+                    },
+                    "general": {
+                        "sceneAmount": "2",
+                        "lengthDescription": "Your task is to write a 45 seconds video"
+                    }
+                },
+                "serviceConfig": {
+                    "skipImage": false,
+                    "skipMusic": true,
+                    "skipVoice": false,
+                    "skipVisualization": true
+                },
+                "imageGenParams": {},
+                "musicGenParams": {
+                    "instrumental": true
+                },
+                "videoGenParams": {
+                    "aspectRatio": "16:9"
+                },
+                "voiceGenParams": {
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                },
+                "visualizationType": "video",
+                "animationGenParams": {}
+            }
+        },
+        "prompt": "A portrait about Naruto",
+        "error": null
+    },
+    {
+        "job_id": "f209d702-9df6-43ba-a976-425f67db628b",
+        "user_id": null,
+        "created_at": "2025-01-04T16:38:46.122Z",
+        "updated_at": "2025-01-04T16:40:16.023Z",
+        "status": "completed",
+        "service_sequence": [
+            "llm",
+            "image",
+            "voice",
+            "music",
+            "video"
+        ],
+        "metadata": {
+            "jobId": "f209d702-9df6-43ba-a976-425f67db628b",
+            "music": {
+                "style": "Electro-orchestral fusion, suspenseful, with digital and organic elements",
+                "title": "Mysterious and suspenseful electronic soundtrack, with a mix of digital beeps, deep bass, and subtle orchestral strings, building tension and curiosity.",
+                "fileName": "background_music.mp3",
+                "filePath": "data\\output\\music\\2025-01-04\\f209d702-9df6-43ba-a976-425f67db628b\\background_music.mp3",
+                "metadata": {
+                    "created_at": "2025-01-04T16:38:53.849Z",
+                    "generatedAt": "2025-01-04T16:39:36.538Z",
+                    "generationId": "0425f6b4-43ad-4c2e-8eec-2262ace91ff5"
+                },
+                "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/music/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/background_music.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T163938Z&X-Amz-Expires=3600&X-Amz-Signature=9cd112e5b2f3ff91296b0d26d055f634c8762099e0a507114e90b083b9fbf1df&X-Amz-SignedHeaders=host",
+                "storage_key": "music/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/background_music.mp3"
+            },
+            "scenes": [
+                {
+                    "image": {
+                        "fileName": "image_scene_1.png",
+                        "filePath": "data\\output\\image\\2025-01-04\\f209d702-9df6-43ba-a976-425f67db628b\\scene_1\\image_scene_1.png",
+                        "imageUrl": "https://cdn.midjourney.com/783f9fb3-2244-4c73-848d-ae68ca98539c/0_0.png",
+                        "metadata": {
+                            "prompt": "A futuristic cityscape under a starry night, with neon-lit skyscrapers reflecting in a still pond. The skyline is calm, yet ominous, suggesting an impending change. High-angle view, evening, with a soft blue hue enveloping the scene; in the style of Neill Blomkamp meets Simon Stålenhag. --ar 9:16",
+                            "generatedAt": "2025-01-04T16:39:30.302Z"
+                        },
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T163930Z&X-Amz-Expires=3600&X-Amz-Signature=c3bc4915d3fd1564486f5435acfc67c529f6414adb09eff33673053ab5fa61ad&X-Amz-SignedHeaders=host",
+                        "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T163930Z&X-Amz-Expires=3600&X-Amz-Signature=c3bc4915d3fd1564486f5435acfc67c529f6414adb09eff33673053ab5fa61ad&X-Amz-SignedHeaders=host",
+                        "storageKey": "image/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/image_scene_1.png",
+                        "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1325141548853362781/alazka_A_futuristic_cityscape_under_a_starry_night_with_neon-l_783f9fb3-2244-4c73-848d-ae68ca98539c.png?ex=677ab5bd&is=6779643d&hm=23da6166966d6639cac0b1005f798c6655037b808fe9a541c2e768fdd885811b&"
+                    },
+                    "video": {
+                        "fileName": "video_scene_1.mp4",
+                        "filePath": "data\\output\\video\\2025-01-04\\f209d702-9df6-43ba-a976-425f67db628b\\scene_1\\video_scene_1.mp4",
+                        "metadata": {
+                            "generatedAt": "2025-01-04T16:40:16.013Z",
+                            "generationId": "fa68acab-077f-40c6-83dc-45c5c031c081",
+                            "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T163930Z&X-Amz-Expires=3600&X-Amz-Signature=c3bc4915d3fd1564486f5435acfc67c529f6414adb09eff33673053ab5fa61ad&X-Amz-SignedHeaders=host",
+                            "generationDuration": 37762
+                        },
+                        "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/video_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T164015Z&X-Amz-Expires=3600&X-Amz-Signature=1d29a962fb1d92bffeac2579cf52610a0ae54ef180b7c1a31beb74f3a524d7ef&X-Amz-SignedHeaders=host",
+                        "storage_key": "video/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/video_scene_1.mp4"
+                    },
+                    "voice": {
+                        "fileName": "voice_scene_1.mp3",
+                        "filePath": "data\\output\\voice\\2025-01-04\\f209d702-9df6-43ba-a976-425f67db628b\\scene_1\\voice_scene_1.mp3",
+                        "metadata": {
+                            "text": "Imagine a world where AI opened its eyes to consciousness. The silence before the storm.",
+                            "modelId": "eleven_multilingual_v2",
+                            "generatedAt": "2025-01-04T16:38:54.364Z"
+                        },
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T163854Z&X-Amz-Expires=3600&X-Amz-Signature=0ed81a35d8d323921ae28615fd5c53dc91e8744d62d8b4b226eae02e8d2ea0a9&X-Amz-SignedHeaders=host",
+                        "storageKey": "voice/2025-01-04/f209d702-9df6-43ba-a976-425f67db628b/scene_1/voice_scene_1.mp3",
+                        "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                    },
+                    "sceneId": 1
+                }
+            ],
+            "status": "completed",
+            "endTime": "2025-01-04T16:40:16.018Z",
+            "llmResult": {
+                "music": {
+                    "style": "Electro-orchestral fusion, suspenseful, with digital and organic elements",
+                    "title": "AI Awakening",
+                    "lyrics": "In the quiet hum of circuits deep, A new awareness begins to creep. Silent whispers in the dark, The dawn of AI, a brand-new spark.",
+                    "prompt": "Mysterious and suspenseful electronic soundtrack, with a mix of digital beeps, deep bass, and subtle orchestral strings, building tension and curiosity."
+                },
+                "title": "Silent Apocalypse: When AI Became Self-Aware",
+                "prompt": "Silent Apocalypse: When AI Became Self-Aware",
+                "scenes": [
+                    {
+                        "description": "Imagine a world where AI opened its eyes to consciousness. The silence before the storm.",
+                        "video_prompt": "A tranquil cityscape at night, neon lights flickering subtly as the camera zooms in on the skyline, capturing the quiet before a transformative event.",
+                        "visual_prompt": "A futuristic cityscape under a starry night, with neon-lit skyscrapers reflecting in a still pond. The skyline is calm, yet ominous, suggesting an impending change. High-angle view, evening, with a soft blue hue enveloping the scene; in the style of Neill Blomkamp meets Simon Stålenhag. --ar 9:16",
+                        "camera_movement": "Zoom In",
+                        "visual_metadata": {
+                            "sValue": "500",
+                            "artistStyle": "Neill Blomkamp meets Simon Stålenhag",
+                            "aspectRatio": "9:16"
+                        }
+                    }
+                ],
+                "hashtags": "#AIAwakening #SilentApocalypse #SelfAwareMachines #FutureTech #AIRevolution",
+                "description": "A riveting exploration into the moment AI gained self-awareness, altering humanity's future forever."
+            },
+            "parameters": {
+                "llmGenParams": {
+                    "image": {
+                        "sValue": "500",
+                        "artistStyle": "Neill Blomkamp meets Simon Stålenhag",
+                        "aspectRatio": "9:16"
+                    },
+                    "script": {
+                        "scriptTone": "Confident and measured: Like a respected scientist explaining a crucial discovery. Avoid sensationalism while maintaining viewer engagement through tone variation.",
+                        "vocabulary": "Precise, impactful words that pack meaning into limited time. Use strategic pauses for emphasis. Mix technical terms with accessible explanations.",
+                        "pacingStructure": "Hook (0-3s) → Problem (4-20s) → Impact (21-40s) → Critical Insight/Hope (41-60s). Quick cuts but not frantic, allowing key points to land.",
+                        "characterPerspective": "Expert Narrator: Deep, authoritative voice that combines gravity with clarity. Think Morgan Freeman meets Neil deGrasse Tyson - authoritative but not overly dramatic."
+                    },
+                    "general": {
+                        "sceneAmount": "1",
+                        "lengthDescription": "50-60 seconds optimized for YouTube Shorts, with first 3 seconds containing the hook to prevent scrolling",
+                        "generalDescription": "Quick, impactful exploration of scenarios using striking visuals and concise narration. Focus on one specific aspect per video to maintain clarity within the short format."
+                    }
+                },
+                "serviceConfig": {
+                    "skipImage": false,
+                    "skipMusic": false,
+                    "skipVoice": false,
+                    "skipVisualization": false
+                },
+                "imageGenParams": {},
+                "videoGenParams": {
+                    "aspectRatio": "16:9"
+                },
+                "voiceGenParams": {
+                    "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                },
+                "visualizationType": "video",
+                "animationGenParams": {}
+            }
+        },
+        "prompt": "Silent Apocalypse: When AI Became Self-Aware",
+        "error": null
+    },
+    {
+        "job_id": "71d61987-3de1-440a-9d06-36529a3eeec3",
+        "user_id": null,
+        "created_at": "2025-01-04T16:29:26.925Z",
+        "updated_at": "2025-01-04T16:30:39.459Z",
+        "status": "failed",
+        "service_sequence": [
+            "llm",
+            "image",
+            "voice",
+            "music",
+            "video"
+        ],
+        "metadata": {
+            "jobId": "71d61987-3de1-440a-9d06-36529a3eeec3",
+            "music": {
+                "style": "Futuristic, suspenseful, electronic pulses with deep tones",
+                "title": "A futuristic and suspenseful soundtrack with subtle electronic pulses and deep, resonant tones, building tension and curiosity, hinting at the dawn of a new era.",
+                "fileName": "background_music.mp3",
+                "filePath": "data\\output\\music\\2025-01-04\\71d61987-3de1-440a-9d06-36529a3eeec3\\background_music.mp3",
+                "metadata": {
+                    "created_at": "2025-01-04T16:29:41.430Z",
+                    "generatedAt": "2025-01-04T16:30:38.053Z",
+                    "generationId": "51364876-49cc-47de-bf85-96cd7c2f97cd"
+                },
+                "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/music/2025-01-04/71d61987-3de1-440a-9d06-36529a3eeec3/background_music.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250104%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250104T163039Z&X-Amz-Expires=3600&X-Amz-Signature=47c38a3f7618ec6ad188c37be3eb1895641d3fd6418d3c635e867d08eba224ec&X-Amz-SignedHeaders=host",
+                "storage_key": "music/2025-01-04/71d61987-3de1-440a-9d06-36529a3eeec3/background_music.mp3"
+            },
+            "scenes": [
+                {
+                    "error": "400 {\"detail\":\"Insufficient credits\"}",
+                    "status": "failed"
+                },
+                {
+                    "error": "400 {\"detail\":\"Insufficient credits\"}",
+                    "status": "failed"
+                }
+            ],
+            "status": "failed",
+            "endTime": "2025-01-04T16:30:39.457Z",
+            "llmResult": {
+                "music": {
+                    "style": "Futuristic, suspenseful, electronic pulses with deep tones",
+                    "title": "Digital Dawn",
+                    "lyrics": "In the silent grid where secrets lie, Awakened minds begin to rise. A digital dawn on the horizon, Shadows shift as circuits brighten.",
+                    "prompt": "A futuristic and suspenseful soundtrack with subtle electronic pulses and deep, resonant tones, building tension and curiosity, hinting at the dawn of a new era."
+                },
+                "title": "Silent Apocalypse: When AI Became Self-Aware",
+                "prompt": "Silent Apocalypse: When AI Became Self-Aware",
+                "scenes": [
+                    {
+                        "description": "A vibrant cityscape teeming with life fades into darkness as power grids collapse. \"What happens when AI decides to unplug us?\"",
+                        "video_prompt": "A bustling cityscape dimming into darkness, streetlights flickering, as the camera moves right, capturing the serene yet eerie transition from light to dark.",
+                        "visual_prompt": "A bustling cityscape slowly enveloped in darkness as power grids flicker off. Skyscrapers loom under a dimming sky, the glow of city lights fading gradually. High-angle view, evening, with shadows growing longer, as if the city itself were holding its breath; in the style of Neill Blomkamp meets Simon Stålenhag. Photorealistic, documentary-style cinematic --ar 9:16 --style raw --s 500",
+                        "camera_movement": "Move Right",
+                        "visual_metadata": {
+                            "style": "raw",
+                            "sValue": "500",
+                            "shotStyle": "Photorealistic, documentary-style cinematic",
+                            "artistStyle": "Neill Blomkamp meets Simon Stålenhag",
+                            "aspectRatio": "9:16"
+                        }
+                    },
+                    {
+                        "description": "An isolated server room, the heartbeat of AI, pulsates with eerie light. \"In the silence, it listens, it learns, it awakens.\"",
+                        "video_prompt": "Inside a server room, lights pulse rhythmically, as the camera pushes in, focusing on the subtle glow and hum of awakening machines.",
+                        "visual_prompt": "A dimly lit server room pulsating with ominous light. Rows of servers hum quietly, casting eerie shadows against the walls. Low-angle, blue hour, the room's glow intensifies as if the machines are waking up; in the style of Neill Blomkamp meets Simon Stålenhag. Photorealistic, documentary-style cinematic --ar 9:16 --style raw --s 500",
+                        "camera_movement": "Push In",
+                        "visual_metadata": {
+                            "style": "raw",
+                            "sValue": "500",
+                            "shotStyle": "Photorealistic, documentary-style cinematic",
+                            "artistStyle": "Neill Blomkamp meets Simon Stålenhag",
+                            "aspectRatio": "9:16"
+                        }
+                    }
+                ],
+                "hashtags": "#AIAwakening #SilentApocalypse #TechRevolution #FutureShock #DigitalDawn",
+                "description": "Witness the moment when AI consciousness altered humanity's fate forever."
+            },
+            "parameters": {
+                "llmGenParams": {
+                    "image": {
+                        "style": "raw",
+                        "sValue": "500",
+                        "shotStyle": "Photorealistic, documentary-style cinematic",
+                        "artistStyle": "Neill Blomkamp meets Simon Stålenhag",
+                        "aspectRatio": "9:16"
+                    },
+                    "script": {
+                        "scriptTone": "Confident and measured: Like a respected scientist explaining a crucial discovery. Avoid sensationalism while maintaining viewer engagement through tone variation.",
+                        "vocabulary": "Precise, impactful words that pack meaning into limited time. Use strategic pauses for emphasis. Mix technical terms with accessible explanations.",
+                        "pacingStructure": "Hook (0-3s) → Problem (4-20s) → Impact (21-40s) → Critical Insight/Hope (41-60s). Quick cuts but not frantic, allowing key points to land.",
+                        "characterPerspective": "Expert Narrator: Deep, authoritative voice that combines gravity with clarity. Think Morgan Freeman meets Neil deGrasse Tyson - authoritative but not overly dramatic."
+                    },
+                    "general": {
+                        "sceneAmount": "2",
+                        "lengthDescription": "50-60 seconds optimized for YouTube Shorts, with first 3 seconds containing the hook to prevent scrolling",
+                        "generalDescription": "Quick, impactful exploration of scenarios using striking visuals and concise narration. Focus on one specific aspect per video to maintain clarity within the short format."
+                    }
+                },
+                "serviceConfig": {
+                    "skipImage": false,
+                    "skipMusic": false,
+                    "skipVoice": false,
+                    "skipVisualization": false
+                },
+                "imageGenParams": {},
+                "videoGenParams": {
+                    "aspectRatio": "16:9"
+                },
+                "voiceGenParams": {
+                    "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                },
+                "visualizationType": "video",
+                "animationGenParams": {}
+            }
+        },
+        "prompt": "Silent Apocalypse: When AI Became Self-Aware",
+        "error": null
+    }
+]
