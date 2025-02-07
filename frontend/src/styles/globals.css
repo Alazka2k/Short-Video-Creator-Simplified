@@ -25,34 +25,52 @@
     --input: 240 5.9% 90%; /* Input background color: light gray */
     --ring: 271 91% 65%; /* Ring color: bright purple */
     --radius: 0.5rem; /* Border radius: 0.5 rem */
-    --white: 0 0% 100%; /* White color */
-    --black: 0 0% 0%; /* Black color */
-    --transparent: 0 0% 100% / 0; /* Transparent color */
+    --white: #fff;
+    --black: #000;
+    --transparent: transparent;
+
+    /* Aurora specific variables */
+    --blue-100: #dbeafe;
+    --blue-200: #bfdbfe;
+    --blue-300: #93c5fd;
+    --blue-400: #60a5fa;
+    --blue-500: #3b82f6;
+    --indigo-200: #c7d2fe;
+    --indigo-300: #a5b4fc;
+    --indigo-400: #818cf8;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    
+    /* Animation defaults */
+    --animation-duration: 60s;
+    --gradient-width: 200%;
+    --gradient-height: 200%;
+    --blur-amount: 80px;
+    --main-opacity: 0.5;
+    --layer-opacity: 0.7;
   }
 
   .dark {
     /* Define CSS variables for dark mode */
-    --background: 224 71% 4%; /* Background color: very dark blue (Hue: 224, Saturation: 71%, Lightness: 4%) */ 
-    --foreground: 213 31% 91%; /* Foreground color: light gray (Hue: 213, Saturation: 31%, Lightness: 91%) */
-    --card: 224 71% 4%; /* Card background color: very dark blue (Hue: 224, Saturation: 71%, Lightness: 4%) */
-    --card-foreground: 213 31% 91%; /* Card foreground color: light gray (Hue: 213, Saturation: 31%, Lightness: 91%) */
-    --popover: 224 71% 4%; /* Popover background color: very dark blue (Hue: 224, Saturation: 71%, Lightness: 4%) */
-    --popover-foreground: 215 20.2% 65.1%; /* Popover foreground color: medium gray (Hue: 215, Saturation: 20.2%, Lightness: 65.1%) */
-    --primary: 271 91% 65%; /* Primary color: bright purple (Hue: 271, Saturation: 91%, Lightness: 65%) */
-    --primary-foreground: 0 0% 100%; /* Primary foreground color: white (Hue: 0, Saturation: 0%, Lightness: 100%) */
-    --secondary: 222 47% 11%; /* Secondary color: dark blue (Hue: 222, Saturation: 47%, Lightness: 11%) */
-    --secondary-foreground: 215 20.2% 65.1%; /* Secondary foreground color: medium gray (Hue: 215, Saturation: 20.2%, Lightness: 65.1%) */
-    --muted: 223 47% 11%; /* Muted color: dark blue (Hue: 223, Saturation: 47%, Lightness: 11%) */
-    --muted-foreground: 215 20.2% 65.1%; /* Muted foreground color: medium gray (Hue: 215, Saturation: 20.2%, Lightness: 65.1%) */
-    --accent: 262 83% 58%; /* Accent color: bright blue (Hue: 262, Saturation: 83%, Lightness: 58%) */
-    --accent-foreground: 0 0% 100%; /* Accent foreground color: white (Hue: 0, Saturation: 0%, Lightness: 100%) */
-    --destructive: 0 63% 31%; /* Destructive color: dark red (Hue: 0, Saturation: 63%, Lightness: 31%) */
-    --destructive-foreground: 210 40% 98%; /* Destructive foreground color: very light blue (Hue: 210, Saturation: 40%, Lightness: 98%) */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
     --border: 216 34% 17%; /* Border color: dark gray (Hue: 216, Saturation: 34%, Lightness: 17%) */
     --input: 216 34% 17%; /* Input background color: dark gray (Hue: 216, Saturation: 34%, Lightness: 17%) */
     --ring: 271 91% 65%; /* Ring color: bright purple (Hue: 271, Saturation: 91%, Lightness: 65%) */
-    --white: 0 0% 100%; /* White color (Hue: 0, Saturation: 0%, Lightness: 100%) */
-    --black: 0 0% 0%; /* Black color (Hue: 0, Saturation: 0%, Lightness: 0%) */
     --transparent: 0 0% 100% / 0; /* Transparent color (Hue: 0, Saturation: 0%, Lightness: 100%, Alpha: 0) */
   }
 
@@ -121,16 +139,28 @@
   }
 
   .animate-aurora {
-    /* Aurora animation */
-    animation: aurora 15s ease-in-out infinite;
-    background-size: 400% 400%;
+    animation: aurora var(--animation-duration) linear infinite;
     will-change: background-position;
   }
 
+  .animate-aurora::before,
+  .animate-aurora::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--aurora);
+    background-size: var(--gradient-width) var(--gradient-height);
+    animation: aurora var(--animation-duration) linear infinite;
+    opacity: var(--layer-opacity);
+    mix-blend-mode: soft-light;
+  }
+
   .animate-aurora::before {
-    /* Aurora animation before pseudo-element */
-    content: ""; /* Empty content */
-    display: none; /* Hide the pseudo-element */
+    mask-image: radial-gradient(circle at 100% 0%, black, transparent 70%);
+  }
+
+  .animate-aurora::after {
+    mask-image: radial-gradient(circle at 0% 100%, black, transparent 70%);
   }
 
   .animate-aurora-subtle {
@@ -197,13 +227,10 @@
 
 @keyframes aurora {
   0% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
+    background-position: 0% 50%;
   }
   100% {
-    background-position: 0% 0%;
+    background-position: 200% 50%;
   }
 }
 
@@ -233,8 +260,7 @@
 
 /* Add animation start detection */
 .animate-aurora {
-  animation: aurora 15s ease-in-out infinite;
-  background-size: 400% 400%;
+  animation: aurora var(--animation-duration) linear infinite;
   will-change: background-position;
 }
 
