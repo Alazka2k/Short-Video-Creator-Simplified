@@ -6,15 +6,11 @@ import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
 export default function WorkbenchPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background */}
-      <div className="main-gradient" />
-      <div className="gradient-overlay" />
-
       <div className="container max-w-7xl mx-auto py-12">
         <div className="relative">
           {/* Header section */}
           <div className="text-center space-y-2 mb-8">
-            <h1 className="text-4xl font-bold tracking-tight gradient-primary-text">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">
               Content Workbench
             </h1>
             <p className="text-muted-foreground text-lg">

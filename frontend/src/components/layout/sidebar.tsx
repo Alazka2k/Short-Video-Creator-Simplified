@@ -87,7 +87,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      "border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
       className
     )}>
       <div className="flex flex-col h-full px-4 py-6">

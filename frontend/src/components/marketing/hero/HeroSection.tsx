@@ -33,10 +33,7 @@ import { HeroVideo } from '@/components/marketing/hero/HeroVideo'
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-accent/5">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background to-accent/5" />
-
+    <section className="relative overflow-hidden">
       <div className="container relative px-4 md:px-6 py-16 md:py-24">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left column - Text content */}

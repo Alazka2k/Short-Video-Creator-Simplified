@@ -104,38 +104,6 @@ export default function FeaturesPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-grid-white/[0.02] -z-10">
-        <div className="absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-      </div>
-      
-      {/* Floating orbs */}
-      <motion.div
-        className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl"
-        animate={{
-          x: [0, 100, 0],
-          y: [0, -50, 0],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-3xl"
-        animate={{
-          x: [0, -100, 0],
-          y: [0, 50, 0],
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      />
-
-      {/* Main Content */}
       <div className="flex-1 flex">
         {/* Feature Navigation */}
         <div className="w-[400px] border-r bg-background/50 p-8">

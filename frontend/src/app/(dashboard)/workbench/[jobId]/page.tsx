@@ -102,10 +102,6 @@ export default function JobDetailsPage({ params }: { params: { jobId: string } }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background */}
-      <div className="main-gradient" />
-      <div className="gradient-overlay" />
-
       <div className="container max-w-7xl mx-auto py-12">
         <div className="relative">
           {/* Main content */}

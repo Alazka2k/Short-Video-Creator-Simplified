@@ -4,181 +4,262 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 271 91% 65%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 280 46% 96%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 271 91% 65%;
-    --radius: 0.5rem;
+    /* Define CSS variables for light mode */
+    --background: 0 0% 98%; /* Background color: very light gray */
+    --foreground: 240 10% 3.9%; /* Foreground color: dark gray */
+    --card: 0 0% 100%; /* Card background color: white */
+    --card-foreground: 240 10% 3.9%; /* Card foreground color: dark gray */
+    --popover: 0 0% 100%; /* Popover background color: white */
+    --popover-foreground: 240 10% 3.9%; /* Popover foreground color: dark gray */
+    --primary: 271 91% 65%; /* Primary color: bright purple */
+    --primary-foreground: 0 0% 100%; /* Primary foreground color: white */
+    --secondary: 280 46% 96%; /* Secondary color: light purple */
+    --secondary-foreground: 240 5.9% 10%; /* Secondary foreground color: dark gray */
+    --muted: 240 4.8% 95.9%; /* Muted color: very light gray */
+    --muted-foreground: 240 3.8% 46.1%; /* Muted foreground color: medium gray */
+    --accent: 262 83% 58%; /* Accent color: bright blue */
+    --accent-foreground: 0 0% 100%; /* Accent foreground color: white */
+    --destructive: 0 84.2% 60.2%; /* Destructive color: bright red */
+    --destructive-foreground: 0 0% 98%; /* Destructive foreground color: very light gray */
+    --border: 240 5.9% 90%; /* Border color: light gray */
+    --input: 240 5.9% 90%; /* Input background color: light gray */
+    --ring: 271 91% 65%; /* Ring color: bright purple */
+    --radius: 0.5rem; /* Border radius: 0.5 rem */
+    --white: 0 0% 100%; /* White color */
+    --black: 0 0% 0%; /* Black color */
+    --transparent: 0 0% 100% / 0; /* Transparent color */
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
-    --primary: 271 91% 65%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 215 20.2% 65.1%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 271 91% 65%;
+    /* Define CSS variables for dark mode */
+    --background: 224 71% 4%; /* Background color: very dark blue (Hue: 224, Saturation: 71%, Lightness: 4%) */ 
+    --foreground: 213 31% 91%; /* Foreground color: light gray (Hue: 213, Saturation: 31%, Lightness: 91%) */
+    --card: 224 71% 4%; /* Card background color: very dark blue (Hue: 224, Saturation: 71%, Lightness: 4%) */
+    --card-foreground: 213 31% 91%; /* Card foreground color: light gray (Hue: 213, Saturation: 31%, Lightness: 91%) */
+    --popover: 224 71% 4%; /* Popover background color: very dark blue (Hue: 224, Saturation: 71%, Lightness: 4%) */
+    --popover-foreground: 215 20.2% 65.1%; /* Popover foreground color: medium gray (Hue: 215, Saturation: 20.2%, Lightness: 65.1%) */
+    --primary: 271 91% 65%; /* Primary color: bright purple (Hue: 271, Saturation: 91%, Lightness: 65%) */
+    --primary-foreground: 0 0% 100%; /* Primary foreground color: white (Hue: 0, Saturation: 0%, Lightness: 100%) */
+    --secondary: 222 47% 11%; /* Secondary color: dark blue (Hue: 222, Saturation: 47%, Lightness: 11%) */
+    --secondary-foreground: 215 20.2% 65.1%; /* Secondary foreground color: medium gray (Hue: 215, Saturation: 20.2%, Lightness: 65.1%) */
+    --muted: 223 47% 11%; /* Muted color: dark blue (Hue: 223, Saturation: 47%, Lightness: 11%) */
+    --muted-foreground: 215 20.2% 65.1%; /* Muted foreground color: medium gray (Hue: 215, Saturation: 20.2%, Lightness: 65.1%) */
+    --accent: 262 83% 58%; /* Accent color: bright blue (Hue: 262, Saturation: 83%, Lightness: 58%) */
+    --accent-foreground: 0 0% 100%; /* Accent foreground color: white (Hue: 0, Saturation: 0%, Lightness: 100%) */
+    --destructive: 0 63% 31%; /* Destructive color: dark red (Hue: 0, Saturation: 63%, Lightness: 31%) */
+    --destructive-foreground: 210 40% 98%; /* Destructive foreground color: very light blue (Hue: 210, Saturation: 40%, Lightness: 98%) */
+    --border: 216 34% 17%; /* Border color: dark gray (Hue: 216, Saturation: 34%, Lightness: 17%) */
+    --input: 216 34% 17%; /* Input background color: dark gray (Hue: 216, Saturation: 34%, Lightness: 17%) */
+    --ring: 271 91% 65%; /* Ring color: bright purple (Hue: 271, Saturation: 91%, Lightness: 65%) */
+    --white: 0 0% 100%; /* White color (Hue: 0, Saturation: 0%, Lightness: 100%) */
+    --black: 0 0% 0%; /* Black color (Hue: 0, Saturation: 0%, Lightness: 0%) */
+    --transparent: 0 0% 100% / 0; /* Transparent color (Hue: 0, Saturation: 0%, Lightness: 100%, Alpha: 0) */
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    /* Set background and foreground colors for the body */
+    background-color: hsl(var(--background)); /* Use the background color defined in :root or .dark */
+    color: hsl(var(--foreground)); /* Use the foreground color defined in :root or .dark */
   }
 }
-
-/* Background styles */
-.main-gradient {
-  position: fixed;
-  inset: 0;
-  z-index: -10;
-  background: 
-    radial-gradient(circle at top left, hsl(var(--primary) / 0.15), transparent 50%),
-    radial-gradient(circle at bottom right, hsl(var(--secondary) / 0.15), transparent 50%),
-    linear-gradient(to bottom right, hsl(var(--background)), hsl(var(--background)));
-}
-
-.gradient-overlay {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-  opacity: 0.25;
-  mix-blend-mode: overlay;
-}
-
-.gradient-animate {
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
-}
-
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-} 
 
 /* Add these custom gradients */
 @layer utilities {
   .gradient-primary {
-    background-image: linear-gradient(to right, rgb(139, 92, 246), rgb(168, 85, 247));
+    /* Primary gradient background */
+    background-image: linear-gradient(to right, rgb(139, 92, 246), rgb(168, 85, 247)); /* Gradient from purple to pink */
   }
   
   .gradient-primary-text {
-    background-image: linear-gradient(to right, rgb(139, 92, 246), rgb(168, 85, 247));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    /* Primary gradient text */
+    background-image: linear-gradient(to right, rgb(139, 92, 246), rgb(168, 85, 247)); /* Gradient from purple to pink */
+    -webkit-background-clip: text; /* Clip the background to the text */
+    background-clip: text; /* Clip the background to the text */
+    color: transparent; /* Make the text color transparent */
   }
 
   .gradient-hover:hover {
-    background-image: linear-gradient(to right, rgb(124, 58, 237), rgb(147, 51, 234));
+    /* Gradient background on hover */
+    background-image: linear-gradient(to right, rgb(124, 58, 237), rgb(147, 51, 234)); /* Gradient from dark purple to darker pink */
   }
 
   .animate-in {
-    animation: animate-in 0.5s ease-out;
+    /* Fade-in animation */
+    animation: animate-in 0.5s ease-out; /* Animation duration: 0.5s, easing: ease-out */
   }
 
   .slide-in-from-top {
-    animation: slide-in-from-top 0.5s ease-out;
+    /* Slide-in from top animation */
+    animation: slide-in-from-top 0.5s ease-out; /* Animation duration: 0.5s, easing: ease-out */
   }
 
   .slide-in-from-bottom {
-    animation: slide-in-from-bottom 0.5s ease-out;
+    /* Slide-in from bottom animation */
+    animation: slide-in-from-bottom 0.5s ease-out; /* Animation duration: 0.5s, easing: ease-out */
   }
 
   .hover-card {
-    transition-property: all;
-    transition-duration: 200ms;
+    /* Hover effect for cards */
+    transition-property: all; /* Transition all properties */
+    transition-duration: 200ms; /* Transition duration: 200ms */
   }
   
   .hover-card:hover {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    transform: scale(1.02);
+    /* Hover effect for cards */
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); /* Add shadow on hover */
+    transform: scale(1.02); /* Slightly scale up the card on hover */
   }
 
   .animate-drift {
-    animation: drift 20s ease-in-out infinite;
+    /* Drift animation */
+    animation: drift 20s ease-in-out infinite; /* Animation duration: 20s, easing: ease-in-out, infinite loop */
   }
 
   .animate-drift-slow {
-    animation: drift-slow 25s ease-in-out infinite;
+    /* Slow drift animation */
+    animation: drift-slow 25s ease-in-out infinite; /* Animation duration: 25s, easing: ease-in-out, infinite loop */
+  }
+
+  .animate-aurora {
+    /* Aurora animation */
+    animation: aurora 15s ease-in-out infinite;
+    background-size: 400% 400%;
+    will-change: background-position;
+  }
+
+  .animate-aurora::before {
+    /* Aurora animation before pseudo-element */
+    content: ""; /* Empty content */
+    display: none; /* Hide the pseudo-element */
+  }
+
+  .animate-aurora-subtle {
+    /* Subtle aurora animation */
+    animation: aurora-subtle 35s linear infinite; /* Animation duration: 35s, linear easing, infinite loop */
   }
 } 
 
 @keyframes animate-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  /* Keyframes for fade-in animation */
+  from { opacity: 0; } /* Start with opacity 0 */
+  to { opacity: 1; } /* End with opacity 1 */
 }
 
 @keyframes slide-in-from-top {
+  /* Keyframes for slide-in from top animation */
   from { 
-    opacity: 0;
-    transform: translateY(-20px);
+    opacity: 0; /* Start with opacity 0 */
+    transform: translateY(-20px); /* Start with translateY -20px */
   }
   to { 
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 1; /* End with opacity 1 */
+    transform: translateY(0); /* End with translateY 0 */
   }
 }
 
 @keyframes slide-in-from-bottom {
+  /* Keyframes for slide-in from bottom animation */
   from { 
-    opacity: 0;
-    transform: translateY(20px);
+    opacity: 0; /* Start with opacity 0 */
+    transform: translateY(20px); /* Start with translateY 20px */
   }
   to { 
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 1; /* End with opacity 1 */
+    transform: translateY(0); /* End with translateY 0 */
   }
 } 
 
 @keyframes drift {
+  /* Keyframes for drift animation */
   0% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0) scale(1); /* Start with no translation and scale 1 */
   }
   50% {
-    transform: translate(30px, 20px) scale(1.05);
+    transform: translate(30px, 20px) scale(1.05); /* Midpoint with translation and scale 1.05 */
   }
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0) scale(1); /* End with no translation and scale 1 */
   }
 }
 
 @keyframes drift-slow {
+  /* Keyframes for slow drift animation */
   0% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0) scale(1); /* Start with no translation and scale 1 */
   }
   50% {
-    transform: translate(-20px, -30px) scale(1.05);
+    transform: translate(-20px, -30px) scale(1.05); /* Midpoint with translation and scale 1.05 */
   }
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0) scale(1); /* End with no translation and scale 1 */
+  }
+}
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes aurora-subtle {
+  /* Keyframes for subtle aurora animation */
+  0% {
+    background-position: 0% 50%, 50% 50%; /* Start with background position */
+    transform: translateY(0) scale(1); /* Start with no translation and scale 1 */
+  }
+  25% {
+    background-position: 25% 50%, 25% 50%; /* Quarter point with background position */
+    transform: translateY(-5px) scale(1.01); /* Quarter point with translation and scale 1.01 */
+  }
+  50% {
+    background-position: 50% 50%, 0% 50%; /* Midpoint with background position */
+    transform: translateY(0) scale(1); /* Midpoint with no translation and scale 1 */
+  }
+  75% {
+    background-position: 75% 50%, 75% 50%; /* Three-quarter point with background position */
+    transform: translateY(5px) scale(0.99); /* Three-quarter point with translation and scale 0.99 */
+  }
+  100% {
+    background-position: 100% 50%, 50% 50%; /* End with background position */
+    transform: translateY(0) scale(1); /* End with no translation and scale 1 */
+  }
+}
+
+/* Add animation start detection */
+.animate-aurora {
+  animation: aurora 15s ease-in-out infinite;
+  background-size: 400% 400%;
+  will-change: background-position;
+}
+
+.animate-aurora::before {
+  content: ""; /* Empty content */
+  display: none; /* Hide the pseudo-element */
+}
+
+/* Add this script to detect animation start */
+@property --aurora-animation-started {
+  syntax: "<integer>"; /* Define the syntax for the custom property */
+  initial-value: 0; /* Initial value of the custom property */
+  inherits: false; /* The custom property does not inherit */
+}
+
+.animate-aurora {
+  --aurora-animation-started: 1; /* Set the custom property to 1 when animation starts */
+}
+
+/* This will trigger when animation starts */
+@keyframes detect-aurora-start {
+  from {
+    --aurora-animation-started: 0; /* Start with custom property value 0 */
+  }
+  to {
+    --aurora-animation-started: 1; /* End with custom property value 1 */
   }
 } 
