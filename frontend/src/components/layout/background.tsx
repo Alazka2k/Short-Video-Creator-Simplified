@@ -64,38 +64,19 @@ interface BackgroundProps {
 function BackgroundComponent({ children, showOverlays = true }: BackgroundProps) {
   return (
     <>
-      <div className="fixed inset-0 bg-zinc-50 dark:bg-zinc-900">
+      <div className="fixed inset-0 bg-background">
         <div className="absolute inset-0 overflow-hidden">
           <div 
             className={cn(
               "absolute inset-0",
-              // CSS Variables for configuration
-              "[--start-color:var(--blue-200)]",
-              "[--middle-color:var(--indigo-300)]",
-              "[--end-color:var(--blue-300)]",
-              "[--accent1-color:var(--indigo-400)]",
-              "[--accent2-color:var(--blue-400)]",
-              "dark:[--start-color:var(--slate-900)]",
-              "dark:[--middle-color:var(--slate-800)]",
-              "dark:[--end-color:var(--slate-900)]",
-              "dark:[--accent1-color:var(--slate-800)]",
-              "dark:[--accent2-color:var(--slate-900)]",
-              // Animation settings
-              "[--animation-duration:60s]",
-              "[--gradient-width:200%]",
-              "[--gradient-height:200%]",
-              "[--blur-amount:80px]",
-              "[--main-opacity:0.5]",
-              "[--layer-opacity:0.7]",
-              // Base aurora gradient
-              "[--aurora:repeating-linear-gradient(100deg,var(--start-color)_0%,var(--middle-color)_7%,var(--end-color)_10%,var(--accent1-color)_12%,var(--accent2-color)_16%)]",
-              // Apply the animation and effects
-              "bg-[length:var(--gradient-width)_var(--gradient-height)]",
-              "bg-[image:var(--aurora)]",
+              "opacity-50",
+              "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500",
               "animate-aurora",
-              "filter blur-[var(--blur-amount)]",
-              "opacity-[var(--main-opacity)]",
-              "mix-blend-soft-light"
+              "after:absolute after:inset-0",
+              "after:bg-gradient-to-br after:from-indigo-500 after:via-purple-500 after:to-pink-500",
+              "after:animate-aurora after:opacity-50 after:blur-3xl",
+              "mix-blend-normal",
+              showOverlays && "mask-radial-farthest"
             )}
           />
         </div>

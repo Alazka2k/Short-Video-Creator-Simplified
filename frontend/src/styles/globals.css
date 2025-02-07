@@ -5,8 +5,8 @@
 @layer base {
   :root {
     /* Define CSS variables for light mode */
-    --background: 0 0% 98%; /* Background color: very light gray */
-    --foreground: 240 10% 3.9%; /* Foreground color: dark gray */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%; /* Card background color: white */
     --card-foreground: 240 10% 3.9%; /* Card foreground color: dark gray */
     --popover: 0 0% 100%; /* Popover background color: white */
@@ -28,6 +28,7 @@
     --white: #fff;
     --black: #000;
     --transparent: transparent;
+    --violet-200: #ddd6fe;
 
     /* Aurora specific variables */
     --blue-100: #dbeafe;
@@ -139,8 +140,7 @@
   }
 
   .animate-aurora {
-    animation: aurora var(--animation-duration) linear infinite;
-    will-change: background-position;
+    animation: aurora 15s linear infinite;
   }
 
   .animate-aurora::before,
@@ -166,6 +166,14 @@
   .animate-aurora-subtle {
     /* Subtle aurora animation */
     animation: aurora-subtle 35s linear infinite; /* Animation duration: 35s, linear easing, infinite loop */
+  }
+
+  .mask-radial-farthest {
+    mask-image: radial-gradient(
+      circle at center,
+      black,
+      transparent 80%
+    );
   }
 } 
 
@@ -228,9 +236,15 @@
 @keyframes aurora {
   0% {
     background-position: 0% 50%;
+    transform: rotate(0deg);
+  }
+  50% {
+    background-position: 100% 50%;
+    transform: rotate(180deg);
   }
   100% {
-    background-position: 200% 50%;
+    background-position: 0% 50%;
+    transform: rotate(360deg);
   }
 }
 

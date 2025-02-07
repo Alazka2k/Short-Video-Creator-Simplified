@@ -37,17 +37,19 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute>
       <div className="relative min-h-screen">
-        <Background showOverlays />
-        <DashboardHeader />
-        <div className="flex">
-          <Sidebar className="w-64 hidden md:block border-r border-border/20" />
-
-          <main className="flex-1 p-8">
-            <div className="mx-auto max-w-7xl">
-              {children}
+        <Background>
+          <div className="relative flex min-h-screen flex-col">
+            <DashboardHeader />
+            <div className="flex flex-1">
+              <Sidebar className="w-64 hidden md:block border-r border-border/20" />
+              <main className="flex-1 p-8">
+                <div className="mx-auto max-w-7xl">
+                  {children}
+                </div>
+              </main>
             </div>
-          </main>
-        </div>
+          </div>
+        </Background>
       </div>
     </ProtectedRoute>
   )

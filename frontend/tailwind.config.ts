@@ -82,18 +82,24 @@ const config = {
           to: { height: "0" },
         },
         aurora: {
-          from: {
-            backgroundPosition: "50% 50%",
+          "0%": {
+            backgroundPosition: "0% 50%",
+            transform: "rotate(0deg)",
           },
-          to: {
-            backgroundPosition: "350% 50%",
+          "50%": {
+            backgroundPosition: "100% 50%",
+            transform: "rotate(180deg)",
+          },
+          "100%": {
+            backgroundPosition: "0% 50%",
+            transform: "rotate(360deg)",
           },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        aurora: "aurora var(--animation-duration) linear infinite",
+        aurora: "aurora 15s linear infinite",
       },
     },
   },
