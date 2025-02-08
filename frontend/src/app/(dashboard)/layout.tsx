@@ -28,7 +28,6 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { Background } from '@/components/layout/background'
 
-
 export default function DashboardLayout({
   children,
 }: {
@@ -37,7 +36,7 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute>
       <div className="relative min-h-screen">
-        <Background>
+        <Background isStatic>
           <div className="relative flex min-h-screen flex-col">
             <DashboardHeader />
             <div className="flex flex-1">

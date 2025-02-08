@@ -6,80 +6,98 @@ import { cn } from "@/lib/utils";
 interface BackgroundProps {
   children?: React.ReactNode;
   showOverlays?: boolean;
+  isStatic?: boolean;
 }
 
 /**
- * Aurora Background Configuration
+ * Aurora Background Component
  * 
- * Colors:
- * Light Mode:
- * - start: var(--white) - Pure white for subtle start
- * - middle: var(--blue-200) - Light blue for gentle transition
- * - end: var(--white) - Pure white for subtle end
- * - accent1: var(--indigo-200) - Light indigo for first accent
- * - accent2: var(--blue-100) - Very light blue for second accent
+ * IMPORTANT CONFIGURATION DEPENDENCIES:
+ * When modifying the background animation or styling, you need to update two files:
  * 
- * Dark Mode:
- * - start: var(--slate-900) - Very dark slate for depth
- * - middle: var(--slate-800) - Dark slate for transition
- * - end: var(--slate-900) - Very dark slate for consistency
- * - accent1: var(--slate-800) - Dark slate for first accent
- * - accent2: var(--slate-900) - Very dark slate for second accent
+ * 1. tailwind.config.ts:
+ *    - Add/modify keyframes in the keyframes section:
+ *      ```ts
+ *      keyframes: {
+ *        "aurora-flow": {
+ *          "0%": { backgroundPosition: "0% 50%", transform: "translateX(0%) translateY(-10%)" },
+ *          // ... other keyframe steps
+ *        }
+ *      }
+ *      ```
+ *    - Add/modify animations in the animation section:
+ *      ```ts
+ *      animation: {
+ *        "aurora-flow": "aurora-flow 90s ease infinite",
+ *        "aurora-flow-delayed": "aurora-flow 90s ease infinite -30s",
+ *        "aurora-flow-reverse": "aurora-flow 90s ease infinite -60s"
+ *      }
+ *      ```
  * 
- * Animation:
- * - duration: 60s - Controls speed (higher = slower)
- * - timing: linear - Options: linear (constant), ease-in-out (smooth start/stop)
- * - iterationCount: infinite - Options: infinite, or number for limited cycles
- * 
- * Gradient:
- * - angle: 100deg - Controls flow direction (0-360 degrees)
- * - stops: Percentage positions for color transitions
- *   · start: 0% - Beginning of gradient
- *   · middleStart: 7% - Start of middle transition
- *   · middle: 10% - Middle point
- *   · accent1: 12% - First accent position
- *   · accent2: 16% - Second accent position
- *   Closer numbers = sharper transitions
- * 
- * Size:
- * - width: 200% - Larger = slower movement
- * - height: 200% - Larger = more vertical space
- * Recommended: 200-400% for optimal effect
- * 
- * Effects:
- * - blur: 80px - Controls softness (20-150px)
- * - opacity: 50% - Controls visibility (30-100%)
- * - blend: soft-light - Options:
- *   · soft-light: Gentle blending
- *   · screen: Bright, additive
- *   · multiply: Darker blend
- *   · overlay: High contrast
- *   · color-dodge: Vivid blend
- * 
- * Positioning:
- * - zIndex: -10 - Controls stacking (-1 to -10 recommended)
- * - inset: -10px - Controls edge coverage (-5 to -20px)
+ * 2. globals.css:
+ *    - Add utility classes for animations:
+ *      ```css
+ *      .animate-aurora-flow {
+ *        animation: aurora-flow 90s ease infinite;
+ *        will-change: background-position, transform;
+ *      }
+ *      ```
+ *    - Add mask utilities if needed:
+ *      ```css
+ *      .mask-radial-farthest {
+ *        mask-image: radial-gradient(...);
+ *      }
+ *      ```
  */
 
-function BackgroundComponent({ children, showOverlays = true }: BackgroundProps) {
+function BackgroundComponent({ children, showOverlays = true, isStatic = false }: BackgroundProps & { isStatic?: boolean }) {
+  const gradients = {
+    primary: 'linear-gradient(60deg, transparent 0%, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.04) 35%, rgba(200,200,255,0.04) 50%, rgba(255,255,255,0.04) 65%, rgba(255,255,255,0.02) 75%, transparent 100%)',
+    secondary: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.02) 25%, rgba(220,220,255,0.03) 35%, rgba(200,200,255,0.03) 50%, rgba(220,220,255,0.03) 65%, rgba(255,255,255,0.02) 75%, transparent 100%)',
+    tertiary: 'linear-gradient(30deg, transparent 0%, rgba(255,255,255,0.01) 25%, rgba(235,235,255,0.02) 35%, rgba(220,220,255,0.02) 50%, rgba(235,235,255,0.02) 65%, rgba(255,255,255,0.01) 75%, transparent 100%)'
+  };
+
   return (
     <>
-      <div className="fixed inset-0 bg-background">
-        <div className="absolute inset-0 overflow-hidden">
+      <div className="fixed inset-0 -z-10 h-full w-full bg-white dark:bg-zinc-950">
+        <div
+          style={{
+            '--beam-gradient': gradients.primary,
+            backgroundImage: 'var(--beam-gradient)',
+            backgroundSize: '400% 100%',
+            ...(isStatic && { backgroundPosition: '50% 50%' })
+          } as React.CSSProperties}
+          className={cn(
+            "absolute inset-0 opacity-30 mix-blend-multiply dark:mix-blend-screen dark:opacity-20",
+            isStatic ? "blur-sm" : "animate-beam"
+          )}
+        />
+        {!isStatic && (
+          <>
+            <div
+              style={{
+                '--beam-gradient': gradients.secondary,
+                backgroundImage: 'var(--beam-gradient)',
+                backgroundSize: '400% 100%',
+              } as React.CSSProperties}
+              className="absolute inset-0 opacity-20 mix-blend-multiply dark:mix-blend-screen dark:opacity-15 blur-2xl animate-beam-delayed"
+            />
+            <div
+              style={{
+                '--beam-gradient': gradients.tertiary,
+                backgroundImage: 'var(--beam-gradient)',
+                backgroundSize: '400% 100%',
+              } as React.CSSProperties}
+              className="absolute inset-0 opacity-20 mix-blend-multiply dark:mix-blend-screen dark:opacity-10 blur-3xl animate-beam-slow"
+            />
+          </>
+        )}
+        {showOverlays && (
           <div 
-            className={cn(
-              "absolute inset-0",
-              "opacity-50",
-              "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500",
-              "animate-aurora",
-              "after:absolute after:inset-0",
-              "after:bg-gradient-to-br after:from-indigo-500 after:via-purple-500 after:to-pink-500",
-              "after:animate-aurora after:opacity-50 after:blur-3xl",
-              "mix-blend-normal",
-              showOverlays && "mask-radial-farthest"
-            )}
+            className="absolute inset-0 mask-radial-farthest" 
+            style={{ '--mask-image': 'radial-gradient(circle at center, black 30%, transparent 80%)' } as React.CSSProperties} 
           />
-        </div>
+        )}
       </div>
       <div className="relative">
         {children}
@@ -88,4 +106,4 @@ function BackgroundComponent({ children, showOverlays = true }: BackgroundProps)
   );
 }
 
-export const Background = memo(BackgroundComponent); 
+export const Background = memo(BackgroundComponent);

@@ -175,6 +175,62 @@
       transparent 80%
     );
   }
+
+  .animate-aurora-horizontal {
+    animation: aurora-horizontal 60s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: background-position;
+  }
+
+  .animate-aurora-horizontal-delayed {
+    animation: aurora-horizontal 60s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation-delay: -20s;
+    will-change: background-position;
+  }
+
+  .animate-aurora-horizontal-reverse {
+    animation: aurora-horizontal 60s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+    animation-delay: -40s;
+    will-change: background-position;
+  }
+
+  .animate-aurora-flow {
+    animation: aurora-flow 90s ease infinite;
+    will-change: background-position, transform;
+  }
+
+  .animate-aurora-flow-delayed {
+    animation: aurora-flow 90s ease infinite;
+    animation-delay: -30s;
+    will-change: background-position, transform;
+  }
+
+  .animate-aurora-flow-reverse {
+    animation: aurora-flow 90s ease infinite;
+    animation-delay: -60s;
+    will-change: background-position, transform;
+  }
+
+  .animate-beam {
+    animation: beam 20s linear infinite;
+    will-change: background-position;
+  }
+
+  .animate-beam-delayed {
+    animation: beam 20s linear infinite;
+    animation-delay: -6.67s;
+    will-change: background-position;
+  }
+
+  .animate-beam-slow {
+    animation: beam 20s linear infinite;
+    animation-delay: -13.33s;
+    will-change: background-position;
+  }
+
+  .mask-radial-farthest {
+    mask-image: var(--mask-image);
+    -webkit-mask-image: var(--mask-image);
+  }
 } 
 
 @keyframes animate-in {
@@ -301,5 +357,84 @@
   }
   to {
     --aurora-animation-started: 1; /* End with custom property value 1 */
+  }
+}
+
+@keyframes aurora-horizontal {
+  0% {
+    background-position: 0% 0;
+  }
+  50% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: -300% 0;
+  }
+}
+
+@keyframes aurora-flow {
+  0% {
+    background-position: 0% 50%;
+    transform: translateX(0%) translateY(-10%);
+  }
+  25% {
+    background-position: -50% 55%;
+    transform: translateX(-15%) translateY(0%);
+  }
+  50% {
+    background-position: -100% 50%;
+    transform: translateX(-25%) translateY(-15%);
+  }
+  75% {
+    background-position: -150% 45%;
+    transform: translateX(-15%) translateY(0%);
+  }
+  100% {
+    background-position: -200% 50%;
+    transform: translateX(0%) translateY(-10%);
+  }
+}
+
+@keyframes beam {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -300% 50%;
+  }
+}
+
+/* Light mode adjustments */
+@media (prefers-color-scheme: light) {
+  .animate-beam {
+    --beam-gradient: linear-gradient(60deg, transparent 0%, rgba(0,0,0,0.02) 25%, rgba(0,0,0,0.03) 35%, rgba(20,20,50,0.03) 50%, rgba(0,0,0,0.03) 65%, rgba(0,0,0,0.02) 75%, transparent 100%);
+    opacity: 0.7;
+    mix-blend-mode: multiply;
+  }
+  .animate-beam-delayed {
+    --beam-gradient: linear-gradient(120deg, transparent 0%, rgba(0,0,0,0.02) 25%, rgba(20,20,50,0.03) 35%, rgba(30,30,60,0.03) 50%, rgba(20,20,50,0.03) 65%, rgba(0,0,0,0.02) 75%, transparent 100%);
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+  }
+  .animate-beam-slow {
+    --beam-gradient: linear-gradient(30deg, transparent 0%, rgba(0,0,0,0.01) 25%, rgba(20,20,50,0.02) 35%, rgba(30,30,60,0.02) 50%, rgba(20,20,50,0.02) 65%, rgba(0,0,0,0.01) 75%, transparent 100%);
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .animate-beam {
+    opacity: 0.6;
+    mix-blend-mode: screen;
+  }
+  .animate-beam-delayed {
+    opacity: 0.4;
+    mix-blend-mode: screen;
+  }
+  .animate-beam-slow {
+    opacity: 0.4;
+    mix-blend-mode: screen;
   }
 } 

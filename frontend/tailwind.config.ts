@@ -81,7 +81,7 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        aurora: {
+        "aurora": {
           "0%": {
             backgroundPosition: "0% 50%",
             transform: "rotate(0deg)",
@@ -95,11 +95,61 @@ const config = {
             transform: "rotate(360deg)",
           },
         },
+        "aurora-horizontal": {
+          "0%": {
+            backgroundPosition: "0% 0",
+          },
+          "50%": {
+            backgroundPosition: "-150% 0",
+          },
+          "100%": {
+            backgroundPosition: "-300% 0",
+          },
+        },
+        "aurora-flow": {
+          "0%": {
+            backgroundPosition: "0% 50%",
+            transform: "translateX(0%) translateY(-10%)"
+          },
+          "25%": {
+            backgroundPosition: "-50% 55%",
+            transform: "translateX(-15%) translateY(0%)"
+          },
+          "50%": {
+            backgroundPosition: "-100% 50%",
+            transform: "translateX(-25%) translateY(-15%)"
+          },
+          "75%": {
+            backgroundPosition: "-150% 45%",
+            transform: "translateX(-15%) translateY(0%)"
+          },
+          "100%": {
+            backgroundPosition: "-200% 50%",
+            transform: "translateX(0%) translateY(-10%)"
+          }
+        },
+        "beam": {
+          "0%": {
+            backgroundPosition: "100% 50%",
+          },
+          "100%": {
+            backgroundPosition: "-300% 50%",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        aurora: "aurora 15s linear infinite",
+        "aurora": "aurora 15s linear infinite",
+        "aurora-horizontal": "aurora-horizontal 60s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "aurora-horizontal-delayed": "aurora-horizontal 60s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "aurora-horizontal-reverse": "aurora-horizontal 60s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse",
+        "aurora-flow": "aurora-flow 90s ease infinite",
+        "aurora-flow-delayed": "aurora-flow 90s ease infinite -30s",
+        "aurora-flow-reverse": "aurora-flow 90s ease infinite -60s",
+        "beam": "beam 40s linear infinite",
+        "beam-delayed": "beam 40s linear infinite -13.33s",
+        "beam-slow": "beam 40s linear infinite -26.67s",
       },
     },
   },

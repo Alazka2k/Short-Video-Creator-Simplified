@@ -43,9 +43,6 @@ export function HeroSection() {
             transition={{ duration: 0.5 }}
             className="flex flex-col items-start gap-6 relative"
           >
-            {/* Decorative elements */}
-            <div className="absolute -left-8 -top-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-accent/10 rounded-full blur-2xl" />
             
             {/* Badge */}
             <motion.div
