@@ -2,7 +2,30 @@ const storageService = require('./storage');
 const logger = require('./logger');
 
 class StorageUrlHelper {
+  constructor() {
+    this.cache = new Map();
+    this.EXPIRY_BUFFER = 10 * 60 * 1000; // 10 minutes before expiration
+    this.BATCH_SIZE = 10;
+    this.MAX_RETRIES = 3;
+  }
+
+  // Singleton instance
+  static getInstance() {
+    if (!StorageUrlHelper.instance) {
+      StorageUrlHelper.instance = new StorageUrlHelper();
+    }
+    return StorageUrlHelper.instance;
+  }
+
   static async getFreshUrl(url) {
+    return StorageUrlHelper.getInstance().getFreshUrlInstance(url);
+  }
+
+  static async refreshUrlsInObject(obj) {
+    return StorageUrlHelper.getInstance().refreshUrlsInObjectInstance(obj);
+  }
+
+  async getFreshUrlInstance(url) {
     try {
       if (!url) {
         throw new Error('URL is required');
@@ -19,8 +42,16 @@ class StorageUrlHelper {
         }
         const storageKey = match[1];
         
+        // Check cache first
+        const cached = this.cache.get(storageKey);
+        if (cached && cached.expiresAt > Date.now() + this.EXPIRY_BUFFER) {
+          logger.info('Using cached URL:', { storageKey });
+          return cached.url;
+        }
+
         // Get fresh signed URL
-        return await storageService.getSignedUrl(storageKey);
+        const freshUrl = await this.refreshUrl(storageKey);
+        return freshUrl.url;
       }
       
       // If not an S3 URL, return the original URL
@@ -31,7 +62,7 @@ class StorageUrlHelper {
     }
   }
 
-  static async refreshUrlsInObject(obj) {
+  async refreshUrlsInObjectInstance(obj) {
     const newObj = { ...obj };
     
     // Look for URL fields that might need refreshing
@@ -39,11 +70,157 @@ class StorageUrlHelper {
     
     for (const field of urlFields) {
       if (newObj[field] && typeof newObj[field] === 'string') {
-        newObj[field] = await this.getFreshUrl(newObj[field]);
+        newObj[field] = await this.getFreshUrlInstance(newObj[field]);
       }
     }
 
     return newObj;
+  }
+
+  async refreshUrl(storageKey, retryCount = 0) {
+    try {
+      const signedUrl = await storageService.getSignedUrl(storageKey, 3600);
+      const urlInfo = {
+        url: signedUrl,
+        refreshedAt: Date.now(),
+        expiresAt: Date.now() + 3600 * 1000 // 1 hour
+      };
+      this.cache.set(storageKey, urlInfo);
+      logger.info('Refreshed URL:', { storageKey, expiresAt: urlInfo.expiresAt });
+      return urlInfo;
+    } catch (error) {
+      if (error.code === 'ThrottlingException' && retryCount < this.MAX_RETRIES) {
+        // Exponential backoff
+        const delay = Math.pow(2, retryCount) * 1000;
+        logger.info('Rate limited, retrying after delay:', { 
+          storageKey, 
+          retryCount, 
+          delay 
+        });
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.refreshUrl(storageKey, retryCount + 1);
+      }
+      logger.error('Failed to refresh URL:', { 
+        storageKey, 
+        error,
+        retryCount 
+      });
+      throw error;
+    }
+  }
+
+  async refreshUrlBatch(storageKeys) {
+    const results = new Map();
+    const chunks = this.chunkArray(storageKeys, this.BATCH_SIZE);
+
+    logger.info('Starting batch URL refresh:', { 
+      totalKeys: storageKeys.length,
+      chunks: chunks.length,
+      batchSize: this.BATCH_SIZE
+    });
+
+    for (const [index, chunk] of chunks.entries()) {
+      const refreshPromises = chunk.map(async key => {
+        try {
+          const urlInfo = await this.refreshUrl(key);
+          results.set(key, urlInfo);
+        } catch (error) {
+          logger.error('Failed to refresh URL in batch:', { 
+            storageKey: key, 
+            error,
+            chunkIndex: index
+          });
+        }
+      });
+
+      // Process each chunk with a small delay between chunks
+      await Promise.all(refreshPromises);
+      if (index < chunks.length - 1) { // Don't delay after the last chunk
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    logger.info('Completed batch URL refresh:', { 
+      totalProcessed: results.size,
+      successRate: `${(results.size / storageKeys.length * 100).toFixed(1)}%`
+    });
+
+    return results;
+  }
+
+  chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  async extractStorageKeysFromJob(job) {
+    const storageKeys = new Set();
+    
+    if (job.metadata?.scenes) {
+      for (const scene of job.metadata.scenes) {
+        if (scene.image?.storage_key) storageKeys.add(scene.image.storage_key);
+        if (scene.video?.storage_key) storageKeys.add(scene.video.storage_key);
+        if (scene.voice?.storage_key) storageKeys.add(scene.voice.storage_key);
+      }
+    }
+    
+    if (job.metadata?.music?.storage_key) {
+      storageKeys.add(job.metadata.music.storage_key);
+    }
+
+    return Array.from(storageKeys);
+  }
+
+  async updateJobUrls(job) {
+    const storageKeys = await this.extractStorageKeysFromJob(job);
+    
+    if (storageKeys.length === 0) {
+      logger.info('No storage keys found in job:', { jobId: job.job_id });
+      return job;
+    }
+
+    logger.info('Updating job URLs:', { 
+      jobId: job.job_id, 
+      storageKeysCount: storageKeys.length 
+    });
+
+    const refreshedUrls = await this.refreshUrlBatch(storageKeys);
+    const updatedMetadata = { ...job.metadata };
+
+    // Update scene URLs
+    if (updatedMetadata.scenes) {
+      updatedMetadata.scenes = updatedMetadata.scenes.map(scene => ({
+        ...scene,
+        image: scene.image?.storage_key ? {
+          ...scene.image,
+          public_url: refreshedUrls.get(scene.image.storage_key)?.url || scene.image.public_url
+        } : scene.image,
+        video: scene.video?.storage_key ? {
+          ...scene.video,
+          public_url: refreshedUrls.get(scene.video.storage_key)?.url || scene.video.public_url
+        } : scene.video,
+        voice: scene.voice?.storage_key ? {
+          ...scene.voice,
+          public_url: refreshedUrls.get(scene.voice.storage_key)?.url || scene.voice.public_url
+        } : scene.voice
+      }));
+    }
+
+    // Update music URL
+    if (updatedMetadata.music?.storage_key) {
+      updatedMetadata.music = {
+        ...updatedMetadata.music,
+        public_url: refreshedUrls.get(updatedMetadata.music.storage_key)?.url || updatedMetadata.music.public_url
+      };
+    }
+
+    return {
+      ...job,
+      metadata: updatedMetadata
+    };
   }
 }
 

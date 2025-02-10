@@ -269,8 +269,22 @@ router.get('/jobs/:jobId',
         timeout: 30000  // 30 seconds timeout
       });
 
+       logger.info('Job response data:', {
+         jobId: req.params.jobId,
+         responseUserId: response.data.user_id,
+         requestUserId: userId,
+      //   responseData: response.data,
+         isApiUser
+       });
+
       // If not API user, verify job belongs to user
-      if (!isApiUser && response.data.userId !== userId) {
+      if (!isApiUser && response.data.user_id?.toString() !== userId?.toString()) {
+        logger.warn('Access denied to job:', {
+          jobId: req.params.jobId,
+          jobUserId: response.data.user_id,
+          requestUserId: userId,
+          isApiUser
+        });
         return res.status(403).json({
           error: 'Access denied',
           message: 'You do not have permission to access this job'

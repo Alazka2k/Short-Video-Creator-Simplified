@@ -181,7 +181,21 @@ class AnimationGenService {
   }
 
   async getImageFromUrl(imageUrl) {
-    return StorageUrlHelper.getFreshUrl(imageUrl);
+    try {
+      logger.info('Getting fresh URL for image:', { originalUrl: imageUrl });
+      const freshUrl = await StorageUrlHelper.getFreshUrl(imageUrl);
+      logger.info('Fresh URL obtained:', { 
+        originalUrl: imageUrl,
+        isFreshUrlDifferent: freshUrl !== imageUrl 
+      });
+      return freshUrl;
+    } catch (error) {
+      logger.error('Error getting fresh URL:', {
+        originalUrl: imageUrl,
+        error: error.message
+      });
+      throw new Error(`Failed to get fresh URL for image: ${error.message}`);
+    }
   }
 
   async generateAnimation(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {

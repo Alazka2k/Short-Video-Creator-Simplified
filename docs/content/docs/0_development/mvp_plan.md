@@ -44,6 +44,24 @@
   - ✅ Video creation navigation
   - ✅ Project/video list view (prototype)
   - ✅ Quick actions menu
+- ⏳ Content Creation Dashboard & Details
+  - ✅ Basic job creation and processing
+  - ✅ Job service integration
+  - ✅ Content generation pipeline
+  - ✅ Basic workbench page layout (/workbench)
+  - ✅ Pagination for job listing
+  - ✅ Filtering and sorting options
+  - ✅ Initial job listing implementation
+  - ✅ Basic routing structure
+  - ✅ Fix user ID association with jobs
+  - ⏳ Important enhancements of overview: 
+  - ⏳ Job details page (/workbench/:jobId)
+  - ⏳ Validate if the user who calls the jobId has the same user id
+  - ⏳ Content preview functionality like a video cutting tool (show all generated content as a flow)
+  - ⏳ Content recreation options (voice, music, visual) also needs to update the job itself in the database
+  - ⏳ Content download functionality in the overview (download all) and in the details
+  - ⏳ Loading mechanism during job generation on the content creation page and the job overview page
+  - ⏳ Enhanced job status tracking
 - ⏳ Video creation flow in progress
   - ✅ Basic video creation form
   - ✅ Script settings with categories
@@ -53,28 +71,11 @@
   - ✅ Content type selection
   - ✅ Visualization type selection
   - ✅ Real-time settings summary
-  - ⏳ Video assembly options
-  - ⏳ Preview generation system
+  - ⏳ Video assembly options in job details page (e.g. transitions)
+  - ⏳ Save current updated by updating the job data in the database (new call update job)
   - ⏳ Advanced format options
   - ⏳ Custom style presets
   - ⏳ Batch processing support
-- ⏳ Content Creation Overview & Dashboard
-  - ✅ Basic job creation and processing
-  - ✅ Job service integration
-  - ✅ Content generation pipeline
-  - ✅ Basic workbench page layout (/workbench)
-  - ✅ Initial job listing implementation
-  - ✅ Basic routing structure
-  - ✅ Fix user ID association with jobs
-  - ⏳ Job details page (/workbench/:jobId)
-  - ⏳ Loading mechanism during job generation
-  - ⏳ Pagination for job listing
-  - ⏳ Filtering and sorting options
-  - ⏳ Content preview functionality
-  - ⏳ Content recreation options (voice, music, visual)
-  - ⏳ Content download functionality
-  - ⏳ Transition selection between scenes
-  - ⏳ Enhanced job status tracking
 
 ## MVP Goals
 1. Create usable content for marketing

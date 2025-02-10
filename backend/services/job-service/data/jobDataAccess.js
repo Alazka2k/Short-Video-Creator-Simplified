@@ -3,10 +3,12 @@ const logger = require('../../../shared/utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
 const config = require('../../../shared/utils/config');
+const StorageUrlHelper = require('../../../shared/utils/storage-url-helper');
 
 class JobDataAccess {
   constructor() {
     this.storageBasePath = path.join(config.output.directory, 'jobs');
+    this.storageUrlHelper = StorageUrlHelper.getInstance();
   }
 
   async createJob(jobData) {
@@ -84,7 +86,7 @@ class JobDataAccess {
   
       if (!job) return null;
   
-      return {
+      const processedJob = {
         ...job,
         service_sequence: this.safeJsonParse(job.service_sequence, []),
         metadata: this.safeJsonParse(job.metadata, {}),
@@ -95,6 +97,19 @@ class JobDataAccess {
           skipVisualization: job.skip_visualization
         }
       };
+
+      // Refresh URLs in the job metadata
+      const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
+      
+      // If URLs were refreshed, update the database
+      if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
+        logger.info('Updating job with refreshed URLs:', { jobId });
+        await this.updateJob(jobId, {
+          metadata: JSON.stringify(updatedJob.metadata)
+        });
+      }
+
+      return updatedJob;
     } catch (error) {
       logger.error('Error getting job:', error);
       throw error;
@@ -219,11 +234,26 @@ class JobDataAccess {
       // Execute query
       const jobs = await query;
 
-      // Process results
-      const processedJobs = jobs.map(job => ({
-        ...job,
-        service_sequence: this.safeJsonParse(job.service_sequence) || [],
-        metadata: this.safeJsonParse(job.metadata) || {}
+      // Process results and refresh URLs
+      const processedJobs = await Promise.all(jobs.map(async job => {
+        const processedJob = {
+          ...job,
+          service_sequence: this.safeJsonParse(job.service_sequence) || [],
+          metadata: this.safeJsonParse(job.metadata) || {}
+        };
+
+        // Refresh URLs for each job
+        const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
+        
+        // If URLs were refreshed, update the database
+        if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
+          logger.info('Updating job with refreshed URLs:', { jobId: job.job_id });
+          await this.updateJob(job.job_id, {
+            metadata: JSON.stringify(updatedJob.metadata)
+          });
+        }
+
+        return updatedJob;
       }));
 
       // Return paginated response

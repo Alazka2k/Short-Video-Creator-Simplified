@@ -166,14 +166,22 @@ class VideoGenService {
       logger.info(`Using fresh image URL: ${freshImageUrl}`);
 
       // Download the image using ImageHelper
-      const imageBuffer = await ImageHelper.downloadImageFromUrl(freshImageUrl);
-      
-      // Create temp file for the image
-      const tempDir = path.join(os.tmpdir(), 'video-service', 'temp');
-      await fs.mkdir(tempDir, { recursive: true });
-      const tempImagePath = path.join(tempDir, `scene_${sceneIndex}_input.jpg`);
-      await fs.writeFile(tempImagePath, imageBuffer);
-      tempFiles.push(tempImagePath);
+      try {
+        const imageBuffer = await ImageHelper.downloadImageFromUrl(freshImageUrl);
+        
+        // Create temp file for the image
+        const tempDir = path.join(os.tmpdir(), 'video-service', 'temp');
+        await fs.mkdir(tempDir, { recursive: true });
+        const tempImagePath = path.join(tempDir, `scene_${sceneIndex}_input.jpg`);
+        await fs.writeFile(tempImagePath, imageBuffer);
+        tempFiles.push(tempImagePath);
+      } catch (error) {
+        logger.error('Failed to download image:', {
+          url: freshImageUrl,
+          error: error.message
+        });
+        throw new Error(`Failed to download image: ${error.message}`);
+      }
 
       // Upload to our S3 storage and get a fresh URL
       logger.info('Uploading image to storage...');

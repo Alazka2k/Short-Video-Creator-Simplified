@@ -1,48 +1,72 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { apiClient } from '@/lib/api/apiClient'
+import { useJobDetails } from '@/lib/hooks/useJobDetails'
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
+import { ScenePreview } from '@/components/preview/ScenePreview'
+import { AudioPlayer } from '@/components/preview/AudioPlayer'
+import { apiClient } from '@/lib/api/apiClient'
+import { AuthLogger } from '@/lib/debug/auth-logger'
+import { JobHeader } from '@/components/preview/JobHeader'
 
-interface JobDetails {
-  jobId: string
-  status: string
-  createdAt: string
-  prompt: string
-  content?: {
-    llm?: {
-      title?: string
-      description?: string
-      scenes?: Array<{
-        description: string
-        visual_prompt: string
-      }>
-    }
-  }
+interface MediaContent {
+  public_url: string
+  storage_key: string
+  metadata: any
 }
 
-export default function JobDetailsPage({ params }: { params: { jobId: string } }) {
-  const router = useRouter()
-  const [job, setJob] = useState<JobDetails | null>(null)
-  const [loading, setLoading] = useState(true)
+interface JobScene {
+  sceneId: number
+  image?: MediaContent
+  video?: MediaContent
+  voice?: MediaContent
+}
 
-  useEffect(() => {
-    const fetchJobDetails = async () => {
-      try {
-        const response = await apiClient.get<{ data: JobDetails }>(`/api/job/jobs/${params.jobId}`)
-        setJob(response.data)
-      } catch (error) {
-        console.error('Error fetching job details:', error)
-      } finally {
-        setLoading(false)
-      }
+interface JobDetails {
+  job_id: string
+  user_id: string | null
+  created_at: string
+  updated_at: string
+  status: string
+  service_sequence: string[]
+  metadata: {
+    jobId: string
+    music?: MediaContent
+    scenes: JobScene[]
+    llmResult: {
+      title?: string
+      description?: string
+      hashtags?: string
+      scenes?: Array<{
+        description?: string
+      }>
     }
+    parameters: {
+      llmGenParams?: {
+        image?: {
+          aspectRatio?: string
+        }
+      }
+      voiceId?: string
+    }
+  }
+  prompt: string
+  error: string | null
+}
 
-    fetchJobDetails()
-  }, [params.jobId])
+export default function JobDetailsPage({ params }: { params: Promise<{ jobId: string }> }) {
+  const router = useRouter()
+  const resolvedParams = use(params)
+  const { job, loading, error, refreshUrls } = useJobDetails(resolvedParams.jobId)
+
+  // Refresh job data periodically
+  useEffect(() => {
+    const refreshInterval = setInterval(refreshUrls, 45 * 60 * 1000)
+    return () => clearInterval(refreshInterval)
+  }, [refreshUrls])
 
   const renderContent = () => {
     if (loading) {
@@ -53,19 +77,21 @@ export default function JobDetailsPage({ params }: { params: { jobId: string } }
       )
     }
 
-    if (!job) {
+    if (error || !job) {
       return (
         <div className="space-y-4">
           <Button 
-            variant="ghost" 
+            variant="outline" 
             onClick={() => router.push('/workbench')}
-            className="gap-2"
+            className="gap-2 border-2 hover:border-primary/50 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Workbench
           </Button>
           <div className="rounded-lg border bg-card p-6">
-            <p className="text-center text-muted-foreground">Job not found</p>
+            <p className="text-center text-muted-foreground">
+              {error || 'Job not found'}
+            </p>
           </div>
         </div>
       )
@@ -75,26 +101,65 @@ export default function JobDetailsPage({ params }: { params: { jobId: string } }
       <div className="space-y-8">
         <div className="flex items-center gap-4">
           <Button 
-            variant="ghost" 
+            variant="outline" 
             onClick={() => router.push('/workbench')}
-            className="gap-2"
+            className="gap-2 border-2 hover:border-primary/50 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Workbench
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-semibold">{job.content?.llm?.title || 'Untitled Content'}</h1>
-            <p className="text-muted-foreground">{job.content?.llm?.description || job.prompt}</p>
-          </div>
         </div>
 
-        {/* Placeholder for detailed content - we'll implement this in the next step */}
-        <div className="rounded-lg border bg-card">
-          <div className="p-6">
-            <p className="text-muted-foreground">
-              Status: {job.status}
-            </p>
-          </div>
+        {/* Job Header */}
+        <JobHeader
+          title={job.metadata.llmResult?.title || 'Untitled Content'}
+          description={job.metadata.llmResult?.description || job.prompt}
+          hashtag={job.metadata.llmResult?.hashtags}
+          created_at={job.created_at}
+          aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+          service_sequence={job.service_sequence}
+          prompt={job.prompt}
+          voiceId={job.metadata.parameters?.voiceId}
+        />
+
+        {/* Content Preview Section */}
+        <div className="grid gap-6">
+          {/* Scenes */}
+          {job.metadata.scenes.map((scene) => (
+            <div 
+              key={scene.sceneId}
+              className="rounded-lg border bg-card overflow-hidden"
+            >
+              <div className="p-4 border-b bg-muted/50">
+                <h3 className="font-medium">Scene {scene.sceneId}</h3>
+              </div>
+              <div className="p-6">
+                <ScenePreview
+                  sceneId={scene.sceneId}
+                  image={scene.image}
+                  video={scene.video}
+                  voice={scene.voice}
+                  description={job.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
+                  aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+                />
+              </div>
+            </div>
+          ))}
+
+          {/* Music Section (if exists) */}
+          {job.metadata.music && (
+            <div className="rounded-lg border bg-card overflow-hidden">
+              <div className="p-4 border-b bg-muted/50">
+                <h3 className="font-medium">Background Music</h3>
+              </div>
+              <div className="p-6">
+                <AudioPlayer
+                  url={job.metadata.music.public_url}
+                  title={job.metadata.llmResult?.music?.title || 'Background Music'}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )

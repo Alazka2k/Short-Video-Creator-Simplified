@@ -104,45 +104,42 @@ class AssemblyDataAccess {
           throw new Error(`Missing required visual asset for scene ID ${sceneId}`);
         }
 
-        // Refresh and update URLs if needed
-        if (imageAsset) {
-          const freshUrl = await StorageUrlHelper.getFreshUrl(imageAsset.public_url);
-          if (freshUrl !== imageAsset.public_url) {
+        // Refresh URLs and update database
+        try {
+          if (imageAsset) {
+            imageAsset.public_url = await StorageUrlHelper.getFreshUrl(imageAsset.public_url);
             await trx('image_outputs')
               .where('image_id', imageAsset.image_id)
-              .update({ public_url: freshUrl });
-            imageAsset.public_url = freshUrl;
+              .update({ public_url: imageAsset.public_url });
           }
-        }
 
-        if (videoAsset) {
-          const freshUrl = await StorageUrlHelper.getFreshUrl(videoAsset.public_url);
-          if (freshUrl !== videoAsset.public_url) {
+          if (videoAsset) {
+            videoAsset.public_url = await StorageUrlHelper.getFreshUrl(videoAsset.public_url);
             await trx('video_outputs')
               .where('video_id', videoAsset.video_id)
-              .update({ public_url: freshUrl });
-            videoAsset.public_url = freshUrl;
+              .update({ public_url: videoAsset.public_url });
           }
-        }
 
-        if (animationAsset) {
-          const freshUrl = await StorageUrlHelper.getFreshUrl(animationAsset.public_url);
-          if (freshUrl !== animationAsset.public_url) {
+          if (animationAsset) {
+            animationAsset.public_url = await StorageUrlHelper.getFreshUrl(animationAsset.public_url);
             await trx('animation_outputs')
               .where('animation_id', animationAsset.animation_id)
-              .update({ public_url: freshUrl });
-            animationAsset.public_url = freshUrl;
+              .update({ public_url: animationAsset.public_url });
           }
-        }
 
-        if (voiceAsset) {
-          const freshUrl = await StorageUrlHelper.getFreshUrl(voiceAsset.public_url);
-          if (freshUrl !== voiceAsset.public_url) {
+          if (voiceAsset) {
+            voiceAsset.public_url = await StorageUrlHelper.getFreshUrl(voiceAsset.public_url);
             await trx('voice_outputs')
               .where('voice_id', voiceAsset.voice_id)
-              .update({ public_url: freshUrl });
-            voiceAsset.public_url = freshUrl;
+              .update({ public_url: voiceAsset.public_url });
           }
+        } catch (error) {
+          logger.error('Failed to refresh URLs for scene assets:', {
+            jobId,
+            sceneId,
+            error: error.message
+          });
+          throw new Error(`Failed to refresh URLs for scene ${sceneId}: ${error.message}`);
         }
 
         return {
@@ -176,20 +173,26 @@ class AssemblyDataAccess {
         .first();
 
       if (music) {
-        // Refresh URL if needed
-        const freshUrl = await StorageUrlHelper.getFreshUrl(music.public_url);
-        if (freshUrl !== music.public_url) {
+        try {
+          // Refresh URL and update database
+          music.public_url = await StorageUrlHelper.getFreshUrl(music.public_url);
           await knex('music_outputs')
             .where('music_id', music.music_id)
-            .update({ public_url: freshUrl });
-          music.public_url = freshUrl;
-        }
+            .update({ public_url: music.public_url });
 
-        logger.info('Found music asset:', {
-          jobId,
-          musicId: music.music_id,
-          publicUrl: music.public_url
-        });
+          logger.info('Found and refreshed music asset:', {
+            jobId,
+            musicId: music.music_id,
+            publicUrl: music.public_url
+          });
+        } catch (error) {
+          logger.error('Failed to refresh URL for music asset:', {
+            jobId,
+            musicId: music.music_id,
+            error: error.message
+          });
+          throw new Error(`Failed to refresh URL for music asset: ${error.message}`);
+        }
       } else {
         logger.info(`No music asset found for job ${jobId}`);
       }
