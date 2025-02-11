@@ -239,7 +239,10 @@ export function VisualSettingsStep({
                           {/* Show carousel for the selected style within this category */}
                           {selectedStyle && category.options.some(opt => opt.id === selectedStyle.id) && (
                             <div className="w-full overflow-hidden">
-                              <VisualStyleCarousel previewImages={selectedStyle.previewImages} />
+                              <VisualStyleCarousel 
+                                previewImages={selectedStyle.previewImages} 
+                                selectedStyle={selectedStyle.id}
+                              />
                             </div>
                           )}
                         </motion.div>

@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/apiClient'
 import { useAuth } from '@/lib/auth/AuthContext'
+import { useState } from 'react'
+import { useStorageUrls } from './useStorageUrls'
 
 interface WorkbenchState {
-  jobs: any[]
-  loading: boolean
-  error: string | null
   filters: {
     status?: string
     services?: string[]
@@ -15,8 +14,6 @@ interface WorkbenchState {
   pagination: {
     page: number
     limit: number
-    total: number
-    totalPages: number
   }
 }
 
@@ -31,29 +28,24 @@ interface JobsResponse {
 export function useWorkbench() {
   const { getM2MToken } = useAuth()
   const [state, setState] = useState<WorkbenchState>({
-    jobs: [],
-    loading: true,
-    error: null,
     filters: {
       sortBy: 'created_at',
       sortOrder: 'desc'
     },
     pagination: {
       page: 1,
-      limit: 20,
-      total: 0,
-      totalPages: 0
+      limit: 20
     }
   })
 
-  useEffect(() => {
-    loadJobs()
-  }, [state.pagination.page, state.filters])
-
-  const loadJobs = async () => {
-    try {
-      setState(prev => ({ ...prev, loading: true, error: null }))
-      
+  // Query for jobs
+  const { 
+    data: jobsResponse,
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['jobs', state.pagination, state.filters],
+    queryFn: async () => {
       const queryParams = new URLSearchParams({
         page: state.pagination.page.toString(),
         limit: state.pagination.limit.toString(),
@@ -71,9 +63,8 @@ export function useWorkbench() {
         )
       }
 
-      // Get both tokens
-      const userToken = localStorage.getItem("access_token")
       const m2mToken = await getM2MToken()
+      const userToken = localStorage.getItem("access_token")
       
       const headers: Record<string, string> = {
         'Authorization': `Bearer ${m2mToken}`
@@ -88,24 +79,29 @@ export function useWorkbench() {
         { headers }
       )
       
-      setState(prev => ({
-        ...prev,
-        jobs: response.data,
-        loading: false,
-        pagination: {
-          ...prev.pagination,
-          total: response.pagination.total,
-          totalPages: response.pagination.totalPages
-        }
-      }))
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to load jobs'
-      }))
+      return response
     }
-  }
+  })
+
+  // Extract preview storage keys from jobs
+  const previewStorageKeys = jobsResponse?.data?.flatMap(job => {
+    if (!job.metadata?.scenes?.[0]) return []
+    
+    const scene = job.metadata.scenes[0]
+    if (scene.video?.storage_key) {
+      return [scene.video.storage_key]
+    }
+    if (scene.animation?.storage_key) {
+      return [scene.animation.storage_key]
+    }
+    if (scene.image?.storage_key) {
+      return [scene.image.storage_key]
+    }
+    return []
+  }) || []
+
+  // Use our storage URLs hook
+  const { urls: previewUrls } = useStorageUrls(previewStorageKeys)
 
   const handleFilterChange = (newFilters: Partial<WorkbenchState['filters']>) => {
     setState(prev => ({
@@ -122,8 +118,46 @@ export function useWorkbench() {
     }))
   }
 
+  // Transform jobs data to include fresh URLs
+  const jobs = jobsResponse?.data?.map(job => {
+    if (!job.metadata?.scenes?.[0]) return job
+    
+    const scene = job.metadata.scenes[0]
+    const updatedScene = {
+      ...scene,
+      video: scene.video && {
+        ...scene.video,
+        public_url: previewUrls[scene.video.storage_key] || scene.video.public_url
+      },
+      animation: scene.animation && {
+        ...scene.animation,
+        public_url: previewUrls[scene.animation.storage_key] || scene.animation.public_url
+      },
+      image: scene.image && {
+        ...scene.image,
+        publicUrl: previewUrls[scene.image.storage_key] || scene.image.publicUrl
+      }
+    }
+
+    return {
+      ...job,
+      metadata: {
+        ...job.metadata,
+        scenes: [updatedScene, ...job.metadata.scenes.slice(1)]
+      }
+    }
+  }) || []
+
   return {
-    ...state,
+    jobs,
+    loading: isLoading,
+    error: error ? (error as Error).message : null,
+    filters: state.filters,
+    pagination: {
+      ...state.pagination,
+      total: jobsResponse?.pagination.total || 0,
+      totalPages: jobsResponse?.pagination.totalPages || 0
+    },
     handleFilterChange,
     handlePageChange
   }

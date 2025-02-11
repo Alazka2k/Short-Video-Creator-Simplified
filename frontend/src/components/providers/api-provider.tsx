@@ -3,6 +3,17 @@
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { initializeApiClient } from '@/lib/api/apiClient';
 import { AuthLogger } from '@/lib/debug/auth-logger';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    },
+  },
+})
 
 export function ApiProvider({ children }: { children: React.ReactNode }) {
   console.log('API Provider rendered');
@@ -28,7 +39,9 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthProvider onInit={handleAuthInit}>
-      {children}
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
     </AuthProvider>
   );
 } 

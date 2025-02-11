@@ -1,0 +1,100 @@
+{
+    "job_id": "e18a9593-974f-4c14-915b-288008cbbbb5",
+    "user_id": 30,
+    "created_at": "2025-02-11T10:22:30.607Z",
+    "updated_at": "2025-02-11T10:23:12.351Z",
+    "status": "completed",
+    "service_sequence": [
+        "llm"
+    ],
+    "metadata": {
+        "jobId": "e18a9593-974f-4c14-915b-288008cbbbb5",
+        "music": null,
+        "scenes": [
+            {
+                "image": null,
+                "video": null,
+                "voice": null,
+                "sceneId": 1
+            },
+            {
+                "image": null,
+                "video": null,
+                "voice": null,
+                "sceneId": 2
+            }
+        ],
+        "status": "completed",
+        "endTime": "2025-02-11T10:23:12.349Z",
+        "llmResult": {
+            "music": {
+                "style": "Fusion of traditional Japanese and modern instrumental",
+                "title": "Naruto's Journey",
+                "lyrics": "From shadows cast, he rose to fight, A beacon bright, in the darkest night. With every step, a dream ignites, The hero stands, in radiant light.",
+                "prompt": "An energetic and uplifting soundtrack with traditional Japanese instruments fused with modern beats, capturing the spirit of adventure, determination, and hope."
+            },
+            "title": "Naruto: From Misfit to Hero",
+            "prompt": "A portrait about Naruto",
+            "scenes": [
+                {
+                    "description": "\"From a village outcast to a beacon of hope, his story inspires us all. Who is he?\"",
+                    "video_prompt": "Naruto stands resolutely before the Hokage Rock, the camera slowly moving up to reveal the stone faces as the setting sun bathes the scene in a golden hue, highlighting Naruto's resolve.",
+                    "visual_prompt": "A young Naruto Uzumaki standing boldly in front of the Hokage Rock, his bright orange outfit contrasting against the stone faces of the Hokage. The sun sets behind him, casting a warm glow and long shadows. Eye-level view, golden hour lighting, capturing the determination in his eyes.",
+                    "camera_movement": "Crane Up",
+                    "visual_metadata": {
+                        "aspectRatio": "9:16"
+                    }
+                },
+                {
+                    "description": "\"Facing impossible odds, he turned his loneliness into strength. How did he achieve the impossible?\"",
+                    "video_prompt": "Adult Naruto stands firm against a towering storm, with the camera orbiting around him to capture the energy and determination in his eyes as chakra swirls visibly.",
+                    "visual_prompt": "Adult Naruto Uzumaki confidently facing a massive swirling storm, symbolizing the challenges he overcame. His cloak billows in the wind, and chakra energy glows around him. Low-angle view, evening light with dramatic shadows, emphasizing his heroic stance.",
+                    "camera_movement": "Orbit Right",
+                    "visual_metadata": {
+                        "aspectRatio": "9:16"
+                    }
+                }
+            ],
+            "hashtags": "#NarutoJourney #NinjaLegend #AnimeHero #FromMisfitToHero #BelieveIt",
+            "description": "Explore the transformation of Naruto Uzumaki from a spirited outcast to a legendary ninja hero. Discover the pivotal moments that defined his journey."
+        },
+        "parameters": {
+            "llmGenParams": {
+                "image": {
+                    "aspectRatio": "9:16"
+                },
+                "script": {
+                    "scriptTone": "Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+                    "vocabulary": "Informative Tone: Focus on clarity and factual information",
+                    "pacingStructure": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+                    "characterPerspective": "Content Creator: Shares personal experiences and opinions"
+                },
+                "general": {
+                    "sceneAmount": "2",
+                    "lengthDescription": "Your task is to write a 45 seconds video"
+                }
+            },
+            "serviceConfig": {
+                "skipImage": true,
+                "skipMusic": true,
+                "skipVoice": true,
+                "skipVisualization": true
+            },
+            "imageGenParams": {},
+            "musicGenParams": {
+                "instrumental": true
+            },
+            "videoGenParams": {
+                "aspectRatio": "16:9"
+            },
+            "voiceGenParams": {
+                "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+            },
+            "visualizationType": "video",
+            "animationGenParams": {}
+        }
+    },
+    "prompt": "A portrait about Naruto",
+    "error": null,
+    "serviceConfig": {}
+}

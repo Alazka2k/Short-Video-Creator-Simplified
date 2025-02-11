@@ -19,6 +19,7 @@ const animationRoutes = require('./routes/animation');
 const videoRoutes = require('./routes/video');
 const jobRoutes = require('./routes/job');
 const assemblyRoutes = require('./routes/assembly');
+const storageRoutes = require('./routes/storage');
 
 // Log environment configuration
 logger.info('Environment Configuration:', {
@@ -110,9 +111,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'API Gateway is healthy' });
 });
 
-// Mount route files
-app.use('/api/auth', authRoutes);
+// Docs routes
 app.use('/api/docs', docsRoutes);
+
+// Service routes
 app.use('/api/llm', llmRoutes);
 app.use('/api/image', imageRoutes);
 app.use('/api/voice', voiceRoutes);
@@ -121,6 +123,12 @@ app.use('/api/animation', animationRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/job', jobRoutes);
 app.use('/api/assembly', assemblyRoutes);
+
+// Auth routes
+app.use('/api/auth', authRoutes);
+
+// Storage routes
+app.use('/api/storage', storageRoutes);
 
 // Add media serving endpoint
 app.use('/media', serviceAuthMiddleware, express.static(path.join(__dirname, '../../data/output')));

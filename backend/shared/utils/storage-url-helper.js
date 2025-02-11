@@ -25,6 +25,23 @@ class StorageUrlHelper {
     return StorageUrlHelper.getInstance().refreshUrlsInObjectInstance(obj);
   }
 
+  async shouldRefreshUrl(storageKey) {
+    // Check if URL exists in cache and is not expiring soon
+    const cached = this.cache.get(storageKey);
+    if (cached && cached.expiresAt > Date.now() + this.EXPIRY_BUFFER) {
+      logger.info('URL still valid:', { storageKey });
+      return false;
+    }
+    return true;
+  }
+
+  extractStorageKeyFromUrl(url) {
+    if (!url || !url.includes('short-video-creator-dev.s3')) return null;
+    const urlWithoutParams = url.split('?')[0];
+    const match = urlWithoutParams.match(/\.com\/(.*)/);
+    return match?.[1] || null;
+  }
+
   async getFreshUrlInstance(url) {
     try {
       if (!url) {
@@ -32,20 +49,15 @@ class StorageUrlHelper {
       }
 
       // Check if it's an S3 URL from our storage
-      // TODO: Make it work for prod / staging environments. Currently it's only working for dev since hard coded s3 bucket name.
       if (url.includes('short-video-creator-dev.s3')) {
-        // Extract storage key from URL (everything after .com/)
-        const urlWithoutParams = url.split('?')[0];
-        const match = urlWithoutParams.match(/\.com\/(.*)/);
-        if (!match || !match[1]) {
+        const storageKey = this.extractStorageKeyFromUrl(url);
+        if (!storageKey) {
           throw new Error('Invalid S3 URL format');
         }
-        const storageKey = match[1];
         
-        // Check cache first
-        const cached = this.cache.get(storageKey);
-        if (cached && cached.expiresAt > Date.now() + this.EXPIRY_BUFFER) {
-          logger.info('Using cached URL:', { storageKey });
+        // Check if we need to refresh
+        if (!await this.shouldRefreshUrl(storageKey)) {
+          const cached = this.cache.get(storageKey);
           return cached.url;
         }
 
@@ -66,11 +78,15 @@ class StorageUrlHelper {
     const newObj = { ...obj };
     
     // Look for URL fields that might need refreshing
-    const urlFields = ['url', 'public_url', 'imageUrl', 'audioUrl', 'videoUrl'];
+    const urlFields = ['url', 'publicUrl', 'imageUrl', 'audioUrl', 'videoUrl'];
     
     for (const field of urlFields) {
       if (newObj[field] && typeof newObj[field] === 'string') {
-        newObj[field] = await this.getFreshUrlInstance(newObj[field]);
+        // Only refresh if needed
+        const storageKey = this.extractStorageKeyFromUrl(newObj[field]);
+        if (storageKey && await this.shouldRefreshUrl(storageKey)) {
+          newObj[field] = await this.getFreshUrlInstance(newObj[field]);
+        }
       }
     }
 
@@ -161,14 +177,14 @@ class StorageUrlHelper {
     
     if (job.metadata?.scenes) {
       for (const scene of job.metadata.scenes) {
-        if (scene.image?.storage_key) storageKeys.add(scene.image.storage_key);
-        if (scene.video?.storage_key) storageKeys.add(scene.video.storage_key);
-        if (scene.voice?.storage_key) storageKeys.add(scene.voice.storage_key);
+        if (scene.image?.storageKey) storageKeys.add(scene.image.storageKey);
+        if (scene.video?.storageKey) storageKeys.add(scene.video.storageKey);
+        if (scene.voice?.storageKey) storageKeys.add(scene.voice.storageKey);
       }
     }
     
-    if (job.metadata?.music?.storage_key) {
-      storageKeys.add(job.metadata.music.storage_key);
+    if (job.metadata?.music?.storageKey) {
+      storageKeys.add(job.metadata.music.storageKey);
     }
 
     return Array.from(storageKeys);
@@ -194,26 +210,26 @@ class StorageUrlHelper {
     if (updatedMetadata.scenes) {
       updatedMetadata.scenes = updatedMetadata.scenes.map(scene => ({
         ...scene,
-        image: scene.image?.storage_key ? {
+        image: scene.image?.storageKey ? {
           ...scene.image,
-          public_url: refreshedUrls.get(scene.image.storage_key)?.url || scene.image.public_url
+          publicUrl: refreshedUrls.get(scene.image.storageKey)?.url || scene.image.publicUrl
         } : scene.image,
-        video: scene.video?.storage_key ? {
+        video: scene.video?.storageKey ? {
           ...scene.video,
-          public_url: refreshedUrls.get(scene.video.storage_key)?.url || scene.video.public_url
+          publicUrl: refreshedUrls.get(scene.video.storageKey)?.url || scene.video.publicUrl
         } : scene.video,
-        voice: scene.voice?.storage_key ? {
+        voice: scene.voice?.storageKey ? {
           ...scene.voice,
-          public_url: refreshedUrls.get(scene.voice.storage_key)?.url || scene.voice.public_url
+          publicUrl: refreshedUrls.get(scene.voice.storageKey)?.url || scene.voice.publicUrl
         } : scene.voice
       }));
     }
 
     // Update music URL
-    if (updatedMetadata.music?.storage_key) {
+    if (updatedMetadata.music?.storageKey) {
       updatedMetadata.music = {
         ...updatedMetadata.music,
-        public_url: refreshedUrls.get(updatedMetadata.music.storage_key)?.url || updatedMetadata.music.public_url
+        publicUrl: refreshedUrls.get(updatedMetadata.music.storageKey)?.url || updatedMetadata.music.publicUrl
       };
     }
 

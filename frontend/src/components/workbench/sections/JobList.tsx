@@ -1,4 +1,4 @@
-import { BentoGrid, BentoItem } from '@/components/ui/bento-grid'
+import { BentoGrid } from '@/components/ui/bento-grid'
 import { 
   Image as ImageIcon, 
   Music as MusicIcon,
@@ -9,6 +9,12 @@ import {
   Loader2 as LoadingIcon
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+
+interface PreviewContent {
+  url: string;
+  type: 'video' | 'animation' | 'image';
+  storageKey?: string;
+}
 
 interface Job {
   job_id: string
@@ -24,15 +30,15 @@ interface Job {
     scenes?: Array<{
       image?: {
         publicUrl?: string
+        storage_key?: string
       }
       video?: {
         public_url?: string
+        storage_key?: string
       }
       animation?: {
         public_url?: string
-      }
-      voice?: {
-        publicUrl?: string
+        storage_key?: string
       }
     }>
   }
@@ -84,40 +90,60 @@ export function JobList({ jobs, loading, error }: JobListProps) {
     }
   }
 
-  const getPreviewUrl = (job: Job) => {
-    if (!job.metadata?.scenes?.[0]) return null
-    const scene = job.metadata.scenes[0]
+  const getPreviewContent = (job: Job): PreviewContent | null => {
+    if (!job.metadata?.scenes?.[0]) return null;
+    const scene = job.metadata.scenes[0];
     
-    // Try to get video/animation first
+    // Prioritize video > animation > image
     if (scene.video?.public_url) {
-      return scene.video.public_url
+      return {
+        url: scene.video.public_url,
+        type: 'video',
+        storageKey: scene.video.storage_key
+      };
     }
+    
     if (scene.animation?.public_url) {
-      return scene.animation.public_url
+      return {
+        url: scene.animation.public_url,
+        type: 'animation',
+        storageKey: scene.animation.storage_key
+      };
     }
-    // Fall back to image if no video/animation
+    
     if (scene.image?.publicUrl) {
-      return scene.image.publicUrl
+      return {
+        url: scene.image.publicUrl,
+        type: 'image',
+        storageKey: scene.image.storage_key
+      };
     }
-    return null
+    
+    return null;
   }
 
-  const jobsToBentoItems = (jobs: Job[]): BentoItem[] => {
-    return jobs.map(job => ({
-      title: job.metadata?.llmResult?.title || 'Untitled',
-      description: job.metadata?.llmResult?.description || job.prompt,
-      icon: null, // Remove the robot icon
-      services: job.service_sequence.map(service => ({
-        icon: getServiceIcon(service),
-        label: getServiceLabel(service)
-      })),
-      meta: formatDistanceToNow(new Date(job.created_at), { addSuffix: true }),
-      cta: 'View Details →',
-      colSpan: (job.metadata?.scenes?.length ?? 0) > 1 ? 2 : 1,
-      hasPersistentHover: false,
-      previewUrl: getPreviewUrl(job),
-      jobId: job.job_id
-    }))
+  const getItems = () => {
+    return jobs.map(job => {
+      const preview = getPreviewContent(job);
+      const serviceIcon = getServiceIcon(job.service_sequence[0] || 'llm');
+      
+      return {
+        title: job.metadata?.llmResult?.title || 'Untitled',
+        description: job.metadata?.llmResult?.description || job.prompt,
+        icon: serviceIcon,
+        services: job.service_sequence.map(service => ({
+          icon: getServiceIcon(service),
+          label: getServiceLabel(service)
+        })),
+        meta: formatDistanceToNow(new Date(job.created_at), { addSuffix: true }),
+        cta: 'View Details →',
+        colSpan: (job.metadata?.scenes?.length ?? 0) > 1 ? 2 : 1,
+        hasPersistentHover: false,
+        previewUrl: preview?.url,
+        previewType: preview?.type,
+        jobId: job.job_id
+      };
+    });
   }
 
   if (loading) {
@@ -152,5 +178,5 @@ export function JobList({ jobs, loading, error }: JobListProps) {
     )
   }
 
-  return <BentoGrid items={jobsToBentoItems(jobs)} />
+  return <BentoGrid items={getItems()} />
 } 

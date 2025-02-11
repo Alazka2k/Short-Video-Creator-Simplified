@@ -1,0 +1,130 @@
+{
+    "job_id": "b1e4c0c5-2918-49f7-939f-8a78501076d5",
+    "user_id": 30,
+    "created_at": "2025-02-11T10:52:51.501Z",
+    "updated_at": "2025-02-11T10:53:48.941Z",
+    "status": "completed",
+    "service_sequence": [
+        "llm",
+        "image",
+        "voice",
+        "animation"
+    ],
+    "metadata": {
+        "jobId": "b1e4c0c5-2918-49f7-939f-8a78501076d5",
+        "music": null,
+        "scenes": [
+            {
+                "image": {
+                    "fileName": "image_scene_1.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-11\\b1e4c0c5-2918-49f7-939f-8a78501076d5\\scene_1\\image_scene_1.png",
+                    "imageUrl": "https://cdn.midjourney.com/8a8ccead-fdff-4256-ab36-af57caacb5c1/0_1.png",
+                    "metadata": {
+                        "prompt": "A futuristic cityscape where Trunks stands with his sword, ready to defend against an unseen threat. The city, a fusion of ancient and futuristic architecture, gleams under the vibrant sunset. Eye-level view, golden hour lighting, capturing the city's dynamic energy; --ar 9:16",
+                        "generatedAt": "2025-02-11T10:53:27.012Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T105327Z&X-Amz-Expires=3600&X-Amz-Signature=80a2494b559f51d35e469d5792df700d161560e7433a5d1f2229ad72b9678170&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/image_scene_1.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1338825199226982442/alazka_A_futuristic_cityscape_where_Trunks_stands_with_his_swo_8a8ccead-fdff-4256-ab36-af57caacb5c1.png?ex=67ac7da1&is=67ab2c21&hm=c20e160be1a15e533fd4ea7240c4ced7a9a7f27eda71925c7ac70e8766ae4e97&"
+                },
+                "voice": {
+                    "fileName": "voice_scene_1.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-11\\b1e4c0c5-2918-49f7-939f-8a78501076d5\\scene_1\\voice_scene_1.mp3",
+                    "metadata": {
+                        "text": "Meet Trunks, the time-traveling warrior, a beacon of hope in a world teetering on the brink of chaos.",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-11T10:53:05.255Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T105305Z&X-Amz-Expires=3600&X-Amz-Signature=9436636b898aca27c387f20bbc182353db5a42fc8e71aa2dc3e9b6ca519bc9db&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/voice_scene_1.mp3",
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                },
+                "sceneId": 1,
+                "animation": {
+                    "url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/animation/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/animation_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T105348Z&X-Amz-Expires=3600&X-Amz-Signature=973b741b71980d12de5ac90d86e84ca5db3643e2f7419e1ab2ec0e7970d7107b&X-Amz-SignedHeaders=host",
+                    "fileName": "animation_scene_1.mp4",
+                    "filePath": "data\\output\\animation\\2025-02-11\\b1e4c0c5-2918-49f7-939f-8a78501076d5\\scene_1\\animation_scene_1.mp4",
+                    "metadata": {
+                        "prompt": "A cityscape view as the camera pushes in on Trunks, standing with his sword. The sun sets dramatically, highlighting the mix of ancient and futuristic elements in the city, portraying the duality of his world.",
+                        "duration": 5,
+                        "fileName": "animation_scene_1.mp4",
+                        "fullPath": "data\\output\\animation\\2025-02-11\\b1e4c0c5-2918-49f7-939f-8a78501076d5\\scene_1\\animation_scene_1.mp4",
+                        "createdAt": "2025-02-11T10:53:48.879Z",
+                        "patternId": "pattern_20241118-175948",
+                        "generatedAt": "2025-02-11T10:53:48.935Z",
+                        "relativePath": "2025-02-11\\b1e4c0c5-2918-49f7-939f-8a78501076d5\\scene_1",
+                        "animationParameters": {
+                            "inputImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/temp_images/scene_1_converted.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T105329Z&X-Amz-Expires=3600&X-Amz-Signature=bfd60534315b4a62dd07f6891dadd8a60cb884e54bdea2ccbc5defe8a0753221&X-Amz-SignedHeaders=host",
+                            "animationLength": 5
+                        }
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/animation/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/animation_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T105348Z&X-Amz-Expires=3600&X-Amz-Signature=973b741b71980d12de5ac90d86e84ca5db3643e2f7419e1ab2ec0e7970d7107b&X-Amz-SignedHeaders=host",
+                    "storageKey": "animation/2025-02-11/b1e4c0c5-2918-49f7-939f-8a78501076d5/scene_1/animation_scene_1.mp4"
+                }
+            }
+        ],
+        "status": "completed",
+        "endTime": "2025-02-11T10:53:48.939Z",
+        "llmResult": {
+            "music": {
+                "style": "Uplifting orchestral, heroic themes, futuristic synths",
+                "title": "Time's Guardian",
+                "lyrics": "In the shadows of time, a guardian stands, Guiding the future with unwavering hands. Through echoes of ages, the battle unfolds, A legacy written in stories untold.",
+                "prompt": "A dynamic and heroic soundtrack with uplifting orchestral elements, a sense of urgency, and futuristic synths, capturing the essence of a warrior's journey through time."
+            },
+            "title": "Trunks: Guardian of Time",
+            "prompt": "A portrait about Trunks",
+            "scenes": [
+                {
+                    "description": "Meet Trunks, the time-traveling warrior, a beacon of hope in a world teetering on the brink of chaos.",
+                    "video_prompt": "A cityscape view as the camera pushes in on Trunks, standing with his sword. The sun sets dramatically, highlighting the mix of ancient and futuristic elements in the city, portraying the duality of his world.",
+                    "visual_prompt": "A futuristic cityscape where Trunks stands with his sword, ready to defend against an unseen threat. The city, a fusion of ancient and futuristic architecture, gleams under the vibrant sunset. Eye-level view, golden hour lighting, capturing the city's dynamic energy; --ar 9:16",
+                    "camera_movement": "Push In",
+                    "visual_metadata": {
+                        "aspectRatio": "9:16"
+                    }
+                }
+            ],
+            "hashtags": "#TrunksLegacy #TimeWarrior #DragonBall #FutureProtector #SaiyanSaga",
+            "description": "Dive into the world of Trunks, the time-traveling warrior with a legacy of courage and resilience."
+        },
+        "parameters": {
+            "llmGenParams": {
+                "image": {
+                    "aspectRatio": "9:16"
+                },
+                "script": {
+                    "scriptTone": "Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+                    "vocabulary": "Informative Tone: Focus on clarity and factual information",
+                    "pacingStructure": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+                    "characterPerspective": "Content Creator: Shares personal experiences and opinions"
+                },
+                "general": {
+                    "sceneAmount": "1",
+                    "lengthDescription": "Your task is to write a 45 seconds video"
+                }
+            },
+            "serviceConfig": {
+                "skipImage": false,
+                "skipMusic": true,
+                "skipVoice": false,
+                "skipVisualization": false
+            },
+            "imageGenParams": {},
+            "musicGenParams": {
+                "instrumental": true
+            },
+            "videoGenParams": {
+                "aspectRatio": "16:9"
+            },
+            "voiceGenParams": {
+                "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+            },
+            "visualizationType": "animation",
+            "animationGenParams": {}
+        }
+    },
+    "prompt": "A portrait about Trunks",
+    "error": null,
+    "serviceConfig": {}
+}

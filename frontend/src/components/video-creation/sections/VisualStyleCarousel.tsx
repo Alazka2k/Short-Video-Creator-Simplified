@@ -1,113 +1,114 @@
 import { motion } from "framer-motion"
 import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel"
 import { useEffect, useState, useMemo, useCallback } from "react"
-
-const IMAGE_CACHE_KEY = 'video_creation_image_cache'
+import { Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { ProgressiveImage } from "@/components/ui/progressive-media"
 
 interface VisualStyleCarouselProps {
   previewImages: string[]
+  selectedStyle?: string
 }
 
-export function VisualStyleCarousel({ previewImages }: VisualStyleCarouselProps) {
-  const [loadedImages, setLoadedImages] = useState<string[]>([])
+export function VisualStyleCarousel({ 
+  previewImages,
+  selectedStyle 
+}: VisualStyleCarouselProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({})
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [loadingErrors, setLoadingErrors] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
-  // Get and set image cache from localStorage
-  const getImageCache = useCallback(() => {
-    try {
-      return JSON.parse(localStorage.getItem(IMAGE_CACHE_KEY) || '{}')
-    } catch {
-      return {}
-    }
-  }, [])
+  // Reset states when style changes
+  useEffect(() => {
+    setLoadedImages(new Set())
+    setLoadingStates({})
+    setIsInitialLoad(true)
+    setLoadingErrors([])
+    setCurrentIndex(0)
+  }, [selectedStyle])
 
-  const setImageCache = useCallback((cache: Record<string, string>) => {
-    localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(cache))
-  }, [])
-
-  // Memoize the image loading function
+  // Load all images for the current style
   const loadImage = useCallback((src: string) => {
-    return new Promise((resolve, reject) => {
-      const imageCache = getImageCache()
+    return new Promise<void>((resolve, reject) => {
+      const imgElement = document.createElement('img')
       
-      // If image is already cached, resolve immediately
-      if (imageCache[src]) {
-        resolve(src)
-        return
+      imgElement.onload = () => {
+        setLoadedImages(prev => new Set([...prev, src]))
+        setLoadingStates(prev => ({ ...prev, [src]: false }))
+        resolve()
       }
 
-      const img = new Image()
-      img.onload = () => {
-        // Update cache with new image
-        const updatedCache = { ...imageCache, [src]: src }
-        setImageCache(updatedCache)
-        resolve(src)
+      imgElement.onerror = () => {
+        setLoadingErrors(prev => [...prev, src])
+        setLoadingStates(prev => ({ ...prev, [src]: false }))
+        reject(new Error(`Failed to load image: ${src}`))
       }
-      img.onerror = (error) => {
-        console.error("Failed to load:", src, error)
-        reject(error)
-      }
-      img.src = src
+
+      setLoadingStates(prev => ({ ...prev, [src]: true }))
+      imgElement.src = src
     })
-  }, [getImageCache, setImageCache])
+  }, [])
 
-  // Initialize from cache on mount
+  // Load all images for the current style
   useEffect(() => {
-    const imageCache = getImageCache()
-    const cachedImages = previewImages.filter(img => imageCache[img])
-    if (cachedImages.length > 0) {
-      setLoadedImages(cachedImages)
-      if (cachedImages.length === previewImages.length) {
-        setIsLoading(false)
+    if (!selectedStyle || previewImages.length === 0) return
+
+    const loadAllImages = async () => {
+      try {
+        // Load first image immediately, then load the rest in parallel
+        if (previewImages.length > 0) {
+          await loadImage(previewImages[0])
+          
+          // Load remaining images in parallel
+          await Promise.all(
+            previewImages.slice(1).map(src => loadImage(src))
+          )
+        }
+        setIsInitialLoad(false)
+      } catch (error) {
+        console.error('Error loading images:', error)
       }
     }
-  }, [previewImages, getImageCache])
 
-  // Load any uncached images
-  const loadImages = useCallback(async () => {
-    const imageCache = getImageCache()
-    const uncachedImages = previewImages.filter(img => !imageCache[img])
-    
-    if (uncachedImages.length === 0) {
-      return
-    }
+    loadAllImages()
+  }, [selectedStyle, previewImages, loadImage])
 
-    console.log("Loading uncached images:", uncachedImages)
-    setIsLoading(true)
+  // Calculate loading progress
+  const loadingProgress = useMemo(() => {
+    if (previewImages.length === 0) return 0
+    const loadedCount = loadedImages.size
+    return Math.round((loadedCount / previewImages.length) * 100)
+  }, [previewImages.length, loadedImages.size])
 
-    try {
-      const loadedResults = await Promise.all(
-        uncachedImages.map(src => 
-          loadImage(src)
-            .then(result => {
-              setLoadedImages(prev => [...prev, src])
-              return result
-            })
-            .catch(error => {
-              setLoadingErrors(prev => [...prev, src])
-              return error
-            })
-        )
-      )
-      console.log("All images processed:", loadedResults)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [previewImages, loadImage, getImageCache])
+  // Show loading state during initial load
+  if (isInitialLoad && loadingProgress < 100) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="mt-4 w-full max-w-full overflow-hidden"
+      >
+        <div className="max-w-[600px] mx-auto">
+          <div className="h-[250px] flex items-center justify-center flex-col gap-4 bg-muted/50 rounded-lg border-2 border-dashed border-muted">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="text-sm text-muted-foreground space-y-2">
+              <div>Loading style previews... {loadingProgress}%</div>
+              {loadingErrors.length > 0 && (
+                <div className="text-destructive text-xs">
+                  Failed to load {loadingErrors.length} images
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
 
-  // Effect to trigger loading of uncached images
-  useEffect(() => {
-    if (previewImages.length > 0) {
-      loadImages()
-    }
-  }, [previewImages, loadImages])
-
-  const allImagesLoaded = loadedImages.length === previewImages.length
-
-  // Memoize the loaded images array to prevent unnecessary re-renders
-  const cachedImages = useMemo(() => loadedImages, [loadedImages])
-
+  // Show carousel once images are loaded
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -116,37 +117,26 @@ export function VisualStyleCarousel({ previewImages }: VisualStyleCarouselProps)
       className="mt-4 w-full max-w-full overflow-hidden"
     >
       <div className="max-w-[600px] mx-auto">
-        {allImagesLoaded ? (
-          <div className="h-[250px] relative">
-            <ThreeDPhotoCarousel
-              images={cachedImages}
-              onSelect={() => {}}
-            />
-          </div>
-        ) : (
-          <div className="h-[250px] flex items-center justify-center flex-col gap-4">
-            <div className="text-muted-foreground">
-              Loading previews... ({loadedImages.length}/{previewImages.length})
-            </div>
-            {loadingErrors.length > 0 && (
-              <div className="text-red-500 text-sm space-y-2">
-                <div>Failed to load {loadingErrors.length} images</div>
-                <div className="text-xs">
-                  First error: {loadingErrors[0]}
-                </div>
+        <div className="h-[250px] relative">
+          <ThreeDPhotoCarousel
+            images={previewImages}
+            onSelect={(index) => {
+              setCurrentIndex(index)
+              setIsInitialLoad(false)
+            }}
+          />
+          {/* Loading overlay for individual images */}
+          {Object.entries(loadingStates).map(([img, isLoading]) => (
+            isLoading && (
+              <div 
+                key={img}
+                className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm"
+              >
+                <Loader2 className="h-6 w-6 animate-spin" />
               </div>
-            )}
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div>Attempting to load:</div>
-              {previewImages.slice(0, 2).map((path, i) => (
-                <div key={i} className="font-mono">{path}</div>
-              ))}
-              {previewImages.length > 2 && (
-                <div>...and {previewImages.length - 2} more</div>
-              )}
-            </div>
-          </div>
-        )}
+            )
+          ))}
+        </div>
       </div>
     </motion.div>
   )

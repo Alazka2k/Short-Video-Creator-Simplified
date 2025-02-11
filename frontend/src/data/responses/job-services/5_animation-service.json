@@ -1,0 +1,23 @@
+{
+    "message": "Animation generated successfully",
+    "result": {
+        "filePath": "data\\output\\animation\\2025-02-11\\4ffecd43-a0d7-4cd4-81ed-238e2d7e90bf\\scene_1\\animation_scene_1.mp4",
+        "fileName": "animation_scene_1.mp4",
+        "storage_key": "animation/2025-02-11/4ffecd43-a0d7-4cd4-81ed-238e2d7e90bf/scene_1/animation_scene_1.mp4",
+        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/animation/2025-02-11/4ffecd43-a0d7-4cd4-81ed-238e2d7e90bf/scene_1/animation_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T100243Z&X-Amz-Expires=3600&X-Amz-Signature=2787a170c64031c2bca2fa6ec6820895aaa0e6033818679b09d5defa543b75a6&X-Amz-SignedHeaders=host",
+        "metadata": {
+            "prompt": "Early humans gathered around a flickering campfire, their silhouettes moving as the camera slowly pushes in, capturing the essence of human innovation.",
+            "duration": 5,
+            "fileName": "animation_scene_1.mp4",
+            "fullPath": "data\\output\\animation\\2025-02-11\\4ffecd43-a0d7-4cd4-81ed-238e2d7e90bf\\scene_1\\animation_scene_1.mp4",
+            "createdAt": "2025-02-11T10:02:43.827Z",
+            "patternId": "pattern_20241118-173727",
+            "generatedAt": "2025-02-11T10:02:43.821Z",
+            "relativePath": "2025-02-11\\4ffecd43-a0d7-4cd4-81ed-238e2d7e90bf\\scene_1",
+            "animationParameters": {
+                "inputImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/temp_images/scene_1_converted.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T100230Z&X-Amz-Expires=3600&X-Amz-Signature=dba3201a5ad59c8da6d6ed7a3f9b5eccbd905813ca1236e1b510dde5246f85f2&X-Amz-SignedHeaders=host",
+                "animationLength": 5
+            }
+        }
+    }
+}

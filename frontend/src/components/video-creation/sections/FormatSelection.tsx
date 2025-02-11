@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import Image from 'next/image'
+import { Loader2 } from 'lucide-react'
 import aspectRatioData from '@/data/video-creation/image/aspect-ratio_select-option.json'
 
 interface FormatOption {
@@ -32,6 +33,7 @@ export function FormatSelection({
   isGenerating
 }: FormatSelectionProps) {
   const [hoveredCard, setHoveredCard] = React.useState<string | null>(null)
+  const [loadingStates, setLoadingStates] = React.useState<Record<string, boolean>>({})
 
   return (
     <div className="space-y-4 pb-12">
@@ -69,22 +71,44 @@ export function FormatSelection({
                 )}>
                   <AspectRatio
                     ratio={format.width / format.height}
-                    className="bg-muted relative overflow-hidden"
+                    className="bg-muted relative overflow-hidden rounded-lg"
                   >
                     <div className="absolute inset-0 border-2 border-border rounded-lg z-10" />
-                    <Image
-                      src={format.previewImages}
-                      alt={format.name}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
+                    <div className="relative w-full h-full">
+                      {loadingStates[format.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center z-20 bg-background/50">
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        </div>
+                      )}
+                      <Image
+                        src={format.previewImages}
+                        alt={format.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className={cn(
+                          "object-cover transition-opacity duration-300",
+                          loadingStates[format.id] ? "opacity-50" : "opacity-100"
+                        )}
+                        priority={selectedFormat === format.id}
+                        onLoadingComplete={() => {
+                          setLoadingStates(prev => ({ ...prev, [format.id]: false }))
+                        }}
+                        onLoadStart={() => {
+                          setLoadingStates(prev => ({ ...prev, [format.id]: true }))
+                        }}
+                        onError={() => {
+                          setLoadingStates(prev => ({ ...prev, [format.id]: false }))
+                          console.error(`Failed to load image for format: ${format.id}`)
+                        }}
+                      />
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
                   </AspectRatio>
                 </div>
               </div>
 
               {/* Description - Fixed Height */}
-              <div className="h-[10px] flex items-center justify-center">
+              <div className="h-[60px] flex items-center justify-center">
                 <div className="text-sm text-muted-foreground text-center px-4">
                   {format.description}
                 </div>
