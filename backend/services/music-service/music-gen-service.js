@@ -86,11 +86,17 @@ class MusicGenService {
         try {
           await this.downloadMusic(selectedVariation.audio_url, tempOutputPath);
           
+          // Upload to storage
+          const storageResult = await storageService.uploadFile(tempOutputPath, 'music');
+          logger.info('Music uploaded to storage successfully');
+
           const musicRecord = await this.dataAccess.createMusicOutput(jobId, {
             tempFilePath: tempOutputPath,
             title: musicData.title,
             style: musicData.style,
             instrumental: musicData.instrumental,
+            storageKey: storageResult.storageKey,
+            publicUrl: storageResult.url,
             metadata: {
               generationId: selectedVariation.id,
               created_at: selectedVariation.created_at,
@@ -103,8 +109,8 @@ class MusicGenService {
             fileName: path.basename(musicRecord.file_path),
             title: musicRecord.title,
             style: musicRecord.style,
-            storage_key: musicRecord.storage_key,
-            public_url: musicRecord.public_url,
+            storageKey: musicRecord.storage_key,
+            publicUrl: musicRecord.public_url,
             metadata: typeof musicRecord.metadata === 'string' 
               ? JSON.parse(musicRecord.metadata) 
               : musicRecord.metadata

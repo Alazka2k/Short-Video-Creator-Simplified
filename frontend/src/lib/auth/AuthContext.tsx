@@ -37,6 +37,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const M2M_TOKEN_KEY = 'auth_m2m_token';
 const M2M_TOKEN_EXPIRY_KEY = 'auth_m2m_token_expiry';
 
+// Add token validation helper
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const tokenData = JSON.parse(atob(token.split('.')[1]));
+    // Check if token expires in less than 5 minutes
+    return tokenData.exp * 1000 <= Date.now() + 5 * 60 * 1000;
+  } catch (error) {
+    AuthLogger.error('Token validation error:', error);
+    return true;
+  }
+};
+
 export function AuthProvider({ children, onInit }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,12 +57,42 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
   useEffect(() => {
     AuthLogger.setDebugMode(true);
     AuthLogger.log('Auth Provider initialized');
+
+    // Add global request interceptor
+    const interceptor = async (config: any) => {
+      const token = localStorage.getItem("access_token");
+      if (token && isTokenExpired(token)) {
+        AuthLogger.warning('Token expired or about to expire, logging out user');
+        await logout();
+        window.location.href = '/auth/login';
+        throw new Error('Session expired. Please log in again.');
+      }
+      return config;
+    };
+
+    // Add the interceptor to all fetch requests
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        await interceptor({});
+        return originalFetch(...args);
+      } catch (error) {
+        throw error;
+      }
+    };
+
+    return () => {
+      // Restore original fetch
+      window.fetch = originalFetch;
+    };
   }, []);
 
   const refreshToken = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
     if (!refreshToken) {
       AuthLogger.error('No refresh token available');
+      // Clear any remaining auth state
+      await logout();
       throw new Error("No refresh token available");
     }
 
@@ -64,6 +106,9 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
 
       if (!response.ok) {
         AuthLogger.error('Token refresh failed', { status: response.status });
+        // Clear auth state and redirect to login
+        await logout();
+        window.location.href = '/auth/login';
         throw new Error("Token refresh failed");
       }
 
@@ -75,10 +120,9 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       return data.tokens.access_token;
     } catch (error) {
       AuthLogger.error('Token refresh error:', error);
-      // Clear tokens on refresh failure
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      setUser(null);
+      // Clear tokens and redirect to login
+      await logout();
+      window.location.href = '/auth/login';
       throw error;
     }
   };
@@ -91,18 +135,16 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       
       if (token) {
         try {
-          // Validate token before using it
-          const tokenData = JSON.parse(atob(token.split('.')[1]));
-          const isExpired = tokenData.exp * 1000 <= Date.now();
-          
-          if (isExpired) {
-            AuthLogger.warning('Token expired, attempting refresh');
+          // Check if token is expired or about to expire
+          if (isTokenExpired(token)) {
+            AuthLogger.warning('Token expired or about to expire, attempting refresh');
             try {
               await refreshToken();
             } catch (refreshError) {
               AuthLogger.error('Token refresh failed:', refreshError);
               setUser(null);
               setIsLoading(false);
+              window.location.href = '/auth/login';
               return;
             }
           }
@@ -110,7 +152,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
           const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/profile`, {
             method: 'GET',
             headers: {
-              Authorization: `Bearer ${isExpired ? await refreshToken() : token}`,
+              Authorization: `Bearer ${token}`,
             },
           });
 
@@ -125,6 +167,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
             } catch (refreshError) {
               AuthLogger.error('Token refresh failed after profile fetch error:', refreshError);
               setUser(null);
+              window.location.href = '/auth/login';
             }
           }
         } catch (error) {
@@ -132,6 +175,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
           setUser(null);
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
+          window.location.href = '/auth/login';
         }
       } else {
         AuthLogger.log('No token found, user is not authenticated');

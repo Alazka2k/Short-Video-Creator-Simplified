@@ -51,8 +51,8 @@ class AnimationDataAccess {
             scene_id: sceneId,
             original_pattern: animationData.originalPattern,
             file_path: filePath,
-            storage_key: animationData.storage_key,
-            public_url: animationData.public_url,
+            storage_key: animationData.storageKey,
+            public_url: animationData.publicUrl,
             metadata: JSON.stringify(fullMetadata),
             created_at: knex.fn.now()
           })
@@ -60,11 +60,19 @@ class AnimationDataAccess {
 
         logger.info(`Created animation output record: ${animationRecord.animation_id}`);
 
+        // Convert snake_case to camelCase in returned object
         return {
-          ...animationRecord,
+          animationId: animationRecord.animation_id,
+          jobId: animationRecord.job_id,
+          sceneId: animationRecord.scene_id,
+          originalPattern: animationRecord.original_pattern,
+          filePath: animationRecord.file_path,
+          storageKey: animationRecord.storage_key,
+          publicUrl: animationRecord.public_url,
           metadata: typeof animationRecord.metadata === 'string' 
             ? JSON.parse(animationRecord.metadata)
-            : animationRecord.metadata
+            : animationRecord.metadata,
+          createdAt: animationRecord.created_at
         };
       } catch (dbError) {
         logger.error('Database error creating animation record:', dbError);
@@ -101,6 +109,8 @@ class AnimationDataAccess {
 
       return animations.map(animation => ({
         ...animation,
+        storageKey: animation.storage_key,
+        publicUrl: animation.public_url,
         metadata: typeof animation.metadata === 'string' 
           ? JSON.parse(animation.metadata)
           : animation.metadata
@@ -123,6 +133,8 @@ class AnimationDataAccess {
 
       return {
         ...animation,
+        storageKey: animation.storage_key,
+        publicUrl: animation.public_url,
         metadata: typeof animation.metadata === 'string' 
           ? JSON.parse(animation.metadata)
           : animation.metadata
@@ -228,6 +240,8 @@ class AnimationDataAccess {
 
       return {
         ...updated,
+        storageKey: updated.storage_key,
+        publicUrl: updated.public_url,
         metadata: typeof updated.metadata === 'string'
           ? JSON.parse(updated.metadata)
           : updated.metadata

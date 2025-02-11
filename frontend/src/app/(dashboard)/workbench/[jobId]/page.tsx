@@ -11,6 +11,11 @@ import { AudioPlayer } from '@/components/preview/AudioPlayer'
 import { apiClient } from '@/lib/api/apiClient'
 import { AuthLogger } from '@/lib/debug/auth-logger'
 import { JobHeader } from '@/components/preview/JobHeader'
+import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
+import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
+import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
+import pacingData from '@/data/video-creation/script/pacing-structure_select-option.json'
+import perspectiveData from '@/data/video-creation/script/character-perspective_select-option.json'
 
 interface MediaContent {
   public_url: string
@@ -57,6 +62,30 @@ interface JobDetails {
   error: string | null
 }
 
+// Helper function to find option name by prompt
+const findOptionNameByPrompt = (data: any, prompt: string): string | undefined => {
+  for (const category of data.categories) {
+    for (const option of category.options) {
+      if (option.prompt === prompt || option.promptDefinition === prompt) {
+        return option.name
+      }
+    }
+  }
+  return undefined
+}
+
+// Helper function to find shot style name by promptDefinition
+const findShotStyleName = (promptDefinition: string): string | undefined => {
+  for (const category of shotStyleData.categories) {
+    for (const option of category.options) {
+      if (option.promptDefinition === promptDefinition) {
+        return option.name
+      }
+    }
+  }
+  return undefined
+}
+
 export default function JobDetailsPage({ params }: { params: Promise<{ jobId: string }> }) {
   const router = useRouter()
   const resolvedParams = use(params)
@@ -97,6 +126,21 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
       )
     }
 
+    // Extract script information
+    const scriptParams = job.metadata.parameters?.llmGenParams?.script || {}
+    const scriptInfo = {
+      tone: findOptionNameByPrompt(scriptToneData, scriptParams.scriptTone),
+      vocabulary: findOptionNameByPrompt(vocabularyData, scriptParams.vocabulary),
+      pacing: findOptionNameByPrompt(pacingData, scriptParams.pacingStructure),
+      perspective: findOptionNameByPrompt(perspectiveData, scriptParams.characterPerspective)
+    }
+
+    // Extract shot style
+    const shotStyle = findShotStyleName(job.metadata.parameters?.llmGenParams?.image?.shotStyle)
+
+    // Extract focus/theme
+    const focus = job.metadata.parameters?.llmGenParams?.general?.generalDescription
+
     return (
       <div className="space-y-8">
         <div className="flex items-center gap-4">
@@ -117,33 +161,27 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           hashtag={job.metadata.llmResult?.hashtags}
           created_at={job.created_at}
           aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+          shotStyle={shotStyle}
           service_sequence={job.service_sequence}
           prompt={job.prompt}
           voiceId={job.metadata.parameters?.voiceId}
+          scriptInfo={scriptInfo}
+          focus={focus}
         />
 
         {/* Content Preview Section */}
         <div className="grid gap-6">
           {/* Scenes */}
           {job.metadata.scenes.map((scene) => (
-            <div 
+            <ScenePreview
               key={scene.sceneId}
-              className="rounded-lg border bg-card overflow-hidden"
-            >
-              <div className="p-4 border-b bg-muted/50">
-                <h3 className="font-medium">Scene {scene.sceneId}</h3>
-              </div>
-              <div className="p-6">
-                <ScenePreview
-                  sceneId={scene.sceneId}
-                  image={scene.image}
-                  video={scene.video}
-                  voice={scene.voice}
-                  description={job.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
-                  aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
-                />
-              </div>
-            </div>
+              sceneId={scene.sceneId}
+              image={scene.image}
+              video={scene.video}
+              voice={scene.voice}
+              description={job.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
+              aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+            />
           ))}
 
           {/* Music Section (if exists) */}

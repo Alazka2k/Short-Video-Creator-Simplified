@@ -20,9 +20,17 @@ interface JobHeaderProps {
   hashtag?: string
   created_at: string
   aspectRatio?: string
+  shotStyle?: string
   service_sequence: string[]
   prompt: string
   voiceId?: string
+  scriptInfo?: {
+    tone?: string
+    vocabulary?: string
+    pacing?: string
+    perspective?: string
+  }
+  focus?: string
 }
 
 export function JobHeader({
@@ -31,9 +39,12 @@ export function JobHeader({
   hashtag,
   created_at,
   aspectRatio,
+  shotStyle,
   service_sequence = [],
   prompt,
-  voiceId
+  voiceId,
+  scriptInfo,
+  focus
 }: JobHeaderProps) {
   const [showDetails, setShowDetails] = useState(false)
 
@@ -44,6 +55,12 @@ export function JobHeader({
       if (voice) return voice.name
     }
     return id
+  }
+
+  // Parse hashtags from string
+  const getHashtags = (hashtagString?: string) => {
+    if (!hashtagString) return []
+    return hashtagString.split(' ').filter(tag => tag.startsWith('#'))
   }
 
   const getServiceIcon = (service: string) => {
@@ -84,12 +101,6 @@ export function JobHeader({
     }
   }
 
-  // Parse hashtags from string
-  const getHashtags = (hashtagString?: string) => {
-    if (!hashtagString) return []
-    return hashtagString.split(' ').filter(tag => tag.startsWith('#'))
-  }
-
   return (
     <div className="space-y-4 bg-card rounded-lg border p-6">
       {/* Title and Creation Time */}
@@ -111,7 +122,7 @@ export function JobHeader({
 
       {/* Hashtags */}
       {hashtag && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
           {getHashtags(hashtag).map((tag, index) => (
             <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">
               <Hash className="w-4 h-4" />
@@ -121,40 +132,31 @@ export function JobHeader({
         </div>
       )}
 
-      {/* Media Information */}
-      <div className="flex flex-wrap items-center gap-4 pt-2">
-        {/* Aspect Ratio */}
-        {aspectRatio && (
-          <div className="text-sm bg-muted px-3 py-1.5 rounded-full">
-            <span className="font-medium">Aspect Ratio:</span>{' '}
-            <span className="text-muted-foreground">{aspectRatio}</span>
-          </div>
-        )}
-
-        {/* Voice */}
-        {voiceId && (
+      {/* Voice */}
+      {voiceId && (
+        <div className="flex flex-wrap items-center gap-4 border-t pt-4">
           <div className="text-sm bg-muted px-3 py-1.5 rounded-full">
             <span className="font-medium">Voice:</span>{' '}
             <span className="text-muted-foreground">{getVoiceName(voiceId)}</span>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Service Sequence */}
-        {service_sequence.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {service_sequence.map((service, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-1.5 text-sm bg-muted rounded-full px-3 py-1.5"
-                title={getServiceLabel(service)}
-              >
-                {getServiceIcon(service)}
-                <span>{getServiceLabel(service)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Service Sequence */}
+      {service_sequence.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap border-t pt-4">
+          {service_sequence.map((service, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-1.5 text-sm bg-muted rounded-full px-3 py-1.5"
+              title={getServiceLabel(service)}
+            >
+              {getServiceIcon(service)}
+              <span>{getServiceLabel(service)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Additional Details Button */}
       <Button
@@ -172,11 +174,50 @@ export function JobHeader({
 
       {/* Collapsible Details */}
       {showDetails && (
-        <div className="mt-4 space-y-3 border-t pt-4">
-          {prompt && (
+        <div className="mt-4 space-y-4 border-t pt-4">
+          {/* Initial Prompt & Focus / Theme */}
+          {prompt && focus && (
             <div>
               <span className="text-sm font-medium">Initial Prompt:</span>
               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-lg">{prompt}</p>
+              <span className="text-sm font-medium">With focus / theme:</span>
+              <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-lg">{focus}</p>
+            </div>
+          )}
+
+                    {/* Script Settings */}
+                    {scriptInfo && Object.values(scriptInfo).some(Boolean) && (
+            <div>
+              <span className="text-sm font-medium">Script Settings:</span>
+              <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
+                {scriptInfo.tone && (
+                  <p><span className="font-medium">Tone:</span> {scriptInfo.tone}</p>
+                )}
+                {scriptInfo.vocabulary && (
+                  <p><span className="font-medium">Vocabulary:</span> {scriptInfo.vocabulary}</p>
+                )}
+                {scriptInfo.pacing && (
+                  <p><span className="font-medium">Pacing:</span> {scriptInfo.pacing}</p>
+                )}
+                {scriptInfo.perspective && (
+                  <p><span className="font-medium">Perspective:</span> {scriptInfo.perspective}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Visual Settings */}
+          {(aspectRatio || shotStyle) && (
+            <div>
+              <span className="text-sm font-medium">Visual Settings:</span>
+              <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
+                {aspectRatio && (
+                  <p><span className="font-medium">Aspect Ratio:</span> {aspectRatio}</p>
+                )}
+                {shotStyle && (
+                  <p><span className="font-medium">Visual Style:</span> {shotStyle}</p>
+                )}
+              </div>
             </div>
           )}
         </div>

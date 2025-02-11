@@ -21,25 +21,25 @@ class AnimationServiceInterface {
     }
   }
 
-  async process(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {
+  async process(imageUrl, videoPrompt, sceneIndex, jobId = null, parameters = {}, isTest = false) {
     try {
       logger.info('Animation service: Starting process...', {
-        imagePath,
+        imageUrl,
         sceneIndex,
         jobId,
-        options: JSON.stringify(options),
+        parameters: JSON.stringify(parameters),
         isTest
       });
 
       // Validate inputs
-      if (!options?.videoPrompt) {
+      if (!videoPrompt) {
         logger.error('Animation service: Missing video prompt');
         throw new Error('Video prompt is required for animation generation');
       }
 
-      if (!imagePath) {
-        logger.error('Animation service: Missing image path');
-        throw new Error('Image path is required for animation generation');
+      if (!imageUrl) {
+        logger.error('Animation service: Missing image URL');
+        throw new Error('Image URL is required for animation generation');
       }
 
       if (!jobId && !isTest) {
@@ -48,17 +48,17 @@ class AnimationServiceInterface {
 
       logger.info('Starting animation generation');
       const result = await this.service.generateAnimation(
-        imagePath,
-        promptOrTestFolder,
+        imageUrl,
+        videoPrompt,
         sceneIndex,
         jobId,
-        options,
+        parameters,
         isTest
       );
 
       const transformedResult = {
         ...result,
-        url: result.public_url || result.filePath
+        url: result.publicUrl || result.filePath
       };
 
       logger.info('Animation generation completed successfully');

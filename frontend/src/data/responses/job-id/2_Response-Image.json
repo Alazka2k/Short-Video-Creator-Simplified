@@ -1,0 +1,83 @@
+{
+    "message": "Content generation completed successfully",
+    "result": {
+        "jobId": "c733399e-e790-483b-bab5-3dadfb11966e",
+        "status": "completed",
+        "outputDir": "data\\output\\integration\\2025-02-11\\c733399e-e790-483b-bab5-3dadfb11966e",
+        "content": {
+            "llm": {
+                "prompt": "A portrait about Vegeta",
+                "title": "Vegeta: A Prince's Journey Beyond Power",
+                "description": "Explore the untold struggles and personal growth of Vegeta, the Saiyan Prince, as he navigates the balance between pride and humility.",
+                "hashtags": "#Vegeta #SaiyanPrince #DragonBall #PrideAndPower #AnimeLegends",
+                "scenes": [
+                    {
+                        "description": "On a distant planet, a lone warrior stands amidst ruins, pondering his past battles and relentless pursuit of power.",
+                        "visual_prompt": "A solitary figure of Vegeta standing on a rocky outcrop, overlooking a barren alien landscape under a crimson sky. His silhouette is strong and defiant, casting a long shadow. Low-angle view, evening red glow, with dynamic clouds swirling; --sref 2611275237 --ar 9:16",
+                        "video_prompt": "Vegeta's silhouette against a desolate alien backdrop, the camera zooms in on his determined expression as the wind rustles his battle-worn armor.",
+                        "camera_movement": "Zoom In",
+                        "visual_metadata": {
+                            "sValue": "500",
+                            "shotStyle": "--sref 2611275237",
+                            "aspectRatio": "9:16"
+                        }
+                    },
+                    {
+                        "description": "Vegeta reflects on the challenges that have shaped him, realizing the true essence of strength lies not in power alone but in the courage to change.",
+                        "visual_prompt": "A close-up of Vegeta's face as he stares into the distance, eyes filled with resolve and introspection. The golden hour lighting bathes his features in a warm, soft glow. Eye-level view, capturing the inner conflict and growth; --sref 2611275237 --ar 9:16",
+                        "video_prompt": "A tight shot of Vegeta's thoughtful expression, the camera slowly pulling out to reveal the vastness of the universe stretching out before him, symbolizing endless possibilities.",
+                        "camera_movement": "Pull Out",
+                        "visual_metadata": {
+                            "sValue": "500",
+                            "shotStyle": "--sref 2611275237",
+                            "aspectRatio": "9:16"
+                        }
+                    }
+                ],
+                "music": {
+                    "title": "Beyond the Horizon",
+                    "prompt": "Epic orchestral score with powerful strings, soaring brass, and poignant piano motifs, capturing the essence of a hero's journey and inner transformation.",
+                    "style": "Epic orchestral, powerful and emotive",
+                    "lyrics": "In the vast expanse of stars we stride, A prince's heart, his strength, his pride. Through battles fierce, and nights so long, He finds his place where souls belong."
+                }
+            },
+            "scenes": [
+                {
+                    "sceneId": 1,
+                    "voice": null,
+                    "image": {
+                        "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-11\\c733399e-e790-483b-bab5-3dadfb11966e\\scene_1\\image_scene_1.png",
+                        "fileName": "image_scene_1.png",
+                        "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1338818347441193001/alazka_A_solitary_figure_of_Vegeta_standing_on_a_rocky_outcrop_c1c56e18-e548-43ed-a7fc-24c6a6543647.png?ex=67ac7740&is=67ab25c0&hm=dba0fe135c57e58f74d6ef73784448a18b9064cc66f8076ba07b8c0c0d0d6445&",
+                        "imageUrl": "https://cdn.midjourney.com/c1c56e18-e548-43ed-a7fc-24c6a6543647/0_0.png",
+                        "storageKey": "image/2025-02-11/c733399e-e790-483b-bab5-3dadfb11966e/scene_1/image_scene_1.png",
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-11/c733399e-e790-483b-bab5-3dadfb11966e/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T102614Z&X-Amz-Expires=3600&X-Amz-Signature=395465bc52e88092b3530e3cdadea7eb321b1c8fdb0b4c13c0fc440efb35698e&X-Amz-SignedHeaders=host",
+                        "metadata": {
+                            "prompt": "A solitary figure of Vegeta standing on a rocky outcrop, overlooking a barren alien landscape under a crimson sky. His silhouette is strong and defiant, casting a long shadow. Low-angle view, evening red glow, with dynamic clouds swirling; --sref 2611275237 --ar 9:16",
+                            "generatedAt": "2025-02-11T10:26:14.062Z"
+                        }
+                    },
+                    "video": null
+                },
+                {
+                    "sceneId": 2,
+                    "voice": null,
+                    "image": {
+                        "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-11\\c733399e-e790-483b-bab5-3dadfb11966e\\scene_2\\image_scene_2.png",
+                        "fileName": "image_scene_2.png",
+                        "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1338818333985996830/alazka_A_close-up_of_Vegetas_face_as_he_stares_into_the_distan_f2826833-3c9b-4cbd-ae61-bcc333aaa3f3.png?ex=67ac773c&is=67ab25bc&hm=061efd3097c2ebb4faddc2698f903a63d8e79b6d07da4e042077bb8a48ae82d6&",
+                        "imageUrl": "https://cdn.midjourney.com/f2826833-3c9b-4cbd-ae61-bcc333aaa3f3/0_1.png",
+                        "storageKey": "image/2025-02-11/c733399e-e790-483b-bab5-3dadfb11966e/scene_2/image_scene_2.png",
+                        "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-11/c733399e-e790-483b-bab5-3dadfb11966e/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T102611Z&X-Amz-Expires=3600&X-Amz-Signature=89171ef1fb47a4f63da4c50414a0fc35c98dc026ac1e9e444b3afadbe966625c&X-Amz-SignedHeaders=host",
+                        "metadata": {
+                            "prompt": "A close-up of Vegeta's face as he stares into the distance, eyes filled with resolve and introspection. The golden hour lighting bathes his features in a warm, soft glow. Eye-level view, capturing the inner conflict and growth; --sref 2611275237 --ar 9:16",
+                            "generatedAt": "2025-02-11T10:26:11.318Z"
+                        }
+                    },
+                    "video": null
+                }
+            ],
+            "music": null
+        }
+    }
+}

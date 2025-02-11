@@ -40,12 +40,12 @@ class MusicDataAccess {
                 lyric: musicData.lyric || null,
                 instrumental: musicData.instrumental,
                 file_path: finalFilePath,
-                storage_key: storageResult.storageKey,
-                public_url: storageResult.url,
+                storage_key: musicData.storageKey,
+                public_url: musicData.publicUrl,
                 created_at: new Date(),
                 metadata: JSON.stringify({
                     generationId: musicData.metadata.generationId,
-                    created_at: musicData.metadata.created_at,
+                    createdAt: musicData.metadata.created_at,
                     generatedAt: musicData.metadata.generatedAt
                 })
             };
@@ -64,15 +64,15 @@ class MusicDataAccess {
                     style: musicData.style,
                     lyric: musicData.lyric || null,
                     instrumental: musicData.instrumental,
-                    file_path: finalFilePath,
-                    storage_key: storageResult.storageKey,
-                    public_url: storageResult.url,
-                    created_at: new Date(),
-                    metadata: JSON.stringify({
+                    filePath: finalFilePath,
+                    storageKey: musicData.storageKey,
+                    publicUrl: musicData.publicUrl,
+                    createdAt: new Date(),
+                    metadata: {
                         generationId: musicData.metadata.generationId,
-                        created_at: musicData.metadata.created_at,
+                        createdAt: musicData.metadata.created_at,
                         generatedAt: musicData.metadata.generatedAt
-                    })
+                    }
                 }, null, 2)
             );
 

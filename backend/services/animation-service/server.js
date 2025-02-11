@@ -32,7 +32,7 @@ function createServer(animationServiceInterface) {
         }, 300000); // 5 minutes timeout
       
         try {
-          const { imageUrl, sceneIndex, jobId, options } = req.body;
+          const { imageUrl, videoPrompt, sceneIndex, jobId, parameters = {} } = req.body;
           logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
           
           if (!imageUrl) {
@@ -44,18 +44,18 @@ function createServer(animationServiceInterface) {
           if (!jobId) {
             throw new Error('Missing required parameter: jobId');
           }
-          if (!options?.videoPrompt) {
-            throw new Error('Missing required parameter: options.videoPrompt');
+          if (!videoPrompt) {
+            throw new Error('Missing required parameter: videoPrompt');
           }
       
-          logger.info(`Animation Service: Generating animation for scene ${sceneIndex}, jobId ${jobId} with prompt "${options.videoPrompt}"`);
+          logger.info(`Animation Service: Generating animation for scene ${sceneIndex}, jobId ${jobId} with prompt "${videoPrompt}"`);
           
           const result = await animationServiceInterface.process(
             imageUrl,
-            jobId,
+            videoPrompt,
             sceneIndex,
             jobId,
-            options,
+            parameters,
             false
           );
           

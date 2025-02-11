@@ -1,0 +1,184 @@
+{
+    "job_id": "6268e248-3555-4842-ad19-5bff0819d6f5",
+    "user_id": null,
+    "created_at": "2025-01-30T12:51:18.235Z",
+    "updated_at": "2025-01-30T12:53:11.113Z",
+    "status": "completed",
+    "service_sequence": [
+        "llm",
+        "image",
+        "voice",
+        "music",
+        "video"
+    ],
+    "metadata": {
+        "jobId": "6268e248-3555-4842-ad19-5bff0819d6f5",
+        "music": {
+            "style": "Fusion of traditional and modern, lively and inspiring.",
+            "title": "Energetic and uplifting track combining traditional Japanese instruments with modern beats, evoking the spirit of adventure and friendship.",
+            "fileName": "background_music.mp3",
+            "filePath": "data\\output\\music\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\background_music.mp3",
+            "metadata": {
+                "created_at": "2025-01-30T12:51:29.564Z",
+                "generatedAt": "2025-01-30T12:52:29.028Z",
+                "generationId": "1f2c838c-810a-405c-b680-01c517483cd2"
+            },
+            "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/music/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/background_music.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125230Z&X-Amz-Expires=3600&X-Amz-Signature=20800c2f18ac9a45cf893b80b405936e2b9254b7ccba3fa525ccbff8d3441fc1&X-Amz-SignedHeaders=host",
+            "storage_key": "music/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/background_music.mp3"
+        },
+        "scenes": [
+            {
+                "image": {
+                    "fileName": "image_scene_1.png",
+                    "filePath": "data\\output\\image\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\scene_1\\image_scene_1.png",
+                    "imageUrl": "https://cdn.midjourney.com/d78521a5-ce54-4f97-b138-4686bc88b1a5/0_0.png",
+                    "metadata": {
+                        "prompt": "A dynamic and colorful depiction of Naruto Uzumaki, a young ninja with blonde spiky hair and a bright orange jumpsuit, standing confidently in the bustling Hidden Leaf Village. The sun shines brightly, casting long shadows behind him. Eye-level view, morning light, capturing the vibrancy and hope of his surroundings; --ar 9:16",
+                        "generatedAt": "2025-01-30T12:51:58.929Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125158Z&X-Amz-Expires=3600&X-Amz-Signature=6ae4852801d94d101d4dc3c567688f450c4b0a24149f4b0bd1092a06f6b68382&X-Amz-SignedHeaders=host",
+                    "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125158Z&X-Amz-Expires=3600&X-Amz-Signature=6ae4852801d94d101d4dc3c567688f450c4b0a24149f4b0bd1092a06f6b68382&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/image_scene_1.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1334506362411155507/alazka_A_dynamic_and_colorful_depiction_of_Naruto_Uzumaki_a_yo_d78521a5-ce54-4f97-b138-4686bc88b1a5.png?ex=679cc766&is=679b75e6&hm=247a9c781a5d7944c10ffbf3cf4e414f07ff2deeb5b10c79ca7732faba8f33d1&"
+                },
+                "video": {
+                    "fileName": "video_scene_1.mp4",
+                    "filePath": "data\\output\\video\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\scene_1\\video_scene_1.mp4",
+                    "metadata": {
+                        "generatedAt": "2025-01-30T12:53:05.561Z",
+                        "generationId": "3c4b7961-94b4-470b-abde-7f089d54ebee",
+                        "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125158Z&X-Amz-Expires=3600&X-Amz-Signature=6ae4852801d94d101d4dc3c567688f450c4b0a24149f4b0bd1092a06f6b68382&X-Amz-SignedHeaders=host",
+                        "generationDuration": 59100
+                    },
+                    "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/video_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125305Z&X-Amz-Expires=3600&X-Amz-Signature=dbdf7fed3ef36ec001cfd95063117d6a6f85875a924fa4490b7631d41f122d84&X-Amz-SignedHeaders=host",
+                    "storage_key": "video/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/video_scene_1.mp4"
+                },
+                "voice": {
+                    "fileName": "voice_scene_1.mp3",
+                    "filePath": "data\\output\\voice\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\scene_1\\voice_scene_1.mp3",
+                    "metadata": {
+                        "text": "In the Hidden Leaf Village, a young boy with untamed energy stands ready to become a legend. Who is he?",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-01-30T12:51:32.683Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125132Z&X-Amz-Expires=3600&X-Amz-Signature=4a05b0cdcc580e478785da8f2090f350d0e2916b8098be72a9c1e88e6738138c&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_1/voice_scene_1.mp3",
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                },
+                "sceneId": 1
+            },
+            {
+                "image": {
+                    "fileName": "image_scene_2.png",
+                    "filePath": "data\\output\\image\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\scene_2\\image_scene_2.png",
+                    "imageUrl": "https://cdn.midjourney.com/2aa7162d-f4ac-4848-876d-2f407aa3a381/0_2.png",
+                    "metadata": {
+                        "prompt": "A heartfelt scene of Naruto surrounded by his friends Sakura and Sasuke, their faces set with determination and camaraderie as they stand together on a hill overlooking the village. The golden hour bathes them in a warm glow, highlighting their bond. Low-angle view, evening light, emphasizing unity and aspiration; --ar 9:16",
+                        "generatedAt": "2025-01-30T12:51:57.948Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125157Z&X-Amz-Expires=3600&X-Amz-Signature=f3e0d1b6e235f30133ff0542a61e884810a9680eb46a6b3f5c8e475a6aa59f4c&X-Amz-SignedHeaders=host",
+                    "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125157Z&X-Amz-Expires=3600&X-Amz-Signature=f3e0d1b6e235f30133ff0542a61e884810a9680eb46a6b3f5c8e475a6aa59f4c&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/image_scene_2.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1334506355322523648/alazka_A_heartfelt_scene_of_Naruto_surrounded_by_his_friends_S_2aa7162d-f4ac-4848-876d-2f407aa3a381.png?ex=679cc765&is=679b75e5&hm=c26bc4833e1aaefcdd5404ee026a6ba77d112cece19caa50d8f0b005ef3286f0&"
+                },
+                "video": {
+                    "fileName": "video_scene_2.mp4",
+                    "filePath": "data\\output\\video\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\scene_2\\video_scene_2.mp4",
+                    "metadata": {
+                        "generatedAt": "2025-01-30T12:53:11.105Z",
+                        "generationId": "3e6089f6-34d1-4996-9621-864e56ba60e6",
+                        "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125158Z&X-Amz-Expires=3600&X-Amz-Signature=f96314619353a0803898f9c8e05d66f9c81d73d77de0ef621b68d4168fb0dc88&X-Amz-SignedHeaders=host",
+                        "generationDuration": 65498
+                    },
+                    "public_url": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/video_scene_2.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125311Z&X-Amz-Expires=3600&X-Amz-Signature=2ef38633311a033cf96e7871f043d8524bb68fd37a8db20608893d2c404f394c&X-Amz-SignedHeaders=host",
+                    "storage_key": "video/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/video_scene_2.mp4"
+                },
+                "voice": {
+                    "fileName": "voice_scene_2.mp3",
+                    "filePath": "data\\output\\voice\\2025-01-30\\6268e248-3555-4842-ad19-5bff0819d6f5\\scene_2\\voice_scene_2.mp3",
+                    "metadata": {
+                        "text": "Bound by dreams and friendship, Naruto's quest to become Hokage inspires us all. Will he achieve his destiny?",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-01-30T12:51:32.680Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/voice_scene_2.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250130%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250130T125132Z&X-Amz-Expires=3600&X-Amz-Signature=a39bc05fc94886cdf09fcb7812d70316e58aca4ff7d7c1cbb56902c18d57f633&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-01-30/6268e248-3555-4842-ad19-5bff0819d6f5/scene_2/voice_scene_2.mp3",
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                },
+                "sceneId": 2
+            }
+        ],
+        "status": "completed",
+        "endTime": "2025-01-30T12:53:11.111Z",
+        "llmResult": {
+            "music": {
+                "style": "Fusion of traditional and modern, lively and inspiring.",
+                "title": "Ninja's Heartbeat",
+                "lyrics": "In the shadow of dreams, we rise, Bound by the ties of fate and skies. Through the trials, we find our way, A ninja's heart beats strong today.",
+                "prompt": "Energetic and uplifting track combining traditional Japanese instruments with modern beats, evoking the spirit of adventure and friendship."
+            },
+            "title": "Naruto: The Ninja's Journey",
+            "prompt": "A portrait about Naruto",
+            "scenes": [
+                {
+                    "description": "In the Hidden Leaf Village, a young boy with untamed energy stands ready to become a legend. Who is he?",
+                    "video_prompt": "A lively scene in the Hidden Leaf Village. Naruto stands with unwavering determination, his shadow stretching behind him as the camera zooms in on his resolute face, capturing the essence of his spirit.",
+                    "visual_prompt": "A dynamic and colorful depiction of Naruto Uzumaki, a young ninja with blonde spiky hair and a bright orange jumpsuit, standing confidently in the bustling Hidden Leaf Village. The sun shines brightly, casting long shadows behind him. Eye-level view, morning light, capturing the vibrancy and hope of his surroundings; --ar 9:16",
+                    "camera_movement": "Zoom In",
+                    "visual_metadata": {
+                        "aspectRatio": "9:16"
+                    }
+                },
+                {
+                    "description": "Bound by dreams and friendship, Naruto's quest to become Hokage inspires us all. Will he achieve his destiny?",
+                    "video_prompt": "Naruto, Sakura, and Sasuke stand united on a hill, the camera pans right, revealing the Hidden Leaf Village below as the golden hour envelops them, symbolizing hope and dreams.",
+                    "visual_prompt": "A heartfelt scene of Naruto surrounded by his friends Sakura and Sasuke, their faces set with determination and camaraderie as they stand together on a hill overlooking the village. The golden hour bathes them in a warm glow, highlighting their bond. Low-angle view, evening light, emphasizing unity and aspiration; --ar 9:16",
+                    "camera_movement": "Pan Right",
+                    "visual_metadata": {
+                        "aspectRatio": "9:16"
+                    }
+                }
+            ],
+            "hashtags": "#Naruto #NinjaLegend #AnimeAdventure #ShinobiJourney #BelieveIt",
+            "description": "Dive into the vibrant world of Naruto, where dreams, friendship, and ninja legends are woven together."
+        },
+        "parameters": {
+            "llmGenParams": {
+                "image": {
+                    "aspectRatio": "9:16"
+                },
+                "script": {
+                    "scriptTone": "Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+                    "vocabulary": "Informative Tone: Focus on clarity and factual information",
+                    "pacingStructure": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+                    "characterPerspective": "Content Creator: Shares personal experiences and opinions"
+                },
+                "general": {
+                    "sceneAmount": "2",
+                    "lengthDescription": "Your task is to write a 45 seconds video"
+                }
+            },
+            "serviceConfig": {
+                "skipImage": false,
+                "skipMusic": false,
+                "skipVoice": false,
+                "skipVisualization": false
+            },
+            "imageGenParams": {},
+            "musicGenParams": {
+                "instrumental": true
+            },
+            "videoGenParams": {
+                "aspectRatio": "16:9"
+            },
+            "voiceGenParams": {
+                "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+            },
+            "visualizationType": "video",
+            "animationGenParams": {}
+        }
+    },
+    "prompt": "A portrait about Naruto",
+    "error": null,
+    "serviceConfig": {}
+}

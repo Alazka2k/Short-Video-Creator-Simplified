@@ -24,8 +24,8 @@ class MusicProcessor {
       if (musicResult) {
         await this.jobDataAccess.updateJobProgress(jobId, 'music', 'completed', {
           filePath: musicResult.filePath,
-          storage_key: musicResult.storage_key,
-          public_url: musicResult.public_url,
+          storageKey: musicResult.storageKey,
+          publicUrl: musicResult.publicUrl,
           metadata: musicResult.metadata
         });
       }

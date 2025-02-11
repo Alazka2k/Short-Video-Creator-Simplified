@@ -198,15 +198,15 @@ class AnimationGenService {
     }
   }
 
-  async generateAnimation(imagePath, promptOrTestFolder, sceneIndex, jobId = null, options = {}, isTest = false) {
-    logger.info('generateAnimation called with:', { imagePath, promptOrTestFolder, sceneIndex, jobId, options, isTest });
+  async generateAnimation(imageUrl, videoPrompt, sceneIndex, jobId = null, parameters = {}, isTest = false) {
+    logger.info('generateAnimation called with:', { imageUrl, videoPrompt, sceneIndex, jobId, parameters, isTest });
     
     if (!this.accessToken) {
       throw new Error('Animation Generation Service not initialized. Call init() first.');
     }
     
-    if (!imagePath) {
-      throw new Error('Image path is undefined or empty');
+    if (!imageUrl) {
+      throw new Error('Image URL is undefined or empty');
     }
 
     if (!isTest && !jobId) {
@@ -215,12 +215,12 @@ class AnimationGenService {
 
     let tempFiles = [];
     try {
-      logger.info(`Starting animation generation for image: ${imagePath}`);
+      logger.info(`Starting animation generation for image: ${imageUrl}`);
       
-      let imageSource = imagePath;
-      if (imagePath.startsWith('http')) {
+      let imageSource = imageUrl;
+      if (imageUrl.startsWith('http')) {
         // Get fresh URL if needed
-        imageSource = await this.getImageFromUrl(imagePath);
+        imageSource = await this.getImageFromUrl(imageUrl);
         logger.info('Using image URL:', imageSource);
       }
 
@@ -232,12 +232,11 @@ class AnimationGenService {
       
       await this.convertToJpeg(imageSource, jpegPath);
       
-      const animationLength = options.animationLength || this.animationLength;
-      const videoPrompt = options.videoPrompt || '';
+      const animationLength = parameters.animationLength || this.animationLength;
 
       let animationFilePath, metadataPath;
       if (isTest) {
-        ({ animationFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest));
+        ({ animationFilePath, metadataPath } = this.getOutputPaths(videoPrompt, sceneIndex, isTest));
       } else {
         ({ animationFilePath, metadataPath } = this.getOutputPaths(jobId, sceneIndex, isTest));
       }
@@ -308,8 +307,8 @@ class AnimationGenService {
             originalPattern: selectedPattern.id,
             tempFilePath: animationFilePath,
             fileName: path.basename(animationFilePath),
-            storage_key: storageResult.storageKey,
-            public_url: storageResult.url,
+            storageKey: storageResult.storageKey,
+            publicUrl: storageResult.url,
             metadata: {
               prompt: videoPrompt,
               duration: animationLength,
@@ -334,15 +333,28 @@ class AnimationGenService {
           return {
             filePath: animationFilePath,
             fileName: path.basename(animationFilePath),
-            storage_key: storageResult.storageKey,
-            public_url: storageResult.url,
-            metadata: animationRecord.metadata
+            storageKey: animationRecord.storageKey,
+            publicUrl: animationRecord.publicUrl,
+            metadata: {
+              ...animationRecord.metadata,
+              generatedAt: new Date().toISOString()
+            }
           };
         }
 
         return {
           filePath: animationFilePath,
-          fileName: path.basename(animationFilePath)
+          fileName: path.basename(animationFilePath),
+          metadata: {
+            prompt: videoPrompt,
+            duration: animationLength,
+            generatedAt: new Date().toISOString(),
+            patternId: selectedPattern.id,
+            animationParameters: {
+              inputImageUrl,
+              animationLength
+            }
+          }
         };
 
       } catch (error) {

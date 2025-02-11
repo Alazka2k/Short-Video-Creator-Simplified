@@ -18,7 +18,7 @@ router.post('/generate',
   async (req, res) => {
     try {
       logger.info('Forwarding request to Animation service');
-      const { imageUrl, sceneIndex, jobId, options } = req.body;
+      const { imageUrl, videoPrompt, sceneIndex, jobId, parameters = {}, animationLength } = req.body;
 
       // Basic validation
       if (!imageUrl) {
@@ -30,16 +30,23 @@ router.post('/generate',
       if (!jobId) {
         throw new Error('Missing required parameter: jobId');
       }
-      if (!options?.videoPrompt) {
-        throw new Error('Missing required parameter: options.videoPrompt');
+      if (!videoPrompt) {
+        throw new Error('Missing required parameter: videoPrompt');
       }
 
-      const response = await axios.post(`${config.services.animation.url}/generate`, {
+      // Structure parameters properly
+      const requestBody = {
         imageUrl,
+        videoPrompt,
         sceneIndex,
         jobId,
-        options
-      }, {
+        parameters: {
+          ...parameters,
+          animationLength: animationLength || parameters.animationLength || 5
+        }
+      };
+
+      const response = await axios.post(`${config.services.animation.url}/generate`, requestBody, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 300000  // 5 minutes timeout
       });

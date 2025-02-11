@@ -26,16 +26,17 @@ class MetadataManager {
         voice: metadata.voiceResult ? {
           filePath: metadata.voiceResult.filePath,
           fileName: path.basename(metadata.voiceResult.filePath),
-          storage_key: metadata.voiceResult.storage_key,
-          public_url: metadata.voiceResult.public_url,
+          storageKey: metadata.voiceResult.storageKey,
+          publicUrl: metadata.voiceResult.publicUrl,
           metadata: metadata.voiceResult.metadata
         } : null,
         image: metadata.imageResult ? {
           filePath: metadata.imageResult.filePath,
           fileName: path.basename(metadata.imageResult.filePath),
-          storage_key: metadata.imageResult.storage_key,
-          public_url: metadata.imageResult.publicUrl,
+          storageKey: metadata.imageResult.storageKey,
+          publicUrl: metadata.imageResult.publicUrl,
           metadata: metadata.imageResult.metadata
+
         } : null
       };
 
@@ -43,8 +44,8 @@ class MetadataManager {
         sceneMetadata[metadata.visualizationType] = {
           filePath: metadata.visualResult.filePath,
           fileName: metadata.visualResult.filePath ? path.basename(metadata.visualResult.filePath) : null,
-          storage_key: metadata.visualResult.storage_key,
-          public_url: metadata.visualResult.public_url,
+          storageKey: metadata.visualResult.storageKey,
+          publicUrl: metadata.visualResult.publicUrl,
           metadata: metadata.visualResult.metadata
         };
       }

@@ -166,13 +166,14 @@ class VideoGenService {
       logger.info(`Using fresh image URL: ${freshImageUrl}`);
 
       // Download the image using ImageHelper
+      let tempImagePath;
       try {
         const imageBuffer = await ImageHelper.downloadImageFromUrl(freshImageUrl);
         
         // Create temp file for the image
         const tempDir = path.join(os.tmpdir(), 'video-service', 'temp');
         await fs.mkdir(tempDir, { recursive: true });
-        const tempImagePath = path.join(tempDir, `scene_${sceneIndex}_input.jpg`);
+        tempImagePath = path.join(tempDir, `scene_${sceneIndex}_input.jpg`);
         await fs.writeFile(tempImagePath, imageBuffer);
         tempFiles.push(tempImagePath);
       } catch (error) {
@@ -276,8 +277,8 @@ class VideoGenService {
             result = {
               filePath: videoFilePath,
               fileName: path.basename(videoFilePath),
-              storage_key: storageResult.storageKey,
-              public_url: storageResult.url,
+              storageKey: storageResult.storageKey,
+              publicUrl: storageResult.url,
               metadata: {
                 generationId: generation.id,
                 sourceImageUrl: freshImageUrl,

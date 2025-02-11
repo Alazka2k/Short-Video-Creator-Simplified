@@ -119,8 +119,8 @@ class VideoDataAccess {
         camera_movement: videoData.cameraMovement,
         aspect_ratio: videoData.aspectRatio,
         file_path: videoPath,
-        storage_key: videoData.storage_key,
-        public_url: videoData.public_url,
+        storage_key: videoData.storageKey,
+        public_url: videoData.publicUrl,
         created_at: new Date(),
         metadata: JSON.stringify({
           fileName: videoData.fileName,
@@ -143,8 +143,8 @@ class VideoDataAccess {
         aspectRatio: videoData.aspectRatio,
         fileName: videoData.fileName,
         filePath: videoPath,
-        storage_key: videoData.storage_key,
-        public_url: videoData.public_url,
+        storageKey: videoData.storageKey,
+        publicUrl: videoData.publicUrl,
         ...videoData.metadata
       });
 

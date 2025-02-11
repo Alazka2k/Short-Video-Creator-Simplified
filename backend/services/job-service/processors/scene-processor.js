@@ -60,8 +60,8 @@ class SceneProcessor {
         await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'completed', {
           sceneId,
           filePath: result.filePath,
-          storage_key: result.storage_key,
-          public_url: result.public_url
+          storageKey: result.storageKey,
+          publicUrl: result.publicUrl
         });
         return result;
       })() : Promise.resolve(null),
@@ -78,18 +78,19 @@ class SceneProcessor {
           jobId,
           sceneId,
           filePath: result.filePath,
-          storage_key: result.storage_key,
-          public_url: result.publicUrl
+          storageKey: result.storageKey,
+          publicUrl: result.publicUrl
         });
 
         await this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', {
           sceneId,
           filePath: result.filePath,
-          storage_key: result.storage_key,
-          public_url: result.publicUrl
+          storageKey: result.storageKey,
+          publicUrl: result.publicUrl
         });
         return result;
       })() : Promise.resolve(null)
+
     ]);
 
     return [voiceResult, imageResult];
@@ -98,11 +99,6 @@ class SceneProcessor {
   async generateVisualization(scene, sceneId, jobId, imageResult, serviceConfig, parameters, visualizationType) {
     if (serviceConfig.skipVisualization) return null;
 
-    // Normalize URL property
-    if (imageResult && imageResult.publicUrl && !imageResult.public_url) {
-      imageResult.public_url = imageResult.publicUrl;
-    }
-
     // Log the full imageResult for debugging
     logger.info('Starting visualization generation with image result:', {
       type: visualizationType,
@@ -110,9 +106,8 @@ class SceneProcessor {
       jobId,
       imageResult: {
         filePath: imageResult?.filePath,
-        public_url: imageResult?.public_url,
-        publicUrl: imageResult?.publicUrl, // Log both to verify
-        storage_key: imageResult?.storage_key
+        publicUrl: imageResult?.publicUrl,
+        storageKey: imageResult?.storageKey
       },
       hasVideoPrompt: !!scene.video_prompt,
       videoPrompt: scene.video_prompt
@@ -129,7 +124,7 @@ class SceneProcessor {
         throw new Error('Video prompt is required for visualization generation');
       }
 
-      if (!imageResult?.public_url) {
+      if (!imageResult?.publicUrl) {
         logger.error('Missing image URL for visualization', { sceneId, jobId });
         throw new Error('Image URL is required for visualization generation');
       }
@@ -138,11 +133,11 @@ class SceneProcessor {
         logger.info('Executing video service...', {
           sceneId,
           jobId,
-          imageUrl: imageResult.public_url,
+          imageUrl: imageResult.publicUrl,
           videoPrompt: scene.video_prompt
         });
         return await this.services.video.process(
-          imageResult.public_url,
+          imageResult.publicUrl,
           scene.video_prompt,
           scene.camera_movement,
           parameters.videoGenParams?.aspectRatio || '16:9',
@@ -153,15 +148,18 @@ class SceneProcessor {
         logger.info('Executing animation service...', {
           sceneId,
           jobId,
-          imageUrl: imageResult?.public_url,
+          imageUrl: imageResult?.publicUrl,
           videoPrompt: scene.video_prompt
         });
         return await this.services.animation.process(
-          imageResult?.public_url,
+          imageResult?.publicUrl,
           scene.video_prompt,
           sceneId,
           jobId,
-          parameters.animationGenParams
+          {
+            animationLength: parameters.animationGenParams?.animationLength || 5,
+            ...parameters.animationGenParams
+          }
         );
       }
     } catch (error) {
