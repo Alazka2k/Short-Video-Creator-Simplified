@@ -38,6 +38,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.tiktokcdn-us.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**.amazonaws.com', // This will match any S3 bucket in any region
+      }
     ]
   }
 }

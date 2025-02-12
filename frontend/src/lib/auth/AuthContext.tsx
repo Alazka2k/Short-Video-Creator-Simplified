@@ -64,7 +64,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       if (token && isTokenExpired(token)) {
         AuthLogger.warning('Token expired or about to expire, logging out user');
         await logout();
-        window.location.href = '/auth/login';
+        window.location.href = '/login';
         throw new Error('Session expired. Please log in again.');
       }
       return config;
@@ -108,7 +108,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
         AuthLogger.error('Token refresh failed', { status: response.status });
         // Clear auth state and redirect to login
         await logout();
-        window.location.href = '/auth/login';
+        window.location.href = '/login';
         throw new Error("Token refresh failed");
       }
 
@@ -122,7 +122,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       AuthLogger.error('Token refresh error:', error);
       // Clear tokens and redirect to login
       await logout();
-      window.location.href = '/auth/login';
+      window.location.href = '/login';
       throw error;
     }
   };
@@ -144,7 +144,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
               AuthLogger.error('Token refresh failed:', refreshError);
               setUser(null);
               setIsLoading(false);
-              window.location.href = '/auth/login';
+              window.location.href = '/login';
               return;
             }
           }
@@ -167,7 +167,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
             } catch (refreshError) {
               AuthLogger.error('Token refresh failed after profile fetch error:', refreshError);
               setUser(null);
-              window.location.href = '/auth/login';
+              window.location.href = '/login';
             }
           }
         } catch (error) {
@@ -175,7 +175,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
           setUser(null);
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
-          window.location.href = '/auth/login';
+          window.location.href = '/login';
         }
       } else {
         AuthLogger.log('No token found, user is not authenticated');

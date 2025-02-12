@@ -27,8 +27,8 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
   ]
 
   const sortOptions = [
-    { id: 'created_at', label: 'Creation Date', value: 'created_at' },
-    { id: 'updated_at', label: 'Last Updated', value: 'updated_at' }
+    { id: 'createdAt', label: 'Creation Date', value: 'createdAt' },
+    { id: 'updatedAt', label: 'Last Updated', value: 'updatedAt' }
   ]
 
   const orderOptions = [

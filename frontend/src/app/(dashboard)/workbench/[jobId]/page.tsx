@@ -19,8 +19,8 @@ import perspectiveData from '@/data/video-creation/script/character-perspective_
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 
 interface MediaContent {
-  public_url: string
-  storage_key: string
+  publicUrl: string
+  storageKey: string
   metadata: any
 }
 
@@ -29,6 +29,7 @@ interface JobScene {
   image?: MediaContent
   video?: MediaContent
   voice?: MediaContent
+  animation?: MediaContent
 }
 
 interface JobDetails {
@@ -101,6 +102,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     const keys = []
     if (scene.image?.storageKey) keys.push(scene.image.storageKey)
     if (scene.video?.storageKey) keys.push(scene.video.storageKey)
+    if (scene.animation?.storageKey) keys.push(scene.animation.storageKey)
     if (scene.voice?.storageKey) keys.push(scene.voice.storageKey)
     return keys
   }) || []
@@ -178,6 +180,10 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
             ...scene.video,
             publicUrl: freshUrls[scene.video.storageKey] || scene.video.publicUrl
           } : scene.video,
+          animation: scene.animation?.storageKey ? {
+            ...scene.animation,
+            publicUrl: freshUrls[scene.animation.storageKey] || scene.animation.publicUrl
+          } : scene.animation,
           voice: scene.voice?.storageKey ? {
             ...scene.voice,
             publicUrl: freshUrls[scene.voice.storageKey] || scene.voice.publicUrl
@@ -227,6 +233,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
               sceneId={scene.sceneId}
               image={scene.image}
               video={scene.video}
+              animation={scene.animation}
               voice={scene.voice}
               description={jobWithFreshUrls.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
               aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}

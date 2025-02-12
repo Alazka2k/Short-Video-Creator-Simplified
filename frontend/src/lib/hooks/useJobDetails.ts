@@ -15,6 +15,7 @@ interface JobScene {
   image?: MediaContent
   video?: MediaContent
   voice?: MediaContent
+  animation?: MediaContent
 }
 
 interface JobDetails {
@@ -99,6 +100,7 @@ export function useJobDetails(jobId: string) {
     if (scene.image?.storageKey) keys.push(scene.image.storageKey)
     if (scene.video?.storageKey) keys.push(scene.video.storageKey)
     if (scene.voice?.storageKey) keys.push(scene.voice.storageKey)
+    if (scene.animation?.storageKey) keys.push(scene.animation.storageKey)
     return keys
   }) || []
 
@@ -125,6 +127,10 @@ export function useJobDetails(jobId: string) {
           ...scene.video,
           publicUrl: freshUrls[scene.video.storageKey] || scene.video.publicUrl
         } : scene.video,
+        animation: scene.animation?.storageKey ? {
+          ...scene.animation,
+          publicUrl: freshUrls[scene.animation.storageKey] || scene.animation.publicUrl
+        } : scene.animation,
         voice: scene.voice?.storageKey ? {
           ...scene.voice,
           publicUrl: freshUrls[scene.voice.storageKey] || scene.voice.publicUrl

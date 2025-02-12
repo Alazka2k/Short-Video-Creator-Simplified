@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { ProgressiveVideo } from '@/components/ui/progressive-media'
+import { Loader2 } from 'lucide-react'
 
 interface VideoPreviewProps {
   url: string
@@ -16,18 +17,23 @@ export function VideoPreview({ url, title, className, onError, onLoad }: VideoPr
 
   // Reset state when URL changes
   useEffect(() => {
+    console.log('VideoPreview: URL changed:', url)
     setIsLoading(true)
     setError(null)
   }, [url])
 
   const handleLoad = () => {
+    console.log('VideoPreview: Video loaded successfully:', url)
     setIsLoading(false)
     onLoad?.()
   }
 
-  const handleError = () => {
-    const errorMessage = 'Failed to load video'
-    setError(errorMessage)
+  const handleError = (error: string) => {
+    console.error('VideoPreview: Error loading video:', {
+      url,
+      error
+    })
+    setError(error)
     setIsLoading(false)
     if (onError) {
       const errorEvent = new Event('error')
@@ -47,13 +53,23 @@ export function VideoPreview({ url, title, className, onError, onLoad }: VideoPr
   }
 
   return (
-    <ProgressiveVideo
-      src={url}
-      className={className}
-      onMediaLoad={handleLoad}
-      onMediaError={handleError}
-      shouldPreload
-      showControls
-    />
+    <div className={cn("relative", className)}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm text-muted-foreground">Loading video...</span>
+          </div>
+        </div>
+      )}
+      <ProgressiveVideo
+        src={url}
+        className={cn(className, isLoading && "opacity-0")}
+        onMediaLoad={handleLoad}
+        onMediaError={handleError}
+        shouldPreload
+        showControls
+      />
+    </div>
   )
 } 

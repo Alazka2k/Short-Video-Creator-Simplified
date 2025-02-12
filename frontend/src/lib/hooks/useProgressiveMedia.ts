@@ -15,6 +15,54 @@ interface UseProgressiveMediaOptions {
   onError?: (error: string) => void
 }
 
+// Helper to determine media type from URL
+function getMediaType(url: string): 'image' | 'video' | 'audio' | 'unknown' {
+  try {
+    // Extract storageKey from S3 URL by looking at the path after the domain
+    const urlPath = url.split('amazonaws.com/')[1]
+    if (urlPath) {
+      const storageKey = urlPath.split('?')[0] // Remove query parameters
+      console.log('useProgressiveMedia: Extracted storageKey:', storageKey)
+
+      // Determine type based on storageKey pattern
+      if (storageKey.startsWith('image/')) {
+        console.log('useProgressiveMedia: Detected image type from storage key pattern')
+        return 'image'
+      }
+      if (storageKey.startsWith('video/') || storageKey.startsWith('animation/')) {
+        console.log('useProgressiveMedia: Detected video type from storage key pattern')
+        return 'video'
+      }
+      if (storageKey.startsWith('voice/') || storageKey.startsWith('music/')) {
+        console.log('useProgressiveMedia: Detected audio type from storage key pattern')
+        return 'audio'
+      }
+    }
+
+    // Fallback to extension check if not an S3 URL
+    const extension = url.split('?')[0].split('.').pop()?.toLowerCase() || ''
+    console.log('useProgressiveMedia: Checking file extension:', extension)
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      console.log('useProgressiveMedia: Detected image type from extension')
+      return 'image'
+    }
+    if (['mp4', 'webm', 'ogg'].includes(extension)) {
+      console.log('useProgressiveMedia: Detected video type from extension')
+      return 'video'
+    }
+    if (['mp3', 'wav', 'aac'].includes(extension)) {
+      console.log('useProgressiveMedia: Detected audio type from extension')
+      return 'audio'
+    }
+  } catch (error) {
+    console.error('useProgressiveMedia: Error determining media type:', error)
+  }
+  
+  console.log('useProgressiveMedia: Could not determine media type, using unknown')
+  return 'unknown'
+}
+
 export function useProgressiveMedia(src: string | null, options: UseProgressiveMediaOptions = {}) {
   const [state, setState] = useState<MediaState>({
     isLoading: true,
@@ -108,11 +156,46 @@ export function useProgressiveMedia(src: string | null, options: UseProgressiveM
       }
     }
 
-    // Create a new Image object to preload
-    const img = new Image()
-    
-    img.onload = () => {
-      console.log('useProgressiveMedia: Image loaded successfully:', src)
+    const mediaType = getMediaType(src)
+    console.log('useProgressiveMedia: Final media type determination:', mediaType)
+
+    // Handle different media types
+    if (mediaType === 'image') {
+      const img = new Image()
+      
+      img.onload = () => {
+        console.log('useProgressiveMedia: Image loaded successfully:', src)
+        setState({
+          isLoading: false,
+          error: null,
+          url: src,
+          progress: 100
+        })
+        if (options.cacheKey) {
+          cacheUrl(options.cacheKey, src)
+        }
+        onLoadRef.current?.(src)
+      }
+
+      img.onerror = (error) => {
+        console.error('useProgressiveMedia: Image load error:', error)
+        setState({
+          isLoading: false,
+          error: 'Failed to load image',
+          url: null,
+          progress: 0
+        })
+        onErrorRef.current?.('Failed to load image')
+      }
+
+      img.src = src
+      return () => {
+        img.onload = null
+        img.onerror = null
+      }
+    } else {
+      // For video and audio, directly use the URL since we've already validated the type
+      console.log(`useProgressiveMedia: Using ${mediaType} URL directly:`, src)
       setState({
         isLoading: false,
         error: null,
@@ -123,27 +206,6 @@ export function useProgressiveMedia(src: string | null, options: UseProgressiveM
         cacheUrl(options.cacheKey, src)
       }
       onLoadRef.current?.(src)
-    }
-
-    img.onerror = (error) => {
-      console.error('useProgressiveMedia: Image load error:', error)
-      setState({
-        isLoading: false,
-        error: 'Failed to load media',
-        url: null,
-        progress: 0
-      })
-      onErrorRef.current?.('Failed to load media')
-    }
-
-    // Start loading the image
-    console.log('useProgressiveMedia: Setting image source:', src)
-    img.src = src
-
-    // Cleanup
-    return () => {
-      img.onload = null
-      img.onerror = null
     }
   }, [src, options.cacheKey, getCachedUrl, cacheUrl])
 

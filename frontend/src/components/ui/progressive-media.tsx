@@ -5,6 +5,7 @@ import Image, { ImageProps } from 'next/image'
 import { HTMLAttributes, VideoHTMLAttributes, AudioHTMLAttributes, useRef, useState, useEffect } from 'react'
 import { Button } from './button'
 import { Slider } from './slider'
+import React from 'react'
 
 interface BaseProgressiveProps {
   src: string
@@ -44,7 +45,7 @@ export function ProgressiveImage({
     error,
     progress
   } = useProgressiveMedia(src, {
-    cacheKey: `image-${src}`,
+    cacheKey: cacheKey || `image-${src}`,
     preload: shouldPreload,
     onProgress: (progress) => {
       console.log('ProgressiveImage: Loading progress:', progress)
@@ -60,9 +61,10 @@ export function ProgressiveImage({
   })
 
   if (error) {
+    console.error('ProgressiveImage: Rendering error state:', error)
     return (
       <div className="flex items-center justify-center w-full h-full bg-muted rounded-lg">
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
@@ -78,6 +80,10 @@ export function ProgressiveImage({
             className
           )}
           loading={shouldPreload ? "eager" : "lazy"}
+          onError={(e) => {
+            console.error('ProgressiveImage: Native img error:', e)
+            onMediaError?.('Failed to load image')
+          }}
           {...props}
         />
       ) : (
@@ -315,7 +321,7 @@ export function ProgressiveVideo({
   )
 }
 
-export function ProgressiveAudio({
+export const ProgressiveAudio = React.forwardRef<HTMLAudioElement, ProgressiveAudioProps>(({
   src,
   cacheKey,
   shouldPreload,
@@ -324,7 +330,7 @@ export function ProgressiveAudio({
   onMediaLoad,
   onMediaError,
   ...props
-}: ProgressiveAudioProps) {
+}, ref) => {
   const { isLoading, error, url, progress } = useProgressiveMedia(src, {
     cacheKey,
     preload: shouldPreload,
@@ -335,7 +341,7 @@ export function ProgressiveAudio({
   if (error) {
     return (
       <div className="flex items-center justify-center w-full h-full bg-muted rounded-lg">
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
@@ -344,6 +350,7 @@ export function ProgressiveAudio({
     <div className="relative">
       {url ? (
         <audio
+          ref={ref}
           src={url}
           className={cn('w-full', className)}
           {...props}
@@ -362,4 +369,5 @@ export function ProgressiveAudio({
       )}
     </div>
   )
-} 
+})
+ProgressiveAudio.displayName = 'ProgressiveAudio' 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AudioPlayer } from './AudioPlayer'
 import { ImagePreview } from './ImagePreview'
 import { VideoPreview } from './VideoPreview'
@@ -56,13 +56,24 @@ export function ScenePreview({
   // Use storage URLs hook to keep URLs fresh
   const { urls: freshUrls, refreshUrls } = useStorageUrls(storageKeys)
 
+  // Effect to trigger media loading for all types when URLs are ready
+  useEffect(() => {
+    if (Object.keys(freshUrls).length > 0) {
+      console.log('ScenePreview: Fresh URLs available, triggering media loading for scene', sceneId, freshUrls)
+    }
+  }, [freshUrls, sceneId])
+
   const handleMediaError = (type: string) => {
     AuthLogger.error(`Error loading ${type} for scene ${sceneId}:`, {
       errorType: type,
       originalUrl: type === 'image' ? image?.publicUrl : 
                   type === 'video' ? video?.publicUrl : 
                   type === 'animation' ? animation?.publicUrl :
-                  type === 'voice' ? voice?.publicUrl : null
+                  type === 'voice' ? voice?.publicUrl : null,
+      freshUrl: type === 'image' ? freshUrls[image?.storageKey || ''] :
+                type === 'video' ? freshUrls[video?.storageKey || ''] :
+                type === 'animation' ? freshUrls[animation?.storageKey || ''] :
+                type === 'voice' ? freshUrls[voice?.storageKey || ''] : null
     })
     setMediaErrors(prev => ({
       ...prev,
@@ -98,12 +109,14 @@ export function ScenePreview({
   // Determine which media to show (priority: video > animation > image)
   const getMediaContent = () => {
     if (video?.storageKey && freshUrls[video.storageKey]) {
+      console.log('ScenePreview: Loading video for scene', sceneId, freshUrls[video.storageKey])
       return (
         <VideoPreview 
           url={freshUrls[video.storageKey]}
           className="absolute inset-0 h-full w-full object-contain"
           onError={() => handleMediaError('video')}
           onLoad={() => {
+            console.log('ScenePreview: Video loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { video, ...rest } = prev
               return rest
@@ -114,12 +127,14 @@ export function ScenePreview({
     }
     
     if (animation?.storageKey && freshUrls[animation.storageKey]) {
+      console.log('ScenePreview: Loading animation for scene', sceneId, freshUrls[animation.storageKey])
       return (
         <VideoPreview 
           url={freshUrls[animation.storageKey]}
           className="absolute inset-0 h-full w-full object-contain"
           onError={() => handleMediaError('animation')}
           onLoad={() => {
+            console.log('ScenePreview: Animation loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { animation, ...rest } = prev
               return rest
@@ -130,6 +145,7 @@ export function ScenePreview({
     }
     
     if (image?.storageKey && freshUrls[image.storageKey]) {
+      console.log('ScenePreview: Loading image for scene', sceneId, freshUrls[image.storageKey])
       return (
         <ImagePreview 
           url={freshUrls[image.storageKey]}
@@ -137,6 +153,7 @@ export function ScenePreview({
           className="absolute inset-0 h-full w-full object-contain"
           onError={() => handleMediaError('image')}
           onLoad={() => {
+            console.log('ScenePreview: Image loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { image, ...rest } = prev
               return rest

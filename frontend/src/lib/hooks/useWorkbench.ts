@@ -88,14 +88,14 @@ export function useWorkbench() {
     if (!job.metadata?.scenes?.[0]) return []
     
     const scene = job.metadata.scenes[0]
-    if (scene.video?.storage_key) {
-      return [scene.video.storage_key]
+    if (scene.video?.storageKey) {
+      return [scene.video.storageKey]
     }
-    if (scene.animation?.storage_key) {
-      return [scene.animation.storage_key]
+    if (scene.animation?.storageKey) {
+      return [scene.animation.storageKey]
     }
-    if (scene.image?.storage_key) {
-      return [scene.image.storage_key]
+    if (scene.image?.storageKey) {
+      return [scene.image.storageKey]
     }
     return []
   }) || []
@@ -127,15 +127,15 @@ export function useWorkbench() {
       ...scene,
       video: scene.video && {
         ...scene.video,
-        public_url: previewUrls[scene.video.storage_key] || scene.video.public_url
+        publicUrl: previewUrls[scene.video.storageKey] || scene.video.publicUrl
       },
       animation: scene.animation && {
         ...scene.animation,
-        public_url: previewUrls[scene.animation.storage_key] || scene.animation.public_url
+        publicUrl: previewUrls[scene.animation.storageKey] || scene.animation.publicUrl
       },
       image: scene.image && {
         ...scene.image,
-        publicUrl: previewUrls[scene.image.storage_key] || scene.image.publicUrl
+        publicUrl: previewUrls[scene.image.storageKey] || scene.image.publicUrl
       }
     }
 

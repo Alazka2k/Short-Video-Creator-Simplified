@@ -30,15 +30,15 @@ interface Job {
     scenes?: Array<{
       image?: {
         publicUrl?: string
-        storage_key?: string
+        storageKey?: string
       }
       video?: {
-        public_url?: string
-        storage_key?: string
+        publicUrl?: string
+        storageKey?: string
       }
       animation?: {
-        public_url?: string
-        storage_key?: string
+        publicUrl?: string
+        storageKey?: string
       }
     }>
   }
@@ -95,19 +95,19 @@ export function JobList({ jobs, loading, error }: JobListProps) {
     const scene = job.metadata.scenes[0];
     
     // Prioritize video > animation > image
-    if (scene.video?.public_url) {
+    if (scene.video?.publicUrl) {
       return {
-        url: scene.video.public_url,
+        url: scene.video.publicUrl,
         type: 'video',
-        storageKey: scene.video.storage_key
+        storageKey: scene.video.storageKey
       };
     }
     
-    if (scene.animation?.public_url) {
+    if (scene.animation?.publicUrl) {
       return {
-        url: scene.animation.public_url,
+        url: scene.animation.publicUrl,
         type: 'animation',
-        storageKey: scene.animation.storage_key
+        storageKey: scene.animation.storageKey
       };
     }
     
@@ -115,7 +115,7 @@ export function JobList({ jobs, loading, error }: JobListProps) {
       return {
         url: scene.image.publicUrl,
         type: 'image',
-        storageKey: scene.image.storage_key
+        storageKey: scene.image.storageKey
       };
     }
     

@@ -3,6 +3,7 @@ import { Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
+import { ProgressiveAudio } from '@/components/ui/progressive-media'
 
 interface AudioPlayerProps {
   url: string
@@ -24,63 +25,28 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
 
   // Reset state when URL changes
   useEffect(() => {
+    console.log('AudioPlayer: URL changed:', url)
+    setIsLoading(true)
+    setError(null)
     setIsPlaying(false)
     setCurrentTime(0)
     setDuration(0)
-    setIsLoading(true)
-    setError(null)
   }, [url])
 
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration)
-      setIsLoading(false)
-      onLoad?.()
-    }
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime)
-    }
-
-    const handleEnded = () => {
-      setIsPlaying(false)
-      setCurrentTime(0)
-    }
-
-    const handleError = (e: Event) => {
-      setError('Failed to load audio')
-      setIsLoading(false)
-      onError?.(e)
-    }
-
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata)
-    audio.addEventListener('timeupdate', handleTimeUpdate)
-    audio.addEventListener('ended', handleEnded)
-    audio.addEventListener('error', handleError)
-
-    return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
-      audio.removeEventListener('timeupdate', handleTimeUpdate)
-      audio.removeEventListener('ended', handleEnded)
-      audio.removeEventListener('error', handleError)
-    }
-  }, [onError, onLoad])
-
-  const togglePlay = () => {
+  const handlePlay = () => {
     if (audioRef.current) {
       if (isPlaying) {
+        console.log('AudioPlayer: Pausing audio:', url)
         audioRef.current.pause()
       } else {
+        console.log('AudioPlayer: Playing audio:', url)
         audioRef.current.play()
       }
       setIsPlaying(!isPlaying)
     }
   }
 
-  const toggleMute = () => {
+  const handleMute = () => {
     if (audioRef.current) {
       audioRef.current.muted = !isMuted
       setIsMuted(!isMuted)
@@ -96,11 +62,42 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
     }
   }
 
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime)
+    }
+  }
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      console.log('AudioPlayer: Audio metadata loaded:', {
+        url,
+        duration: audioRef.current.duration
+      })
+      setDuration(audioRef.current.duration)
+      setIsLoading(false)
+      onLoad?.()
+    }
+  }
+
   const handleSeek = (value: number[]) => {
     const newTime = value[0]
     if (audioRef.current) {
       audioRef.current.currentTime = newTime
       setCurrentTime(newTime)
+    }
+  }
+
+  const handleError = (error: string) => {
+    console.error('AudioPlayer: Error loading audio:', {
+      url,
+      error
+    })
+    setError(error)
+    setIsLoading(false)
+    if (onError) {
+      const errorEvent = new Event('error')
+      onError(errorEvent)
     }
   }
 
@@ -112,41 +109,25 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
 
   if (error) {
     return (
-      <div className={cn("p-4 space-y-4 rounded-lg border bg-destructive/10", className)}>
-        <div className="text-sm text-destructive">{error}</div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className={cn("p-4 space-y-4 rounded-lg border bg-muted/50", className)}>
-        <div className="flex items-center justify-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm text-muted-foreground">Loading audio...</span>
-        </div>
+      <div className="rounded-lg bg-destructive/10 p-2">
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
 
   return (
-    <div className={cn("p-4 space-y-4 rounded-lg border bg-card", className)}>
-      <audio ref={audioRef} src={url} preload="metadata" />
-      
-      {title && (
-        <div className="font-medium text-sm text-muted-foreground mb-2">
-          {title}
-        </div>
-      )}
-
+    <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
-          onClick={togglePlay}
+          onClick={handlePlay}
+          disabled={isLoading}
           className="h-8 w-8"
         >
-          {isPlaying ? (
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : isPlaying ? (
             <Pause className="h-4 w-4" />
           ) : (
             <Play className="h-4 w-4" />
@@ -157,9 +138,10 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
           <Slider
             value={[currentTime]}
             min={0}
-            max={duration}
+            max={duration || 100}
             step={0.1}
             onValueChange={handleSeek}
+            disabled={isLoading}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground mt-1">
@@ -172,7 +154,8 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleMute}
+            onClick={handleMute}
+            disabled={isLoading}
             className="h-8 w-8"
           >
             {isMuted ? (
@@ -187,10 +170,32 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
             max={1}
             step={0.1}
             onValueChange={handleVolumeChange}
+            disabled={isLoading}
             className="w-20"
           />
         </div>
       </div>
+
+      <ProgressiveAudio
+        ref={audioRef}
+        src={url}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={() => setIsPlaying(false)}
+        onMediaLoad={() => {
+          console.log('AudioPlayer: Audio loaded successfully:', url)
+          setIsLoading(false)
+          onLoad?.()
+        }}
+        onMediaError={handleError}
+        shouldPreload
+      />
+
+      {title && (
+        <p className="text-sm text-muted-foreground truncate">
+          {title}
+        </p>
+      )}
     </div>
   )
 }
