@@ -1,18 +1,49 @@
-import { useState } from 'react'
-import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Maximize2, ZoomIn, ZoomOut, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ProgressiveImage } from '@/components/ui/progressive-media'
 
 interface ImagePreviewProps {
   url: string
   alt?: string
   className?: string
-  onError?: (error: Event) => void
+  onError?: (error: React.SyntheticEvent<HTMLImageElement, Event>) => void
+  onLoad?: () => void
 }
 
-export function ImagePreview({ url, alt, className }: ImagePreviewProps) {
+export function ImagePreview({ url, alt, className, onError, onLoad }: ImagePreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Reset state when URL changes
+  useEffect(() => {
+    console.log('ImagePreview: URL changed:', url)
+    setIsLoading(true)
+    setError(null)
+    setZoomLevel(1)
+  }, [url])
+
+  const handleLoad = () => {
+    console.log('ImagePreview: Image loaded successfully:', url)
+    setIsLoading(false)
+    onLoad?.()
+  }
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error('ImagePreview: Error loading image:', {
+      url,
+      error: e,
+      type: e.type,
+      target: e.target
+    })
+    setError('Failed to load image')
+    setIsLoading(false)
+    onError?.(e)
+  }
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.25, 3))
@@ -27,20 +58,46 @@ export function ImagePreview({ url, alt, className }: ImagePreviewProps) {
     setZoomLevel(1) // Reset zoom when toggling fullscreen
   }
 
+  if (error) {
+    return (
+      <div className={cn(
+        "flex items-center justify-center bg-destructive/10 rounded-lg p-4",
+        className
+      )}>
+        <span className="text-sm text-destructive">{error}</span>
+      </div>
+    )
+  }
+
   return (
     <div className={cn("relative group", className)}>
       <div className={cn(
         "relative overflow-hidden rounded-lg border bg-card",
         isFullscreen && "fixed inset-4 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       )}>
-        <img
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+            <Skeleton className="w-full h-full" />
+          </div>
+        )}
+        <ProgressiveImage
           src={url}
           alt={alt || "Preview"}
           className={cn(
-            "w-full h-full object-contain transition-transform duration-200",
-            isFullscreen ? "max-h-[calc(100vh-2rem)]" : "max-h-[400px]"
+            "w-full h-full object-contain transition-opacity duration-200",
+            isFullscreen ? "max-h-[calc(100vh-2rem)]" : "max-h-[400px]",
+            isLoading && "opacity-0"
           )}
           style={{ transform: `scale(${zoomLevel})` }}
+          onMediaLoad={handleLoad}
+          onMediaError={(error) => {
+            console.error('ImagePreview: ProgressiveImage error:', error)
+            const syntheticEvent = new Event('error') as unknown as React.SyntheticEvent<HTMLImageElement, Event>
+            handleError(syntheticEvent)
+          }}
+          shouldPreload
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
 
         {/* Controls */}

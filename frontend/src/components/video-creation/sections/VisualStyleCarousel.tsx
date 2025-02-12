@@ -117,8 +117,8 @@ export function VisualStyleCarousel({
       className="mt-4 w-full max-w-full overflow-hidden"
     >
       <div className="max-w-[600px] mx-auto">
-        <div className="h-[250px] relative">
-          <ThreeDPhotoCarousel
+          <div className="h-[250px] relative">
+            <ThreeDPhotoCarousel
             images={previewImages}
             onSelect={(index) => {
               setCurrentIndex(index)
@@ -136,7 +136,7 @@ export function VisualStyleCarousel({
               </div>
             )
           ))}
-        </div>
+          </div>
       </div>
     </motion.div>
   )

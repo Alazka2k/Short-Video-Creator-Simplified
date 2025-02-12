@@ -17,7 +17,7 @@ interface UseProgressiveMediaOptions {
 
 export function useProgressiveMedia(src: string | null, options: UseProgressiveMediaOptions = {}) {
   const [state, setState] = useState<MediaState>({
-    isLoading: false,
+    isLoading: true,
     error: null,
     url: null,
     progress: 0
@@ -37,30 +37,63 @@ export function useProgressiveMedia(src: string | null, options: UseProgressiveM
 
   const getCachedUrl = useCallback((key: string) => {
     try {
+      console.log('useProgressiveMedia: Checking cache for URL:', src)
       const cache = JSON.parse(localStorage.getItem(key) || '{}')
-      return cache[src || ''] || null
-    } catch {
+      const cachedData = cache[src || '']
+      if (cachedData) {
+        const { url, timestamp } = cachedData
+        const age = Date.now() - timestamp
+        console.log('useProgressiveMedia: Cache entry found:', {
+          url,
+          age: Math.round(age / 1000 / 60) + ' minutes old'
+        })
+        // Check if cache is less than 45 minutes old
+        if (age < 45 * 60 * 1000) {
+          console.log('useProgressiveMedia: Using cached URL:', url)
+          return url
+        }
+        console.log('useProgressiveMedia: Cache expired, will fetch fresh URL')
+      } else {
+        console.log('useProgressiveMedia: No cache entry found')
+      }
+      return null
+    } catch (error) {
+      console.error('useProgressiveMedia: Error reading cache:', error)
       return null
     }
   }, [src])
 
-  const setCachedUrl = useCallback((key: string, url: string) => {
+  const cacheUrl = useCallback((key: string, url: string) => {
     try {
+      console.log('useProgressiveMedia: Caching URL:', url)
       const cache = JSON.parse(localStorage.getItem(key) || '{}')
-      cache[src || ''] = url
+      cache[src || ''] = {
+        url,
+        timestamp: Date.now()
+      }
       localStorage.setItem(key, JSON.stringify(cache))
+      console.log('useProgressiveMedia: URL cached successfully')
     } catch (error) {
-      console.error('Error caching URL:', error)
+      console.error('useProgressiveMedia: Error caching URL:', error)
     }
   }, [src])
 
-  const loadMedia = useCallback(async () => {
+  useEffect(() => {
     if (!src) {
-      setState(prev => ({ ...prev, isLoading: false }))
+      console.log('useProgressiveMedia: No source URL provided')
+      setState({
+        isLoading: false,
+        error: 'No source URL provided',
+        url: null,
+        progress: 0
+      })
       return
     }
 
-    // Check cache first if cacheKey provided
+    console.log('useProgressiveMedia: Starting media load for:', src)
+    setState(prev => ({ ...prev, isLoading: true, error: null }))
+
+    // Check cache first if cacheKey is provided
     if (options.cacheKey) {
       const cachedUrl = getCachedUrl(options.cacheKey)
       if (cachedUrl) {
@@ -75,109 +108,44 @@ export function useProgressiveMedia(src: string | null, options: UseProgressiveM
       }
     }
 
-    setState(prev => ({ ...prev, isLoading: true, progress: 0 }))
-
-    try {
-      // For images
-      if (src.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-        const img = new Image()
-        img.onload = () => {
-          setState({
-            isLoading: false,
-            error: null,
-            url: src,
-            progress: 100
-          })
-          if (options.cacheKey) {
-            setCachedUrl(options.cacheKey, src)
-          }
-          onLoadRef.current?.(src)
-        }
-        img.onerror = () => {
-          const errorMessage = 'Failed to load image'
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            error: errorMessage,
-            progress: 0
-          }))
-          onErrorRef.current?.(errorMessage)
-        }
-        img.src = src
-        return
-      }
-
-      // For videos and audio
-      if (src.match(/\.(mp4|webm|mp3|wav)$/i)) {
-        const response = await fetch(src)
-        const reader = response.body?.getReader()
-        const contentLength = +(response.headers.get('Content-Length') || '0')
-
-        if (!reader) {
-          throw new Error('Failed to start streaming')
-        }
-
-        let receivedLength = 0
-        const chunks: Uint8Array[] = []
-
-        while (true) {
-          const { done, value } = await reader.read()
-
-          if (done) break
-
-          chunks.push(value)
-          receivedLength += value.length
-
-          const progress = (receivedLength / contentLength) * 100
-          setState(prev => ({ ...prev, progress }))
-          onProgressRef.current?.(progress)
-        }
-
-        const blob = new Blob(chunks)
-        const url = URL.createObjectURL(blob)
-
-        setState({
-          isLoading: false,
-          error: null,
-          url,
-          progress: 100
-        })
-
-        if (options.cacheKey) {
-          setCachedUrl(options.cacheKey, url)
-        }
-        onLoadRef.current?.(url)
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load media'
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-        progress: 0
-      }))
-      onErrorRef.current?.(errorMessage)
-    }
-  }, [src, options.cacheKey, getCachedUrl, setCachedUrl])
-
-  useEffect(() => {
-    let mounted = true
+    // Create a new Image object to preload
+    const img = new Image()
     
-    if (src && (options.preload || !state.url)) {
-      loadMedia()
-    }
-
-    return () => {
-      mounted = false
-      // Cleanup object URLs when component unmounts
-      if (state.url?.startsWith('blob:')) {
-        URL.revokeObjectURL(state.url)
+    img.onload = () => {
+      console.log('useProgressiveMedia: Image loaded successfully:', src)
+      setState({
+        isLoading: false,
+        error: null,
+        url: src,
+        progress: 100
+      })
+      if (options.cacheKey) {
+        cacheUrl(options.cacheKey, src)
       }
+      onLoadRef.current?.(src)
     }
-  }, [src, options.preload, loadMedia])
 
-  return {
-    ...state,
-    reload: loadMedia
-  }
+    img.onerror = (error) => {
+      console.error('useProgressiveMedia: Image load error:', error)
+      setState({
+        isLoading: false,
+        error: 'Failed to load media',
+        url: null,
+        progress: 0
+      })
+      onErrorRef.current?.('Failed to load media')
+    }
+
+    // Start loading the image
+    console.log('useProgressiveMedia: Setting image source:', src)
+    img.src = src
+
+    // Cleanup
+    return () => {
+      img.onload = null
+      img.onerror = null
+    }
+  }, [src, options.cacheKey, getCachedUrl, cacheUrl])
+
+  return state
 } 

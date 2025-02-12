@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
@@ -9,15 +9,27 @@ interface AudioPlayerProps {
   title?: string
   className?: string
   onError?: (error: Event) => void
+  onLoad?: () => void
 }
 
-export function AudioPlayer({ url, title, className }: AudioPlayerProps) {
+export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [volume, setVolume] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
+
+  // Reset state when URL changes
+  useEffect(() => {
+    setIsPlaying(false)
+    setCurrentTime(0)
+    setDuration(0)
+    setIsLoading(true)
+    setError(null)
+  }, [url])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -25,6 +37,8 @@ export function AudioPlayer({ url, title, className }: AudioPlayerProps) {
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration)
+      setIsLoading(false)
+      onLoad?.()
     }
 
     const handleTimeUpdate = () => {
@@ -36,16 +50,24 @@ export function AudioPlayer({ url, title, className }: AudioPlayerProps) {
       setCurrentTime(0)
     }
 
+    const handleError = (e: Event) => {
+      setError('Failed to load audio')
+      setIsLoading(false)
+      onError?.(e)
+    }
+
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('error', handleError)
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('error', handleError)
     }
-  }, [])
+  }, [onError, onLoad])
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -86,6 +108,25 @@ export function AudioPlayer({ url, title, className }: AudioPlayerProps) {
     const minutes = Math.floor(time / 60)
     const seconds = Math.floor(time % 60)
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  if (error) {
+    return (
+      <div className={cn("p-4 space-y-4 rounded-lg border bg-destructive/10", className)}>
+        <div className="text-sm text-destructive">{error}</div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className={cn("p-4 space-y-4 rounded-lg border bg-muted/50", className)}>
+        <div className="flex items-center justify-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading audio...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -152,4 +193,4 @@ export function AudioPlayer({ url, title, className }: AudioPlayerProps) {
       </div>
     </div>
   )
-} 
+}

@@ -38,7 +38,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.tiktokcdn-us.com',
       },
-    ],
+    ]
   }
 }
 

@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/apiClient'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { AuthLogger } from '@/lib/debug/auth-logger'
+import { useStorageUrls } from './useStorageUrls'
 
 interface MediaContent {
-  public_url: string
-  storage_key: string
+  publicUrl: string
+  storageKey: string
   metadata: any
 }
 
@@ -34,22 +35,18 @@ interface JobDetails {
   error: string | null
 }
 
-interface UseJobDetailsState {
-  job: JobDetails | null
-  loading: boolean
-  error: string | null
-}
-
 export function useJobDetails(jobId: string) {
   const { getM2MToken, user } = useAuth()
-  const [state, setState] = useState<UseJobDetailsState>({
-    job: null,
-    loading: true,
-    error: null
-  })
 
-  const loadJob = async () => {
-    try {
+  // Query for job details
+  const { 
+    data: job,
+    isLoading: isLoadingJob,
+    error: jobError,
+    refetch: refreshJob
+  } = useQuery({
+    queryKey: ['job', jobId],
+    queryFn: async () => {
       const m2mToken = await getM2MToken()
       const userToken = localStorage.getItem("access_token")
 
@@ -64,7 +61,6 @@ export function useJobDetails(jobId: string) {
         'Authorization': `Bearer ${m2mToken}`
       }
 
-      // Only add user token if it exists
       if (userToken) {
         headers['x-user-token'] = userToken
       }
@@ -73,18 +69,6 @@ export function useJobDetails(jobId: string) {
         `/api/job/jobs/${jobId}`,
         { headers }
       )
-
-      // Log media URLs for debugging
-      AuthLogger.log('Media URLs:', {
-        jobId,
-        scenes: response.metadata.scenes.map(scene => ({
-          sceneId: scene.sceneId,
-          imageUrl: scene.image?.public_url,
-          videoUrl: scene.video?.public_url,
-          voiceUrl: scene.voice?.public_url
-        })),
-        musicUrl: response.metadata.music?.public_url
-      })
 
       // Verify user has access to this job
       if (response.user_id && user?.user_id) {
@@ -102,38 +86,61 @@ export function useJobDetails(jobId: string) {
         }
       }
 
-      setState(prev => ({
-        ...prev,
-        job: response,
-        loading: false
-      }))
-    } catch (error) {
-      AuthLogger.error('Error loading job:', error)
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to load job details'
-      }))
-    }
+      return response
+    },
+    enabled: !!user,
+    staleTime: 45 * 60 * 1000, // Consider data fresh for 45 minutes
+    gcTime: 60 * 60 * 1000 // Keep in cache for 1 hour
+  })
+
+  // Extract storage keys from job data
+  const storageKeys = job?.metadata?.scenes?.flatMap(scene => {
+    const keys = []
+    if (scene.image?.storageKey) keys.push(scene.image.storageKey)
+    if (scene.video?.storageKey) keys.push(scene.video.storageKey)
+    if (scene.voice?.storageKey) keys.push(scene.voice.storageKey)
+    return keys
+  }) || []
+
+  // Add music storage key if present
+  if (job?.metadata?.music?.storageKey) {
+    storageKeys.push(job.metadata.music.storageKey)
   }
 
-  // Load initial job data
-  useEffect(() => {
-    if (user) {
-      loadJob()
+  // Use storage URLs hook
+  const { urls: freshUrls, isLoading: isRefreshingUrls } = useStorageUrls(storageKeys)
+
+  // Transform job data with fresh URLs
+  const jobWithFreshUrls = job && !isRefreshingUrls ? {
+    ...job,
+    metadata: {
+      ...job.metadata,
+      scenes: job.metadata.scenes.map(scene => ({
+        ...scene,
+        image: scene.image?.storageKey ? {
+          ...scene.image,
+          publicUrl: freshUrls[scene.image.storageKey] || scene.image.publicUrl
+        } : scene.image,
+        video: scene.video?.storageKey ? {
+          ...scene.video,
+          publicUrl: freshUrls[scene.video.storageKey] || scene.video.publicUrl
+        } : scene.video,
+        voice: scene.voice?.storageKey ? {
+          ...scene.voice,
+          publicUrl: freshUrls[scene.voice.storageKey] || scene.voice.publicUrl
+        } : scene.voice
+      })),
+      music: job.metadata.music?.storageKey ? {
+        ...job.metadata.music,
+        publicUrl: freshUrls[job.metadata.music.storageKey] || job.metadata.music.publicUrl
+      } : job.metadata.music
     }
-  }, [jobId, user])
-
-  // Refresh job data periodically (every 45 minutes)
-  useEffect(() => {
-    if (!user) return
-
-    const refreshInterval = setInterval(loadJob, 45 * 60 * 1000)
-    return () => clearInterval(refreshInterval)
-  }, [jobId, user])
+  } : job
 
   return {
-    ...state,
-    refreshUrls: loadJob // Expose refresh function for manual refresh if needed
+    job: jobWithFreshUrls,
+    loading: isLoadingJob || isRefreshingUrls,
+    error: jobError ? (jobError as Error).message : null,
+    refreshUrls: refreshJob
   }
 } 

@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { AudioPlayer } from './AudioPlayer'
 import { ImagePreview } from './ImagePreview'
+import { VideoPreview } from './VideoPreview'
 import { cn } from '@/lib/utils'
 import { AuthLogger } from '@/lib/debug/auth-logger'
 import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 
 interface MediaContent {
-  public_url: string
-  storage_key: string
-  metadata: any
+  publicUrl: string
+  storageKey: string
+  metadata: {
+    text?: string
+    prompt?: string
+    generatedAt?: string
+    [key: string]: any
+  }
+  fileName?: string
+  filePath?: string
 }
 
 interface ScenePreviewProps {
   sceneId: number
   image?: MediaContent
   video?: MediaContent
+  animation?: MediaContent
   voice?: MediaContent
   description?: string
   className?: string
@@ -25,7 +35,8 @@ interface ScenePreviewProps {
 export function ScenePreview({ 
   sceneId, 
   image, 
-  video, 
+  video,
+  animation,
   voice,
   description,
   className,
@@ -34,17 +45,32 @@ export function ScenePreview({
   const [mediaErrors, setMediaErrors] = useState<{[key: string]: string}>({})
   const [isCollapsed, setIsCollapsed] = useState(false)
 
+  // Get storage keys for all media
+  const storageKeys = [
+    image?.storageKey,
+    video?.storageKey,
+    animation?.storageKey,
+    voice?.storageKey
+  ].filter((key): key is string => !!key)
+
+  // Use storage URLs hook to keep URLs fresh
+  const { urls: freshUrls, refreshUrls } = useStorageUrls(storageKeys)
+
   const handleMediaError = (type: string) => {
     AuthLogger.error(`Error loading ${type} for scene ${sceneId}:`, {
       errorType: type,
-      originalUrl: type === 'image' ? image?.public_url : 
-                  type === 'video' ? video?.public_url : 
-                  type === 'voice' ? voice?.public_url : null
+      originalUrl: type === 'image' ? image?.publicUrl : 
+                  type === 'video' ? video?.publicUrl : 
+                  type === 'animation' ? animation?.publicUrl :
+                  type === 'voice' ? voice?.publicUrl : null
     })
     setMediaErrors(prev => ({
       ...prev,
       [type]: `Failed to load ${type}`
     }))
+
+    // Try refreshing URLs when we encounter an error
+    refreshUrls(storageKeys)
   }
 
   // Convert aspect ratio (e.g., "16:9") to tailwind class
@@ -68,6 +94,60 @@ export function ScenePreview({
 
   // Determine if we should use side-by-side layout
   const useSideBySide = aspectRatio !== "16:9"
+
+  // Determine which media to show (priority: video > animation > image)
+  const getMediaContent = () => {
+    if (video?.storageKey && freshUrls[video.storageKey]) {
+      return (
+        <VideoPreview 
+          url={freshUrls[video.storageKey]}
+          className="absolute inset-0 h-full w-full object-contain"
+          onError={() => handleMediaError('video')}
+          onLoad={() => {
+            setMediaErrors(prev => {
+              const { video, ...rest } = prev
+              return rest
+            })
+          }}
+        />
+      )
+    }
+    
+    if (animation?.storageKey && freshUrls[animation.storageKey]) {
+      return (
+        <VideoPreview 
+          url={freshUrls[animation.storageKey]}
+          className="absolute inset-0 h-full w-full object-contain"
+          onError={() => handleMediaError('animation')}
+          onLoad={() => {
+            setMediaErrors(prev => {
+              const { animation, ...rest } = prev
+              return rest
+            })
+          }}
+        />
+      )
+    }
+    
+    if (image?.storageKey && freshUrls[image.storageKey]) {
+      return (
+        <ImagePreview 
+          url={freshUrls[image.storageKey]}
+          alt={description || image.metadata?.prompt || `Scene ${sceneId} Image`}
+          className="absolute inset-0 h-full w-full object-contain"
+          onError={() => handleMediaError('image')}
+          onLoad={() => {
+            setMediaErrors(prev => {
+              const { image, ...rest } = prev
+              return rest
+            })
+          }}
+        />
+      )
+    }
+    
+    return null
+  }
 
   return (
     <div className={cn("rounded-lg border bg-card overflow-hidden", className)}>
@@ -96,56 +176,22 @@ export function ScenePreview({
           )}>
             {/* Left Side - Visual Content */}
             <div>
-              {/* Video Preview (prioritized over image) */}
-              {video?.public_url ? (
+              <div className={cn(
+                "relative overflow-hidden rounded-lg border bg-card",
+                useSideBySide ? "max-w-[240px]" : "max-w-[480px]",
+                "mx-auto"
+              )}>
                 <div className={cn(
-                  "relative overflow-hidden rounded-lg border bg-card",
-                  useSideBySide ? "max-w-[240px]" : "max-w-[480px]",
-                  "mx-auto"
+                  getAspectRatioClass(aspectRatio),
+                  !useSideBySide && "max-h-[270px]",
+                  useSideBySide && "max-h-[426px]"
                 )}>
-                  <div className={cn(
-                    getAspectRatioClass(aspectRatio),
-                    !useSideBySide && "max-h-[270px]",
-                    useSideBySide && "max-h-[426px]"
-                  )}>
-                    <video 
-                      src={video.public_url}
-                      controls
-                      className="absolute inset-0 h-full w-full object-contain"
-                      poster={image?.public_url}
-                      preload="none"
-                      onError={() => handleMediaError('video')}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
+                  {getMediaContent()}
                 </div>
-              ) : image?.public_url ? (
-                <div className={cn(
-                  "relative overflow-hidden rounded-lg border bg-card",
-                  useSideBySide ? "max-w-[240px]" : "max-w-[480px]",
-                  "mx-auto"
-                )}>
-                  <div className={cn(
-                    getAspectRatioClass(aspectRatio),
-                    !useSideBySide && "max-h-[270px]",
-                    useSideBySide && "max-h-[426px]"
-                  )}>
-                    <ImagePreview 
-                      url={image.public_url}
-                      alt={description || `Scene ${sceneId} Image`}
-                      className="absolute inset-0 h-full w-full object-contain"
-                      onError={() => handleMediaError('image')}
-                    />
-                  </div>
-                </div>
-              ) : null}
-              {mediaErrors.video && (
-                <p className="text-sm text-red-500 mt-2">{mediaErrors.video}</p>
-              )}
-              {mediaErrors.image && (
-                <p className="text-sm text-red-500 mt-2">{mediaErrors.image}</p>
-              )}
+              </div>
+              {Object.entries(mediaErrors).map(([type, error]) => (
+                <p key={type} className="text-sm text-red-500 mt-2">{error}</p>
+              ))}
             </div>
 
             {/* Right Side - Scene Details and Audio */}
@@ -155,37 +201,34 @@ export function ScenePreview({
                 <div>
                   <h4 className="text-sm font-medium">Scene Details</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {description || `Scene ${sceneId}`}
+                    {description || voice?.metadata?.text || image?.metadata?.prompt || `Scene ${sceneId}`}
                   </p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium">Media Type</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {video ? 'Video' : (image ? 'Image' : 'No visual content')}
+                    {video ? 'Video' : (animation ? 'Animation' : (image ? 'Image' : 'No visual content'))}
                     {voice && ' with voice narration'}
                   </p>
                 </div>
               </div>
               
               {/* Voice Preview */}
-              {voice?.public_url && (
+              {voice?.storageKey && freshUrls[voice.storageKey] && (
                 <div className="rounded-lg border bg-card p-4">
                   <h4 className="text-sm font-medium mb-3">Voice Narration</h4>
                   <AudioPlayer 
-                    url={voice.public_url}
-                    title={voice?.metadata?.text || description || `Scene ${sceneId} Voice`}
+                    url={freshUrls[voice.storageKey]}
+                    title={voice.metadata?.text || description || `Scene ${sceneId} Voice`}
                     onError={() => handleMediaError('voice')}
                   />
-                  {mediaErrors.voice && (
-                    <p className="text-sm text-red-500 mt-2">{mediaErrors.voice}</p>
-                  )}
                 </div>
               )}
             </div>
           </div>
 
           {/* No Content Message */}
-          {!image?.public_url && !video?.public_url && !voice?.public_url && (
+          {!image?.storageKey && !video?.storageKey && !animation?.storageKey && !voice?.storageKey && (
             <div className="p-4 rounded-lg border bg-card">
               <p className="text-sm text-muted-foreground text-center">
                 No preview content available for this scene

@@ -16,6 +16,7 @@ import scriptToneData from '@/data/video-creation/script/script-tone_select-opti
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
 import pacingData from '@/data/video-creation/script/pacing-structure_select-option.json'
 import perspectiveData from '@/data/video-creation/script/character-perspective_select-option.json'
+import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 
 interface MediaContent {
   public_url: string
@@ -64,9 +65,11 @@ interface JobDetails {
 
 // Helper function to find option name by prompt
 const findOptionNameByPrompt = (data: any, prompt: string): string | undefined => {
+  if (!prompt) return undefined
+  
   for (const category of data.categories) {
     for (const option of category.options) {
-      if (option.prompt === prompt || option.promptDefinition === prompt) {
+      if (option.prompt === prompt) {
         return option.name
       }
     }
@@ -76,6 +79,8 @@ const findOptionNameByPrompt = (data: any, prompt: string): string | undefined =
 
 // Helper function to find shot style name by promptDefinition
 const findShotStyleName = (promptDefinition: string): string | undefined => {
+  if (!promptDefinition) return undefined
+  
   for (const category of shotStyleData.categories) {
     for (const option of category.options) {
       if (option.promptDefinition === promptDefinition) {
@@ -90,6 +95,23 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
   const router = useRouter()
   const resolvedParams = use(params)
   const { job, loading, error, refreshUrls } = useJobDetails(resolvedParams.jobId)
+
+  // Extract all storage keys
+  const storageKeys = job?.metadata?.scenes?.flatMap(scene => {
+    const keys = []
+    if (scene.image?.storageKey) keys.push(scene.image.storageKey)
+    if (scene.video?.storageKey) keys.push(scene.video.storageKey)
+    if (scene.voice?.storageKey) keys.push(scene.voice.storageKey)
+    return keys
+  }) || []
+
+  // Add music storage key if present
+  if (job?.metadata?.music?.storageKey) {
+    storageKeys.push(job.metadata.music.storageKey)
+  }
+
+  // Get fresh URLs for all media content
+  const { urls: freshUrls } = useStorageUrls(storageKeys)
 
   // Refresh job data periodically
   useEffect(() => {
@@ -141,6 +163,33 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     // Extract focus/theme
     const focus = job.metadata.parameters?.llmGenParams?.general?.generalDescription
 
+    // Transform job data with fresh URLs
+    const jobWithFreshUrls = {
+      ...job,
+      metadata: {
+        ...job.metadata,
+        scenes: job.metadata.scenes.map(scene => ({
+          ...scene,
+          image: scene.image?.storageKey ? {
+            ...scene.image,
+            publicUrl: freshUrls[scene.image.storageKey] || scene.image.publicUrl
+          } : scene.image,
+          video: scene.video?.storageKey ? {
+            ...scene.video,
+            publicUrl: freshUrls[scene.video.storageKey] || scene.video.publicUrl
+          } : scene.video,
+          voice: scene.voice?.storageKey ? {
+            ...scene.voice,
+            publicUrl: freshUrls[scene.voice.storageKey] || scene.voice.publicUrl
+          } : scene.voice
+        })),
+        music: job.metadata.music?.storageKey ? {
+          ...job.metadata.music,
+          publicUrl: freshUrls[job.metadata.music.storageKey] || job.metadata.music.publicUrl
+        } : job.metadata.music
+      }
+    }
+
     return (
       <div className="space-y-8">
         <div className="flex items-center gap-4">
@@ -156,15 +205,15 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
         {/* Job Header */}
         <JobHeader
-          title={job.metadata.llmResult?.title || 'Untitled Content'}
-          description={job.metadata.llmResult?.description || job.prompt}
-          hashtag={job.metadata.llmResult?.hashtags}
-          created_at={job.created_at}
-          aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+          title={jobWithFreshUrls.metadata.llmResult?.title || 'Untitled Content'}
+          description={jobWithFreshUrls.metadata.llmResult?.description || jobWithFreshUrls.prompt}
+          hashtag={jobWithFreshUrls.metadata.llmResult?.hashtags}
+          created_at={jobWithFreshUrls.created_at}
+          aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
           shotStyle={shotStyle}
-          service_sequence={job.service_sequence}
-          prompt={job.prompt}
-          voiceId={job.metadata.parameters?.voiceId}
+          service_sequence={jobWithFreshUrls.service_sequence}
+          prompt={jobWithFreshUrls.prompt}
+          voiceId={jobWithFreshUrls.metadata.parameters?.voiceId}
           scriptInfo={scriptInfo}
           focus={focus}
         />
@@ -172,28 +221,28 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
         {/* Content Preview Section */}
         <div className="grid gap-6">
           {/* Scenes */}
-          {job.metadata.scenes.map((scene) => (
+          {jobWithFreshUrls.metadata.scenes.map((scene) => (
             <ScenePreview
               key={scene.sceneId}
               sceneId={scene.sceneId}
               image={scene.image}
               video={scene.video}
               voice={scene.voice}
-              description={job.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
-              aspectRatio={job.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+              description={jobWithFreshUrls.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
+              aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
             />
           ))}
 
           {/* Music Section (if exists) */}
-          {job.metadata.music && (
+          {jobWithFreshUrls.metadata.music && (
             <div className="rounded-lg border bg-card overflow-hidden">
               <div className="p-4 border-b bg-muted/50">
                 <h3 className="font-medium">Background Music</h3>
               </div>
               <div className="p-6">
                 <AudioPlayer
-                  url={job.metadata.music.public_url}
-                  title={job.metadata.llmResult?.music?.title || 'Background Music'}
+                  url={jobWithFreshUrls.metadata.music.publicUrl}
+                  title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
                 />
               </div>
             </div>
