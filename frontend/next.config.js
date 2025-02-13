@@ -21,6 +21,21 @@ const nextConfig = {
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
         ]
+      },
+      {
+        // Add security headers for all routes
+        source: "/:path*",
+        headers: [
+          // Allow cross-origin isolation
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
+          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+          // Add CORS headers for media content
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, HEAD, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Origin, X-Requested-With, Content-Type, Accept, Range" },
+          { key: "Access-Control-Expose-Headers", value: "Content-Length, Content-Range, Content-Type" }
+        ]
       }
     ]
   },
@@ -43,6 +58,10 @@ const nextConfig = {
         hostname: '**.amazonaws.com', // This will match any S3 bucket in any region
       }
     ]
+  },
+  // Add next-video configuration
+  video: {
+    provider: 's3'
   }
 }
 

@@ -22,6 +22,7 @@ interface ProgressiveImageProps extends Omit<ImageProps, 'src' | 'alt'>, BasePro
 
 interface ProgressiveVideoProps extends Omit<VideoHTMLAttributes<HTMLVideoElement>, 'src'>, BaseProgressiveProps {
   showControls?: boolean
+  onLoadedMetadata?: (e: React.SyntheticEvent<HTMLVideoElement>) => void
 }
 
 interface ProgressiveAudioProps extends Omit<AudioHTMLAttributes<HTMLAudioElement>, 'src'>, BaseProgressiveProps {}
@@ -111,51 +112,105 @@ export function ProgressiveVideo({
   className,
   onMediaLoad,
   onMediaError,
+  onLoadedMetadata,
   ...props
 }: ProgressiveVideoProps) {
-  const { isLoading, error, url, progress } = useProgressiveMedia(src, {
-    cacheKey,
-    preload: shouldPreload,
-    onLoad: onMediaLoad,
-    onError: onMediaError
-  })
-
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
-  const [duration, setDuration] = useState(0)
+  const [isMuted, setIsMuted] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [volume, setVolume] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [duration, setDuration] = useState(0)
+  const [isVideoReady, setIsVideoReady] = useState(false)
+  const [hasCanPlayEventFired, setHasCanPlayEventFired] = useState(false)
 
+  const { url, isLoading, error } = useProgressiveMedia(src, {
+    cacheKey,
+    preload: shouldPreload,
+    onError: onMediaError
+  })
+
+  // Reset state when URL changes
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
+    console.log('ProgressiveVideo: URL changed, resetting video state:', {
+      url: src,
+      isLoading,
+      error
+    })
+    setIsVideoReady(false)
+    setHasCanPlayEventFired(false)
+    setIsPlaying(false)
+    setDuration(0)
+  }, [src])
 
-    const handleLoadedMetadata = () => {
-      setDuration(video.duration)
+  const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.target as HTMLVideoElement
+    console.log('ProgressiveVideo: Video metadata loaded:', {
+      url: src,
+      duration: video.duration,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      readyState: video.readyState,
+      networkState: video.networkState,
+      currentSrc: video.currentSrc
+    })
+    setDuration(video.duration || 0)
+    onLoadedMetadata?.(e)
+  }
+
+  const handleLoadedData = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.target as HTMLVideoElement
+    console.log('ProgressiveVideo: Video data loaded:', {
+      url: src,
+      readyState: video.readyState,
+      networkState: video.networkState,
+      error: video.error,
+      currentSrc: video.currentSrc,
+      duration: video.duration,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight
+    })
+    
+    setIsVideoReady(true)
+  }
+
+  const handleCanPlay = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.target as HTMLVideoElement
+    
+    // Only log and handle the first canplay event
+    if (!hasCanPlayEventFired) {
+      console.log('ProgressiveVideo: Video can play:', {
+        url: src,
+        readyState: video.readyState,
+        networkState: video.networkState,
+        currentSrc: video.currentSrc
+      })
+      setHasCanPlayEventFired(true)
+      
+      // Attempt auto-play only on the first canplay event
+      if (video.readyState >= 4) {
+        console.log('ProgressiveVideo: Attempting auto-play:', {
+          url: src,
+          readyState: video.readyState
+        })
+        
+        video.play().catch(error => {
+          console.warn('ProgressiveVideo: Auto-play failed:', error)
+          // Set muted and try again
+          video.muted = true
+          setIsMuted(true)
+          video.play().catch(error => {
+            console.error('ProgressiveVideo: Muted auto-play failed:', error)
+          })
+        })
+      }
+      
+      // Notify that media is ready
+      onMediaLoad?.(src)
     }
-
-    const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime)
-    }
-
-    const handleEnded = () => {
-      setIsPlaying(false)
-      setCurrentTime(0)
-    }
-
-    video.addEventListener('loadedmetadata', handleLoadedMetadata)
-    video.addEventListener('timeupdate', handleTimeUpdate)
-    video.addEventListener('ended', handleEnded)
-
-    return () => {
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata)
-      video.removeEventListener('timeupdate', handleTimeUpdate)
-      video.removeEventListener('ended', handleEnded)
-    }
-  }, [])
+  }
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -219,20 +274,57 @@ export function ProgressiveVideo({
 
   if (error) {
     return (
-      <div className="flex items-center justify-center w-full h-full bg-muted rounded-lg">
-        <p className="text-sm text-muted-foreground">{error}</p>
+      <div className="rounded-lg bg-destructive/10 p-2">
+        <p className="text-sm text-destructive">{error}</p>
       </div>
     )
   }
 
   return (
     <div className="relative group" ref={containerRef}>
-      {url ? (
+      {(isLoading || !isVideoReady) && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      )}
+      {url && (
         <>
           <video
             ref={videoRef}
             src={url}
-            className={cn('w-full h-full', className)}
+            className={cn(
+              'w-full h-full',
+              (!isVideoReady || isLoading) ? 'opacity-0' : 'opacity-100',
+              'transition-opacity duration-200',
+              className
+            )}
+            crossOrigin="anonymous"
+            playsInline
+            muted={isMuted}
+            autoPlay
+            loop
+            onError={(e) => {
+              const video = e.target as HTMLVideoElement;
+              const errorInfo = {
+                type: e.type,
+                target: video.tagName,
+                url: url,
+                currentSrc: video.currentSrc,
+                message: 'Failed to load video',
+                details: video.error?.message || 'Unknown error',
+                code: video.error?.code,
+                networkState: video.networkState,
+                readyState: video.readyState
+              };
+              console.error('ProgressiveVideo: Error:', JSON.stringify(errorInfo, null, 2));
+              onMediaError?.(`Failed to load video: ${errorInfo.details}`);
+            }}
+            onLoadedMetadata={handleLoadedMetadata}
+            onLoadedData={handleLoadedData}
+            onCanPlay={handleCanPlay}
+            onTimeUpdate={(e) => setCurrentTime((e.target as HTMLVideoElement).currentTime)}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
             {...props}
           />
           {showControls && (
@@ -305,17 +397,6 @@ export function ProgressiveVideo({
             </div>
           )}
         </>
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
-          {showProgress && isLoading && (
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <div className="text-xs text-muted-foreground">
-                {Math.round(progress)}%
-              </div>
-            </div>
-          )}
-        </div>
       )}
     </div>
   )

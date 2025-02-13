@@ -193,8 +193,45 @@ export function useProgressiveMedia(src: string | null, options: UseProgressiveM
         img.onload = null
         img.onerror = null
       }
+    } else if (mediaType === 'video') {
+      // For video, create a temporary video element to check loading
+      const video = document.createElement('video')
+      
+      video.onloadeddata = () => {
+        console.log('useProgressiveMedia: Video loaded successfully:', src)
+        setState({
+          isLoading: false,
+          error: null,
+          url: src,
+          progress: 100
+        })
+        if (options.cacheKey) {
+          cacheUrl(options.cacheKey, src)
+        }
+        onLoadRef.current?.(src)
+      }
+
+      video.onerror = (error) => {
+        console.error('useProgressiveMedia: Video load error:', error)
+        setState({
+          isLoading: false,
+          error: 'Failed to load video',
+          url: null,
+          progress: 0
+        })
+        onErrorRef.current?.('Failed to load video')
+      }
+
+      video.preload = 'auto'
+      video.src = src
+
+      return () => {
+        video.onloadeddata = null
+        video.onerror = null
+        video.src = ''
+      }
     } else {
-      // For video and audio, directly use the URL since we've already validated the type
+      // For audio and unknown types, directly use the URL
       console.log(`useProgressiveMedia: Using ${mediaType} URL directly:`, src)
       setState({
         isLoading: false,
