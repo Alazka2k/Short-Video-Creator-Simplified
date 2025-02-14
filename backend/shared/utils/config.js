@@ -198,6 +198,8 @@ const requiredConfigs = [
   'animationGen.clientId',
   'animationGen.clientSecret',
   'videoGen.provider',
+  'videoGen.model',
+  'videoGen.resolution',
   'videoGen.apiKey',
   'assembly.provider',
   'assembly.apiKey',

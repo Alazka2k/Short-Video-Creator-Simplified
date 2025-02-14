@@ -17,7 +17,7 @@ const nextConfig = {
         source: "/api/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" }, // Update this in production
+          { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
         ]
@@ -55,13 +55,26 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**.amazonaws.com', // This will match any S3 bucket in any region
+        hostname: '**.amazonaws.com',
       }
     ]
   },
-  // Add next-video configuration
+  // Update next-video configuration
   video: {
-    provider: 's3'
+    provider: 's3',
+    s3: {
+      region: process.env.AWS_REGION,
+      bucket: process.env.AWS_BUCKET,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Range',
+      'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Content-Type',
+      'Cross-Origin-Resource-Policy': 'cross-origin'
+    }
   }
 }
 

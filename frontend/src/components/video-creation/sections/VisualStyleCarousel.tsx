@@ -47,7 +47,9 @@ export function VisualStyleCarousel({
       }
 
       setLoadingStates(prev => ({ ...prev, [src]: true }))
-      imgElement.src = src
+      // Ensure the path is relative to the public directory
+      const imagePath = src.startsWith('/') ? src : `/${src}`
+      imgElement.src = imagePath
     })
   }, [])
 
@@ -119,12 +121,12 @@ export function VisualStyleCarousel({
       <div className="max-w-[600px] mx-auto">
           <div className="h-[250px] relative">
             <ThreeDPhotoCarousel
-            images={previewImages}
-            onSelect={(index) => {
-              setCurrentIndex(index)
-              setIsInitialLoad(false)
-            }}
-          />
+              images={previewImages.map(src => src.startsWith('/') ? src : `/${src}`)}
+              onSelect={(index) => {
+                setCurrentIndex(index)
+                setIsInitialLoad(false)
+              }}
+            />
           {/* Loading overlay for individual images */}
           {Object.entries(loadingStates).map(([img, isLoading]) => (
             isLoading && (

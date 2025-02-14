@@ -126,6 +126,8 @@ class VideoDataAccess {
           fileName: videoData.fileName,
           generatedAt: new Date().toISOString(),
           fileSize: fsSync.statSync(videoPath).size,
+          model: config.videoGen.model,
+          resolution: config.videoGen.resolution,
           ...videoData.metadata
         })
       };
@@ -145,6 +147,8 @@ class VideoDataAccess {
         filePath: videoPath,
         storageKey: videoData.storageKey,
         publicUrl: videoData.publicUrl,
+        model: config.videoGen.model,
+        //resolution: config.videoGen.resolution,
         ...videoData.metadata
       });
 

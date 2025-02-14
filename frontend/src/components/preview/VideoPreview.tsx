@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
-import Video from 'next-video'
 
 interface VideoPreviewProps {
   url: string
@@ -86,7 +85,7 @@ export function VideoPreview({ url, title, className, onError, onLoad }: VideoPr
           </div>
         </div>
       )}
-      <Video
+      <video
         src={url}
         className={cn(
           "w-full rounded-lg",
@@ -95,7 +94,7 @@ export function VideoPreview({ url, title, className, onError, onLoad }: VideoPr
           className
         )}
         onLoadedMetadata={(e) => {
-          console.log('Next Video: Metadata loaded', {
+          console.log('Video: Metadata loaded', {
             duration: e.currentTarget.duration,
             videoWidth: e.currentTarget.videoWidth,
             videoHeight: e.currentTarget.videoHeight,
@@ -105,7 +104,7 @@ export function VideoPreview({ url, title, className, onError, onLoad }: VideoPr
           handleMetadataLoad()
         }}
         onLoadedData={(e) => {
-          console.log('Next Video: Data loaded', {
+          console.log('Video: Data loaded', {
             readyState: e.currentTarget.readyState,
             networkState: e.currentTarget.networkState
           })
@@ -114,14 +113,14 @@ export function VideoPreview({ url, title, className, onError, onLoad }: VideoPr
           handleLoad()
         }}
         onCanPlay={(e) => {
-          console.log('Next Video: Can play', {
+          console.log('Video: Can play', {
             readyState: e.currentTarget.readyState,
             networkState: e.currentTarget.networkState
           })
         }}
         onError={(e) => {
           const videoElement = e.currentTarget
-          console.error('Next Video: Error loading video:', {
+          console.error('Video: Error loading video:', {
             error: videoElement.error?.message,
             code: videoElement.error?.code,
             networkState: videoElement.networkState,

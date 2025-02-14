@@ -154,6 +154,8 @@ class VideoGenService {
     let tempFiles = [];
     try {
       logger.info(`Generating video with the following parameters:`);
+      logger.info(`Model: ${config.videoGen.model}`);
+      logger.info(`Resolution: ${config.videoGen.resolution}`);
       logger.info(`Image URL: ${imageUrl}`);
       logger.info(`Video Prompt: ${videoPrompt}`);
       logger.info(`Camera Movement: ${cameraMovement}`);
@@ -195,6 +197,8 @@ class VideoGenService {
 
       const requestPayload = {
         prompt: sanitizedPrompt,
+        model: config.videoGen.model,
+        resolution: config.videoGen.resolution,
         aspect_ratio: aspectRatio,
         camera_motion: cameraMovement,
         keyframes: {
@@ -263,6 +267,7 @@ class VideoGenService {
                 videoPrompt: sanitizedPrompt,
                 cameraMovement,
                 aspectRatio,
+                resolution: config.videoGen.resolution,
                 storage_key: storageResult.storageKey,
                 public_url: storageResult.url,
                 metadata: {
