@@ -28,7 +28,9 @@
   },
   "videoGen": {
     "provider":"lumalabsAI",
-    "apiKey": "YOUR_LUMALABS_API_KEY"
+    "apiKey": "YOUR_LUMALABS_API_KEY",
+    "model": "lumalabs-model",
+    "resolution": "resolution"
   },
   "assembly": {
     "provider":"JSON2Video",

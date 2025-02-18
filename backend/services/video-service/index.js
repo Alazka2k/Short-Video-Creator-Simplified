@@ -15,7 +15,7 @@ class VideoServiceInterface {
     logger.info('VideoServiceInterface initialized');
   }
 
-  async process(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneIndex, jobId, isTest = false) {
+  async process(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneIndex, jobId, isTest = false, model = config.videoGen.model) {
     logger.info('Processing video generation request', {
       imageUrl,
       videoPrompt,
@@ -23,7 +23,8 @@ class VideoServiceInterface {
       aspectRatio,
       sceneIndex,
       jobId,
-      isTest
+      isTest,
+      model
     });
 
     return await this.service.generateVideo(
@@ -33,7 +34,8 @@ class VideoServiceInterface {
       aspectRatio,
       sceneIndex,
       jobId,
-      isTest
+      isTest,
+      model
     );
   }
 

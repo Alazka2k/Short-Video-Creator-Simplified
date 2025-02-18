@@ -18,20 +18,11 @@ router.post('/generate',
   async (req, res) => {
     try {
       logger.info('Forwarding request to Video service');
-      const { imageUrl, videoPrompt, cameraMovement, aspectRatio, jobId, sceneIndex } = req.body;
+      const { imageUrl, videoPrompt, cameraMovement, aspectRatio, jobId, sceneIndex, model = config.videoGen.model } = req.body;
 
       // Basic validation
       if (!imageUrl) {
         throw new Error('Missing required parameter: imageUrl');
-      }
-      if (!videoPrompt) {
-        throw new Error('Missing required parameter: videoPrompt');
-      }
-      if (!cameraMovement) {
-        throw new Error('Missing required parameter: cameraMovement');
-      }
-      if (!aspectRatio) {
-        throw new Error('Missing required parameter: aspectRatio');
       }
       if (!jobId) {
         throw new Error('Missing required parameter: jobId');
@@ -40,14 +31,37 @@ router.post('/generate',
         throw new Error('Missing required parameter: sceneIndex');
       }
 
-      const response = await axios.post(`${config.services.video.url}/generate`, {
+      // Additional validation for ray-1.5
+      if (model === 'ray-1.5') {
+        if (!videoPrompt) {
+          throw new Error('Missing required parameter for ray-1.5: videoPrompt');
+        }
+        if (!cameraMovement) {
+          throw new Error('Missing required parameter for ray-1.5: cameraMovement');
+        }
+        if (!aspectRatio) {
+          throw new Error('Missing required parameter for ray-1.5: aspectRatio');
+        }
+      }
+
+      // Prepare request payload based on model
+      const requestPayload = {
         imageUrl,
-        videoPrompt,
-        cameraMovement,
-        aspectRatio,
         jobId,
-        sceneIndex
-      }, {
+        sceneIndex,
+        model
+      };
+
+      // Add additional parameters for ray-1.5
+      if (model === 'ray-1.5') {
+        Object.assign(requestPayload, {
+          videoPrompt,
+          cameraMovement,
+          aspectRatio
+        });
+      }
+
+      const response = await axios.post(`${config.services.video.url}/generate`, requestPayload, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 600000  // 10 minutes timeout
       });

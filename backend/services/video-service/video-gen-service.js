@@ -24,6 +24,8 @@ class VideoGenService {
   async initialize() {
     logger.info('Video Generation Service initializing...');
     logger.info(`Using Luma AI API Key: ${config.videoGen.apiKey.substring(0, 5)}...`);
+    logger.info(`Using Luma AI Model: ${config.videoGen.model}`);
+    logger.info(`Using Luma AI Resolution: ${config.videoGen.resolution}`);
     await this.fetchSupportedCameraMotions();
     logger.info('Video Generation Service initialized successfully');
   }
@@ -157,9 +159,14 @@ class VideoGenService {
       logger.info(`Model: ${config.videoGen.model}`);
       logger.info(`Resolution: ${config.videoGen.resolution}`);
       logger.info(`Image URL: ${imageUrl}`);
-      logger.info(`Video Prompt: ${videoPrompt}`);
-      logger.info(`Camera Movement: ${cameraMovement}`);
-      logger.info(`Aspect Ratio: ${aspectRatio}`);
+      
+      // Only log these parameters for ray-1.5
+      if (config.videoGen.model === 'ray-1.5') {
+        logger.info(`Video Prompt: ${videoPrompt}`);
+        logger.info(`Camera Movement: ${cameraMovement}`);
+        logger.info(`Aspect Ratio: ${aspectRatio}`);
+      }
+      
       logger.info(`Scene Index: ${sceneIndex}`);
       logger.info(`Is Test: ${isTest}`);
 
@@ -192,15 +199,9 @@ class VideoGenService {
       const lumaImageUrl = await storageService.getSignedUrl(uploadResult.storageKey, 3600); // 1 hour expiry
       logger.info(`Image uploaded successfully, URL: ${lumaImageUrl}`);
 
-      const sanitizedPrompt = this.sanitizeVideoPrompt(videoPrompt);
-      logger.info(`Sanitized Video Prompt: ${sanitizedPrompt}`);
-
-      const requestPayload = {
-        prompt: sanitizedPrompt,
+      let requestPayload = {
         model: config.videoGen.model,
         resolution: config.videoGen.resolution,
-        aspect_ratio: aspectRatio,
-        camera_motion: cameraMovement,
         keyframes: {
           frame0: {
             type: 'image',
@@ -208,6 +209,19 @@ class VideoGenService {
           },
         },
       };
+
+      // Add additional parameters only for ray-1.5
+      if (config.videoGen.model === 'ray-1.5') {
+        const sanitizedPrompt = this.sanitizeVideoPrompt(videoPrompt);
+        logger.info(`Sanitized Video Prompt: ${sanitizedPrompt}`);
+        
+        requestPayload = {
+          ...requestPayload,
+          prompt: sanitizedPrompt,
+          aspect_ratio: aspectRatio,
+          camera_motion: cameraMovement,
+        };
+      }
 
       logger.info(`Luma AI request payload: ${JSON.stringify(requestPayload, null, 2)}`);
 
@@ -235,14 +249,22 @@ class VideoGenService {
 
           let storageResult;
           let result;
+          let metadata = {
+            fileName: path.basename(videoFilePath)
+          };
 
-          if (isTest) {
-            await this.saveVideoMetadata(metadataPath, sceneIndex, {
-              videoPrompt: sanitizedPrompt,
+          // Add additional metadata only for ray-1.5
+          if (config.videoGen.model === 'ray-1.5') {
+            metadata = {
+              ...metadata,
+              videoPrompt: this.sanitizeVideoPrompt(videoPrompt),
               cameraMovement,
               aspectRatio,
-              fileName: path.basename(videoFilePath)
-            });
+            };
+          }
+
+          if (isTest) {
+            await this.saveVideoMetadata(metadataPath, sceneIndex, metadata);
 
             result = {
               filePath: videoFilePath,
@@ -258,25 +280,30 @@ class VideoGenService {
             storageResult = await storageService.uploadFile(videoFilePath, 'video');
             logger.info('Video uploaded to storage successfully');
 
+            const videoData = {
+              fileName: path.basename(videoFilePath),
+              tempFilePath: videoFilePath,
+              storage_key: storageResult.storageKey,
+              public_url: storageResult.url,
+              metadata: {
+                generationId: generation.id,
+                sourceImageUrl: freshImageUrl,
+                generationDuration: elapsedTime,
+                generatedAt: new Date().toISOString()
+              }
+            };
+
+            // Add additional data only for ray-1.5
+            if (config.videoGen.model === 'ray-1.5') {
+              videoData.videoPrompt = this.sanitizeVideoPrompt(videoPrompt);
+              videoData.cameraMovement = cameraMovement;
+              videoData.aspectRatio = aspectRatio;
+            }
+
             await this.dataAccess.createVideoOutput(
               promptOrTestFolder,
               sceneIndex,
-              {
-                fileName: path.basename(videoFilePath),
-                tempFilePath: videoFilePath,
-                videoPrompt: sanitizedPrompt,
-                cameraMovement,
-                aspectRatio,
-                resolution: config.videoGen.resolution,
-                storage_key: storageResult.storageKey,
-                public_url: storageResult.url,
-                metadata: {
-                  generationId: generation.id,
-                  sourceImageUrl: freshImageUrl,
-                  generationDuration: elapsedTime,
-                  generatedAt: new Date().toISOString()
-                }
-              }
+              videoData
             );
 
             result = {
@@ -284,12 +311,7 @@ class VideoGenService {
               fileName: path.basename(videoFilePath),
               storageKey: storageResult.storageKey,
               publicUrl: storageResult.url,
-              metadata: {
-                generationId: generation.id,
-                sourceImageUrl: freshImageUrl,
-                generationDuration: elapsedTime,
-                generatedAt: new Date().toISOString()
-              }
+              metadata: videoData.metadata
             };
           }
 

@@ -38,16 +38,37 @@ function createServer(videoServiceInterface) {
           cameraMovement, 
           aspectRatio, 
           sceneIndex,
-          jobId 
+          jobId,
+          model = config.videoGen.model
         } = req.body;
 
         logger.info(`Video Service: Request body: ${JSON.stringify(req.body)}`);
         
-        if (!imageUrl || !videoPrompt || !cameraMovement || !aspectRatio || !jobId || sceneIndex === undefined) {
-          throw new Error('Missing required parameters: imageUrl, videoPrompt, cameraMovement, aspectRatio, jobId, or sceneIndex');
+        // Basic validation
+        if (!imageUrl) {
+          throw new Error('Missing required parameter: imageUrl');
+        }
+        if (!jobId) {
+          throw new Error('Missing required parameter: jobId');
+        }
+        if (sceneIndex === undefined) {
+          throw new Error('Missing required parameter: sceneIndex');
+        }
+
+        // Additional validation for ray-1.5
+        if (model === 'ray-1.5') {
+          if (!videoPrompt) {
+            throw new Error('Missing required parameter for ray-1.5: videoPrompt');
+          }
+          if (!cameraMovement) {
+            throw new Error('Missing required parameter for ray-1.5: cameraMovement');
+          }
+          if (!aspectRatio) {
+            throw new Error('Missing required parameter for ray-1.5: aspectRatio');
+          }
         }
   
-        logger.info(`Video Service: Generating video for scene ${sceneIndex}, job ${jobId}`);
+        logger.info(`Video Service: Generating video for scene ${sceneIndex}, job ${jobId} with model ${model}`);
         
         const result = await videoServiceInterface.process(
           imageUrl,
@@ -56,7 +77,8 @@ function createServer(videoServiceInterface) {
           aspectRatio,
           sceneIndex,
           jobId,
-          false  // isTest = false for production
+          false,  // isTest = false for production
+          model
         );
         
         clearTimeout(requestTimeout);

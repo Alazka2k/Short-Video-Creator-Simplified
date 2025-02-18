@@ -119,11 +119,6 @@ class SceneProcessor {
         throw new Error(`Invalid visualization type: ${visualizationType}`);
       }
 
-      if (!scene.video_prompt) {
-        logger.error('Missing video prompt for scene', { sceneId, jobId });
-        throw new Error('Video prompt is required for visualization generation');
-      }
-
       if (!imageResult?.publicUrl) {
         logger.error('Missing image URL for visualization', { sceneId, jobId });
         throw new Error('Image URL is required for visualization generation');
@@ -134,16 +129,36 @@ class SceneProcessor {
           sceneId,
           jobId,
           imageUrl: imageResult.publicUrl,
-          videoPrompt: scene.video_prompt
+          videoPrompt: scene.video_prompt,
+          model: parameters.videoGenParams?.model || 'ray-2'
         });
-        return await this.services.video.process(
-          imageResult.publicUrl,
-          scene.video_prompt,
-          scene.camera_movement,
-          parameters.videoGenParams?.aspectRatio || '16:9',
-          sceneId,
-          jobId
-        );
+
+        // For ray-1.5, we need video prompt and camera movement
+        if (parameters.videoGenParams?.model === 'ray-1.5') {
+          if (!scene.video_prompt) {
+            logger.error('Missing video prompt for scene', { sceneId, jobId });
+            throw new Error('Video prompt is required for ray-1.5 visualization generation');
+          }
+          
+          return await this.services.video.process(
+            imageResult.publicUrl,
+            scene.video_prompt,
+            scene.camera_movement,
+            parameters.videoGenParams?.aspectRatio || '16:9',
+            sceneId,
+            jobId
+          );
+        } else {
+          // For ray-2, we only need the image URL
+          return await this.services.video.process(
+            imageResult.publicUrl,
+            null,
+            null,
+            null,
+            sceneId,
+            jobId
+          );
+        }
       } else { // animation
         logger.info('Executing animation service...', {
           sceneId,

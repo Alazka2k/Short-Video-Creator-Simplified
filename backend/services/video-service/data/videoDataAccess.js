@@ -111,26 +111,36 @@ class VideoDataAccess {
         await this.moveVideoFile(videoData.tempFilePath, videoPath);
       }
 
-      // Prepare database record
+      // Prepare database record with required fields
       const record = {
         job_id: jobId,
         scene_id: sceneId,
-        video_prompt: videoData.videoPrompt,
-        camera_movement: videoData.cameraMovement,
-        aspect_ratio: videoData.aspectRatio,
         file_path: videoPath,
-        storage_key: videoData.storageKey,
-        public_url: videoData.publicUrl,
+        storage_key: videoData.storage_key,
+        public_url: videoData.public_url,
         created_at: new Date(),
-        metadata: JSON.stringify({
-          fileName: videoData.fileName,
-          generatedAt: new Date().toISOString(),
-          fileSize: fsSync.statSync(videoPath).size,
-          model: config.videoGen.model,
-          resolution: config.videoGen.resolution,
-          ...videoData.metadata
-        })
       };
+
+      // Add optional fields based on model type (add more information for ray-1.5)
+      if (videoData.videoPrompt) {
+        record.video_prompt = videoData.videoPrompt;
+      }
+      if (videoData.cameraMovement) {
+        record.camera_movement = videoData.cameraMovement;
+      }
+      if (videoData.aspectRatio) {
+        record.aspect_ratio = videoData.aspectRatio;
+      }
+
+      // Add metadata
+      record.metadata = JSON.stringify({
+        fileName: videoData.fileName,
+        generatedAt: new Date().toISOString(),
+        fileSize: fsSync.statSync(videoPath).size,
+        model: config.videoGen.model,
+        resolution: config.videoGen.resolution,
+        ...videoData.metadata
+      });
 
       // Insert record into database
       const [videoOutput] = await trx(this.tableName)
@@ -138,19 +148,28 @@ class VideoDataAccess {
         .returning('*');
 
       // Save metadata file
-      await this.saveMetadata(metadataPath, sceneId, {
+      const metadataObj = {
         videoId: videoOutput.video_id,
-        videoPrompt: videoData.videoPrompt,
-        cameraMovement: videoData.cameraMovement,
-        aspectRatio: videoData.aspectRatio,
         fileName: videoData.fileName,
         filePath: videoPath,
-        storageKey: videoData.storageKey,
-        publicUrl: videoData.publicUrl,
+        storageKey: videoData.storage_key,
+        publicUrl: videoData.public_url,
         model: config.videoGen.model,
-        //resolution: config.videoGen.resolution,
         ...videoData.metadata
-      });
+      };
+
+      // Add optional metadata fields based on model type
+      if (videoData.videoPrompt) {
+        metadataObj.videoPrompt = videoData.videoPrompt;
+      }
+      if (videoData.cameraMovement) {
+        metadataObj.cameraMovement = videoData.cameraMovement;
+      }
+      if (videoData.aspectRatio) {
+        metadataObj.aspectRatio = videoData.aspectRatio;
+      }
+
+      await this.saveMetadata(metadataPath, sceneId, metadataObj);
 
       await trx.commit();
       logger.info(`Video output record created with ID: ${videoOutput.video_id}`);
