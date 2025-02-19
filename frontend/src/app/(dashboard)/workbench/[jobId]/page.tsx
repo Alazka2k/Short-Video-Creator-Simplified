@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useJobDetails } from '@/lib/hooks/useJobDetails'
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
-import { ScenePreview } from '@/components/preview/ScenePreview'
-import { AudioPlayer } from '@/components/preview/AudioPlayer'
+import { ScenePreview } from '@/components/job-details/ScenePreview'
+import { AudioPlayer } from '@/components/job-details/AudioPlayer'
 import { apiClient } from '@/lib/api/apiClient'
 import { AuthLogger } from '@/lib/debug/auth-logger'
-import { JobHeader } from '@/components/preview/JobHeader'
+import { JobHeader } from '@/components/job-details/JobHeader'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
 import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
@@ -56,8 +56,16 @@ interface JobDetails {
         image?: {
           aspectRatio?: string
         }
+        script?: {
+          scriptTone?: string
+          vocabulary?: string
+          pacingStructure?: string
+          characterPerspective?: string
+        }
       }
-      voiceId?: string
+      voiceGenParams?: {
+        elevenlabsVoiceId?: string
+      }
     }
   }
   prompt: string
@@ -219,8 +227,21 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           shotStyle={shotStyle}
           service_sequence={jobWithFreshUrls.service_sequence}
           prompt={jobWithFreshUrls.prompt}
-          voiceId={jobWithFreshUrls.metadata.parameters?.voiceId}
-          scriptInfo={scriptInfo}
+          metadata={{
+            parameters: {
+              voiceGenParams: {
+                elevenlabsVoiceId: jobWithFreshUrls.metadata.parameters?.voiceGenParams?.elevenlabsVoiceId
+              },
+              llmGenParams: {
+                script: scriptInfo
+              }
+            },
+            scenes: jobWithFreshUrls.metadata.scenes.map(scene => ({
+              voice: scene.voice ? {
+                elevenlabsVoiceId: scene.voice.metadata?.elevenlabsVoiceId
+              } : undefined
+            }))
+          }}
           focus={focus}
         />
 

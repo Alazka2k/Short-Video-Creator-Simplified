@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { AuthLogger } from '@/lib/debug/auth-logger'
 import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as VoiceIcon } from 'lucide-react'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 
 interface MediaContent {
@@ -32,18 +33,18 @@ interface ScenePreviewProps {
   aspectRatio?: string
 }
 
-export function ScenePreview({ 
-  sceneId, 
-  image, 
+export function ScenePreview({
+  sceneId,
+  image,
   video,
   animation,
   voice,
   description,
   className,
-  aspectRatio = "9:16"
+  aspectRatio = "1:1"
 }: ScenePreviewProps) {
+  const [showOriginalImage, setShowOriginalImage] = useState(false)
   const [mediaErrors, setMediaErrors] = useState<{[key: string]: string}>({})
-  const [isCollapsed, setIsCollapsed] = useState(false)
 
   // Get storage keys for all media
   const storageKeys = [
@@ -84,7 +85,6 @@ export function ScenePreview({
     refreshUrls(storageKeys)
   }
 
-  // Convert aspect ratio (e.g., "16:9") to tailwind class
   const getAspectRatioClass = (ratio: string) => {
     switch (ratio) {
       case "16:9":
@@ -103,17 +103,13 @@ export function ScenePreview({
     }
   }
 
-  // Determine if we should use side-by-side layout
-  const useSideBySide = aspectRatio !== "16:9"
-
-  // Determine which media to show (priority: video > animation > image)
   const getMediaContent = () => {
     if (video?.storageKey && freshUrls[video.storageKey]) {
       console.log('ScenePreview: Loading video for scene', sceneId, freshUrls[video.storageKey])
       return (
-        <VideoPreview 
+        <VideoPreview
           url={freshUrls[video.storageKey]}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="w-full h-full object-contain"
           onError={() => handleMediaError('video')}
           onLoad={() => {
             console.log('ScenePreview: Video loaded for scene', sceneId)
@@ -125,13 +121,13 @@ export function ScenePreview({
         />
       )
     }
-    
+
     if (animation?.storageKey && freshUrls[animation.storageKey]) {
       console.log('ScenePreview: Loading animation for scene', sceneId, freshUrls[animation.storageKey])
       return (
-        <VideoPreview 
+        <VideoPreview
           url={freshUrls[animation.storageKey]}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="w-full h-full object-contain"
           onError={() => handleMediaError('animation')}
           onLoad={() => {
             console.log('ScenePreview: Animation loaded for scene', sceneId)
@@ -143,14 +139,14 @@ export function ScenePreview({
         />
       )
     }
-    
+
     if (image?.storageKey && freshUrls[image.storageKey]) {
       console.log('ScenePreview: Loading image for scene', sceneId, freshUrls[image.storageKey])
       return (
-        <ImagePreview 
+        <ImagePreview
           url={freshUrls[image.storageKey]}
           alt={description || image.metadata?.prompt || `Scene ${sceneId} Image`}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="w-full h-full object-contain"
           onError={() => handleMediaError('image')}
           onLoad={() => {
             console.log('ScenePreview: Image loaded for scene', sceneId)
@@ -162,98 +158,88 @@ export function ScenePreview({
         />
       )
     }
-    
+
     return null
   }
 
   return (
-    <div className={cn("rounded-lg border bg-card overflow-hidden", className)}>
-      {/* Scene Header */}
-      <div className="p-4 border-b bg-muted/50 flex items-center justify-between">
-        <h3 className="font-medium">Scene {sceneId}</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronDown className={cn(
-            "h-4 w-4 transition-transform",
-            isCollapsed && "transform rotate-180"
-          )} />
-        </Button>
-      </div>
-
-      {/* Scene Content */}
-      {!isCollapsed && (
-        <div className="p-6">
-          {/* Media Content */}
-          <div className={cn(
-            useSideBySide ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-4"
-          )}>
-            {/* Left Side - Visual Content */}
-            <div>
-              <div className={cn(
-                "relative overflow-hidden rounded-lg border bg-card",
-                useSideBySide ? "max-w-[240px]" : "max-w-[480px]",
-                "mx-auto"
-              )}>
-                <div className={cn(
-                  getAspectRatioClass(aspectRatio),
-                  !useSideBySide && "max-h-[270px]",
-                  useSideBySide && "max-h-[426px]"
-                )}>
-                  {getMediaContent()}
-                </div>
-              </div>
-              {Object.entries(mediaErrors).map(([type, error]) => (
-                <p key={type} className="text-sm text-red-500 mt-2">{error}</p>
-              ))}
+    <div className={cn("grid grid-cols-[1.5fr_1fr] gap-6", className)}>
+      {/* Media Content Section */}
+      <div className="space-y-4">
+        {/* Main Media Container */}
+        <div className={cn(
+          "relative w-full overflow-hidden rounded-lg border bg-muted flex items-center justify-center",
+          getAspectRatioClass(aspectRatio)
+        )}>
+          <div className="relative w-full h-full flex items-center justify-center">
+            {getMediaContent()}
+          </div>
+          {Object.entries(mediaErrors).map(([type, error]) => (
+            <div 
+              key={`error-${type}`}
+              className="absolute inset-0 flex items-center justify-center bg-muted"
+            >
+              <p className="text-sm text-muted-foreground">{error}</p>
             </div>
+          ))}
+        </div>
 
-            {/* Right Side - Scene Details and Audio */}
-            <div className="space-y-4">
-              {/* Scene Details */}
-              <div className="rounded-lg border bg-card p-4 space-y-3">
-                <div>
-                  <h4 className="text-sm font-medium">Scene Details</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {description || voice?.metadata?.text || image?.metadata?.prompt || `Scene ${sceneId}`}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium">Media Type</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {video ? 'Video' : (animation ? 'Animation' : (image ? 'Image' : 'No visual content'))}
-                    {voice && ' with voice narration'}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Voice Preview */}
-              {voice?.storageKey && freshUrls[voice.storageKey] && (
-                <div className="rounded-lg border bg-card p-4">
-                  <h4 className="text-sm font-medium mb-3">Voice Narration</h4>
-                  <AudioPlayer 
-                    url={freshUrls[voice.storageKey]}
-                    title={voice.metadata?.text || description || `Scene ${sceneId} Voice`}
-                    onError={() => handleMediaError('voice')}
+        {/* Original Image Toggle */}
+        {(video || animation) && image && (
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowOriginalImage(!showOriginalImage)}
+            >
+              {showOriginalImage ? 'Hide' : 'Show'} Original Image
+            </Button>
+            
+            {showOriginalImage && image.storageKey && freshUrls[image.storageKey] && (
+              <div className={cn(
+                "relative overflow-hidden rounded-lg border bg-muted flex items-center justify-center",
+                getAspectRatioClass(aspectRatio)
+              )}>
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <ImagePreview
+                    url={freshUrls[image.storageKey]}
+                    alt={`Scene ${sceneId} Original Image`}
+                    className="w-full h-full object-contain"
+                    onError={() => handleMediaError('original-image')}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
+        )}
+      </div>
 
-          {/* No Content Message */}
-          {!image?.storageKey && !video?.storageKey && !animation?.storageKey && !voice?.storageKey && (
-            <div className="p-4 rounded-lg border bg-card">
-              <p className="text-sm text-muted-foreground text-center">
-                No preview content available for this scene
-              </p>
+      {/* Right Side Content */}
+      <div className="space-y-4">
+        {/* Description */}
+        {description && (
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-sm text-card-foreground">{description}</p>
+          </div>
+        )}
+
+        {/* Voice Content */}
+        {voice?.storageKey && freshUrls[voice.storageKey] && (
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <VoiceIcon className="h-4 w-4" />
+              <span className="font-medium">Voice Narration</span>
             </div>
-          )}
-        </div>
-      )}
+            <AudioPlayer
+              url={freshUrls[voice.storageKey]}
+              onError={() => handleMediaError('voice')}
+            />
+            {voice.metadata?.text && (
+              <p className="mt-2 text-sm text-muted-foreground">{voice.metadata.text}</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 } 

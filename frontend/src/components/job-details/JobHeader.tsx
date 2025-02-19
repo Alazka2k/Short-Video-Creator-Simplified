@@ -23,12 +23,25 @@ interface JobHeaderProps {
   shotStyle?: string
   service_sequence: string[]
   prompt: string
-  voiceId?: string
-  scriptInfo?: {
-    tone?: string
-    vocabulary?: string
-    pacing?: string
-    perspective?: string
+  metadata: {
+    parameters: {
+      voiceGenParams?: {
+        elevenlabsVoiceId?: string
+      }
+      llmGenParams?: {
+        script?: {
+          scriptTone?: string
+          vocabulary?: string
+          pacingStructure?: string
+          characterPerspective?: string
+        }
+      }
+    }
+    scenes?: Array<{
+      voice?: {
+        elevenlabsVoiceId?: string
+      }
+    }>
   }
   focus?: string
 }
@@ -42,13 +55,18 @@ export function JobHeader({
   shotStyle,
   service_sequence = [],
   prompt,
-  voiceId,
-  scriptInfo,
+  metadata,
   focus
 }: JobHeaderProps) {
   const [showDetails, setShowDetails] = useState(false)
+  
+  // Get voice ID either from parameters or from the first scene's voice
+  const elevenlabsVoiceId = metadata?.parameters?.voiceGenParams?.elevenlabsVoiceId || 
+                           metadata?.scenes?.[0]?.voice?.elevenlabsVoiceId
 
-  // Find voice name from voiceId
+  const scriptInfo = metadata?.parameters?.llmGenParams?.script
+
+  // Find voice name from elevenlabsVoiceId
   const getVoiceName = (id: string) => {
     for (const category of voiceData.categories) {
       const voice = category.options.find(v => v.elevenlabsVoiceId === id)
@@ -123,8 +141,11 @@ export function JobHeader({
       {/* Hashtags */}
       {hashtag && (
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          {getHashtags(hashtag).map((tag, index) => (
-            <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">
+          {getHashtags(hashtag).map((tag) => (
+            <div 
+              key={tag}
+              className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full"
+            >
               <Hash className="w-4 h-4" />
               <span>{tag.substring(1)}</span>
             </div>
@@ -133,11 +154,11 @@ export function JobHeader({
       )}
 
       {/* Voice */}
-      {voiceId && (
+      {elevenlabsVoiceId && (
         <div className="flex flex-wrap items-center gap-4 border-t pt-4">
           <div className="text-sm bg-muted px-3 py-1.5 rounded-full">
             <span className="font-medium">Voice:</span>{' '}
-            <span className="text-muted-foreground">{getVoiceName(voiceId)}</span>
+            <span className="text-muted-foreground">{getVoiceName(elevenlabsVoiceId)}</span>
           </div>
         </div>
       )}
@@ -147,7 +168,7 @@ export function JobHeader({
         <div className="flex items-center gap-2 flex-wrap border-t pt-4">
           {service_sequence.map((service, index) => (
             <div
-              key={index}
+              key={`${service}-${index}`}
               className="flex items-center gap-1.5 text-sm bg-muted rounded-full px-3 py-1.5"
               title={getServiceLabel(service)}
             >
@@ -175,33 +196,49 @@ export function JobHeader({
       {/* Collapsible Details */}
       {showDetails && (
         <div className="mt-4 space-y-4 border-t pt-4">
-          {/* Initial Prompt & Focus / Theme */}
-          {prompt && focus && (
+          {/* Initial Prompt */}
+          {prompt && (
             <div>
               <span className="text-sm font-medium">Initial Prompt:</span>
               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-lg">{prompt}</p>
-              <span className="text-sm font-medium">With focus / theme:</span>
+            </div>
+          )}
+
+          {/* Focus / Theme */}
+          {focus && (
+            <div>
+              <span className="text-sm font-medium">Focus / Theme:</span>
               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-lg">{focus}</p>
             </div>
           )}
 
-                    {/* Script Settings */}
-                    {scriptInfo && Object.values(scriptInfo).some(Boolean) && (
+          {/* Script Settings */}
+          {scriptInfo && Object.values(scriptInfo).some(Boolean) && (
             <div>
               <span className="text-sm font-medium">Script Settings:</span>
               <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
-                {scriptInfo.tone && (
-                  <p><span className="font-medium">Tone:</span> {scriptInfo.tone}</p>
+                {scriptInfo.scriptTone && (
+                  <p><span className="font-medium">Tone:</span> {scriptInfo.scriptTone}</p>
                 )}
                 {scriptInfo.vocabulary && (
                   <p><span className="font-medium">Vocabulary:</span> {scriptInfo.vocabulary}</p>
                 )}
-                {scriptInfo.pacing && (
-                  <p><span className="font-medium">Pacing:</span> {scriptInfo.pacing}</p>
+                {scriptInfo.pacingStructure && (
+                  <p><span className="font-medium">Pacing:</span> {scriptInfo.pacingStructure}</p>
                 )}
-                {scriptInfo.perspective && (
-                  <p><span className="font-medium">Perspective:</span> {scriptInfo.perspective}</p>
+                {scriptInfo.characterPerspective && (
+                  <p><span className="font-medium">Perspective:</span> {scriptInfo.characterPerspective}</p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Voice Settings */}
+          {elevenlabsVoiceId && (
+            <div>
+              <span className="text-sm font-medium">Voice Settings:</span>
+              <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
+                <p><span className="font-medium">Voice:</span> {getVoiceName(elevenlabsVoiceId)}</p>
               </div>
             </div>
           )}

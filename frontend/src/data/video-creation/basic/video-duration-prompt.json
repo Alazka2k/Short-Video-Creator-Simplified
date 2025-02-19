@@ -9,7 +9,7 @@
         "icon": "/creation/duration-icons/test.png"
     },
     {
-        "sceneAmount": 6,
+        "sceneAmount": 3,
         "description": "A short video teaser, perfect for capturing attention quickly.",
         "lengthDescription": "15 seconds with the first 5 seconds containing the hook",
         "name": "Video Teaser",

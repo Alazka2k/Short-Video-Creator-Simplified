@@ -194,11 +194,25 @@ class JobPipelineService {
   }
 
   async finalizeJob(jobId, jobOutputDir, llmResult, sceneResults, musicResult, parameters) {
+    // Count how many scenes have complete failures vs partial successes
+    const totalScenes = sceneResults.sceneResults.length;
+    const completelyFailedScenes = sceneResults.sceneResults.filter(
+      scene => scene.status === 'failed' && !scene.voice && !scene.image
+    ).length;
+
+    // Only mark job as failed if all scenes completely failed
+    const jobStatus = completelyFailedScenes === totalScenes ? 'failed' : 'completed_with_errors';
+
     const metadata = {
       jobId,
-      status: sceneResults.hasFailedServices ? 'failed' : 'completed',
+      status: jobStatus,
       llmResult: llmResult.content,
-      scenes: sceneResults.sceneResults,
+      scenes: sceneResults.sceneResults.map(scene => ({
+        sceneId: scene.sceneId,
+        voice: scene.voice,
+        image: scene.image,
+        ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
+      })),
       music: musicResult,
       parameters,
       endTime: new Date().toISOString()
@@ -206,7 +220,7 @@ class JobPipelineService {
 
     await MetadataManager.saveProjectMetadata(jobOutputDir, metadata);
     await this.jobDataAccess.updateJob(jobId, {
-      status: metadata.status,
+      status: jobStatus,
       metadata: JSON.stringify(metadata)
     });
   }
@@ -228,13 +242,25 @@ class JobPipelineService {
   }
 
   prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResult) {
+    // Use the same logic as finalizeJob for consistency
+    const totalScenes = sceneResults.sceneResults.length;
+    const completelyFailedScenes = sceneResults.sceneResults.filter(
+      scene => scene.status === 'failed' && !scene.voice && !scene.image
+    ).length;
+    const jobStatus = completelyFailedScenes === totalScenes ? 'failed' : 'completed_with_errors';
+
     return {
       jobId,
-      status: sceneResults.hasFailedServices ? 'failed' : 'completed',
+      status: jobStatus,
       outputDir: jobOutputDir,
       content: {
         llm: llmResult.content,
-        scenes: sceneResults.sceneResults,
+        scenes: sceneResults.sceneResults.map(scene => ({
+          sceneId: scene.sceneId,
+          voice: scene.voice,
+          image: scene.image,
+          ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
+        })),
         music: musicResult
       }
     };

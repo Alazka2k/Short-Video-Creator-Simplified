@@ -23,11 +23,12 @@ class ImageGenService {
     return await this.client.isConnected();
   }
 
-  async generateImage(prompt, sceneIndex = null, jobId = null) {
+  async generateImage(prompt, sceneIndex = null, jobId = null, userId = null) {
     try {
       logger.info(`Generating image for prompt: "${prompt}"`, {
         sceneIndex,
-        jobId
+        jobId,
+        userId
       });
       
       // Validate required parameters
@@ -45,7 +46,7 @@ class ImageGenService {
       
       const result = await this.client.generateImage(prompt, (uri, progress) => {
         logger.info(`Image generation progress: ${progress}%`);
-      });
+      }, userId);
 
       if (!result) {
         throw new Error('No image generated');

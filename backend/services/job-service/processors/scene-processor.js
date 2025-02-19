@@ -13,31 +13,54 @@ class SceneProcessor {
     try {
       logger.info(`Processing scene ${sceneId}...`, { jobId, sceneId, sceneDir });
 
-      const [voiceResult, imageResult] = await this.generateVoiceAndImage(
-        scene, sceneId, jobId, serviceConfig, parameters
-      );
+      // Initialize result object
+      let result = { sceneId };
 
-      const visualResult = await this.generateVisualization(
-        scene, sceneId, jobId, imageResult, serviceConfig, parameters, visualizationType
-      );
+      try {
+        const [voiceResult, imageResult] = await this.generateVoiceAndImage(
+          scene, sceneId, jobId, serviceConfig, parameters
+        );
+        
+        // Add successful results
+        if (voiceResult) result.voice = voiceResult;
+        if (imageResult) result.image = imageResult;
 
+        try {
+          const visualResult = await this.generateVisualization(
+            scene, sceneId, jobId, imageResult, serviceConfig, parameters, visualizationType
+          );
+          if (visualResult) result[visualizationType] = visualResult;
+        } catch (visualError) {
+          logger.error(`Error in visualization for scene ${sceneId}:`, visualError);
+          // Don't fail the whole scene, just mark visualization as failed
+          result[visualizationType] = { status: 'failed', error: visualError.message };
+        }
+
+      } catch (genError) {
+        logger.error(`Error in voice/image generation for scene ${sceneId}:`, genError);
+        // Keep any successful generations in the result
+        result.status = 'failed';
+        result.error = genError.message;
+      }
+
+      // Save whatever metadata we have
       await this.saveSceneMetadata(sceneDir, {
         sceneId,
         scene,
-        voiceResult,
-        imageResult,
-        visualResult,
+        voiceResult: result.voice,
+        imageResult: result.image,
+        visualResult: result[visualizationType],
         visualizationType
       });
 
+      return result;
+    } catch (error) {
+      logger.error(`Fatal error processing scene ${sceneId}:`, error);
       return {
         sceneId,
-        voice: voiceResult,
-        image: imageResult,
-        [visualizationType]: visualResult
+        status: 'failed',
+        error: error.message
       };
-    } catch (error) {
-      throw error;
     }
   }
 
