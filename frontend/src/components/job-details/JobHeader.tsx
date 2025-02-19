@@ -153,16 +153,6 @@ export function JobHeader({
         </div>
       )}
 
-      {/* Voice */}
-      {elevenlabsVoiceId && (
-        <div className="flex flex-wrap items-center gap-4 border-t pt-4">
-          <div className="text-sm bg-muted px-3 py-1.5 rounded-full">
-            <span className="font-medium">Voice:</span>{' '}
-            <span className="text-muted-foreground">{getVoiceName(elevenlabsVoiceId)}</span>
-          </div>
-        </div>
-      )}
-
       {/* Service Sequence */}
       {service_sequence.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap border-t pt-4">
@@ -238,7 +228,7 @@ export function JobHeader({
             <div>
               <span className="text-sm font-medium">Voice Settings:</span>
               <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
-                <p><span className="font-medium">Voice:</span> {getVoiceName(elevenlabsVoiceId)}</p>
+                <p>{getVoiceName(elevenlabsVoiceId)}</p>
               </div>
             </div>
           )}
@@ -249,10 +239,10 @@ export function JobHeader({
               <span className="text-sm font-medium">Visual Settings:</span>
               <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
                 {aspectRatio && (
-                  <p><span className="font-medium">Aspect Ratio:</span> {aspectRatio}</p>
+                  <p>{aspectRatio}</p>
                 )}
                 {shotStyle && (
-                  <p><span className="font-medium">Visual Style:</span> {shotStyle}</p>
+                  <p>{shotStyle}</p>
                 )}
               </div>
             </div>

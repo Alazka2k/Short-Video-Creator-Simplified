@@ -155,6 +155,7 @@ export function ScenePreview({
               return rest
             })
           }}
+          aspectRatio={aspectRatio}
         />
       )
     }
@@ -168,12 +169,14 @@ export function ScenePreview({
       <div className="space-y-4">
         {/* Main Media Container */}
         <div className={cn(
-          "relative w-full overflow-hidden rounded-lg border bg-muted flex items-center justify-center",
-          getAspectRatioClass(aspectRatio)
+          "relative w-full overflow-hidden rounded-lg border bg-muted",
+          getAspectRatioClass(aspectRatio),
+          // Add max-width constraints based on aspect ratio
+          aspectRatio === "9:16" && "max-w-[250px] mx-auto", // Half width for vertical videos
+          aspectRatio === "1:1" && "max-w-[350px] mx-auto", // 30% smaller for square images
+          aspectRatio === "16:9" && "max-w-[450px] mx-auto"
         )}>
-          <div className="relative w-full h-full flex items-center justify-center">
-            {getMediaContent()}
-          </div>
+          {getMediaContent()}
           {Object.entries(mediaErrors).map(([type, error]) => (
             <div 
               key={`error-${type}`}
@@ -195,21 +198,23 @@ export function ScenePreview({
               {showOriginalImage ? 'Hide' : 'Show'} Original Image
             </Button>
             
-            {showOriginalImage && image.storageKey && freshUrls[image.storageKey] && (
-              <div className={cn(
-                "relative overflow-hidden rounded-lg border bg-muted flex items-center justify-center",
-                getAspectRatioClass(aspectRatio)
-              )}>
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <ImagePreview
-                    url={freshUrls[image.storageKey]}
-                    alt={`Scene ${sceneId} Original Image`}
-                    className="w-full h-full object-contain"
-                    onError={() => handleMediaError('original-image')}
-                  />
-                </div>
-              </div>
-            )}
+            <div className={cn(
+              "relative overflow-hidden rounded-lg border bg-muted",
+              getAspectRatioClass(aspectRatio),
+              // Add same max-width constraints for original image
+              aspectRatio === "9:16" && "max-w-[300px] mx-auto",
+              aspectRatio === "1:1" && "max-w-[400px] mx-auto",
+            )}>
+              {showOriginalImage && image.storageKey && freshUrls[image.storageKey] && (
+                <ImagePreview
+                  url={freshUrls[image.storageKey]}
+                  alt={`Scene ${sceneId} Original Image`}
+                  className="w-full h-full"
+                  onError={() => handleMediaError('original-image')}
+                  aspectRatio={aspectRatio}
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

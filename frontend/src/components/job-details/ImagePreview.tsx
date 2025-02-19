@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Maximize2, ZoomIn, ZoomOut, Loader2 } from 'lucide-react'
+import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ProgressiveImage } from '@/components/ui/progressive-media'
+import Image from 'next/image'
 
 interface ImagePreviewProps {
   url: string
@@ -11,9 +11,10 @@ interface ImagePreviewProps {
   className?: string
   onError?: (error: React.SyntheticEvent<HTMLImageElement, Event>) => void
   onLoad?: () => void
+  aspectRatio?: string
 }
 
-export function ImagePreview({ url, alt, className, onError, onLoad }: ImagePreviewProps) {
+export function ImagePreview({ url, alt, className, onError, onLoad, aspectRatio = "16:9" }: ImagePreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
@@ -58,6 +59,24 @@ export function ImagePreview({ url, alt, className, onError, onLoad }: ImagePrev
     setZoomLevel(1) // Reset zoom when toggling fullscreen
   }
 
+  const getAspectRatioClass = (ratio: string) => {
+    switch (ratio) {
+      case "16:9":
+        return "aspect-video" // 16/9
+      case "1:1":
+        return "aspect-square" // 1/1
+      case "9:16":
+        return "aspect-[9/16]" // 9/16
+      default:
+        // For custom ratios, calculate the percentage
+        const [width, height] = ratio.split(":").map(Number)
+        if (width && height) {
+          return `aspect-[${width}/${height}]`
+        }
+        return "aspect-video" // fallback to 16:9
+    }
+  }
+
   if (error) {
     return (
       <div className={cn(
@@ -80,25 +99,26 @@ export function ImagePreview({ url, alt, className, onError, onLoad }: ImagePrev
             <Skeleton className="w-full h-full" />
           </div>
         )}
-        <ProgressiveImage
-          src={url}
-          alt={alt || "Preview"}
-          className={cn(
-            "w-full h-full object-contain transition-opacity duration-200",
-            isFullscreen ? "max-h-[calc(100vh-2rem)]" : "max-h-[400px]",
-            isLoading && "opacity-0"
-          )}
-          style={{ transform: `scale(${zoomLevel})` }}
-          onMediaLoad={handleLoad}
-          onMediaError={(error) => {
-            console.error('ImagePreview: ProgressiveImage error:', error)
-            const syntheticEvent = new Event('error') as unknown as React.SyntheticEvent<HTMLImageElement, Event>
-            handleError(syntheticEvent)
-          }}
-          shouldPreload
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+        <div className={cn(
+          "relative w-full",
+          getAspectRatioClass(aspectRatio)
+        )}>
+          <Image
+            src={url}
+            alt={alt || "Preview"}
+            className={cn(
+              "object-contain w-full h-full transition-opacity duration-200",
+              isFullscreen ? "max-h-[calc(100vh-2rem)]" : "",
+              isLoading && "opacity-0"
+            )}
+            style={{ transform: `scale(${zoomLevel})` }}
+            onLoad={handleLoad}
+            onError={handleError}
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
 
         {/* Controls */}
         <div className={cn(

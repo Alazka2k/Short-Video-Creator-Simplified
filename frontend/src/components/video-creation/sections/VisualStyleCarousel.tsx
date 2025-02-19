@@ -3,7 +3,7 @@ import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel"
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ProgressiveImage } from "@/components/ui/progressive-media"
+
 
 interface VisualStyleCarouselProps {
   previewImages: string[]

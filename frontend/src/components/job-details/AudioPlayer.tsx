@@ -3,13 +3,12 @@ import { Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
-import { ProgressiveAudio } from '@/components/ui/progressive-media'
 
 interface AudioPlayerProps {
   url: string
   title?: string
   className?: string
-  onError?: (error: Event) => void
+  onError?: (error: React.SyntheticEvent<HTMLAudioElement, Event>) => void
   onLoad?: () => void
 }
 
@@ -88,17 +87,14 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
     }
   }
 
-  const handleError = (error: string) => {
+  const handleError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
     console.error('AudioPlayer: Error loading audio:', {
       url,
-      error
+      error: e
     })
-    setError(error)
+    setError('Failed to load audio')
     setIsLoading(false)
-    if (onError) {
-      const errorEvent = new Event('error')
-      onError(errorEvent)
-    }
+    onError?.(e)
   }
 
   const formatTime = (time: number) => {
@@ -176,19 +172,19 @@ export function AudioPlayer({ url, title, className, onError, onLoad }: AudioPla
         </div>
       </div>
 
-      <ProgressiveAudio
+      <audio
         ref={audioRef}
         src={url}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
-        onMediaLoad={() => {
+        onCanPlayThrough={() => {
           console.log('AudioPlayer: Audio loaded successfully:', url)
           setIsLoading(false)
           onLoad?.()
         }}
-        onMediaError={handleError}
-        shouldPreload
+        onError={handleError}
+        preload="auto"
       />
 
       {title && (

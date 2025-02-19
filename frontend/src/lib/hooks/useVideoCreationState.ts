@@ -13,11 +13,12 @@ import { apiClient } from '@/lib/api/apiClient'
 
 const STORAGE_KEY = 'video_creation_state'
 const IMAGE_CACHE_KEY = 'video_creation_image_cache'
+const VISUAL_SETTINGS_KEY = 'video_creation_visual_settings'
 const M2M_TOKEN_KEY = 'video_creation_m2m_token'
 
-interface M2MTokenData {
+interface TokenResponse {
   access_token: string;
-  expires_at: number; // timestamp when token expires
+  expires_at: number;
 }
 
 interface VideoCreationState {
@@ -37,31 +38,67 @@ interface VideoCreationState {
 }
 
 export function useVideoCreationState(defaultValues?: any) {
-  const { getM2MToken } = useAuth();
+  const auth = useAuth();
+  if (!auth) {
+    throw new Error('useVideoCreationState must be used within an AuthProvider');
+  }
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [m2mToken, setM2MToken] = useState<string | null>(null)
+
   // Initialize state from localStorage or default values
   const [state, setState] = useState<VideoCreationState>(() => {
     if (typeof window === 'undefined') return getDefaultState(defaultValues)
+    
+    // Load visual settings separately to persist across sessions
+    const savedVisualSettings = localStorage.getItem(VISUAL_SETTINGS_KEY)
+    let visualSettings = {
+      shotStyle: defaultValues?.shotStyle || '',
+      aspectRatio: defaultValues?.aspectRatio || '9:16'
+    }
+    
+    if (savedVisualSettings) {
+      try {
+        visualSettings = JSON.parse(savedVisualSettings)
+      } catch (e) {
+        console.error('Error parsing saved visual settings:', e)
+      }
+    }
     
     const savedState = localStorage.getItem(STORAGE_KEY)
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState)
-        return parsed
+        return {
+          ...parsed,
+          visualSettings: {
+            ...visualSettings,
+            ...parsed.visualSettings
+          }
+        }
       } catch (e) {
         console.error('Error parsing saved state:', e)
-        return getDefaultState(defaultValues)
+        return {
+          ...getDefaultState(defaultValues),
+          visualSettings
+        }
       }
     }
-    return getDefaultState(defaultValues)
+    return {
+      ...getDefaultState(defaultValues),
+      visualSettings
+    }
   })
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Save full state
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+      
+      // Save visual settings separately to persist across sessions
+      localStorage.setItem(VISUAL_SETTINGS_KEY, JSON.stringify(state.visualSettings))
     }
   }, [state])
 
@@ -81,18 +118,27 @@ export function useVideoCreationState(defaultValues?: any) {
     }
   }, [])
 
-  // State update function
+  // Update state function with visual settings persistence
   const updateState = useCallback((updates: Partial<VideoCreationState>) => {
     setState(prev => {
       const newState = { ...prev, ...updates }
+      
+      // If visual settings are being updated, ensure they're properly merged
+      if (updates.visualSettings) {
+        newState.visualSettings = {
+          ...prev.visualSettings,
+          ...updates.visualSettings
+        }
+      }
+      
       return JSON.stringify(newState) !== JSON.stringify(prev) ? newState : prev
     })
   }, [])
 
   // Initialize M2M token
   useEffect(() => {
-    getM2MToken().then(token => setM2MToken(token));
-  }, [getM2MToken]);
+    auth.getM2MToken().then(token => setM2MToken(token));
+  }, [auth]);
 
   const findVoiceId = (selectedId: string): string => {
     if (!selectedId) return '';
@@ -170,7 +216,7 @@ export function useVideoCreationState(defaultValues?: any) {
       
       // Get both tokens
       const userToken = localStorage.getItem("access_token");
-      const m2mToken = await getM2MToken();
+      const m2mToken = await auth.getM2MToken();
       
       // Set up headers with both tokens
       const headers: Record<string, string> = {
@@ -193,7 +239,7 @@ export function useVideoCreationState(defaultValues?: any) {
       setError(error instanceof Error ? error.message : 'An error occurred while creating the project');
       throw error;
     }
-  }, [constructRequestBody, getM2MToken]);
+  }, [constructRequestBody, auth.getM2MToken]);
 
   const handleGenerateVideo = useCallback(async () => {
     setIsGenerating(true);
@@ -203,7 +249,7 @@ export function useVideoCreationState(defaultValues?: any) {
       
       // Get both tokens
       const userToken = localStorage.getItem("access_token");
-      const m2mToken = await getM2MToken();
+      const m2mToken = await auth.getM2MToken();
       
       // Set up headers with both tokens
       const headers: Record<string, string> = {
@@ -228,7 +274,7 @@ export function useVideoCreationState(defaultValues?: any) {
     } finally {
       setIsGenerating(false);
     }
-  }, [constructRequestBody, getM2MToken]);
+  }, [constructRequestBody, auth.getM2MToken]);
 
   return {
     state,

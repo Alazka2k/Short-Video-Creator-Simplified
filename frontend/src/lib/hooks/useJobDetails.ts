@@ -37,7 +37,11 @@ interface JobDetails {
 }
 
 export function useJobDetails(jobId: string) {
-  const { getM2MToken, user } = useAuth()
+  const auth = useAuth();
+  if (!auth) {
+    throw new Error('useJobDetails must be used within an AuthProvider');
+  }
+  const { getM2MToken, user } = auth;
 
   // Query for job details
   const { 

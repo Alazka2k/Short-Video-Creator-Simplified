@@ -1,8 +1,9 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { AuthLogger } from "@/lib/debug/auth-logger";
 import { auth0M2MConfig } from "./config";
+import { useAuth0 } from '@auth0/auth0-react';
 
 interface User {
   user_id: number;
@@ -32,7 +33,7 @@ interface AuthProviderProps {
   onInit?: (auth: AuthContextType) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 const M2M_TOKEN_KEY = 'auth_m2m_token';
 const M2M_TOKEN_EXPIRY_KEY = 'auth_m2m_token_expiry';
@@ -50,42 +51,92 @@ const isTokenExpired = (token: string): boolean => {
 };
 
 export function AuthProvider({ children, onInit }: AuthProviderProps) {
+  const {
+    isAuthenticated: auth0IsAuthenticated,
+    isLoading: auth0Loading,
+    user: auth0User,
+    getAccessTokenSilently,
+    logout: auth0Logout
+  } = useAuth0();
+
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Enable debug mode on mount
+  // Update user state when Auth0 user changes
   useEffect(() => {
-    AuthLogger.setDebugMode(true);
-    AuthLogger.log('Auth Provider initialized');
+    if (auth0User) {
+      setUser({
+        user_id: parseInt(auth0User.sub?.split('|')[1] || '0'),
+        email: auth0User.email || '',
+        name: auth0User.name,
+        picture: auth0User.picture,
+        provider: auth0User.sub?.split('|')[0] || 'unknown'
+      });
+    } else {
+      setUser(null);
+    }
+  }, [auth0User]);
 
-    // Add global request interceptor
-    const interceptor = async (config: any) => {
-      const token = localStorage.getItem("access_token");
-      if (token && isTokenExpired(token)) {
-        AuthLogger.warning('Token expired or about to expire, logging out user');
-        await logout();
-        window.location.href = '/login';
-        throw new Error('Session expired. Please log in again.');
-      }
-      return config;
-    };
-
-    // Add the interceptor to all fetch requests
-    const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      try {
-        await interceptor({});
-        return originalFetch(...args);
-      } catch (error) {
-        throw error;
-      }
-    };
+  // Update last activity timestamp on user interaction
+  useEffect(() => {
+    const updateActivity = () => setLastActivity(Date.now());
+    
+    // Track user activity
+    window.addEventListener('mousemove', updateActivity);
+    window.addEventListener('keypress', updateActivity);
+    window.addEventListener('click', updateActivity);
+    window.addEventListener('scroll', updateActivity);
 
     return () => {
-      // Restore original fetch
-      window.fetch = originalFetch;
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keypress', updateActivity);
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
     };
   }, []);
+
+  // Token refresh logic
+  const refreshTokenIfNeeded = useCallback(async () => {
+    try {
+      const currentTime = Date.now();
+      const inactiveTime = currentTime - lastActivity;
+      
+      // If user has been inactive for more than 30 minutes, log them out
+      if (inactiveTime > 30 * 60 * 1000) {
+        AuthLogger.log('User inactive for 30 minutes, logging out');
+        await logout();
+        return;
+      }
+
+      // Otherwise, refresh the token
+      const token = await getAccessTokenSilently({
+        detailedResponse: true,
+      });
+      
+      localStorage.setItem('access_token', token.access_token);
+      AuthLogger.log('Token refreshed successfully');
+    } catch (error) {
+      AuthLogger.error('Error refreshing token:', error);
+    }
+  }, [getAccessTokenSilently, lastActivity]);
+
+  // Set up token refresh interval
+  useEffect(() => {
+    if (auth0IsAuthenticated && !refreshInterval) {
+      // Refresh token every 10 minutes if user is active
+      const interval = setInterval(refreshTokenIfNeeded, 10 * 60 * 1000);
+      setRefreshInterval(interval);
+    }
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
+      }
+    };
+  }, [auth0IsAuthenticated, refreshInterval, refreshTokenIfNeeded]);
 
   const refreshToken = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
@@ -186,34 +237,23 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
     checkAuth();
   }, []);
 
-  const login = async (userData: User, tokens: Tokens) => {
-    AuthLogger.log('Logging in user', { userId: userData.user_id });
-    setUser(userData);
-    localStorage.setItem("access_token", tokens.access_token);
-    localStorage.setItem("refresh_token", tokens.refresh_token);
-  };
-
-  const logout = async () => {
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (refreshToken) {
-      try {
-        AuthLogger.log('Logging out user');
-        await fetch(`/api/auth/proxy?endpoint=/api/auth/logout`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken }),
-        });
-      } catch (error) {
-        AuthLogger.error('Logout error:', error);
+  const logout = useCallback(async () => {
+    try {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
       }
+      localStorage.removeItem('access_token');
+      setUser(null);
+      await auth0Logout({
+        logoutParams: {
+          returnTo: window.location.origin
+        }
+      });
+    } catch (error) {
+      AuthLogger.error('Error during logout:', error);
     }
-    setUser(null);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    // Also clear M2M tokens on logout
-    localStorage.removeItem(M2M_TOKEN_KEY);
-    localStorage.removeItem(M2M_TOKEN_EXPIRY_KEY);
-  };
+  }, [auth0Logout, refreshInterval]);
 
   const getM2MToken = async () => {
     try {
@@ -278,9 +318,12 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       AuthLogger.log('Auth context initialized, calling onInit');
       onInit({
         isAuthenticated: !!user,
-        isLoading,
+        isLoading: auth0Loading || isLoading,
         user,
-        login,
+        login: async (userData: User, tokens: Tokens) => {
+          setUser(userData);
+          localStorage.setItem('access_token', tokens.access_token);
+        },
         logout,
         getM2MToken: async () => {
           if (isLoading) {
@@ -293,15 +336,18 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
         }
       });
     }
-  }, [isLoading, user, login, logout, getM2MToken, onInit]);
+  }, [isLoading, user, auth0Loading, logout, getM2MToken, onInit]);
 
   return (
     <AuthContext.Provider
       value={{
         isAuthenticated: !!user,
-        isLoading,
+        isLoading: auth0Loading || isLoading,
         user,
-        login,
+        login: async (userData: User, tokens: Tokens) => {
+          setUser(userData);
+          localStorage.setItem('access_token', tokens.access_token);
+        },
         logout,
         getM2MToken
       }}
