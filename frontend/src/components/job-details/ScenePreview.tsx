@@ -4,10 +4,11 @@ import { ImagePreview } from './ImagePreview'
 import { VideoPreview } from './VideoPreview'
 import { cn } from '@/lib/utils'
 import { AuthLogger } from '@/lib/debug/auth-logger'
-import { ChevronDown, SquareLibrary } from 'lucide-react'
+import { ChevronDown, SquareLibrary, Download, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as VoiceIcon } from 'lucide-react'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
+import { Separator } from '@/components/ui/separator'
 
 interface MediaContent {
   publicUrl: string
@@ -172,9 +173,9 @@ export function ScenePreview({
           "relative w-full overflow-hidden rounded-lg border bg-muted",
           getAspectRatioClass(aspectRatio),
           // Add max-width constraints based on aspect ratio
-          aspectRatio === "9:16" && "max-w-[250px] mx-auto", // Half width for vertical videos
-          aspectRatio === "1:1" && "max-w-[350px] mx-auto", // 30% smaller for square images
-          aspectRatio === "16:9" && "max-w-[450px] mx-auto"
+          aspectRatio === "9:16" && "max-w-[300px] mx-auto",
+          aspectRatio === "1:1" && "max-w-[400px] mx-auto",
+          aspectRatio === "16:9" && "max-w-[500px] mx-auto"
         )}>
           {getMediaContent()}
           {Object.entries(mediaErrors).map(([type, error]) => (
@@ -186,41 +187,10 @@ export function ScenePreview({
             </div>
           ))}
         </div>
-
-        {/* Original Image Toggle */}
-        {(video || animation) && image && (
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowOriginalImage(!showOriginalImage)}
-            >
-              {showOriginalImage ? 'Hide' : 'Show'} Original Image
-            </Button>
-            
-            <div className={cn(
-              "relative overflow-hidden rounded-lg border bg-muted",
-              getAspectRatioClass(aspectRatio),
-              // Add same max-width constraints for original image
-              aspectRatio === "9:16" && "max-w-[300px] mx-auto",
-              aspectRatio === "1:1" && "max-w-[400px] mx-auto",
-            )}>
-              {showOriginalImage && image.storageKey && freshUrls[image.storageKey] && (
-                <ImagePreview
-                  url={freshUrls[image.storageKey]}
-                  alt={`Scene ${sceneId} Original Image`}
-                  className="w-full h-full"
-                  onError={() => handleMediaError('original-image')}
-                  aspectRatio={aspectRatio}
-                />
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Right Side Content */}
-      <div>
+      <div className="space-y-4">
         {/* Description */}
         {description && (
           <div className="rounded-lg border bg-card p-4">
@@ -234,7 +204,7 @@ export function ScenePreview({
 
         {/* Voice Content */}
         {voice?.storageKey && freshUrls[voice.storageKey] && (
-          <div className="rounded-lg border bg-card p-4 mt-4">
+          <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center gap-2 mb-2">
               <VoiceIcon className="h-4 w-4" />
               <span className="font-medium">Voice Narration</span>
@@ -243,8 +213,134 @@ export function ScenePreview({
               url={freshUrls[voice.storageKey]}
               onError={() => handleMediaError('voice')}
             />
+            <div className="flex items-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Recreate
+              </Button>
+            </div>
           </div>
         )}
+
+        {/* Visualization Controls */}
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            {video ? <VideoIcon className="h-4 w-4" /> : 
+             animation ? <AnimationIcon className="h-4 w-4" /> : 
+             <ImageIcon className="h-4 w-4" />}
+            <span className="font-medium">Visualization</span>
+          </div>
+
+          <div className={cn("space-y-4", !video && !animation && "space-y-2")}>
+            {/* Image Section */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ImageIcon className="h-3 w-3" />
+                <span>Image</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Recreate
+                </Button>
+                {(video || animation) && image && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOriginalImage(!showOriginalImage)}
+                  >
+                    {showOriginalImage ? 'Hide' : 'Show'} Original
+                  </Button>
+                )}
+              </div>
+              
+              {/* Original Image Preview */}
+              {showOriginalImage && image?.storageKey && freshUrls[image.storageKey] && (
+                <div className={cn(
+                  "relative overflow-hidden rounded-lg border bg-muted mt-2",
+                  getAspectRatioClass(aspectRatio),
+                  // Add same max-width constraints for original image
+                  aspectRatio === "9:16" && "max-w-[200px] mx-auto",
+                  aspectRatio === "1:1" && "max-w-[250px] mx-auto",
+                )}>
+                  <ImagePreview
+                    url={freshUrls[image.storageKey]}
+                    alt={`Scene ${sceneId} Original Image`}
+                    className="w-full h-full"
+                    onError={() => handleMediaError('original-image')}
+                    aspectRatio={aspectRatio}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Separator between Image and Video/Animation */}
+            {(video || animation) && (
+              <Separator className="my-2" />
+            )}
+
+            {/* Video/Animation Section */}
+            {(video || animation) && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {video ? (
+                    <>
+                      <VideoIcon className="h-3 w-3" />
+                      <span>Video</span>
+                    </>
+                  ) : animation ? (
+                    <>
+                      <AnimationIcon className="h-3 w-3" />
+                      <span>Animation</span>
+                    </>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Recreate
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
