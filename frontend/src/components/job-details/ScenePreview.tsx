@@ -4,7 +4,7 @@ import { ImagePreview } from './ImagePreview'
 import { VideoPreview } from './VideoPreview'
 import { cn } from '@/lib/utils'
 import { AuthLogger } from '@/lib/debug/auth-logger'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, SquareLibrary } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as VoiceIcon } from 'lucide-react'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
@@ -220,17 +220,21 @@ export function ScenePreview({
       </div>
 
       {/* Right Side Content */}
-      <div className="space-y-4">
+      <div>
         {/* Description */}
         {description && (
           <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <SquareLibrary className="h-4 w-4" />
+              <span className="font-medium">Description</span>
+            </div>
             <p className="text-sm text-card-foreground">{description}</p>
           </div>
         )}
 
         {/* Voice Content */}
         {voice?.storageKey && freshUrls[voice.storageKey] && (
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-lg border bg-card p-4 mt-4">
             <div className="flex items-center gap-2 mb-2">
               <VoiceIcon className="h-4 w-4" />
               <span className="font-medium">Voice Narration</span>
@@ -239,9 +243,6 @@ export function ScenePreview({
               url={freshUrls[voice.storageKey]}
               onError={() => handleMediaError('voice')}
             />
-            {voice.metadata?.text && (
-              <p className="mt-2 text-sm text-muted-foreground">{voice.metadata.text}</p>
-            )}
           </div>
         )}
       </div>

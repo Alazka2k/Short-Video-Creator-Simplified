@@ -211,6 +211,8 @@ class JobPipelineService {
         sceneId: scene.sceneId,
         voice: scene.voice,
         image: scene.image,
+        video: scene.video,
+        animation: scene.animation,
         ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
       })),
       music: musicResult,
@@ -259,6 +261,8 @@ class JobPipelineService {
           sceneId: scene.sceneId,
           voice: scene.voice,
           image: scene.image,
+          video: scene.video,
+          animation: scene.animation,
           ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
         })),
         music: musicResult

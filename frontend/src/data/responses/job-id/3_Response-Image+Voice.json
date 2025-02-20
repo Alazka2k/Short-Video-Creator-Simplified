@@ -1,0 +1,185 @@
+{
+    "job_id": "04f8b0ee-a547-418b-a5d5-b9f70e747d40",
+    "user_id": 30,
+    "created_at": "2025-02-19T15:32:13.000Z",
+    "updated_at": "2025-02-19T15:34:51.728Z",
+    "status": "completed_with_errors",
+    "service_sequence": [
+        "llm",
+        "image",
+        "voice"
+    ],
+    "metadata": {
+        "jobId": "04f8b0ee-a547-418b-a5d5-b9f70e747d40",
+        "music": null,
+        "scenes": [
+            {
+                "image": {
+                    "fileName": "image_scene_1.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-19\\04f8b0ee-a547-418b-a5d5-b9f70e747d40\\scene_1\\image_scene_1.png",
+                    "imageUrl": "https://cdn.midjourney.com/a4c1a83c-db30-4bef-bf38-02de80651174/0_2.png",
+                    "metadata": {
+                        "prompt": "A chilling Canadian forest under a moonlit sky, with snow softly covering the ground. A young boy stands, eyes wide with fear, as the moonlight highlights his trembling figure. High-angle view, night setting, casting long shadows on the snow; --sref 3326977824 --ar 1:1",
+                        "generatedAt": "2025-02-19T15:32:58.473Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250219%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250219T153604Z&X-Amz-Expires=3600&X-Amz-Signature=656246c6d5503918b61b8e609b26bb1ac58679318ba3aff90bda69509ab6f4a3&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_1/image_scene_1.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1341794636355731579/alazka_A_chilling_Canadian_forest_under_a_moonlit_sky_with_sno_a4c1a83c-db30-4bef-bf38-02de80651174.png?ex=67b74b22&is=67b5f9a2&hm=924f902c6ad56bf9a6dd7ea1ca9cd592b29e429b0e1d625dc4233b78b7e7a71a&"
+                },
+                "voice": {
+                    "fileName": "voice_scene_1.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-19\\04f8b0ee-a547-418b-a5d5-b9f70e747d40\\scene_1\\voice_scene_1.mp3",
+                    "metadata": {
+                        "text": "\"In the frosty wilderness of Canada, a young boy's scream pierces the night. His life is about to change forever.\"",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-19T15:32:38.633Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250219%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250219T153604Z&X-Amz-Expires=3600&X-Amz-Signature=56404641f214b83fb9fc7cc0c15fa805d1c7d401cfa9a207ed96c574afa5fb90&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_1/voice_scene_1.mp3",
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+                },
+                "sceneId": 1
+            },
+            {
+                "image": {
+                    "fileName": "image_scene_2.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-19\\04f8b0ee-a547-418b-a5d5-b9f70e747d40\\scene_2\\image_scene_2.png",
+                    "imageUrl": "https://cdn.midjourney.com/d3008d55-306d-456f-b67b-e0512eabffa9/0_2.png",
+                    "metadata": {
+                        "prompt": "A battlefield shrouded in smoke, an adult Wolverine crouches, his claws gleaming under a harsh, dim light. The chaos of war evident in the background. Eye-level view, with a gritty, overcast ambiance; --sref 3326977824 --ar 1:1",
+                        "generatedAt": "2025-02-19T15:33:21.248Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250219%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250219T153604Z&X-Amz-Expires=3600&X-Amz-Signature=f4218a8fb85c356386d74561fcfd82f81bf6919b73d1ea1025fe93b30081e51d&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_2/image_scene_2.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1341794727103561810/alazka_A_battlefield_shrouded_in_smoke_an_adult_Wolverine_crou_d3008d55-306d-456f-b67b-e0512eabffa9.png?ex=67b74b38&is=67b5f9b8&hm=655929ec0abba72c3be07a74b73e89420243004edc660b4c8837edd6fbb440dd&"
+                },
+                "voice": {
+                    "fileName": "voice_scene_2.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-19\\04f8b0ee-a547-418b-a5d5-b9f70e747d40\\scene_2\\voice_scene_2.mp3",
+                    "metadata": {
+                        "text": "\"Years later, amidst the chaos of war, his claws emerge, defining his destiny and his curse.\"",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-19T15:32:33.445Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_2/voice_scene_2.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250219%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250219T153604Z&X-Amz-Expires=3600&X-Amz-Signature=0088d19bce286f11e9bb182a327f1e032e746769f2375e099ca7ec3a1be7c274&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_2/voice_scene_2.mp3",
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+                },
+                "sceneId": 2
+            },
+            {
+                "image": {
+                    "fileName": "image_scene_3.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-19\\04f8b0ee-a547-418b-a5d5-b9f70e747d40\\scene_3\\image_scene_3.png",
+                    "imageUrl": "https://cdn.midjourney.com/99570cf1-9876-4389-9fb0-7df133ff3b68/0_0.png",
+                    "metadata": {
+                        "prompt": "Wolverine stands heroically atop a rocky cliff, overlooking a futuristic city. The setting sun casts a golden glow over his determined face. Low-angle view, evening light, with a heroic and hopeful aura; --sref 3326977824 --ar 1:1",
+                        "generatedAt": "2025-02-19T15:33:43.136Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_3/image_scene_3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250219%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250219T153604Z&X-Amz-Expires=3600&X-Amz-Signature=456371e1894d4fc6621b82816a151fcecd6a68e100695baefa45a64b4d523f5d&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_3/image_scene_3.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1341794820913631333/alazka_Wolverine_stands_heroically_atop_a_rocky_cliff_overlook_99570cf1-9876-4389-9fb0-7df133ff3b68.png?ex=67b74b4e&is=67b5f9ce&hm=3435e85805837fe13f0a74778fa8c4ad2afdf776346dafde567b01a5a205d863&"
+                },
+                "voice": {
+                    "fileName": "voice_scene_3.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-19\\04f8b0ee-a547-418b-a5d5-b9f70e747d40\\scene_3\\voice_scene_3.mp3",
+                    "metadata": {
+                        "text": "\"Now, as a legend among the X-Men, he fights for justice, eternally haunted by his past.\"",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-19T15:32:33.320Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_3/voice_scene_3.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250219%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250219T153604Z&X-Amz-Expires=3600&X-Amz-Signature=5055a23322bd4705b98afdcd3e995b594c0be125f66a761c390ed7477c508ba4&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-19/04f8b0ee-a547-418b-a5d5-b9f70e747d40/scene_3/voice_scene_3.mp3",
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+                },
+                "sceneId": 3
+            }
+        ],
+        "status": "completed_with_errors",
+        "endTime": "2025-02-19T15:33:43.198Z",
+        "llmResult": {
+            "music": {
+                "style": "Orchestral rock fusion, intense and dynamic",
+                "title": "The Claw's Path",
+                "lyrics": "In the shadow's breath, his story unfolds, Claws of fate, through time, they hold. From pain's embrace, a hero's mold, In the fight for truth, his soul is bold.",
+                "prompt": "A dynamic soundtrack blending intense orchestral elements with gritty rock undertones, capturing the raw and relentless spirit of Wolverine's journey."
+            },
+            "title": "The Untamed Journey of Wolverine",
+            "prompt": "A video about the lifestory of Wolverine",
+            "scenes": [
+                {
+                    "description": "\"In the frosty wilderness of Canada, a young boy's scream pierces the night. His life is about to change forever.\"",
+                    "video_prompt": "The camera pans over the serene, snow-covered Canadian forest, capturing the stark contrast of a young boy's terrified expression under the pale moonlight, as his future begins to unfold.",
+                    "visual_prompt": "A chilling Canadian forest under a moonlit sky, with snow softly covering the ground. A young boy stands, eyes wide with fear, as the moonlight highlights his trembling figure. High-angle view, night setting, casting long shadows on the snow; --sref 3326977824 --ar 1:1",
+                    "camera_movement": "Pan Left",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 3326977824",
+                        "aspectRatio": "1:1"
+                    }
+                },
+                {
+                    "description": "\"Years later, amidst the chaos of war, his claws emerge, defining his destiny and his curse.\"",
+                    "video_prompt": "The camera moves slowly through the smoke-filled battlefield, focusing on Wolverine as his claws extend, symbolizing his transformation amidst the backdrop of war.",
+                    "visual_prompt": "A battlefield shrouded in smoke, an adult Wolverine crouches, his claws gleaming under a harsh, dim light. The chaos of war evident in the background. Eye-level view, with a gritty, overcast ambiance; --sref 3326977824 --ar 1:1",
+                    "camera_movement": "Push In",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 3326977824",
+                        "aspectRatio": "1:1"
+                    }
+                },
+                {
+                    "description": "\"Now, as a legend among the X-Men, he fights for justice, eternally haunted by his past.\"",
+                    "video_prompt": "A sweeping camera movement captures Wolverine's silhouette against the sunset, symbolizing his enduring legacy and the hope he brings to the future.",
+                    "visual_prompt": "Wolverine stands heroically atop a rocky cliff, overlooking a futuristic city. The setting sun casts a golden glow over his determined face. Low-angle view, evening light, with a heroic and hopeful aura; --sref 3326977824 --ar 1:1",
+                    "camera_movement": "Crane Up",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 3326977824",
+                        "aspectRatio": "1:1"
+                    }
+                }
+            ],
+            "hashtags": "#Wolverine #XMen #MarvelLegends #SuperheroJourney #ClawsofFate",
+            "description": "Explore Wolverine's riveting life story, from a troubled past to a heroic present in the X-Men universe."
+        },
+        "parameters": {
+            "llmGenParams": {
+                "image": {
+                    "sValue": "500",
+                    "shotStyle": "--sref 3326977824",
+                    "aspectRatio": "1:1"
+                },
+                "script": {
+                    "scriptTone": "",
+                    "vocabulary": "",
+                    "pacingStructure": "",
+                    "characterPerspective": ""
+                },
+                "general": {
+                    "sceneAmount": 3,
+                    "lengthDescription": "15 seconds with the first 5 seconds containing the hook"
+                }
+            },
+            "serviceConfig": {
+                "skipImage": false,
+                "skipMusic": true,
+                "skipVoice": false,
+                "skipVisualization": true
+            },
+            "imageGenParams": {},
+            "videoGenParams": {
+                "aspectRatio": "1:1"
+            },
+            "voiceGenParams": {
+                "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+            },
+            "visualizationType": "image",
+            "animationGenParams": {}
+        }
+    },
+    "prompt": "A video about the lifestory of Wolverine",
+    "error": null,
+    "serviceConfig": {}
+}

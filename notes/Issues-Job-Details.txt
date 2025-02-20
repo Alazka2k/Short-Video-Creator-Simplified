@@ -1,0 +1,51 @@
+Critical Issues (P0) - Need to be fixed first:
+1. Media Loading Issues:
+• Fix video/animation loading errors in useProgressiveMedia
+• Fix voice narration endless loading
+• Fix music player endless loading
+These are blocking issues preventing core functionality.
+Core UX Improvements (P1):
+2. Scene Content / Job Details Rendering:
+• Fix Collapsible Details in the job details overview (not all information is rendered even though it is available in the response and defined in the code)
+• More Scene Details Information Display
+• Add description, visual prompt
+• Show original image for video/animation content in a collapsed option (but we need to give the user the option to also see the original image of each scene)
+• Improve visual separation of information
+• Fix image centering (currently it does not fit to the div)
+• No autoplay of videos
+3. Workbench view:
+- Improve the view in the workbench
+- Currently images are not loaded when we have video or animation files
+- If possible adapt automatically the size of the bento grids depending on the image aspect ratio
+4. Component Structure:
+• Create separate SceneDetails component
+• Split AudioPlayer component into MusicPlayer and VoicePlayer components
+This will improve code maintainability and fix current issues.
+
+Additional Features (P2):
+Download Functionality:
+• Add scene content download options
+• Add complete content download as zip
+• Add "Create Video" button for assembly endpoint
+Content Recreation:
+• Add recreation buttons for image/voice
+• Implement popup interface for inputs
+• Prepare for future endpoint integration
+
+Technical Analysis:
+• For P0:
+• Need to debug useProgressiveMedia hook for video/animation
+• Review audio loading logic in AudioPlayer
+• May need to modify URL handling in storage hooks
+• For P1:
+• Create new SceneDetails.tsx component
+• Modify ScenePreview to handle media priority
+• Update styling for consistent aspect ratio handling
+• Split audio components
+• For P2:
+• Add new UI components for information display
+• Implement download functionality
+• Add assembly endpoint integration
+• For P3:
+• Create modal/popup components
+• Prepare recreation interface
