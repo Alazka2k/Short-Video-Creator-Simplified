@@ -23,7 +23,7 @@ const menuItems = [
     icon: LayoutDashboardIcon
   },
   {
-    title: 'Create Video',
+    title: 'Create Content',
     href: '/create',
     icon: PlusCircle
   },
@@ -33,18 +33,18 @@ const menuItems = [
     icon: FolderIcon
   },
   {
-    title: 'My Videos',
-    href: '/dashboard/videos',
-    icon: VideoIcon
+    title: 'Videos',
+    href: '/videos',
+    icon: VideoIcon,
   },
   {
     title: 'Subscription',
-    href: '/dashboard/subscription',
+    href: '/subscription',
     icon: CreditCard
   },
   {
     title: 'Settings',
-    href: '/dashboard/settings',
+    href: '/settings',
     icon: SettingsIcon
   }
 ];

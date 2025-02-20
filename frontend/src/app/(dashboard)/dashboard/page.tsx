@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TokenUsage } from '@/components/dashboard/billing/token-usage';
+import { TokenUsage } from '@/components/billing/token-usage';
 import { Wand2, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

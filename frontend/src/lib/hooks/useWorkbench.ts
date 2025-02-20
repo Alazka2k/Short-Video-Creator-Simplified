@@ -26,7 +26,9 @@ interface JobsResponse {
 }
 
 export function useWorkbench() {
-  const { getM2MToken } = useAuth()
+  const auth = useAuth()
+  if (!auth) throw new Error('useWorkbench must be used within an AuthProvider')
+  const { getM2MToken } = auth
   const [state, setState] = useState<WorkbenchState>({
     filters: {
       sortBy: 'created_at',

@@ -91,8 +91,9 @@ export function ImagePreview({ url, alt, className, onError, onLoad, aspectRatio
   return (
     <div className={cn("relative group", className)}>
       <div className={cn(
-        "relative overflow-hidden rounded-lg border bg-card",
-        isFullscreen && "fixed inset-4 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+        "relative overflow-hidden rounded-lg",
+        isFullscreen ? "fixed inset-4 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm" :
+        "bg-gradient-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20"
       )}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
@@ -131,7 +132,7 @@ export function ImagePreview({ url, alt, className, onError, onLoad, aspectRatio
             size="icon"
             onClick={handleZoomOut}
             disabled={zoomLevel <= 0.5}
-            className="h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80"
+            className="h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 border-violet-500/20 hover:border-violet-500/40"
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
@@ -140,7 +141,7 @@ export function ImagePreview({ url, alt, className, onError, onLoad, aspectRatio
             size="icon"
             onClick={handleZoomIn}
             disabled={zoomLevel >= 3}
-            className="h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80"
+            className="h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 border-violet-500/20 hover:border-violet-500/40"
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
@@ -148,7 +149,7 @@ export function ImagePreview({ url, alt, className, onError, onLoad, aspectRatio
             variant="secondary"
             size="icon"
             onClick={toggleFullscreen}
-            className="h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80"
+            className="h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 border-violet-500/20 hover:border-violet-500/40"
           >
             <Maximize2 className="h-4 w-4" />
           </Button>

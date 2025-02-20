@@ -120,135 +120,137 @@ export function JobHeader({
   }
 
   return (
-    <div className="space-y-4 bg-card rounded-lg border p-6">
-      {/* Title and Creation Time */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          {created_at && (
-            <p className="text-sm text-muted-foreground">
-              Created {formatDistanceToNow(new Date(created_at), { addSuffix: true })}
-            </p>
-          )}
+    <div className="rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 p-[1px]">
+      <div className="space-y-4 bg-card rounded-xl p-6">
+        {/* Title and Creation Time */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold">{title}</h1>
+            {created_at && (
+              <p className="text-sm text-muted-foreground">
+                Created {formatDistanceToNow(new Date(created_at), { addSuffix: true })}
+              </p>
+            )}
+          </div>
         </div>
+
+        {/* Description */}
+        {description && (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        )}
+
+        {/* Hashtags */}
+        {hashtag && (
+          <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+            {getHashtags(hashtag).map((tag) => (
+              <div 
+                key={tag}
+                className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full"
+              >
+                <Hash className="w-4 h-4" />
+                <span>{tag.substring(1)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Service Sequence */}
+        {service_sequence.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap border-t pt-4">
+            {service_sequence.map((service, index) => (
+              <div
+                key={`${service}-${index}`}
+                className="flex items-center gap-1.5 text-sm bg-muted rounded-full px-3 py-1.5"
+                title={getServiceLabel(service)}
+              >
+                {getServiceIcon(service)}
+                <span>{getServiceLabel(service)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Additional Details Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowDetails(!showDetails)}
+          className="w-full mt-2 border-violet-500/20 hover:border-violet-500/40 transition-colors"
+        >
+          <span className="mr-2">{showDetails ? 'Hide' : 'Show'} Initial Data</span>
+          <ChevronDown className={cn(
+            "w-4 h-4 transition-transform",
+            showDetails && "transform rotate-180"
+          )} />
+        </Button>
+
+        {/* Collapsible Details */}
+        {showDetails && (
+          <div className="mt-4 space-y-4 border-t border-violet-500/20 pt-4">
+            {/* Initial Prompt */}
+            {prompt && (
+              <div>
+                <span className="text-sm font-medium">Initial Prompt:</span>
+                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-gradient-to-br from-violet-500/5 to-purple-500/5 p-3 rounded-lg border border-violet-500/20">{prompt}</p>
+              </div>
+            )}
+
+            {/* Focus / Theme */}
+            {focus && (
+              <div>
+                <span className="text-sm font-medium">Focus / Theme:</span>
+                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-gradient-to-br from-violet-500/5 to-purple-500/5 p-3 rounded-lg border border-violet-500/20">{focus}</p>
+              </div>
+            )}
+
+            {/* Script Settings */}
+            {scriptInfo && Object.values(scriptInfo).some(Boolean) && (
+              <div>
+                <span className="text-sm font-medium">Script Settings:</span>
+                <div className="mt-1 text-sm text-muted-foreground bg-gradient-to-br from-violet-500/5 to-purple-500/5 p-3 rounded-lg border border-violet-500/20 space-y-2">
+                  {scriptInfo.scriptTone && (
+                    <p><span className="font-medium">Tone:</span> {scriptInfo.scriptTone}</p>
+                  )}
+                  {scriptInfo.vocabulary && (
+                    <p><span className="font-medium">Vocabulary:</span> {scriptInfo.vocabulary}</p>
+                  )}
+                  {scriptInfo.pacingStructure && (
+                    <p><span className="font-medium">Pacing:</span> {scriptInfo.pacingStructure}</p>
+                  )}
+                  {scriptInfo.characterPerspective && (
+                    <p><span className="font-medium">Perspective:</span> {scriptInfo.characterPerspective}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Voice Settings */}
+            {elevenlabsVoiceId && (
+              <div>
+                <span className="text-sm font-medium">Voice Settings:</span>
+                <div className="mt-1 text-sm text-muted-foreground bg-gradient-to-br from-violet-500/5 to-purple-500/5 p-3 rounded-lg border border-violet-500/20 space-y-2">
+                  <p>{getVoiceName(elevenlabsVoiceId)}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Visual Settings */}
+            {(aspectRatio || shotStyle) && (
+              <div>
+                <span className="text-sm font-medium">Visual Settings:</span>
+                <div className="mt-1 text-sm text-muted-foreground bg-gradient-to-br from-violet-500/5 to-purple-500/5 p-3 rounded-lg border border-violet-500/20 space-y-2">
+                  {aspectRatio && (
+                    <p>{aspectRatio}</p>
+                  )}
+                  {shotStyle && (
+                    <p>{shotStyle}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Description */}
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      )}
-
-      {/* Hashtags */}
-      {hashtag && (
-        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          {getHashtags(hashtag).map((tag) => (
-            <div 
-              key={tag}
-              className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full"
-            >
-              <Hash className="w-4 h-4" />
-              <span>{tag.substring(1)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Service Sequence */}
-      {service_sequence.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap border-t pt-4">
-          {service_sequence.map((service, index) => (
-            <div
-              key={`${service}-${index}`}
-              className="flex items-center gap-1.5 text-sm bg-muted rounded-full px-3 py-1.5"
-              title={getServiceLabel(service)}
-            >
-              {getServiceIcon(service)}
-              <span>{getServiceLabel(service)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Additional Details Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setShowDetails(!showDetails)}
-        className="w-full mt-2 border-2 hover:border-primary/50 transition-colors"
-      >
-        <span className="mr-2">{showDetails ? 'Hide' : 'Show'} Initial Data</span>
-        <ChevronDown className={cn(
-          "w-4 h-4 transition-transform",
-          showDetails && "transform rotate-180"
-        )} />
-      </Button>
-
-      {/* Collapsible Details */}
-      {showDetails && (
-        <div className="mt-4 space-y-4 border-t pt-4">
-          {/* Initial Prompt */}
-          {prompt && (
-            <div>
-              <span className="text-sm font-medium">Initial Prompt:</span>
-              <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-lg">{prompt}</p>
-            </div>
-          )}
-
-          {/* Focus / Theme */}
-          {focus && (
-            <div>
-              <span className="text-sm font-medium">Focus / Theme:</span>
-              <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap bg-muted p-3 rounded-lg">{focus}</p>
-            </div>
-          )}
-
-          {/* Script Settings */}
-          {scriptInfo && Object.values(scriptInfo).some(Boolean) && (
-            <div>
-              <span className="text-sm font-medium">Script Settings:</span>
-              <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
-                {scriptInfo.scriptTone && (
-                  <p><span className="font-medium">Tone:</span> {scriptInfo.scriptTone}</p>
-                )}
-                {scriptInfo.vocabulary && (
-                  <p><span className="font-medium">Vocabulary:</span> {scriptInfo.vocabulary}</p>
-                )}
-                {scriptInfo.pacingStructure && (
-                  <p><span className="font-medium">Pacing:</span> {scriptInfo.pacingStructure}</p>
-                )}
-                {scriptInfo.characterPerspective && (
-                  <p><span className="font-medium">Perspective:</span> {scriptInfo.characterPerspective}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Voice Settings */}
-          {elevenlabsVoiceId && (
-            <div>
-              <span className="text-sm font-medium">Voice Settings:</span>
-              <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
-                <p>{getVoiceName(elevenlabsVoiceId)}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Visual Settings */}
-          {(aspectRatio || shotStyle) && (
-            <div>
-              <span className="text-sm font-medium">Visual Settings:</span>
-              <div className="mt-1 text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
-                {aspectRatio && (
-                  <p>{aspectRatio}</p>
-                )}
-                {shotStyle && (
-                  <p>{shotStyle}</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 } 

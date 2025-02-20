@@ -1,0 +1,16 @@
+{
+    "options": [
+      {
+        "id": "fade",
+        "name": "Fade",
+        "description": "Fade in and out between scenes",
+        "duration": 1
+      },
+      {
+        "id": "wipeleft",
+        "name": "Wipe Left",
+        "description": "Wipe in from left to right",
+        "duration": 1.5
+      }
+    ]
+}

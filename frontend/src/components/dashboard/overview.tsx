@@ -8,15 +8,17 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 export function DashboardOverview() {
-  const { user } = useAuth();
+  const auth = useAuth();
   const router = useRouter();
+
+  if (!auth) return null;
 
   return (
     <div className="space-y-12 animate-in">
       {/* Welcome section with animation */}
       <div className="flex flex-col gap-2 slide-in-from-top">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
-          Welcome back, {user?.name}
+          Welcome back, {auth.user?.name}
         </h1>
         <p className="text-lg text-muted-foreground">
           Transform your content into professional videos in minutes.
