@@ -165,92 +165,56 @@ export function ScenePreview({
   }
 
   return (
-    <div className={cn("grid grid-cols-[1.5fr_1fr] gap-6", className)}>
-      {/* Media Content Section */}
-      <div className="space-y-4">
-        {/* Main Media Container */}
-        <div className={cn(
-          "relative w-full overflow-hidden rounded-lg border bg-muted",
-          getAspectRatioClass(aspectRatio),
-          // Add max-width constraints based on aspect ratio
-          aspectRatio === "9:16" && "max-w-[300px] mx-auto",
-          aspectRatio === "1:1" && "max-w-[400px] mx-auto",
-          aspectRatio === "16:9" && "max-w-[500px] mx-auto"
-        )}>
-          {getMediaContent()}
-          {Object.entries(mediaErrors).map(([type, error]) => (
-            <div 
-              key={`error-${type}`}
-              className="absolute inset-0 flex items-center justify-center bg-muted"
-            >
-              <p className="text-sm text-muted-foreground">{error}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Right Side Content */}
-      <div className="space-y-4">
-        {/* Description */}
-        {description && (
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <SquareLibrary className="h-4 w-4" />
-              <span className="font-medium">Description</span>
-            </div>
-            <p className="text-sm text-card-foreground">{description}</p>
-          </div>
-        )}
-
-        {/* Voice Content */}
-        {voice?.storageKey && freshUrls[voice.storageKey] && (
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <VoiceIcon className="h-4 w-4" />
-              <span className="font-medium">Voice Narration</span>
-            </div>
-            <AudioPlayer
-              url={freshUrls[voice.storageKey]}
-              onError={() => handleMediaError('voice')}
-            />
-            <div className="flex items-center gap-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
+    <div className="rounded-xl border bg-card p-6 shadow-sm">
+      <div className={cn("grid grid-cols-[1.5fr_1fr] gap-6", className)}>
+        {/* Left Side - Media Content Section */}
+        <div className="flex items-center justify-center">
+          {/* Main Media Container */}
+          <div className={cn(
+            "relative w-full overflow-hidden rounded-lg border bg-muted",
+            getAspectRatioClass(aspectRatio),
+            // Add max-width constraints based on aspect ratio
+            aspectRatio === "9:16" && "max-w-[300px]",
+            aspectRatio === "1:1" && "max-w-[400px]",
+            aspectRatio === "16:9" && "max-w-[550px]"
+          )}>
+            {getMediaContent()}
+            {Object.entries(mediaErrors).map(([type, error]) => (
+              <div 
+                key={`error-${type}`}
+                className="absolute inset-0 flex items-center justify-center bg-muted"
               >
-                <Download className="h-4 w-4 mr-1" />
-                Download
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Recreate
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Visualization Controls */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            {video ? <VideoIcon className="h-4 w-4" /> : 
-             animation ? <AnimationIcon className="h-4 w-4" /> : 
-             <ImageIcon className="h-4 w-4" />}
-            <span className="font-medium">Visualization</span>
-          </div>
-
-          <div className={cn("space-y-4", !video && !animation && "space-y-2")}>
-            {/* Image Section */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ImageIcon className="h-3 w-3" />
-                <span>Image</span>
+                <p className="text-sm text-muted-foreground">{error}</p>
               </div>
-              <div className="flex items-center gap-2">
+            ))}
+          </div>
+        </div>
+
+        {/* Right Side Content */}
+        <div className="space-y-4">
+          {/* Description */}
+          {description && (
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <SquareLibrary className="h-4 w-4" />
+                <span className="font-medium">Description</span>
+              </div>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+          )}
+
+          {/* Voice Content */}
+          {voice?.storageKey && freshUrls[voice.storageKey] && (
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <VoiceIcon className="h-4 w-4" />
+                <span className="font-medium">Voice Narration</span>
+              </div>
+              <AudioPlayer
+                url={freshUrls[voice.storageKey]}
+                onError={() => handleMediaError('voice')}
+              />
+              <div className="flex items-center gap-2 mt-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -267,57 +231,25 @@ export function ScenePreview({
                   <RefreshCw className="h-4 w-4 mr-1" />
                   Recreate
                 </Button>
-                {(video || animation) && image && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowOriginalImage(!showOriginalImage)}
-                  >
-                    {showOriginalImage ? 'Hide' : 'Show'} Original
-                  </Button>
-                )}
               </div>
-              
-              {/* Original Image Preview */}
-              {showOriginalImage && image?.storageKey && freshUrls[image.storageKey] && (
-                <div className={cn(
-                  "relative overflow-hidden rounded-lg border bg-muted mt-2",
-                  getAspectRatioClass(aspectRatio),
-                  // Add same max-width constraints for original image
-                  aspectRatio === "9:16" && "max-w-[200px] mx-auto",
-                  aspectRatio === "1:1" && "max-w-[250px] mx-auto",
-                )}>
-                  <ImagePreview
-                    url={freshUrls[image.storageKey]}
-                    alt={`Scene ${sceneId} Original Image`}
-                    className="w-full h-full"
-                    onError={() => handleMediaError('original-image')}
-                    aspectRatio={aspectRatio}
-                  />
-                </div>
-              )}
+            </div>
+          )}
+
+          {/* Visualization Controls */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              {video ? <VideoIcon className="h-4 w-4" /> : 
+               animation ? <AnimationIcon className="h-4 w-4" /> : 
+               <ImageIcon className="h-4 w-4" />}
+              <span className="font-medium">Visualization</span>
             </div>
 
-            {/* Separator between Image and Video/Animation */}
-            {(video || animation) && (
-              <Separator className="my-2" />
-            )}
-
-            {/* Video/Animation Section */}
-            {(video || animation) && (
+            <div className={cn("space-y-4", !video && !animation && "space-y-2")}>
+              {/* Image Section */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {video ? (
-                    <>
-                      <VideoIcon className="h-3 w-3" />
-                      <span>Video</span>
-                    </>
-                  ) : animation ? (
-                    <>
-                      <AnimationIcon className="h-3 w-3" />
-                      <span>Animation</span>
-                    </>
-                  ) : null}
+                  <ImageIcon className="h-3 w-3" />
+                  <span>Image</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -336,9 +268,79 @@ export function ScenePreview({
                     <RefreshCw className="h-4 w-4 mr-1" />
                     Recreate
                   </Button>
+                  {(video || animation) && image && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowOriginalImage(!showOriginalImage)}
+                    >
+                      {showOriginalImage ? 'Hide' : 'Show'} Original
+                    </Button>
+                  )}
                 </div>
+                
+                {/* Original Image Preview */}
+                {showOriginalImage && image?.storageKey && freshUrls[image.storageKey] && (
+                  <div className={cn(
+                    "relative overflow-hidden rounded-lg border bg-muted mt-2",
+                    getAspectRatioClass(aspectRatio),
+                    // Add same max-width constraints for original image
+                    aspectRatio === "9:16" && "max-w-[150px] mx-auto",
+                    aspectRatio === "1:1" && "max-w-[250px] mx-auto",
+                  )}>
+                    <ImagePreview
+                      url={freshUrls[image.storageKey]}
+                      alt={`Scene ${sceneId} Original Image`}
+                      className="w-full h-full"
+                      onError={() => handleMediaError('original-image')}
+                      aspectRatio={aspectRatio}
+                    />
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Separator between Image and Video/Animation */}
+              {(video || animation) && (
+                <Separator className="my-2" />
+              )}
+
+              {/* Video/Animation Section */}
+              {(video || animation) && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {video ? (
+                      <>
+                        <VideoIcon className="h-3 w-3" />
+                        <span>Video</span>
+                      </>
+                    ) : animation ? (
+                      <>
+                        <AnimationIcon className="h-3 w-3" />
+                        <span>Animation</span>
+                      </>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Recreate
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
