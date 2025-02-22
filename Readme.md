@@ -14,9 +14,9 @@
 11. [Data Storage System](#data-storage-system)
 12. [Database Architecture and Design](#database-architecture-and-design)
 13. [Output Format](#output-format)
-13. [Testing](#testing)
-14. [Source Code Export](#source-code-export)
-15. [Storage Setup](#storage-setup)
+14. [Testing](#testing)
+15. [Source Code Export](#source-code-export)
+16. [Storage Setup](#storage-setup)
 
 ## Introduction
 
@@ -35,6 +35,7 @@ This project aims to streamline the content creation pipeline by integrating sev
 
 ## Features
 
+### Core Features
 - Efficient CSV input processing for batch content creation with multiple prompts
 - AI-powered script generation using advanced GPT models
 - Realistic voice narration synthesis using Elevenlabs
@@ -45,18 +46,41 @@ This project aims to streamline the content creation pipeline by integrating sev
 - Structured output optimized for video editing workflows
 - Highly configurable pipeline to suit various content needs
 - Robust error handling and comprehensive logging
-- Separate test environment for all services
-- Integration test for end-to-end workflow verification
-- Source code export functionality for easy sharing and versioning
-- API Gateway for centralized request handling and direct service communication
-- Fully functional video generation service with API gateway integration
-- Database integration for persistent storage of job and content data
-- Planned external file storage system for generated media files
-- Automated video assembly with JSON2Video integration
-- Support for scene transitions and layered media
+
+### Frontend Features
+- Modern, responsive React/Next.js application
+- Authentication system with Auth0 integration
+- Protected routes and M2M token flow
+- Dark/Light mode support
+- Content creation workflow with:
+  - Script settings customization
+  - Visual style selection
+  - Format selection (aspect ratios)
+  - Scene transition management
+  - Preview capabilities for all media types
+- Dashboard with:
+  - Project overview
+  - Job management
+  - Content organization
+  - Quick actions menu
+
+### Video Assembly Features
+- Scene transition selection and management
+- Multiple aspect ratio support (16:9, 9:16, 1:1)
+- Individual scene download capabilities
+- Preview functionality for all content types
+- Automated video assembly with transitions
 - Background music integration
-- Local media serving through API gateway
-- Structured video project configuration
+- Scene management and organization
+
+### System Features
+- API Gateway for centralized request handling
+- Microservices architecture
+- Database integration for all services
+- AWS S3 storage integration
+- Comprehensive error handling
+- Detailed logging system
+- Test environment for all services
 
 ## Prerequisites
 
@@ -364,50 +388,129 @@ SHORT-VIDEO-CREATOR-SIMPLIFIED/
 ## Architecture
 
 ### Frontend Architecture
-The frontend is built with Next.js 14 and follows a modern, component-based architecture:
+The frontend is built with Next.js 14 and follows a modern, component-based architecture with a focus on performance and user experience:
 
 #### App Structure
 - `app/`
-  - `(marketing)/` - Public marketing pages
-    - `page.tsx` - Landing page
-    - `showcase/` - Example videos showcase
-    - `features/` - Detailed features page
+  - `(auth)/` - Authentication pages
+    - `login/` - Login page
+    - `register/` - Registration page
   - `(dashboard)/` - Protected dashboard area
     - `layout.tsx` - Dashboard layout wrapper
-    - `videos/` - Video management
-    - `create/` - Video creation
+    - `dashboard/` - Main dashboard view
+    - `workbench/` - Content workbench
+      - `[jobId]/` - Job details page
+    - `create/` - Video creation flow
+      - `quick/` - Quick creation mode
+      - `advanced/` - Advanced editor
     - `settings/` - User settings
+  - `(marketing)/` - Public marketing pages
+    - `page.tsx` - Landing page
+    - `pricing/` - Pricing plans
+    - `features/` - Features showcase
 
-#### Components
-- `marketing/` - Marketing page components
-  - `hero/` - Hero section with demo carousel
-  - `features/` - Features grid layout
-  - `process/` - How it works steps
-  - `testimonials/` - User success stories
-  - `showcase/` - Video examples display
-- `layout/` - Shared layout components
-  - `header.tsx` - Main navigation
-  - `footer.tsx` - Site footer
-  - `dashboard-layout.tsx` - Dashboard structure
-  - `sidebar.tsx` - Dashboard navigation
-- `ui/` - Reusable UI components
-- `auth/` - Authentication components
-- `video/` - Video-related components
+#### Components Organization
+- `components/`
+  - `ui/` - Reusable UI components
+    - `button.tsx` - Button component
+    - `card.tsx` - Card component
+    - `select-standard.tsx` - Standard select component
+    - `tooltip.tsx` - Tooltip component
+    - `3d-carousel.tsx` - 3D carousel for previews
+  - `job-details/` - Job management components
+    - `ScenePreview.tsx` - Scene preview component
+    - `JobHeader.tsx` - Job header information
+    - `AudioPlayer.tsx` - Audio playback component
+    - `ImagePreview.tsx` - Image preview component
+  - `video-creation/` - Video creation components
+    - `sections/` - Creation flow sections
+      - `FormatSelection.tsx` - Aspect ratio selection
+      - `VisualStyleCarousel.tsx` - Style selection
+    - `steps/` - Creation flow steps
+  - `providers/` - Context providers
+    - `theme-provider.tsx` - Theme context
+    - `auth0-provider.tsx` - Auth0 context
+    - `api-provider.tsx` - API context
+  - `layout/` - Layout components
+    - `sidebar.tsx` - Dashboard navigation
+    - `header.tsx` - Main header
+
+#### State Management
+- React Query for server state
+- Context API for global state
+- Custom hooks for shared logic:
+  - `useJobDetails` - Job data management
+  - `useStorageUrls` - Storage URL handling
+  - `useWorkbench` - Workbench state
+  - `useVideoCreationState` - Creation flow state
+  - `useProgressiveMedia` - Media loading
 
 #### Key Features
-- Modern, responsive design
-- Server and client components
-- Route groups for organization
-- Protected routes with authentication
-- Optimized images and animations
-- Dark/light mode support
+- Server and Client Components optimization
+- Progressive image/video loading
+- Responsive design with Tailwind CSS
+- Dark/light mode with system preference
+- Real-time preview capabilities
+- Optimized media handling
+- Enhanced error boundaries
+- Toast notifications
+- Loading states and animations
+- Transition animations
+- Protected routes
+- M2M token flow
+- API request interceptors
+
+### Database Updates
+Recent database schema updates include:
+
+1. **Job Status Enhancement** (20250219000000)
+   - Increased job status field length to 50 characters
+   - Added support for more detailed status tracking
+
+2. **Job Status Constraints** (20250219000001)
+   - Added new status: 'completed_with_errors'
+   - Updated status check constraints
+   - Migrated existing status values
+
+3. **Progress Tracking** (20250219000002)
+   - Added 'in_progress' status
+   - Enhanced job progress tracking
+   - Updated status constraints
+
+4. **Service Integration**
+   - Enhanced service output tables
+   - Added storage key tracking
+   - Improved metadata handling
+   - Added URL management
+
+5. **Key Features**:
+   - UUID for job identification
+   - Comprehensive metadata storage
+   - Flexible JSON storage for parameters
+   - Enhanced status tracking
+   - Progress monitoring
+   - Service output linking
+   - Storage integration
+   - URL management
+   - Error tracking
+   - Transition data storage
+
+6. **Data Flow Improvements**:
+   - Enhanced job tracking
+   - Better error handling
+   - Improved status transitions
+   - More detailed progress tracking
+   - Better service integration
+   - Enhanced metadata storage
+   - Optimized query performance
+
+
 
 The application follows a microservices architecture designed for flexibility and maintainability:
-
 1. API Gateway: Handles routing and direct communication with all services
 2. Input Processing: Parses CSV input with multiple prompts and loads configuration parameters
-3. Authentication Service: Manages user registration, login, and authorization (Planned)
-4. Job Service: Orchestrates the content generation process and manages job statuses (Planned)
+3. Authentication Service: Manages user registration, login, and authorization
+4. Job Service: Orchestrates the content generation process and manages job statuses
 5. Billing Service: Handles subscription management and usage-based billing (Planned)
 6. LLM Service: Generates dynamic script content based on input and parameters
 7. Voice Generation Service: Synthesizes natural-sounding narration from the generated script
@@ -458,14 +561,7 @@ The project uses a PostgreSQL database to store persistent data. The database sc
 15. **music_outputs**: Stores information about generated music.
 16. **animation_outputs**: Contains data about created animations.
 17. **video_outputs**: Stores information about generated videos.
-18. **assembly_outputs**: Stores information about assembled videos
-    - Assembly ID
-    - Job ID
-    - Project ID (JSON2Video)
-    - Status
-    - Video file URL
-    - Assembly configuration
-    - Metadata
+18. **assembly_outputs**: Stores information about assembled videos.
 
 ### Key Features:
 
@@ -1048,3 +1144,65 @@ The project includes an integrated documentation system:
 - Hot reloading for documentation
 - Preview deployments
 - Automated builds
+
+## Recent Updates and Changes
+
+### Frontend Enhancements
+- Implemented scene transition selection between video scenes
+- Added support for multiple aspect ratios (16:9, 9:16, 1:1)
+- Enhanced preview capabilities for all content types
+- Improved dashboard layout and navigation
+- Added dark/light mode support
+- Implemented responsive design across all components
+- Enhanced error handling with toast notifications
+- Added loading states and animations
+- Improved M2M token flow implementation
+
+### Video Assembly Features
+- Added scene transition selection with visual preview
+- Implemented transition management between scenes
+- Enhanced video assembly process with transition support
+- Added tooltips for transition descriptions
+- Improved layout of assembly controls
+- Added preview capabilities for transitions
+- Enhanced download functionality for individual scenes
+
+### Backend Improvements
+- Enhanced database integration across all services
+- Improved error handling and logging
+- Added support for AWS S3 storage
+- Enhanced API Gateway functionality
+- Improved service communication
+- Added comprehensive testing coverage
+- Enhanced security measures
+
+### Documentation Updates
+- Added detailed frontend documentation
+- Updated API documentation
+- Enhanced setup instructions
+- Added configuration guides
+- Updated project structure documentation
+- Added troubleshooting guides
+
+## Planned Features
+
+### Frontend
+- Template system for quick content creation
+- Advanced analytics dashboard
+- Enhanced project management
+- Improved user settings interface
+- Additional customization options
+
+### Backend
+- Enhanced error recovery
+- Improved performance optimization
+- Additional service integrations
+- Enhanced security features
+- Improved monitoring capabilities
+
+### Infrastructure
+- Enhanced deployment automation
+- Improved scaling capabilities
+- Additional cloud provider support
+- Enhanced backup systems
+- Improved monitoring tools

@@ -1,7 +1,7 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import React, { use, useState, useEffect } from 'react'
+import { Loader2, ArrowLeft, Download, PlayCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useJobDetails } from '@/lib/hooks/useJobDetails'
@@ -16,7 +16,21 @@ import scriptToneData from '@/data/video-creation/script/script-tone_select-opti
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
 import pacingData from '@/data/video-creation/script/pacing-structure_select-option.json'
 import perspectiveData from '@/data/video-creation/script/character-perspective_select-option.json'
+import transitionData from '@/data/video-creation/assembly/transition-select-option.json'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select-standard"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface MediaContent {
   publicUrl: string
@@ -72,6 +86,17 @@ interface JobDetails {
   error: string | null
 }
 
+interface TransitionOption {
+  id: string
+  name: string
+  description: string
+  preview?: string
+}
+
+interface TransitionData {
+  options: TransitionOption[]
+}
+
 // Helper function to find option name by prompt
 const findOptionNameByPrompt = (data: any, prompt: string): string | undefined => {
   if (!prompt) return undefined
@@ -100,10 +125,14 @@ const findShotStyleName = (promptDefinition: string): string | undefined => {
   return undefined
 }
 
+// Add transitions from the JSON file
+const transitionOptions: TransitionOption[] = (transitionData as TransitionData).options
+
 export default function JobDetailsPage({ params }: { params: Promise<{ jobId: string }> }) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { job, loading, error, refreshUrls } = useJobDetails(resolvedParams.jobId)
+  const [selectedTransitions, setSelectedTransitions] = useState<Record<number, string>>({})
 
   // Extract all storage keys
   const storageKeys = job?.metadata?.scenes?.flatMap(scene => {
@@ -129,6 +158,31 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     return () => clearInterval(refreshInterval)
   }, [refreshUrls])
 
+  const handleTransitionChange = (sceneId: number, transitionId: string) => {
+    setSelectedTransitions(prev => ({
+      ...prev,
+      [sceneId]: transitionId
+    }))
+  }
+
+  const handleDownloadAll = async () => {
+    // TODO: Implement download all functionality
+    console.log('Download all clicked')
+  }
+
+  const handleAssemble = async () => {
+    try {
+      const response = await apiClient.post('/api/assembly/create', {
+        jobId: resolvedParams.jobId,
+        transitions: selectedTransitions
+      })
+      // TODO: Handle assembly response
+      console.log('Assembly started:', response)
+    } catch (error) {
+      console.error('Assembly failed:', error)
+    }
+  }
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -141,14 +195,16 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     if (error || !job) {
       return (
         <div className="space-y-4">
-          <Button 
-            variant="outline" 
-            onClick={() => router.push('/workbench')}
-            className="gap-2 border-2 hover:border-primary/50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Workbench
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/workbench')}
+              className="gap-2 border-2 hover:border-primary/50 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Workbench
+            </Button>
+          </div>
           <div className="rounded-lg border bg-card p-6">
             <p className="text-center text-muted-foreground">
               {error || 'Job not found'}
@@ -206,7 +262,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
     return (
       <div className="space-y-8">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
           <Button 
             variant="outline" 
             onClick={() => router.push('/workbench')}
@@ -214,6 +270,24 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Workbench
+          </Button>
+
+          <Button
+            variant="default"
+            onClick={handleAssemble}
+            className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 px-8"
+          >
+            <PlayCircle className="w-4 h-4" />
+            Assemble Video
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleDownloadAll}
+            className="gap-2 border-2 hover:border-primary/50 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Download All
           </Button>
         </div>
 
@@ -247,18 +321,52 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
         {/* Content Preview Section */}
         <div className="grid gap-6">
-          {/* Scenes */}
-          {jobWithFreshUrls.metadata.scenes.map((scene) => (
-            <ScenePreview
-              key={scene.sceneId}
-              sceneId={scene.sceneId}
-              image={scene.image}
-              video={scene.video}
-              animation={scene.animation}
-              voice={scene.voice}
-              description={jobWithFreshUrls.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
-              aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
-            />
+          {jobWithFreshUrls.metadata.scenes.map((scene, index) => (
+            <React.Fragment key={scene.sceneId}>
+              <ScenePreview
+                sceneId={scene.sceneId}
+                image={scene.image}
+                video={scene.video}
+                animation={scene.animation}
+                voice={scene.voice}
+                description={jobWithFreshUrls.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
+                aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+              />
+              
+              {/* Add transition selector after each scene except the last one */}
+              {index < jobWithFreshUrls.metadata.scenes.length - 1 && (
+                <div className="flex items-center justify-center gap-2 py-4">
+                  <div className="h-px w-full max-w-[200px] bg-border" />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Select
+                            value={selectedTransitions[scene.sceneId]}
+                            onValueChange={(value) => handleTransitionChange(scene.sceneId, value)}
+                          >
+                            <SelectTrigger className="w-[180px] border-violet-500/20 hover:border-violet-500/40">
+                              <SelectValue placeholder="Select transition" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {transitionOptions.map((transition) => (
+                                <SelectItem key={transition.id} value={transition.id}>
+                                  {transition.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{transitionOptions.find(t => t.id === selectedTransitions[scene.sceneId])?.description || 'Select a transition effect'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <div className="h-px w-full max-w-[200px] bg-border" />
+                </div>
+              )}
+            </React.Fragment>
           ))}
 
           {/* Music Section (if exists) */}

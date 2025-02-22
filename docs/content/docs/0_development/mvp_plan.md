@@ -1,6 +1,6 @@
 # MVP Development Plan
 
-## Current Status (Updated Jan 11, 2025)
+## Current Status (Updated Feb 19, 2025)
 - ✅ Basic authentication with Auth0 is working
   - ✅ M2M token flow implemented (Initial implementation for /job endpoint)
   - ✅ API proxy for CORS handling
@@ -14,7 +14,7 @@
   - ✅ Fix user ID association with jobs
 - ✅ Image accessibility and error handling improved in Animation and Video services
 - ✅ Job service updated with metadata-based configuration
-- ✅✅anding page modernization completed
+- ✅ Landing page modernization completed
   - ✅ Modern hero section with auto-rotating carousel
   - ✅ Responsive layout and animations
   - ✅ How It Works section with process steps
@@ -54,14 +54,14 @@
   - ✅ Initial job listing implementation
   - ✅ Basic routing structure
   - ✅ Fix user ID association with jobs
-  - ⏳ Important enhancements of overview: 
-  - ⏳ Job details page (/workbench/:jobId)
-  - ⏳ Validate if the user who calls the jobId has the same user id
-  - ⏳ Content preview functionality like a video cutting tool (show all generated content as a flow)
-  - ⏳ Content recreation options (voice, music, visual) also needs to update the job itself in the database
-  - ⏳ Content download functionality in the overview (download all) and in the details
-  - ⏳ Loading mechanism during job generation on the content creation page and the job overview page
-  - ⏳ Enhanced job status tracking
+  - ✅ Job details page (/workbench/:jobId)
+  - ✅ Content preview functionality
+  - ✅ Scene transition selection
+  - ✅ Content download functionality
+  - ✅ Loading states and animations
+  - ✅ Enhanced job status tracking
+  - ⏳ Content recreation options (voice, music, visual)
+  - ⏳ Update job data in database after recreation
 - ⏳ Video creation flow in progress
   - ✅ Basic video creation form
   - ✅ Script settings with categories
@@ -71,8 +71,10 @@
   - ✅ Content type selection
   - ✅ Visualization type selection
   - ✅ Real-time settings summary
-  - ⏳ Video assembly options in job details page (e.g. transitions)
-  - ⏳ Save current updated by updating the job data in the database (new call update job)
+  - ✅ Video assembly options in job details page
+  - ✅ Scene transitions with tooltips
+  - ✅ Multiple aspect ratio support
+  - ⏳ Save current updates to job data
   - ⏳ Advanced format options
   - ⏳ Custom style presets
   - ⏳ Batch processing support
@@ -98,8 +100,8 @@
 - ✅ Dedicated Features Page with interactive demos
 - ⏳ Pricing preview
 - ⏳ FAQ Section
-- ⏳ Some Blog Entries (Development of Alpha Version?)
-- ⏳ Link documentation page to http://localhost:4000/docs?
+- ⏳ Blog Entries
+- ⏳ Documentation page
 - ⏳ Contact
 - ⏳ Privacy Policy
 - ⏳ Terms of Service
@@ -120,9 +122,13 @@
 
 ### ✅ 1.4 Dashboard Implementation
 - ✅ Create main dashboard layout
-- ✅ Add a button for the user to go to the video creation page
-- ✅ Add project/video list view (dummy)
-- ✅ Add quick actions menu for Quick Creation and Advanced Creation
+- ✅ Add video creation navigation
+- ✅ Add project/video list view
+- ✅ Add quick actions menu
+- ✅ Implement workbench layout
+- ✅ Add job details view
+- ✅ Implement scene transitions
+- ✅ Add content preview functionality
 
 ### ⏳ 1.5 Video Creation Flow
 - ✅ Implement basic video creation form
@@ -146,19 +152,16 @@
   - ✅ Job service integration
   - ✅ Content generation pipeline
   - ✅ Job status tracking
-  - ✅ Store the user id for each job run (currently it is (null) in the database)
+  - ✅ User ID association with jobs
 - ⏳ Content Creation Overview & Dashboard
-  - [ ] Overview Dashboard for current jobs
-  - [ ] Job details page (/job/:id) / -> Automatic forwarding after job execution request to job/generate
-  - [ ] Loading mechanism until response is received from job/generate
-  - [ ] Updated rename "Projects" to "Content Workbench" page tab on the left side
-  - [ ] List all content pieces in a visual appealing process like a video cutting tool from the first response of job/generate   
-  - [ ] Content recreation options (voice, music, visual) -> Has to send a request to each service, e.g. voice/generate with the job id
-  - [ ] Only show the latest content after content recreation option for a job run. We may need to enhance the get job information endpoint as a query. For a certain job_id and scene_id in each content table we have to query the latest content piece. 
-  - [ ] Content download functionality (all, select option for each content piece)
-  - [ ] Transition selection between scenes
-- ⏳ My Videos dashboard
-  - [ ] Overview Dashboard of all finalized videos (asssembly_outputs table)
+  - ✅ Overview Dashboard for current jobs
+  - ✅ Job details page with transitions
+  - ✅ Loading states and animations
+  - ✅ Content Workbench implementation
+  - ✅ Visual content preview
+  - ⏳ Content recreation options
+  - ⏳ Content version management
+  - ⏳ Enhanced download options
 
 ## Phase 2: Implement Missing Core Features
 
@@ -190,18 +193,15 @@
 
 #### 2.3.1 Video Management (Backend)
 - [ ] GET /api/videos - Fetch video list with pagination and filters
-- [ ] GET /api/videos/:id - Get single video details
-- [ ] DELETE /api/videos/:id - Delete a video
-- [ ] POST /api/videos/:id - Update video metadata
 
-#### 2.3.3. Frontend Enhancements of "My Videos" and "Projects" with new API endpoints (Frontend)
-- [ ] Connect and add backend implementation for "Projects" view
+#### 2.3.2. Frontend Enhancements of "My Videos" with new API endpoints (Frontend)
 - [ ] Connect and add backend implementation for "My videos" view
 
-#### 2.3.4. Video Assembly Enhancements (Frontend)
-- [ ] Add video assembly options
-- [ ] Add progress visualization
+#### 2.3.3. Video Assembly Enhancements (Frontend)
 - [ ] Add video download functionality
+
+#### 2.3.4. Video Dashboard Enhancements (Frontend)
+- [ ] Update the Dashboard with the latest status
 
 ## Phase 3: Fix known bugs and security issues
 
@@ -212,7 +212,6 @@
 
 ### 3.2. Security issues
 - [ ] Fix the encryption of password and username from the frontend (currently it is visible in the network tab of the browser)
-
 
 ## Phase 3: Testing & Refinement
 - User authentication
@@ -231,17 +230,28 @@
 
 ### 5.1. Important and Critical Enhancements
 - [ ] Music Generation with lyrics
-- [ ] Direct upload functionality in My Video Dashboard
-- [ ] Exchange functionality of content (e.g. add a video scene in the content creation interface)
+- [ ] Find a way to align voice length with video scene length
 - [ ] Select Option for Video Duration is not working well
 
 ### 5.2. Feature, Profile and Protected Routes Enhancements
-- [ ] Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0)
-- [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
+#### 5.2.1 Profile Management (Frontend?)
+- [ ] Add progress visualization (after execution of a job)
+
+#### 5.2.2 High Priority Enhancements Content Creation to Video Features (Frontend)
+- [ ] Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0) with new input
 - [ ] Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
+
+#### 5.2.3 Video Assembly Enhancements (Frontend)
+- [ ] Add more video assembly options in the Content Overview page
+
+#### 5.2.4 Functionality Enhancements Content Creation to Video Features (Frontend)
+- [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
+
+#### 5.2.5 Functionality Enhancements Video Creation Flow (Frontend)
 - [ ] Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 
-#### 5.2.1 Profile Management (Frontend?)
+### 5.3. Profile Management Enhancements
+#### 5.3.1 Profile Management (Frontend?)
 - [ ] Add profile editing functionality
 - [ ] Update name/display name
 - [ ] Change profile picture
