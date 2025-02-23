@@ -31,6 +31,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { handleBulkDownload } from '@/lib/utils/download'
+import { toast } from '@/components/ui/use-toast'
 
 interface MediaContent {
   publicUrl: string
@@ -133,6 +135,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
   const resolvedParams = use(params)
   const { job, loading, error, refreshUrls } = useJobDetails(resolvedParams.jobId)
   const [selectedTransitions, setSelectedTransitions] = useState<Record<number, string>>({})
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // Extract all storage keys
   const storageKeys = job?.metadata?.scenes?.flatMap(scene => {
@@ -166,8 +169,25 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
   }
 
   const handleDownloadAll = async () => {
-    // TODO: Implement download all functionality
-    console.log('Download all clicked')
+    if (!job?.metadata?.scenes) {
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "No content available to download",
+      })
+      return
+    }
+
+    setIsDownloading(true)
+    try {
+      await handleBulkDownload(
+        job.metadata.scenes, 
+        job.job_id,
+        job.metadata.llmResult?.title || `content_${job.job_id}`
+      )
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const handleAssemble = async () => {
@@ -284,10 +304,15 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           <Button
             variant="outline"
             onClick={handleDownloadAll}
+            disabled={isDownloading || !job?.metadata?.scenes}
             className="gap-2 border-2 hover:border-primary/50 transition-colors"
           >
-            <Download className="w-4 h-4" />
-            Download All
+            {isDownloading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {isDownloading ? 'Downloading...' : 'Download All'}
           </Button>
         </div>
 

@@ -10,7 +10,10 @@ interface StorageUrlsResponse {
 const urlCache = new Map<string, { url: string; timestamp: number }>()
 
 export function useStorageUrls(storageKeys: string[] = [], options = {}) {
-  const { getM2MToken } = useAuth()
+  const auth = useAuth()
+  if (!auth) throw new Error('Auth context not available')
+  
+  const { getM2MToken } = auth
   const queryClient = useQueryClient()
 
   // Filter out keys that are already in cache and not expired
