@@ -39,6 +39,11 @@ const SERVICE_PERMISSIONS = {
     read: 'read:job',
     manage: 'manage:job'
   },
+  storage: {
+    download: 'download:media',
+    upload: 'upload:media',
+    manage: 'manage:media'
+  },
   user: {
     manage_projects: 'manage:projects',
     use_templates: 'use:templates',
@@ -95,6 +100,10 @@ const ENDPOINT_PERMISSIONS = {
   '/api/job/jobs': SERVICE_PERMISSIONS.job.read,
   '/api/job/jobs/*': SERVICE_PERMISSIONS.job.read,
 
+  // Download Service Endpoints
+  '/api/download': SERVICE_PERMISSIONS.storage.download,
+  '/api/download/*': SERVICE_PERMISSIONS.storage.download,
+
   // User Service Endpoints (for frontend access)
   '/api/user/profile': SERVICE_PERMISSIONS.user.api_access,
   '/api/user/projects': SERVICE_PERMISSIONS.user.manage_projects,
@@ -102,7 +111,6 @@ const ENDPOINT_PERMISSIONS = {
   '/api/user/templates': SERVICE_PERMISSIONS.user.use_templates,
   '/api/user/team': SERVICE_PERMISSIONS.user.manage_team,
   '/api/user/analytics': SERVICE_PERMISSIONS.user.view_analytics,
-
   '/api/user/branding': SERVICE_PERMISSIONS.user.custom_branding
 };
 

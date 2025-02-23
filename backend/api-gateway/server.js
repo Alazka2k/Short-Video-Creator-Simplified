@@ -20,6 +20,7 @@ const videoRoutes = require('./routes/video');
 const jobRoutes = require('./routes/job');
 const assemblyRoutes = require('./routes/assembly');
 const storageRoutes = require('./routes/storage');
+const downloadRoutes = require('./routes/download');
 
 // Log environment configuration
 logger.info('Environment Configuration:', {
@@ -123,12 +124,11 @@ app.use('/api/animation', animationRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/job', jobRoutes);
 app.use('/api/assembly', assemblyRoutes);
+app.use('/api/storage', storageRoutes);
+app.use('/api/download', downloadRoutes);
 
 // Auth routes
 app.use('/api/auth', authRoutes);
-
-// Storage routes
-app.use('/api/storage', storageRoutes);
 
 // Add media serving endpoint
 app.use('/media', serviceAuthMiddleware, express.static(path.join(__dirname, '../../data/output')));

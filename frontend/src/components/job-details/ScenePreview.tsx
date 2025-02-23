@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as VoiceIcon } from 'lucide-react'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 import { Separator } from '@/components/ui/separator'
+import { handleMediaDownload } from '@/lib/utils/download'
 
 interface MediaContent {
   publicUrl: string
@@ -46,6 +47,7 @@ export function ScenePreview({
 }: ScenePreviewProps) {
   const [showOriginalImage, setShowOriginalImage] = useState(false)
   const [mediaErrors, setMediaErrors] = useState<{[key: string]: string}>({})
+  const [isDownloading, setIsDownloading] = useState<{[key: string]: boolean}>({})
 
   // Get storage keys for all media
   const storageKeys = [
@@ -164,6 +166,26 @@ export function ScenePreview({
     return null
   }
 
+  const handleDownload = async (type: 'image' | 'video' | 'voice' | 'animation', content?: MediaContent) => {
+    if (!content?.storageKey) return;
+    
+    const freshUrl = freshUrls[content.storageKey];
+    if (!freshUrl) {
+      await refreshUrls([content.storageKey]);
+      return; // Will trigger a re-render with fresh URL
+    }
+
+    setIsDownloading(prev => ({ ...prev, [type]: true }));
+    try {
+      await handleMediaDownload(type, {
+        ...content,
+        publicUrl: freshUrl // Use the fresh URL instead of the original publicUrl
+      });
+    } finally {
+      setIsDownloading(prev => ({ ...prev, [type]: false }));
+    }
+  }
+
   return (
     <div className="rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 p-[1px]">
       <div className="rounded-xl bg-card">
@@ -219,10 +241,15 @@ export function ScenePreview({
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled
+                    onClick={() => handleDownload('voice', voice)}
+                    disabled={isDownloading['voice']}
                     className="border-violet-500/20 hover:border-violet-500/40"
                   >
-                    <Download className="h-4 w-4 mr-1" />
+                    {isDownloading['voice'] ? (
+                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-1" />
+                    )}
                     Download
                   </Button>
                   <Button
@@ -258,10 +285,15 @@ export function ScenePreview({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled
+                      onClick={() => handleDownload('image', image)}
+                      disabled={isDownloading['image']}
                       className="border-violet-500/20 hover:border-violet-500/40"
                     >
-                      <Download className="h-4 w-4 mr-1" />
+                      {isDownloading['image'] ? (
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-1" />
+                      )}
                       Download
                     </Button>
                     <Button
@@ -330,10 +362,15 @@ export function ScenePreview({
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled
+                        onClick={() => handleDownload(video ? 'video' : 'animation', video || animation)}
+                        disabled={isDownloading[video ? 'video' : 'animation']}
                         className="border-violet-500/20 hover:border-violet-500/40"
                       >
-                        <Download className="h-4 w-4 mr-1" />
+                        {isDownloading[video ? 'video' : 'animation'] ? (
+                          <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4 mr-1" />
+                        )}
                         Download
                       </Button>
                       <Button
