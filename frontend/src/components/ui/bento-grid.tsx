@@ -1,7 +1,8 @@
 'use client';
 
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { Download, Loader2 } from "lucide-react";
+import { Button } from "./button";
 
 export interface BentoItem {
     title: string;
@@ -13,10 +14,13 @@ export interface BentoItem {
     }>;
     meta?: string;
     cta?: string;
-    colSpan?: number;
+    gridSpan?: number;
     hasPersistentHover?: boolean;
     previewUrl?: string | null;
     jobId: string;
+    aspectRatio?: string;
+    onDownload?: () => void;
+    isDownloading?: boolean;
 }
 
 interface BentoGridProps {
@@ -24,6 +28,19 @@ interface BentoGridProps {
 }
 
 export function BentoGrid({ items = [] }: BentoGridProps) {
+    const getAspectRatioClass = (ratio?: string) => {
+        switch (ratio) {
+            case "16:9":
+                return "aspect-video"
+            case "1:1":
+                return "aspect-square"
+            case "9:16":
+                return "aspect-[9/16]"
+            default:
+                return "aspect-square"
+        }
+    }
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 max-w-7xl mx-auto">
             {items.map((item) => (
@@ -34,8 +51,7 @@ export function BentoGrid({ items = [] }: BentoGridProps) {
                         "border border-gray-100/80 dark:border-white/10 bg-white dark:bg-black",
                         "hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:hover:shadow-[0_2px_12px_rgba(255,255,255,0.03)]",
                         "hover:-translate-y-0.5 will-change-transform",
-                        item.colSpan || "col-span-1",
-                        item.colSpan === 2 ? "md:col-span-2" : "",
+                        item.gridSpan === 2 ? "md:col-span-2" : "col-span-1",
                         {
                             "shadow-[0_2px_12px_rgba(0,0,0,0.03)] -translate-y-0.5":
                                 item.hasPersistentHover,
@@ -43,29 +59,26 @@ export function BentoGrid({ items = [] }: BentoGridProps) {
                                 item.hasPersistentHover,
                         }
                     )}
-                    onClick={() => window.open(`/workbench/${item.jobId}`, '_blank')}
-                    style={{ cursor: 'pointer' }}
                 >
                     <div className="relative flex flex-col space-y-3">
-                        {/* Preview image/video if available */}
-                        {item.previewUrl && (
-                            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-black/5 dark:bg-white/5">
-                                {item.previewUrl.endsWith('.mp4') ? (
-                                    <video
-                                        src={item.previewUrl}
-                                        className="w-full h-full object-cover"
-                                        controls
-                                        muted
-                                    />
-                                ) : (
+                        {/* Preview container */}
+                        <div 
+                            className="relative w-full rounded-lg overflow-hidden bg-black/5 dark:bg-white/5 cursor-pointer"
+                            onClick={() => window.open(`/workbench/${item.jobId}`, '_blank')}
+                        >
+                            {item.previewUrl && (
+                                <div className={cn(
+                                    "w-full",
+                                    getAspectRatioClass(item.aspectRatio)
+                                )}>
                                     <img
                                         src={item.previewUrl}
                                         alt={item.title}
                                         className="w-full h-full object-cover"
                                     />
-                                )}
-                            </div>
-                        )}
+                                </div>
+                            )}
+                        </div>
 
                         {/* Title and description */}
                         <div className="space-y-2">
@@ -93,8 +106,25 @@ export function BentoGrid({ items = [] }: BentoGridProps) {
                             ))}
                         </div>
 
-                        {/* CTA */}
-                        <div className="flex justify-end">
+                        {/* Actions */}
+                        <div className="flex justify-between items-center">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    item.onDownload?.();
+                                }}
+                                disabled={item.isDownloading}
+                                className="border-violet-500/20 hover:border-violet-500/40"
+                            >
+                                {item.isDownloading ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                ) : (
+                                    <Download className="h-4 w-4 mr-1" />
+                                )}
+                                {item.isDownloading ? 'Downloading...' : 'Download'}
+                            </Button>
                             <span className="text-xs text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
                                 {item.cta || "View Details →"}
                             </span>

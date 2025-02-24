@@ -60,6 +60,7 @@
   - ✅ Content download functionality
   - ✅ Loading states and animations
   - ✅ Enhanced job status tracking
+  - ✅ Download all scenes as zip file
 - ⏳ Video creation flow in progress
   - ✅ Basic video creation form
   - ✅ Script settings with categories
@@ -72,6 +73,7 @@
   - ✅ Video assembly options in job details page
   - ✅ Scene transitions with tooltips
   - ✅ Multiple aspect ratio support
+
 
 ## MVP Goals
 1. Create usable content for marketing
@@ -141,7 +143,7 @@
   - ✅ Loading states and animations
   - ✅ Content Workbench implementation
   - ✅ Visual content preview (job details page)
-  - ⏳ Enhanced / Possibility to download options
+  - ✅ Enhanced / Possibility to download options (download all, download single scene)
   - ⏳ Improve the grid view of the workbench (align the sizes of the grids to the images aspect ratio)
   - ⏳ Improve the loading feedback after job execution
 

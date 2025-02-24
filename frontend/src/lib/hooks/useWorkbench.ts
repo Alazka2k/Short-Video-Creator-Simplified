@@ -3,6 +3,8 @@ import { apiClient } from '@/lib/api/apiClient'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useState } from 'react'
 import { useStorageUrls } from './useStorageUrls'
+import { handleBulkDownload } from '@/lib/utils/download'
+import { toast } from '@/components/ui/use-toast'
 
 interface WorkbenchState {
   filters: {
@@ -39,6 +41,7 @@ export function useWorkbench() {
       limit: 20
     }
   })
+  const [downloadingJobs, setDownloadingJobs] = useState<Record<string, boolean>>({})
 
   // Query for jobs
   const { 
@@ -120,11 +123,55 @@ export function useWorkbench() {
     }))
   }
 
-  // Transform jobs data to include fresh URLs
+  // Helper function to get aspect ratio from metadata
+  const getAspectRatio = (job: any) => {
+    return job.metadata?.parameters?.llmGenParams?.image?.aspectRatio || '1:1'
+  }
+
+  // Helper function to calculate grid span based on aspect ratio
+  const calculateGridSpan = (aspectRatio: string) => {
+    switch (aspectRatio) {
+      case '16:9':
+        return 2 // Wider images span 2 columns
+      case '1:1':
+        return 1 // Square images span 1 column
+      case '9:16':
+        return 1 // Vertical images span 1 column
+      default:
+        return 1
+    }
+  }
+
+  const handleJobDownload = async (job: any) => {
+    if (!job?.metadata?.scenes) {
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "No content available to download",
+      })
+      return
+    }
+
+    setDownloadingJobs(prev => ({ ...prev, [job.job_id]: true }))
+    try {
+      await handleBulkDownload(
+        job.metadata.scenes,
+        job.job_id,
+        job.metadata.llmResult?.title || `content_${job.job_id}`
+      )
+    } finally {
+      setDownloadingJobs(prev => ({ ...prev, [job.job_id]: false }))
+    }
+  }
+
+  // Transform jobs data to include fresh URLs and aspect ratio information
   const jobs = jobsResponse?.data?.map(job => {
     if (!job.metadata?.scenes?.[0]) return job
     
     const scene = job.metadata.scenes[0]
+    const aspectRatio = getAspectRatio(job)
+    const gridSpan = calculateGridSpan(aspectRatio)
+    
     const updatedScene = {
       ...scene,
       video: scene.video && {
@@ -143,6 +190,8 @@ export function useWorkbench() {
 
     return {
       ...job,
+      aspectRatio,
+      gridSpan,
       metadata: {
         ...job.metadata,
         scenes: [updatedScene, ...job.metadata.scenes.slice(1)]
@@ -161,6 +210,8 @@ export function useWorkbench() {
       totalPages: jobsResponse?.pagination.totalPages || 0
     },
     handleFilterChange,
-    handlePageChange
+    handlePageChange,
+    handleJobDownload,
+    downloadingJobs
   }
 } 
