@@ -54,7 +54,7 @@ export function Pagination({
             return (
               <div 
                 key={`ellipsis-${index}`}
-                className="flex items-center justify-center w-9 h-9"
+                className="flex items-center justify-center w-9 h-9 text-muted-foreground"
               >
                 ...
               </div>
@@ -65,7 +65,11 @@ export function Pagination({
             <Button
               key={page}
               variant={currentPage === page ? "default" : "outline"}
-              className="w-9 h-9 p-0"
+              className={`w-9 h-9 p-0 ${
+                currentPage === page 
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-primary shadow-sm"
+                  : "hover:bg-muted"
+              }`}
               onClick={() => onPageChange(page as number)}
             >
               {page}

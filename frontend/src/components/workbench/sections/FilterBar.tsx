@@ -26,11 +26,6 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
     { id: 'animation', label: 'Animation', value: 'animation' }
   ]
 
-  const sortOptions = [
-    { id: 'createdAt', label: 'Creation Date', value: 'createdAt' },
-    { id: 'updatedAt', label: 'Last Updated', value: 'updatedAt' }
-  ]
-
   const orderOptions = [
     { id: 'desc', label: 'Newest First', value: 'desc' },
     { id: 'asc', label: 'Oldest First', value: 'asc' }
@@ -61,31 +56,15 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
         </Select>
       </div>
 
-      {/* Sort by */}
-      <div className="flex-1 min-w-[200px]">
-        <Select
-          value={filters.sortBy}
-          onValueChange={(value) => onFilterChange({ sortBy: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            {sortOptions.map((option) => (
-              <SelectItem key={option.id} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Sort order */}
       <div className="flex-1 min-w-[200px]">
         <Select
           value={filters.sortOrder}
           onValueChange={(value) => 
-            onFilterChange({ sortOrder: value as 'asc' | 'desc' })
+            onFilterChange({ 
+              sortOrder: value as 'asc' | 'desc',
+              sortBy: 'created_at' // Always sort by creation date
+            })
           }
         >
           <SelectTrigger>

@@ -125,9 +125,14 @@ export function BentoGrid({ items = [] }: BentoGridProps) {
                                 )}
                                 {item.isDownloading ? 'Downloading...' : 'Download'}
                             </Button>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(`/workbench/${item.jobId}`, '_blank')}
+                                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                            >
                                 {item.cta || "View Details →"}
-                            </span>
+                            </Button>
                         </div>
                     </div>
 

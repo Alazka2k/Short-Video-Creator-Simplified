@@ -369,52 +369,84 @@ router.get('/jobs',
         limit,
         sortBy,
         sortOrder,
-        status,
-        ...(services ? { services: services.split(',') } : {}),
-        ...(isApiUser ? {} : { userId: userId.toString() })
+        status
       };
 
-      const response = await axios.get(`${config.services.job.url}/jobs`, {
-        params: filters,
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 30000  // 30 seconds timeout
-      });
-
-      logger.info('Jobs list retrieved:', {
-        status: response.status,
-        hasData: !!response.data,
-        userId,
-        isApiUser,
-        jobCount: response.data?.data?.length || 0,
-        pagination: response.data?.pagination
-      });
-
-      // Process URLs in the response data
-      const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
-      const processedData = await Promise.all(response.data.data.map(async job => {
-        if (job.metadata?.scenes) {
-          for (const scene of job.metadata.scenes) {
-            if (scene.image) {
-              scene.image = await StorageUrlHelper.refreshUrlsInObject(scene.image);
-            }
-            if (scene.video) {
-              scene.video = await StorageUrlHelper.refreshUrlsInObject(scene.video);
-            }
-            if (scene.voice) {
-              scene.voice = await StorageUrlHelper.refreshUrlsInObject(scene.voice);
-            }
-          }
-          if (job.metadata.music) {
-            job.metadata.music = await StorageUrlHelper.refreshUrlsInObject(job.metadata.music);
-          }
+      // Handle services parameter
+      if (services) {
+        if (typeof services === 'string') {
+          filters.services = [services];
+        } else if (Array.isArray(services)) {
+          filters.services = services;
         }
-        return job;
-      }));
+      }
 
-      res.json({
-        data: processedData,
-        pagination: response.data.pagination
+      // Add user ID if not API user
+      if (!isApiUser) {
+        filters.userId = userId.toString();
+      }
+
+      logger.info('Making request to job service:', {
+        url: `${config.services.job.url}/jobs`,
+        filters,
+        userId,
+        isApiUser
       });
+
+      try {
+        const response = await axios.get(`${config.services.job.url}/jobs`, {
+          params: filters,
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000  // 30 seconds timeout
+        });
+
+        logger.info('Jobs list retrieved:', {
+          status: response.status,
+          hasData: !!response.data,
+          userId,
+          isApiUser,
+          jobCount: response.data?.data?.length || 0,
+          pagination: response.data?.pagination
+        });
+
+        // Process URLs in the response data
+        const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+        const processedData = await Promise.all(response.data.data.map(async job => {
+          if (job.metadata?.scenes) {
+            for (const scene of job.metadata.scenes) {
+              if (scene.image) {
+                scene.image = await StorageUrlHelper.refreshUrlsInObject(scene.image);
+              }
+              if (scene.video) {
+                scene.video = await StorageUrlHelper.refreshUrlsInObject(scene.video);
+              }
+              if (scene.voice) {
+                scene.voice = await StorageUrlHelper.refreshUrlsInObject(scene.voice);
+              }
+            }
+            if (job.metadata.music) {
+              job.metadata.music = await StorageUrlHelper.refreshUrlsInObject(job.metadata.music);
+            }
+          }
+          return job;
+        }));
+
+        res.json({
+          data: processedData,
+          pagination: response.data.pagination
+        });
+      } catch (error) {
+        logger.error('Jobs list request error:', {
+          error: error.message,
+          stack: error.stack,
+          status: error.response?.status
+        });
+
+        res.status(error.response?.status || 500).json({
+          error: 'Failed to get jobs list',
+          details: error.response?.data?.details || error.message
+        });
+      }
     } catch (error) {
       logger.error('Jobs list request error:', {
         error: error.message,

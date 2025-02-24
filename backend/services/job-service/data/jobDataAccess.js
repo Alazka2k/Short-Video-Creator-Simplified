@@ -214,7 +214,15 @@ class JobDataAccess {
 
       // Filter by services in service_sequence
       if (filters.services && Array.isArray(filters.services)) {
-        query = query.whereRaw('service_sequence ?& ?', [filters.services]);
+        query = query.where(function() {
+          this.where(function() {
+            this.whereRaw('service_sequence::text ILIKE ?', [`%${filters.services[0]}%`]);
+          });
+          // Add additional service conditions if there are more services
+          for (let i = 1; i < filters.services.length; i++) {
+            this.orWhereRaw('service_sequence::text ILIKE ?', [`%${filters.services[i]}%`]);
+          }
+        });
       }
 
       // Get total count before pagination

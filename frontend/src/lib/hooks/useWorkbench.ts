@@ -63,9 +63,7 @@ export function useWorkbench() {
       }
 
       if (state.filters.services?.length) {
-        state.filters.services.forEach(service => 
-          queryParams.append('services[]', service)
-        )
+        queryParams.append('services', state.filters.services.join(','))
       }
 
       const m2mToken = await getM2MToken()
