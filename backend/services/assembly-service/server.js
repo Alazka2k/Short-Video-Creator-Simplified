@@ -1,8 +1,9 @@
 const express = require('express');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
+const axios = require('axios');
 
-function createServer(assemblyServiceInterface) {
+function createServer(assemblyServiceInterface, storageService) {
   const app = express();
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -25,35 +26,20 @@ function createServer(assemblyServiceInterface) {
       logger.info('Assembly Service: Handling /assemble request');
       logger.info('Assembly Service: Request body:', req.body);
 
-      const { jobId, scenes } = req.body;
+      const { jobId, templateId } = req.body;
 
       // Validate required fields
-      if (!jobId || !scenes || !Array.isArray(scenes)) {
+      if (!jobId || !templateId) {
         return res.status(400).json({ 
           error: 'Missing required parameters', 
-          details: 'jobId and scenes array are required' 
+          details: 'jobId and templateId are required' 
         });
       }
 
-      logger.info(`Assembly Service: Assembling video for job: ${jobId}`);
-      logger.info(`Assembly Service: Scenes: ${JSON.stringify(scenes)}`);
-
-      // Validate each scene has required fields
-      const invalidScenes = scenes.filter(scene => 
-        !scene.sceneId || 
-        typeof scene.duration !== 'number' || 
-        scene.duration <= 0
-      );
-
-      if (invalidScenes.length > 0) {
-        return res.status(400).json({
-          error: 'Invalid scene configuration',
-          details: 'Each scene must have a sceneId and positive duration'
-        });
-      }
+      logger.info(`Assembly Service: Assembling video for job: ${jobId} with template: ${templateId}`);
 
       try {
-        const result = await assemblyServiceInterface.generateContent(jobId, scenes);
+        const result = await assemblyServiceInterface.generateContent(jobId, templateId);
         res.json(result);
       } catch (error) {
         logger.error('Error generating content:', error);
@@ -122,6 +108,101 @@ function createServer(assemblyServiceInterface) {
         error: 'Internal server error',
         details: error.message
       });
+    }
+  });
+
+  // Webhook endpoint for Creatomate render status updates
+  app.post('/webhook', async (req, res) => {
+    try {
+      logger.info('Assembly Service: Processing webhook:', req.body);
+      const { render_id, status, error, metadata, url } = req.body;
+      const { assemblyId, jobId } = JSON.parse(metadata || '{}');
+
+      if (!assemblyId) {
+        logger.error('No assemblyId found in webhook metadata');
+        return res.status(400).json({ error: 'Missing assemblyId in metadata' });
+      }
+
+      switch (status) {
+        case 'succeeded':
+          if (url) {
+            try {
+              // Stream video from Creatomate to S3
+              const response = await axios({
+                method: 'get',
+                url: url,
+                responseType: 'stream'
+              });
+
+              const storageKey = `assembly/${assemblyId}.mp4`;
+              await storageService.s3.upload({
+                Bucket: storageService.bucket,
+                Key: storageKey,
+                Body: response.data,
+                ContentType: 'video/mp4'
+              }).promise();
+
+              const publicUrl = await storageService.getSignedUrl(storageKey, 3600);
+
+              // Update assembly record with storage information
+              await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+                status: 'completed',
+                storage_key: storageKey,
+                public_url: publicUrl,
+                metadata: {
+                  completedAt: new Date().toISOString(),
+                  renderId: render_id,
+                  creatomateUrl: url
+                },
+                updated_at: new Date()
+              });
+
+              logger.info('Assembly completed successfully:', { 
+                assemblyId, 
+                jobId,
+                renderId: render_id,
+                storageKey, 
+                publicUrl 
+              });
+            } catch (storageError) {
+              logger.error('Error storing assembled video:', storageError);
+              await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+                status: 'error',
+                error_message: `Failed to store assembled video: ${storageError.message}`,
+                updated_at: new Date()
+              });
+            }
+          } else {
+            logger.error('No video URL provided in webhook for completed render');
+            await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+              status: 'error',
+              error_message: 'No video URL provided in webhook',
+              updated_at: new Date()
+            });
+          }
+          break;
+
+        case 'failed':
+          await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+            status: 'error',
+            error_message: error || 'Render failed',
+            updated_at: new Date()
+          });
+          logger.error('Assembly failed:', { jobId, assemblyId, renderId: render_id, error });
+          break;
+
+        default:
+          logger.info('Assembly status update:', { jobId, assemblyId, renderId: render_id, status });
+          await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+            status: status === 'processing' ? 'processing' : 'pending',
+            updated_at: new Date()
+          });
+      }
+
+      res.json({ message: 'Webhook processed successfully' });
+    } catch (error) {
+      logger.error('Error processing webhook:', error);
+      res.status(500).json({ error: 'Failed to process webhook' });
     }
   });
 

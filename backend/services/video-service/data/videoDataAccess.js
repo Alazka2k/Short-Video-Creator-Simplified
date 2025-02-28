@@ -173,7 +173,24 @@ class VideoDataAccess {
 
       await trx.commit();
       logger.info(`Video output record created with ID: ${videoOutput.video_id}`);
-      return videoOutput;
+
+      // Return camelCase version for API response
+      return {
+        ...videoOutput,
+        videoId: videoOutput.video_id,
+        jobId: videoOutput.job_id,
+        sceneId: videoOutput.scene_id,
+        filePath: videoOutput.file_path,
+        storageKey: videoOutput.storage_key,
+        publicUrl: videoOutput.public_url,
+        videoPrompt: videoOutput.video_prompt,
+        cameraMovement: videoOutput.camera_movement,
+        aspectRatio: videoOutput.aspect_ratio,
+        createdAt: videoOutput.created_at,
+        metadata: typeof videoOutput.metadata === 'string' 
+          ? JSON.parse(videoOutput.metadata)
+          : videoOutput.metadata
+      };
 
     } catch (error) {
       await trx.rollback();
@@ -201,22 +218,33 @@ class VideoDataAccess {
 
   async getVideoBySceneId(sceneId) {
     try {
-      logger.info(`Retrieving video for scene ${sceneId}`);
-      
       const video = await knex(this.tableName)
-        .where({ scene_id: sceneId })
+        .where('scene_id', sceneId)
         .first();
 
       if (!video) {
-        logger.warn(`No video found for scene ${sceneId}`);
         return null;
       }
 
-      logger.info(`Retrieved video for scene ${sceneId}`);
-      return video;
-
+      // Return camelCase version for API response
+      return {
+        ...video,
+        videoId: video.video_id,
+        jobId: video.job_id,
+        sceneId: video.scene_id,
+        filePath: video.file_path,
+        storageKey: video.storage_key,
+        publicUrl: video.public_url,
+        videoPrompt: video.video_prompt,
+        cameraMovement: video.camera_movement,
+        aspectRatio: video.aspect_ratio,
+        createdAt: video.created_at,
+        metadata: typeof video.metadata === 'string' 
+          ? JSON.parse(video.metadata)
+          : video.metadata
+      };
     } catch (error) {
-      logger.error(`Error retrieving video for scene ${sceneId}:`, error);
+      logger.error('Error getting video by scene ID:', error);
       throw error;
     }
   }

@@ -2,6 +2,7 @@ const AssemblyService = require('./assembly-service');
 const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
+const storageService = require('../../shared/utils/storage');
 
 class AssemblyServiceInterface {
   constructor() {
@@ -21,23 +22,16 @@ class AssemblyServiceInterface {
     }
   }
 
-  async generateContent(jobId, scenes) {
+  async generateContent(jobId, templateId) {
     try {
-      logger.info(`Generating assembled video for job: ${jobId}`);
+      logger.info(`Generating assembled video for job: ${jobId} with template: ${templateId}`);
       
       // Validate input
-      if (!jobId || !scenes || !Array.isArray(scenes)) {
-        throw new Error('Invalid input parameters');
+      if (!jobId || !templateId) {
+        throw new Error('Invalid input parameters: jobId and templateId are required');
       }
 
-      // Validate each scene
-      scenes.forEach((scene, index) => {
-        if (!scene.sceneId || typeof scene.duration !== 'number') {
-          throw new Error(`Invalid scene configuration at index ${index}`);
-        }
-      });
-
-      return await this.service.createVideoProject(jobId, scenes);
+      return await this.service.createVideoProject(jobId, templateId);
     } catch (error) {
       logger.error('Error in generateContent:', error);
       throw error;
@@ -72,7 +66,7 @@ async function startServer() {
     await assemblyServiceInterface.initialize();
 
     const PORT = process.env.ASSEMBLY_SERVICE_PORT || 3007;
-    const app = createServer(assemblyServiceInterface);
+    const app = createServer(assemblyServiceInterface, storageService);
 
     app.listen(PORT, () => {
       logger.info(`Assembly Service running on port ${PORT}`);

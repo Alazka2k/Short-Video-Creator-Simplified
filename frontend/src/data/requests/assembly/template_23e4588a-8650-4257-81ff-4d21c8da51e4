@@ -1,0 +1,26 @@
+const url = 'https://api.creatomate.com/v1/renders';
+const apiKey = '10d55cd91dd843feb67bd7097e503cc9353a14959e661b278164845420e0477046ab6d4f85d71ca274ab4853f9d6b7de';
+
+const data = {
+  "template_id": "23e4588a-8650-4257-81ff-4d21c8da51e4",
+  "modifications": {
+    "Video-Scene-1.source": "https://creatomate.com/files/assets/92cf6d00-fe26-4089-9c06-cc03636458fd",
+    "Audio-Scene-1.source": "https://creatomate.com/files/assets/e4943caa-c621-4617-bee8-5333c996dbc4",
+    "Video-Scene-2.source": "https://creatomate.com/files/assets/fd28f3a5-a78a-4d61-ba6b-ea7704902f4d",
+    "Audio-Scene-2.source": "https://creatomate.com/files/assets/dd641bd2-e26e-471a-87b5-0e876e857ad1",
+    "Video-Scene-3.source": "https://creatomate.com/files/assets/e570cb53-4c46-487c-a32e-cd1dd72d67ed",
+    "Audio-Scene-3.source": "https://creatomate.com/files/assets/f84c05ba-b8ea-404d-8343-9b7343d15836"
+  }
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(data)
+})
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch(error => console.error('Error:', error));

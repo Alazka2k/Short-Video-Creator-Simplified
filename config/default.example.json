@@ -33,8 +33,9 @@
     "resolution": "resolution"
   },
   "assembly": {
-    "provider":"JSON2Video",
-    "apiKey": "YOUR_JSON2VIDEO_API_KEY"
+    "provider":"creatomate",
+    "apiKey": "YOUR_CREATOMATE_API_KEY",
+    "webhookBaseUrl": "WEBHOOK_BASE_URL"
   },
   "input": {
     "csvPath": "./data/input/input.csv"

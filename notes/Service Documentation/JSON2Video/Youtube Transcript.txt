@@ -1,0 +1,23 @@
+In this chapter, we'll cover essential concepts for using the JSON to Video API. 
+The first concept is the "movie," which is the final output of the API, resulting in an MP4 video file. 
+Movies consist of scenes and elements. 
+Scenes are segments of the movie, akin to slides in a PowerPoint presentation, and help organize content. 
+While not mandatory, using scenes simplifies the maintenance and extension of movie templates. 
+Elements are the visible and audible components in your movie, such as images, videos, text, animations, audio, and voiceovers. 
+Each scene can contain multiple elements, and the movie itself can also include elements directly.
+Scenes play sequentially and cannot overlap with other scenes. 
+Each scene can have one or more elements, like images, text, or videos, which can play simultaneously and overlap within the scene. 
+Additionally, movie elements can overlay scenes and are particularly useful for watermarks, background music, or subtitles. 
+You can control the layering of elements, with the first element in the list at the bottom and the last at the top, similar to HTML elements, unlike Photoshop or other video editing software that layer in reverse.
+You can also manage when an element appears or disappears using three main properties: start, duration, and extra time. The start property defines the number of seconds from the beginning of its container, which could be a scene or the movie. 
+The duration property specifies how long the element will be visible, while extra time adds additional seconds after the element is hidden.
+With JSON to Video, you don't need to know the exact length of your assets, like videos or audios, in advance. 
+Setting the duration to "auto" will automatically adjust it to the asset's actual length. 
+For instance, if a video is 15 seconds long, setting the duration to "auto" is equivalent to setting it to 15 seconds, which is the default. 
+If you specify a duration in seconds, the asset will be trimmed to that length. 
+For example, if a video is 15 seconds long and you set the duration to 10 seconds, the last 5 seconds will be trimmed. 
+If you want a video or audio to match the length of its container, use the "container" value, which is especially useful for background music longer than your video.
+To illustrate, consider a 20-second video within a scene. If the scene's duration isn't explicitly set, it will last long enough to accommodate all its elements. 
+In this case, the video dictates the scene's length to be 20 seconds. 
+If the audio's duration is set to "container," it will be trimmed to match the scene's 20-second duration. 
+Thank you for watching this video, and be sure to check out the next one.

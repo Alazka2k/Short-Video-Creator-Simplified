@@ -119,13 +119,56 @@ function loadConfig() {
   // Add service URLs with environment-specific defaults
   config.services = {
     // Service URLs
-    llm: { url: process.env[`${envPrefix}_LLM_SERVICE_URL`]},
-    image: { url: process.env[`${envPrefix}_IMAGE_SERVICE_URL`]},
-    voice: { url: process.env[`${envPrefix}_VOICE_SERVICE_URL`]},
-    animation: { url: process.env[`${envPrefix}_ANIMATION_SERVICE_URL`]},
-    video: { url: process.env[`${envPrefix}_VIDEO_SERVICE_URL`]},
-    music: { url: process.env[`${envPrefix}_MUSIC_SERVICE_URL`]},
-    assembly: { url: process.env[`${envPrefix}_ASSEMBLY_SERVICE_URL`]},
+    llm: { 
+      url: process.env[`${envPrefix}_LLM_SERVICE_URL`]
+      //Add a consistent config (away from default.json)
+      //provider: process.env[`${envPrefix}_LLM_PROVIDER`]
+      //model: process.env[`${envPrefix}_LLM_MODEL`]
+      //apiKey: process.env[`${envPrefix}_LLM_API_KEY`]
+    },
+    voice: { 
+      url: process.env[`${envPrefix}_VOICE_SERVICE_URL`]
+      //Add a consistent config (away from default.json)
+      //provider: process.env[`${envPrefix}_VOICE_PROVIDER`]
+      //modelId: process.env[`${envPrefix}_VOICE_MODEL_ID`]
+      //voiceId: process.env[`${envPrefix}_VOICE_VOICE_ID`]
+      //apiKey: process.env[`${envPrefix}_VOICE_API_KEY`]
+    },
+    image: { 
+      url: process.env[`${envPrefix}_IMAGE_SERVICE_URL`]
+      //Add a consistent config (away from default.json)
+      //provider: process.env[`${envPrefix}_IMAGE_PROVIDER`]
+      //serverId: process.env[`${envPrefix}_IMAGE_SERVER_ID`]
+      //channelId: process.env[`${envPrefix}_IMAGE_CHANNEL_ID`]
+      //salaiToken: process.env[`${envPrefix}_IMAGE_SALAI_TOKEN`]
+    },
+    music: { 
+      url: process.env[`${envPrefix}_MUSIC_SERVICE_URL`]
+      //Add a consistent config (away from default.json)
+      //provider: process.env[`${envPrefix}_MUSIC_PROVIDER`]
+      //modelId: process.env[`${envPrefix}_MUSIC_MODEL_ID`]
+      //apiKey: process.env[`${envPrefix}_MUSIC_API_KEY`]
+    },
+    animation: { 
+      url: process.env[`${envPrefix}_ANIMATION_SERVICE_URL`]
+      //Add a consistent config (away from default.json)
+      //clientId: process.env[`${envPrefix}_ANIMATION_CLIENT_ID`]
+      //clientSecret: process.env[`${envPrefix}_ANIMATION_CLIENT_SECRET`]
+    },
+    video: { 
+      url: process.env[`${envPrefix}_VIDEO_SERVICE_URL`]
+      //Add a consistent config (away from default.json)
+      //provider: process.env[`${envPrefix}_VIDEO_PROVIDER`]
+      //model: process.env[`${envPrefix}_VIDEO_MODEL`]
+      //resolution: process.env[`${envPrefix}_VIDEO_RESOLUTION`]
+      //apiKey: process.env[`${envPrefix}_VIDEO_API_KEY`]
+    },
+    assembly: {
+      url: process.env[`${envPrefix}_ASSEMBLY_SERVICE_URL`],
+      provider: process.env[`${envPrefix}_ASSEMBLY_PROVIDER`],
+      apiKey: process.env[`${envPrefix}_ASSEMBLY_API_KEY`],
+      webhookBaseUrl: process.env[`${envPrefix}_ASSEMBLY_WEBHOOK_BASE_URL`]
+    },
     job: { url: process.env[`${envPrefix}_JOB_SERVICE_URL`]},
     auth: { url: process.env[`${envPrefix}_AUTH_SERVICE_URL`]},
     billing: { url: process.env[`${envPrefix}_BILLING_SERVICE_URL`]},
@@ -203,6 +246,7 @@ const requiredConfigs = [
   'videoGen.apiKey',
   'assembly.provider',
   'assembly.apiKey',
+  'assembly.webhookBaseUrl',
   'parameters.animationGen.animationLength',
   'input.csvPath',
   'parameters.jsonPath',

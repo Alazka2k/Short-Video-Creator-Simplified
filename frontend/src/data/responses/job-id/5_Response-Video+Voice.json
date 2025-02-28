@@ -1,0 +1,222 @@
+{
+    "job_id": "260aa872-b1bb-46a5-87b0-c38a777fea93",
+    "user_id": 30,
+    "created_at": "2025-02-24T16:57:28.913Z",
+    "updated_at": "2025-02-25T09:16:25.379Z",
+    "status": "completed_with_errors",
+    "service_sequence": [
+        "llm",
+        "image",
+        "voice",
+        "video"
+    ],
+    "metadata": {
+        "jobId": "260aa872-b1bb-46a5-87b0-c38a777fea93",
+        "music": null,
+        "scenes": [
+            {
+                "image": {
+                    "fileName": "image_scene_1.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_1\\image_scene_1.png",
+                    "imageUrl": "https://cdn.midjourney.com/41abe31c-4c67-498d-8286-0cc643f2f918/0_3.png",
+                    "metadata": {
+                        "prompt": "A young Charles Darwin, kneeling in a lush English meadow, examining a beetle closely with a magnifying glass. Sunlight filters through tall grass, casting a warm morning glow; --sref 20240813 --ar 16:9",
+                        "generatedAt": "2025-02-24T16:58:19.217Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=0d054ba11206297dea82f5df864a72a6ff97305f67940a7f75d1853035fc24e4&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/image_scene_1.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1343628037807149097/alazka_A_young_Charles_Darwin_kneeling_in_a_lush_English_meado_41abe31c-4c67-498d-8286-0cc643f2f918.png?ex=67bdf69f&is=67bca51f&hm=905af5f883edb0056546d3423887ed7c0e6a98b7de2cfdc8c03c3294ce669aa4&"
+                },
+                "video": {
+                    "fileName": "video_scene_1.mp4",
+                    "filePath": "data\\output\\video\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_1\\video_scene_1.mp4",
+                    "metadata": {
+                        "generatedAt": "2025-02-24T16:59:11.970Z",
+                        "generationId": "262e0a78-74a2-43ed-9e29-d05b579cbe7d",
+                        "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250224%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250224T165819Z&X-Amz-Expires=3600&X-Amz-Signature=96c61dddddbcadae097e94eb00565f9234cd648ab51fb61861ab189af21558d4&X-Amz-SignedHeaders=host",
+                        "generationDuration": 47957
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/video_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=e96bf204ecb28e4aec307a25988480634f98a18c9fff1a959a1ebaddce44e405&X-Amz-SignedHeaders=host",
+                    "storageKey": "video/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/video_scene_1.mp4"
+                },
+                "voice": {
+                    "fileName": "voice_scene_1.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_1\\voice_scene_1.mp3",
+                    "metadata": {
+                        "text": "A curious young boy, collecting beetles in the English countryside. What ignited his passion?",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-24T16:57:50.976Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=5db7eb81eb97426f47a0a34171934a2060490f1b6eefb24c132489ed648c2326&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_1/voice_scene_1.mp3",
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+                },
+                "sceneId": 1
+            },
+            {
+                "image": {
+                    "fileName": "image_scene_2.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_2\\image_scene_2.png",
+                    "imageUrl": "https://cdn.midjourney.com/186e4f68-58dd-4d2f-9d84-ce05aedc87f9/0_3.png",
+                    "metadata": {
+                        "prompt": "The deck of the HMS Beagle, sails billowing under a vibrant sunset sky, Darwin gazing out to the horizon, surrounded by nautical equipment and seabirds swooping nearby; --sref 20240813 --ar 16:9",
+                        "generatedAt": "2025-02-24T16:58:38.730Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=dcdd0b138231f27b32c6ebaf8099ff2dfb543f9819041bb82483b0a7ec6ed16d&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/image_scene_2.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1343628133152063490/alazka_The_deck_of_the_HMS_Beagle_sails_billowing_under_a_vibr_186e4f68-58dd-4d2f-9d84-ce05aedc87f9.png?ex=67bdf6b6&is=67bca536&hm=81752de67358f255dee310a4626fe993c16461fc109e62b0bdba654e493ad581&"
+                },
+                "video": {
+                    "fileName": "video_scene_2.mp4",
+                    "filePath": "data\\output\\video\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_2\\video_scene_2.mp4",
+                    "metadata": {
+                        "generatedAt": "2025-02-24T16:59:35.635Z",
+                        "generationId": "e80abce7-1c21-49bf-8b07-b27eff2e4f82",
+                        "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250224%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250224T165838Z&X-Amz-Expires=3600&X-Amz-Signature=af0dd47ebb53249ead0ef1a36019ac80084f24c1b3346e64195da1f675becf79&X-Amz-SignedHeaders=host",
+                        "generationDuration": 51617
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/video_scene_2.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=06b966892a4c40c8170513d4134941e1f6c1b5477d50e054c52f121ee07bb6cc&X-Amz-SignedHeaders=host",
+                    "storageKey": "video/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/video_scene_2.mp4"
+                },
+                "voice": {
+                    "fileName": "voice_scene_2.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_2\\voice_scene_2.mp3",
+                    "metadata": {
+                        "text": "The HMS Beagle sets sail, carrying Darwin on a voyage that would challenge the very fabric of science.",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-24T16:57:50.968Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/voice_scene_2.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=01709b54a906237b3af04181cc90848ba99c4bba2f79db1764602a8752e26baa&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_2/voice_scene_2.mp3",
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+                },
+                "sceneId": 2
+            },
+            {
+                "image": {
+                    "fileName": "image_scene_3.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_3\\image_scene_3.png",
+                    "imageUrl": "https://cdn.midjourney.com/8ec89de1-07a1-4ce4-a0c3-6561d4eddf48/0_1.png",
+                    "metadata": {
+                        "prompt": "Darwin examining finches with varying beak shapes, set against the rugged volcanic landscape of the Galápagos Islands. An afternoon sun casts dramatic shadows across the terrain; --sref 20240813 --ar 16:9",
+                        "generatedAt": "2025-02-24T16:59:01.503Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/image_scene_3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=e5abf46eb9b0b11be6e16c5b44fdff7a9973474113b44a7b96303683ecf24cf7&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/image_scene_3.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1343628229935894598/alazka_Darwin_examining_finches_with_varying_beak_shapes_set_a_8ec89de1-07a1-4ce4-a0c3-6561d4eddf48.png?ex=67bdf6cd&is=67bca54d&hm=b8041fad3b38ff659bc1d1ebf0d225cc271f4a68b5a82b8b23d7820de51d0a92&"
+                },
+                "video": {
+                    "fileName": "video_scene_3.mp4",
+                    "filePath": "data\\output\\video\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_3\\video_scene_3.mp4",
+                    "metadata": {
+                        "generatedAt": "2025-02-24T16:59:54.761Z",
+                        "generationId": "9a73fc12-e7b0-41ef-90d3-b0e87888014d",
+                        "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/image_scene_3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250224%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250224T165901Z&X-Amz-Expires=3600&X-Amz-Signature=1ec0b8d233001323d36e4928555c06fd75d3b06a40547dc17f873d5793550a4e&X-Amz-SignedHeaders=host",
+                        "generationDuration": 47079
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/video_scene_3.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=f4a6999950f386f7d1300dfd4443d3c8acb248582f5456fb032baa798a905469&X-Amz-SignedHeaders=host",
+                    "storageKey": "video/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/video_scene_3.mp4"
+                },
+                "voice": {
+                    "fileName": "voice_scene_3.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-24\\260aa872-b1bb-46a5-87b0-c38a777fea93\\scene_3\\voice_scene_3.mp3",
+                    "metadata": {
+                        "text": "In the Galápagos, Darwin discovers the clues to a grand theory, forever changing biology.",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-24T16:57:50.989Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/voice_scene_3.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250225%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250225T091801Z&X-Amz-Expires=3600&X-Amz-Signature=e8f194d5823c8b83e2bd281ae21fe4c09a2286a0aae6aec61663214434f4e5e2&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-24/260aa872-b1bb-46a5-87b0-c38a777fea93/scene_3/voice_scene_3.mp3",
+                    "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+                },
+                "sceneId": 3
+            }
+        ],
+        "status": "completed_with_errors",
+        "endTime": "2025-02-24T16:59:54.791Z",
+        "llmResult": {
+            "music": {
+                "style": "Adventurous orchestral, inspiring and triumphant",
+                "title": "Voyage of Discovery",
+                "lyrics": "In the heart of nature, secrets unfold, A journey of wonder, a story retold. Through every wave and distant shore, Knowledge awakens, forevermore.",
+                "prompt": "An adventurous and inspiring orchestral score with sweeping strings, triumphant brass, and curious woodwinds, evoking discovery, exploration, and the pioneering spirit of scientific revolution."
+            },
+            "title": "Charles Darwin: Evolutionary Pioneer",
+            "prompt": "A video about the lifestory of Charles Darwin",
+            "scenes": [
+                {
+                    "description": "A curious young boy, collecting beetles in the English countryside. What ignited his passion?",
+                    "video_prompt": "A young Darwin in an English meadow, carefully observing a beetle, the camera zooms in on his concentrated face, capturing the wonder in his eyes as sunlight bathes the scene.",
+                    "visual_prompt": "A young Charles Darwin, kneeling in a lush English meadow, examining a beetle closely with a magnifying glass. Sunlight filters through tall grass, casting a warm morning glow; --sref 20240813 --ar 16:9",
+                    "camera_movement": "Zoom In",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 20240813",
+                        "aspectRatio": "16:9"
+                    }
+                },
+                {
+                    "description": "The HMS Beagle sets sail, carrying Darwin on a voyage that would challenge the very fabric of science.",
+                    "video_prompt": "Scene shifts to the HMS Beagle cutting through ocean waves, Darwin stands on deck, wind ruffling his hair, as the camera pulls out to reveal the vastness of the sea and sky.",
+                    "visual_prompt": "The deck of the HMS Beagle, sails billowing under a vibrant sunset sky, Darwin gazing out to the horizon, surrounded by nautical equipment and seabirds swooping nearby; --sref 20240813 --ar 16:9",
+                    "camera_movement": "Pull Out",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 20240813",
+                        "aspectRatio": "16:9"
+                    }
+                },
+                {
+                    "description": "In the Galápagos, Darwin discovers the clues to a grand theory, forever changing biology.",
+                    "video_prompt": "Darwin crouches among finches in the Galápagos, the camera pans slowly around him, highlighting the diverse beak shapes, as the landscape stretches out in the background.",
+                    "visual_prompt": "Darwin examining finches with varying beak shapes, set against the rugged volcanic landscape of the Galápagos Islands. An afternoon sun casts dramatic shadows across the terrain; --sref 20240813 --ar 16:9",
+                    "camera_movement": "Pan Right",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 20240813",
+                        "aspectRatio": "16:9"
+                    }
+                }
+            ],
+            "hashtags": "#CharlesDarwin #Evolution #History #NaturalSelection #ScientificRevolution",
+            "description": "Unravel the captivating journey of Charles Darwin, the man who transformed our understanding of nature and life itself."
+        },
+        "parameters": {
+            "llmGenParams": {
+                "image": {
+                    "sValue": "500",
+                    "shotStyle": "--sref 20240813",
+                    "aspectRatio": "16:9"
+                },
+                "script": {
+                    "scriptTone": "",
+                    "vocabulary": "",
+                    "pacingStructure": "",
+                    "characterPerspective": ""
+                },
+                "general": {
+                    "sceneAmount": 3,
+                    "lengthDescription": "15 seconds with the first 5 seconds containing the hook"
+                }
+            },
+            "serviceConfig": {
+                "skipImage": false,
+                "skipMusic": true,
+                "skipVoice": false,
+                "skipVisualization": false
+            },
+            "imageGenParams": {},
+            "videoGenParams": {
+                "aspectRatio": "9:16"
+            },
+            "voiceGenParams": {
+                "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz"
+            },
+            "visualizationType": "video",
+            "animationGenParams": {}
+        }
+    },
+    "prompt": "A video about the lifestory of Charles Darwin",
+    "error": null,
+    "serviceConfig": {}
+}

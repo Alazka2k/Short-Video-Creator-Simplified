@@ -1,0 +1,104 @@
+{
+    "options": 
+    [
+        {
+            "id": "api-test",
+            "name": "API Test",
+            "description": "A test template for API testing",
+            "templateId": "ff6a0f93-a513-474c-9b76-106a13bbba8c",
+            "templateContent": ["image", "text"],
+            "sceneAmount": 3,
+            "aspectRatio": "16:9",
+            "subtitle": "false",
+            "modificationProperties":{
+                "Text-Scene-1.source":{
+                    "keyPath": ["metadata.llmResult.scenes[0].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-2.source":{
+                    "keyPath": ["metadata.llmResult.scenes[1].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-3.source":{
+                    "keyPath": ["metadata.llmResult.scenes[2].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Image-Scene-1.source":{
+                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-2.source":{
+                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-3.source":{
+                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                }
+            }
+        },
+      {
+        "id": "short-form-video",
+        "name": "Short Form Video",
+        "description": "A short form video template with a subtitle",
+        "templateId": "23e4588a-8650-4257-81ff-4d21c8da51e4",
+        "templateContent": ["video", "animation", "voice", "text"],
+        "sceneAmount": 3,
+        "aspectRatio": "16:9",
+        "subtitle": "true",
+        "modificationProperties":{
+            "Video-Scene-1.source":{
+                "keyPath": ["metadata.scenes[0].video.publicUrl", "metadata.scenes[0].animation.publicUrl"],
+                "type": "video",
+                "allowedContent": ["video", "animation"]
+            },
+            "Voice-Scene-1.source":{
+                "keyPath": ["metadata.scenes[0].voice.publicUrl"],
+                "type": "audio",
+                "allowedContent": ["voice"]
+            },
+            "Video-Scene-2.source":{
+                "keyPath": ["metadata.scenes[1].video.publicUrl", "metadata.scenes[1].animation.publicUrl"],
+                "type": "video",
+                "allowedContent": ["video", "animation"]
+            },
+            "Voice-Scene-2.source":{
+                "keyPath": ["metadata.scenes[1].voice.publicUrl"],
+                "type": "audio",
+                "allowedContent": ["voice"]
+            },
+            "Video-Scene-3.source":{
+                "keyPath": ["metadata.scenes[2].video.publicUrl", "metadata.scenes[2].animation.publicUrl"],
+                "type": "video",
+                "allowedContent": ["video", "animation"]
+            },
+            "Voice-Scene-3.source":{    
+                "keyPath": "metadata.scenes[2].voice.publicUrl",
+                "type": "audio",
+                "allowedContent": ["voice"]
+            }
+        }
+      },
+      {
+        "id": "short-form-video-with-image",
+        "name": "Short Form Video with Image",
+        "templateId": "c62b3867-d74c-499a-83c2-1ee7f99d54f4",
+        "contentAllowed": ["image", "voice", "text"],
+        "aspectRatio": "9:16",
+        "subtitle": "true",     
+        "description": "A short form video template for images and voiceover with a subtitle",
+        "modificationProperties":{
+            "Video-Scene-1.source":{
+                "type": "video",
+                "allowedContent": ["video", "animation"]
+            }
+        }
+      }
+    ]
+}

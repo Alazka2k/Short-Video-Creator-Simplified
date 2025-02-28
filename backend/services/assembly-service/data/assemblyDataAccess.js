@@ -19,23 +19,20 @@ class AssemblyDataAccess {
     });
   }
 
-  async createAssemblyOutput(jobId, assemblyData) {
+  async createAssemblyOutput(jobId, userId, templateId) {
     try {
-      const [assemblyRecord] = await knex('assembly_outputs')
+      const [result] = await knex('assembly_outputs')
         .insert({
           job_id: jobId,
-          status: assemblyData.status || 'pending',
-          project_id: assemblyData.projectId,
-          assembly_config: assemblyData.assemblyConfig,
-          metadata: JSON.stringify(assemblyData.metadata),
-          file_path: assemblyData.filePath,
-          storage_key: assemblyData.storageKey,
-          public_url: assemblyData.publicUrl,
-          user_id: assemblyData.userId
+          user_id: userId,
+          template_id: templateId,
+          status: 'pending',
+          created_at: knex.fn.now(),
+          updated_at: knex.fn.now()
         })
-        .returning('*');
+        .returning('assembly_id');
 
-      return assemblyRecord;
+      return result.assembly_id;
     } catch (error) {
       logger.error('Error creating assembly output:', error);
       throw error;
@@ -44,122 +41,102 @@ class AssemblyDataAccess {
 
   async getSceneAssets(jobId, sceneId) {
     try {
-      const assets = await knex.transaction(async (trx) => {
-        // First get the image asset as base
-        const imageAsset = await trx('image_outputs')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
+      // Get the job first to access metadata
+      const job = await knex('jobs')
+        .where({ job_id: jobId })
+        .first();
 
-        // Check if there's a video or animation generated from this image
-        const videoAsset = await trx('video_outputs')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
+      if (!job) {
+        throw new Error(`Job not found: ${jobId}`);
+      }
 
-        const animationAsset = await trx('animation_outputs')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
+      // Parse metadata
+      const metadata = typeof job.metadata === 'string' ? 
+        JSON.parse(job.metadata) : job.metadata;
 
-        // Get voice asset if exists
-        const voiceAsset = await trx('voice_outputs')
-          .where({ job_id: jobId, scene_id: sceneId })
-          .first();
+      // Find the scene in metadata
+      const scene = metadata.scenes.find(s => s.sceneId === sceneId);
+      if (!scene) {
+        throw new Error(`Scene ${sceneId} not found in job ${jobId}`);
+      }
 
-        // Determine which visual asset to use (prioritize video/animation over image)
-        const visualAsset = videoAsset || animationAsset || imageAsset;
-
-        // Log all found assets and their relationships
-        logger.info('Asset lookup results:', {
-          jobId,
-          sceneId,
-          results: {
-            image: imageAsset ? {
-              id: imageAsset.image_id,
-              public_url: imageAsset.public_url,
-              hasGeneratedContent: !!(videoAsset || animationAsset)
-            } : null,
-            video: videoAsset ? {
-              id: videoAsset.video_id,
-              public_url: videoAsset.public_url,
-              generatedFromImage: true
-            } : null,
-            animation: animationAsset ? {
-              id: animationAsset.animation_id,
-              public_url: animationAsset.public_url,
-              generatedFromImage: true
-            } : null,
-            voice: voiceAsset ? {
-              id: voiceAsset.voice_id,
-              public_url: voiceAsset.public_url
-            } : null,
-            selectedVisual: visualAsset ? {
-              type: videoAsset ? 'video' : (animationAsset ? 'animation' : 'image'),
-              id: visualAsset.video_id || visualAsset.animation_id || visualAsset.image_id,
-              public_url: visualAsset.public_url
-            } : null
-          }
-        });
-
-        // Require at least one visual asset
-        if (!visualAsset) {
-          throw new Error(`Missing required visual asset for scene ID ${sceneId}`);
-        }
-
-        // Refresh URLs and update database
-        try {
-          if (imageAsset) {
-            imageAsset.public_url = await StorageUrlHelper.getFreshUrl(imageAsset.public_url);
-            await trx('image_outputs')
-              .where('image_id', imageAsset.image_id)
-              .update({ public_url: imageAsset.public_url });
-          }
-
-          if (videoAsset) {
-            videoAsset.public_url = await StorageUrlHelper.getFreshUrl(videoAsset.public_url);
-            await trx('video_outputs')
-              .where('video_id', videoAsset.video_id)
-              .update({ public_url: videoAsset.public_url });
-          }
-
-          if (animationAsset) {
-            animationAsset.public_url = await StorageUrlHelper.getFreshUrl(animationAsset.public_url);
-            await trx('animation_outputs')
-              .where('animation_id', animationAsset.animation_id)
-              .update({ public_url: animationAsset.public_url });
-          }
-
-          if (voiceAsset) {
-            voiceAsset.public_url = await StorageUrlHelper.getFreshUrl(voiceAsset.public_url);
-            await trx('voice_outputs')
-              .where('voice_id', voiceAsset.voice_id)
-              .update({ public_url: voiceAsset.public_url });
-          }
-        } catch (error) {
-          logger.error('Failed to refresh URLs for scene assets:', {
-            jobId,
-            sceneId,
-            error: error.message
-          });
-          throw new Error(`Failed to refresh URLs for scene ${sceneId}: ${error.message}`);
-        }
-
-        return {
-          visual: {
-            type: videoAsset ? 'video' : (animationAsset ? 'animation' : 'image'),
-            asset: visualAsset,
-            originalImage: imageAsset,
-            isGenerated: !!(videoAsset || animationAsset)
-          },
-          voice: voiceAsset,
-          availableAssets: {
-            hasImage: !!imageAsset,
-            hasVideo: !!videoAsset,
-            hasAnimation: !!animationAsset,
-            hasVoice: !!voiceAsset
-          }
-        };
+      logger.info('Found scene assets in job metadata:', {
+        jobId,
+        sceneId,
+        hasImage: !!scene.image,
+        hasVideo: !!scene.video,
+        hasVoice: !!scene.voice,
+        hasAnimation: !!scene.animation
       });
 
-      return assets;
+      // Validate we have at least one visual asset
+      if (!scene.video && !scene.animation && !scene.image) {
+        throw new Error(`Missing required visual asset for scene ${sceneId}`);
+      }
+
+      // Determine which visual asset to use (prioritize video/animation over image)
+      const visualAsset = scene.video || scene.animation || scene.image;
+
+      // Refresh URLs if needed
+      try {
+        if (scene.image?.publicUrl) {
+          scene.image.publicUrl = await StorageUrlHelper.getFreshUrl(scene.image.publicUrl);
+        }
+        if (scene.video?.publicUrl) {
+          scene.video.publicUrl = await StorageUrlHelper.getFreshUrl(scene.video.publicUrl);
+        }
+        if (scene.animation?.publicUrl) {
+          scene.animation.publicUrl = await StorageUrlHelper.getFreshUrl(scene.animation.publicUrl);
+        }
+        if (scene.voice?.publicUrl) {
+          scene.voice.publicUrl = await StorageUrlHelper.getFreshUrl(scene.voice.publicUrl);
+        }
+
+        // Update job metadata with fresh URLs
+        await knex('jobs')
+          .where({ job_id: jobId })
+          .update({ 
+            metadata: JSON.stringify(metadata),
+            updated_at: knex.fn.now()
+          });
+
+      } catch (error) {
+        logger.error('Failed to refresh URLs for scene assets:', {
+          jobId,
+          sceneId,
+          error: error.message
+        });
+        throw new Error(`Failed to refresh URLs for scene ${sceneId}: ${error.message}`);
+      }
+
+      return {
+        metadata: metadata,
+        visual: {
+          type: scene.video ? 'video' : (scene.animation ? 'animation' : 'image'),
+          asset: {
+            ...visualAsset,
+            storage_key: visualAsset.storageKey,
+            public_url: visualAsset.publicUrl
+          },
+          originalImage: scene.image ? {
+            ...scene.image,
+            storage_key: scene.image.storageKey,
+            public_url: scene.image.publicUrl
+          } : null,
+          isGenerated: !!(scene.video || scene.animation)
+        },
+        voice: scene.voice ? {
+          ...scene.voice,
+          storage_key: scene.voice.storageKey,
+          public_url: scene.voice.publicUrl
+        } : null,
+        availableAssets: {
+          hasImage: !!scene.image,
+          hasVideo: !!scene.video,
+          hasAnimation: !!scene.animation,
+          hasVoice: !!scene.voice
+        }
+      };
     } catch (error) {
       logger.error(`Error fetching scene assets for job ${jobId}, scene ID ${sceneId}:`, error);
       throw error;
@@ -206,47 +183,14 @@ class AssemblyDataAccess {
 
   async getAssemblyByJobId(jobId) {
     try {
-      if (!this.isValidUUID(jobId)) {
-        throw new Error(`Invalid jobId: ${jobId}`);
-      }
-
-      const assembly = await knex('assembly_outputs')
+      const result = await knex('assembly_outputs')
         .where('job_id', jobId)
+        .orderBy('created_at', 'desc')
         .first();
 
-      if (!assembly) {
-        return null;
-      }
-
-      // Handle metadata
-      if (assembly.metadata) {
-        try {
-          assembly.metadata = typeof assembly.metadata === 'string' ? 
-            JSON.parse(assembly.metadata) : assembly.metadata;
-        } catch (e) {
-          logger.error('Error parsing metadata:', e);
-          assembly.metadata = null;
-        }
-      }
-
-      // Handle assembly config
-      if (assembly.assembly_config) {
-        try {
-          assembly.assembly_config = typeof assembly.assembly_config === 'string' ? 
-            JSON.parse(assembly.assembly_config) : assembly.assembly_config;
-        } catch (e) {
-          logger.error('Error parsing assembly_config:', e);
-          assembly.assembly_config = null;
-        }
-      }
-
-      return assembly;
+      return result;
     } catch (error) {
-      logger.error('Error getting assembly by job ID:', {
-        jobId,
-        error: error.message,
-        stack: error.stack
-      });
+      logger.error('Error getting assembly by job ID:', error);
       throw error;
     }
   }
@@ -348,104 +292,64 @@ class AssemblyDataAccess {
     return uuidRegex.test(uuid);
   }
 
-  async updateAssemblyOutput(assemblyId, updateData, videoUrl = null) {
+  async updateAssemblyOutput(assemblyId, updates) {
     try {
-      let dbUpdate = {
-        ...updateData,
+      const updateData = {
+        ...updates,
         updated_at: knex.fn.now()
       };
 
-      // If we have a video URL, handle file storage
-      if (videoUrl) {
-        // Create date-based folder structure
-        const dateFolder = new Date().toISOString().split('T')[0];
-        const outputPath = path.join(
-          this.storageBasePath,
-          dateFolder,
-          updateData.job_id
-        );
-        
-        const fileName = 'assembled_video.mp4';
-        const localPath = path.join(outputPath, fileName);
-
-        // Download the video locally first
-        await this.downloadFile(videoUrl, localPath);
-
-        // Upload to storage
-        const storageResult = await storageService.uploadFile(localPath, 'assembly');
-
-        // Save metadata
-        const metadataPath = path.join(outputPath, 'metadata.json');
-        await fs.writeFile(
-          metadataPath, 
-          JSON.stringify({
-            jobId: updateData.job_id,
-            videoUrl,
-            createdAt: new Date().toISOString(),
-            ...updateData
-          }, null, 2)
-        );
-
-        logger.info('File uploaded to storage:', {
-          localPath,
-          publicUrl: storageResult.url,
-          storageKey: storageResult.storageKey
-        });
-
-        // Create database update object with correct column names
-        dbUpdate = {
-          ...dbUpdate,
-          file_path: localPath.replace(/\\/g, '/'),
-          storage_key: storageResult.storageKey,
-          public_url: storageResult.url,
-          status: 'completed'
-        };
-
-        // Log the update data
-        logger.info('Updating database with:', {
-          projectId: updateData.project_id,
-          filePath: dbUpdate.file_path,
-          storageKey: dbUpdate.storage_key,
-          publicUrl: dbUpdate.public_url,
-          status: dbUpdate.status
-        });
-
-        // Find assembly by project_id and update
-        const [updated] = await knex('assembly_outputs')
-          .where('project_id', updateData.project_id)
-          .update(dbUpdate)
-          .returning('*');
-
-        if (!updated) {
-          throw new Error(`No assembly found with project_id: ${updateData.project_id}`);
-        }
-
-        // Verify the update
-        logger.info('Database update result:', {
-          projectId: updated.project_id,
-          status: updated.status,
-          filePath: updated.file_path,
-          storageKey: updated.storage_key,
-          publicUrl: updated.public_url
-        });
-
-        return updated;
-      } else {
-        // Regular update without file handling
-        const [updated] = await knex('assembly_outputs')
-          .where('project_id', updateData.project_id)
-          .update(dbUpdate)
-          .returning('*');
-
-        return updated;
+      // If metadata is provided, merge it with existing metadata
+      if (updates.metadata) {
+        updateData.metadata = knex.raw('metadata || ?::jsonb', [JSON.stringify(updates.metadata)]);
       }
+
+      const [result] = await knex('assembly_outputs')
+        .where('assembly_id', assemblyId)
+        .update(updateData)
+        .returning('*');
+
+      return result;
     } catch (error) {
-      logger.error('Error updating assembly output:', {
-        error: error.message,
-        stack: error.stack,
-        projectId: updateData.project_id,
-        updateData
-      });
+      logger.error('Error updating assembly output:', error);
+      throw error;
+    }
+  }
+
+  async getAssemblyOutput(assemblyId) {
+    try {
+      const result = await knex('assembly_outputs')
+        .where('assembly_id', assemblyId)
+        .first();
+
+      return result;
+    } catch (error) {
+      logger.error('Error getting assembly output:', error);
+      throw error;
+    }
+  }
+
+  async getTemplateConfig(templateId) {
+    try {
+      const result = await knex('template_configs')
+        .where('template_id', templateId)
+        .first();
+      return result?.config;
+    } catch (error) {
+      logger.error('Error getting template config:', error);
+      throw error;
+    }
+  }
+
+  async listTemplatesByAspectRatio(aspectRatio) {
+    try {
+      const result = await knex('template_configs')
+        .where('aspect_ratio', aspectRatio)
+        .orderBy('name', 'asc')
+        .select('template_id', 'name', 'description', 'aspect_ratio', 'preview_url', 'metadata');
+      return result;
+    } catch (error) {
+      logger.error('Error listing templates by aspect ratio:', error);
       throw error;
     }
   }
@@ -472,6 +376,63 @@ class AssemblyDataAccess {
         error: error.message,
         stack: error.stack
       });
+      throw error;
+    }
+  }
+
+  async getLLMResultProperties(jobId, options = {}) {
+    try {
+      const job = await knex('jobs')
+        .where({ job_id: jobId })
+        .first();
+
+      if (!job) {
+        throw new Error(`Job not found: ${jobId}`);
+      }
+
+      // Parse metadata if needed
+      const metadata = typeof job.metadata === 'string' ? 
+        JSON.parse(job.metadata) : job.metadata;
+
+      if (!metadata.llmResult) {
+        throw new Error(`No LLM result found in job metadata for job: ${jobId}`);
+      }
+
+      const llmResult = metadata.llmResult;
+      
+      // Extract global properties
+      const globalProperties = {
+        title: llmResult.title,
+        description: llmResult.description,
+        hashtags: llmResult.hashtags,
+        prompt: llmResult.prompt
+      };
+
+      // Extract scene-specific properties if requested
+      let sceneProperties = {};
+      if (options.includeScenes && Array.isArray(llmResult.scenes)) {
+        sceneProperties = llmResult.scenes.reduce((acc, scene, index) => {
+          acc[`scene${index + 1}`] = {
+            description: scene.description,
+            video_prompt: scene.video_prompt,
+            visual_prompt: scene.visual_prompt
+          };
+          return acc;
+        }, {});
+      }
+
+      logger.info('Retrieved LLM result properties:', {
+        jobId,
+        hasGlobalProperties: Object.keys(globalProperties).length > 0,
+        hasSceneProperties: Object.keys(sceneProperties).length > 0
+      });
+
+      return {
+        ...globalProperties,
+        scenes: options.includeScenes ? sceneProperties : undefined
+      };
+    } catch (error) {
+      logger.error(`Error getting LLM result properties for job ${jobId}:`, error);
       throw error;
     }
   }

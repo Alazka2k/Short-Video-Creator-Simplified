@@ -137,27 +137,34 @@
   - ✅ Content generation pipeline
   - ✅ Job status tracking
   - ✅ User ID association with jobs
-- ⏳ Content Creation Workbench & Job Details Page
+- ✅ Content Creation Workbench & Job Details Page
   - ✅ Overview Dashboard called Workbench for all jobs
   - ✅ Job details page with transitions
   - ✅ Loading states and animations
   - ✅ Content Workbench implementation
   - ✅ Visual content preview (job details page)
   - ✅ Enhanced / Possibility to download options (download all, download single scene)
-  - ⏳ Improve the grid view of the workbench (align the sizes of the grids to the images aspect ratio)
-  - ⏳ Improve the loading feedback after job execution
+  - ✅ Improve the grid view of the workbench (align the sizes of the grids to the images aspect ratio)
+  - ⏳ Video Assembly
+    - ⏳ Fix the backend for the video assembly and enhance the functionality so we get a final video
+    - ⏳ Fix the frontend for the video assembly to send the correct request when pressing the data
+    - ⏳ Refactor the videos section to show all created videos
 
   ### 1.5 Dedicated Pages (⏳ In Progress)
 - ✅ Dedicated Features Page with interactive demos
+- ⏳ Refactor the Dashboard page
 - ⏳ Pricing preview
 - ⏳ FAQ Section
 - ⏳ Blog Entries
-- ⏳ Documentation page
 - ⏳ Contact
 - ⏳ Privacy Policy
 - ⏳ Terms of Service
 - ⏳ About
 - ⏳ Remove "Careers" from the footer
+- ⏳ Settings page
+  - ⏳ Settings for social media channels
+  - ⏳ Settings for the video preferences (e.g. default style, voice, resolution)
+- ⏳ Refactor the features marketing page
 
 
 ## Phase 2: Implement Missing Core Features
@@ -229,6 +236,7 @@
 - [ ] Music Generation with lyrics
 - [ ] Find a way to align voice length with video scene length
 - [ ] Select Option for Video Duration is not working well
+- [ ] Improve the loading feedback after job execution
 
 ### 5.2. Feature, Profile and Protected Routes Enhancements
 #### 5.2.1 Profile Management (Frontend?)

@@ -1,11 +1,12 @@
-const { Movie, Scene } = require('json2video-sdk');
+const creatomate = require('creatomate');
 const assemblyDataAccess = require('./data/assemblyDataAccess');
+const jobDataAccess = require('../job-service/data/jobDataAccess');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const path = require('path');
 const storageService = require('../../shared/utils/storage');
-const renderMonitor = require('./monitors/renderMonitor');
 const fs = require('fs').promises;
+const _ = require('lodash');
 
 class AssemblyService {
   constructor() {
@@ -14,13 +15,14 @@ class AssemblyService {
     }
     
     this.apiKey = config.assembly.apiKey;
+    this.client = new creatomate.Client(this.apiKey);
     logger.info('Assembly Service initialized with API key');
   }
 
   async init() {
     logger.info('Initializing Assembly Service');
     try {
-      if (config.assembly.provider.toLowerCase() !== 'json2video') {
+      if (config.assembly.provider.toLowerCase() !== 'creatomate') {
         throw new Error('Invalid assembly provider configuration');
       }
       logger.info('Assembly Service initialized successfully');
@@ -30,393 +32,364 @@ class AssemblyService {
     }
   }
 
-  async createVideoProject(jobId, sceneConfigs) {
+  async createVideoProject(assemblyId, jobId, templateId) {
     try {
-      logger.info(`Creating video project for job: ${jobId}`);
+      logger.info(`Creating video project for job: ${jobId} with template: ${templateId}`);
 
-      // Get all scenes first
-      const scenes = await assemblyDataAccess.getAllScenes(jobId);
-      logger.info('Found scenes in database:', {
+      // Get job data
+      const jobData = await jobDataAccess.getJob(jobId);
+      if (!jobData) {
+        throw new Error(`Job not found: ${jobId}`);
+      }
+
+      // Get template configuration
+      const templateConfig = await this.getTemplateConfig(templateId);
+      if (!templateConfig) {
+        throw new Error('Template configuration not found');
+      }
+
+      // Validate template compatibility with job content
+      await this.validateTemplateCompatibility(jobData, templateConfig);
+
+      // Map job content to template modifications
+      const modifications = await this.mapJobContentToModifications(jobData, templateConfig);
+
+      // Construct webhook URL
+      const webhookUrl = `${config.assembly.webhookBaseUrl}/api/assembly/webhook`;
+      logger.info('Using webhook URL:', { webhookUrl });
+
+      // Start the render process
+      logger.info('Starting render with Creatomate:', {
         jobId,
-        sceneCount: scenes.length,
-        scenes: scenes.map(s => ({
-          sceneNumber: s.scene_number,
-          sceneId: s.scene_id
-        }))
+        templateId,
+        assemblyId,
+        webhookUrl,
+        modifications: Object.keys(modifications)
       });
 
-      // Initialize movie project
-      logger.info('Creating new Movie instance');
-      const movie = new Movie();
-      logger.info('Movie instance created:', {
-        hasSetMethod: typeof movie.set === 'function',
-        hasRenderMethod: typeof movie.render === 'function',
-        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(movie)),
-        movieObject: JSON.stringify(movie, null, 2)
+      const renderResponse = await this.client.render({
+        templateId: templateId,
+        modifications: modifications,
+        webhook_url: webhookUrl,
+        metadata: JSON.stringify({
+          jobId,
+          assemblyId,
+          templateId
+        })
       });
-      
-      // Set API key
-      try {
-        if (!this.apiKey) {
-          throw new Error('API key is not configured');
+
+      logger.info('Render started successfully:', {
+        renderId: renderResponse.id,
+        assemblyId,
+        jobId
+      });
+
+      // Update assembly record with render ID
+      await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+        project_id: renderResponse.id,
+        status: 'processing',
+        assembly_config: {
+          modifications,
+          webhookUrl,
+          templateId
         }
-        
-        movie.setAPIKey(this.apiKey);
-        logger.info('Movie project initialized with API key');
-      } catch (error) {
-        logger.error('Failed to set API key:', error);
-        throw new Error(`Failed to initialize movie project: ${error.message}`);
-      }
+      });
 
-      // Set quality and output configuration first
-      try {
-        // Set only properties that are listed in the Movie instance
-        const configSteps = [
-          { key: 'quality', value: 'high' },
-          { key: 'width', value: 1080 },
-          { key: 'height', value: 1920 },
-          { key: 'fps', value: 30 },
-          { key: 'resolution', value: '1080p' },
-          { key: 'exports', value: [{ 
-            format: 'mp4',
-            resolution: '1080p'
-          }] }
-        ];
-
-        // The aspect ratio will be determined by width/height
-
-        logger.info('Attempting to set movie configuration:', configSteps);
-
-        // Set each property individually with logging
-        for (const config of configSteps) {
-          try {
-            logger.info(`Setting ${config.key}:`, config.value);
-            movie.set(config.key, config.value);
-            logger.info(`Successfully set ${config.key}`);
-          } catch (error) {
-            logger.error(`Failed to set ${config.key}:`, {
-              value: config.value,
-              error: error.message || 'Unknown error',
-              stack: error.stack
-            });
-            throw new Error(`Failed to set ${config.key}: ${error.message || 'Unknown error'}`);
-          }
-        }
-
-        logger.info('Movie configuration completed successfully:', {
-          movieInstance: {
-            hasSetMethod: typeof movie.set === 'function',
-            hasRenderMethod: typeof movie.render === 'function',
-            movieObject: JSON.stringify(movie, null, 2)
-          }
-        });
-
-      } catch (error) {
-        logger.error('Failed to set movie configuration:', {
-          error: error.message,
-          stack: error.stack,
-          movieInstance: {
-            hasSetMethod: typeof movie.set === 'function',
-            hasRenderMethod: typeof movie.render === 'function',
-            movieObject: JSON.stringify(movie, null, 2)
-          }
-        });
-        throw new Error(`Failed to configure movie settings: ${error.message}`);
-      }
-
-      // Process each scene
-      logger.info(`Starting to process ${sceneConfigs.length} scenes`);
-
-      // Store scene assets for configuration
-      const sceneAssets = {};
-
-      for (const sceneConfig of sceneConfigs) {
-        try {
-          const assets = await assemblyDataAccess.getSceneAssets(jobId, sceneConfig.sceneId);
-          // Store assets for this scene
-          sceneAssets[sceneConfig.sceneId] = assets;
-
-          logger.info('Processing scene:', {
-            sceneId: sceneConfig.sceneId,
-            duration: sceneConfig.duration,
-            transition: sceneConfig.transition,
-            visualType: assets.visual.type,
-            assets: {
-              hasVisual: !!assets.visual.asset,
-              hasVoice: !!assets.voice,
-              visualType: assets.visual.type,
-              visualUrl: assets.visual.asset?.public_url,
-              voiceUrl: assets.voice?.public_url
-            }
-          });
-
-          const scene = new Scene();
-
-          // Set basic scene properties
-          scene.set("duration", sceneConfig.duration);
-
-          // Add visual element with transition
-          if (assets.visual.asset) {
-            try {
-              const visualElement = {
-                type: assets.visual.type === 'image' ? 'image' : 'video',
-                src: assets.visual.asset.public_url,
-                fit: "cover",
-                position: "center"
-              };
-
-              // Add transition to the element if specified
-              if (sceneConfig.transition) {
-                visualElement.transition = typeof sceneConfig.transition === 'string' 
-                  ? {
-                      style: sceneConfig.transition,
-                      duration: 1.0
-                    }
-                  : sceneConfig.transition;
-              }
-              
-              logger.info('Adding visual element:', {
-                sceneId: sceneConfig.sceneId,
-                element: visualElement
-              });
-              
-              scene.addElement(visualElement);
-            } catch (error) {
-              logger.error('Failed to add visual element:', {
-                sceneId: sceneConfig.sceneId,
-                error: error.message,
-                visualType: assets.visual.type,
-                url: assets.visual.asset.public_url
-              });
-              throw error;
-            }
-          }
-
-          // Add voice if available
-          if (assets.voice) {
-            try {
-              const audioElement = {
-                type: "audio",
-                src: assets.voice.public_url,
-                volume: 1,
-                loop: 0
-              };
-
-              logger.info('Adding audio element:', {
-                sceneId: sceneConfig.sceneId,
-                element: audioElement
-              });
-
-              scene.addElement(audioElement);
-            } catch (error) {
-              logger.error('Failed to add audio element:', {
-                sceneId: sceneConfig.sceneId,
-                error: error.message,
-                url: assets.voice.public_url
-              });
-              throw error;
-            }
-          }
-
-          // Add scene to movie
-          try {
-            movie.addScene(scene);
-            logger.info(`Added scene ${sceneConfig.sceneId} to movie`, {
-              sceneConfig,
-              sceneElements: scene.elements?.length || 0
-            });
-          } catch (error) {
-            logger.error('Failed to add scene to movie:', {
-              sceneId: sceneConfig.sceneId,
-              error: error.message,
-              scene: JSON.stringify(scene)
-            });
-            throw error;
-          }
-
-        } catch (error) {
-          logger.error(`Error processing scene ${sceneConfig.sceneId}:`, {
-            error: error.message,
-            stack: error.stack,
-            sceneConfig,
-            fullError: error
-          });
-          throw error;
-        }
-      }
-
-      logger.info(`Completed processing all ${sceneConfigs.length} scenes`);
-
-      // Add background music if available
-      const musicAsset = await assemblyDataAccess.getMusicAsset(jobId);
-      if (musicAsset) {
-        movie.set("soundtrack", {
-          source: musicAsset.public_url,
-          volume: 0.3,
-          loop: 0
-        });
-        logger.info('Added background music to movie');
-      }
-
-      // Start rendering
-      logger.info('Starting movie render...');
-
-      // Store configuration for database
-      const movieConfig = {
-        quality: "high",
-        width: 1080,
-        height: 1920,
-        fps: 30,
-        resolution: "1080p",
-        exports: [{ 
-          format: 'mp4',
-          resolution: '1080p'
-        }],
-        scenes: sceneConfigs.map(scene => ({
-          ...scene,
-          elements: {
-            visual: sceneAssets[scene.sceneId]?.visual?.asset?.public_url,
-            voice: sceneAssets[scene.sceneId]?.voice?.public_url
-          }
-        }))
+      // No need for background monitoring when using webhooks
+      return {
+        status: 'processing',
+        message: 'Video project created and render started',
+        assemblyId,
+        renderId: renderResponse.id
       };
-
-      logger.info('Starting movie render with configuration:', movieConfig);
-
-      try {
-        // Start render
-        const render = await movie.render();
-        logger.info('Render response:', render);
-
-        if (!render || !render.project) {
-          throw new Error('Invalid render response: missing project ID');
-        }
-
-        const projectId = render.project;
-        logger.info(`Render queued for job ${jobId}, project ID: ${projectId}`);
-
-        // Create assembly record
-        const assemblyOutput = await assemblyDataAccess.createAssemblyOutput(jobId, {
-          status: 'processing',
-          projectId: projectId,
-          assemblyConfig: movieConfig,
-          metadata: { 
-            scenes: sceneConfigs.length,
-            startedAt: new Date().toISOString()
-          }
-        });
-
-        // Start progress monitoring using the dedicated monitor
-        renderMonitor.monitorRender(movie, jobId, projectId);
-
-        return assemblyOutput;
-      } catch (error) {
-        logger.error('Render failed:', {
-          error: error.message,
-          stack: error.stack,
-          movieConfig,
-          movieObject: JSON.stringify(movie, null, 2)
-        });
-        throw new Error(`Failed to start render: ${error.message}`);
-      }
-
     } catch (error) {
       logger.error('Error in createVideoProject:', error);
+      // Update assembly record with error status
+      if (assemblyId) {
+        await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+          status: 'error',
+          error_message: error.message
+        }).catch(updateError => {
+          logger.error('Error updating assembly status:', updateError);
+        });
+      }
       throw error;
     }
   }
 
-  async createScene(assets, sceneConfig) {
-    const scene = new Scene();
-    
-    // Get temporary URLs that are valid only for assembly duration
-    const videoUrl = await storageService.getSignedUrl(assets.video.storage_key, 7200); // 2 hours
-    const voiceUrl = await storageService.getSignedUrl(assets.voice.storage_key, 7200);
-    
-    logger.info('Creating scene with secure URLs:', {
-      sceneNumber: sceneConfig.sceneNumber,
-      duration: sceneConfig.duration
-    });
+  async getTemplateConfig(templateId) {
+    try {
+      // Read template configuration from template-select-option.json
+      const templateConfigPath = path.join(__dirname, '../../../frontend/src/data/video-creation/assembly/template-select-option.json');
+      const templateConfigData = await fs.readFile(templateConfigPath, 'utf8');
+      const templateConfig = JSON.parse(templateConfigData);
 
-    scene.addElement({
-      type: "video",
-      source: videoUrl,
-      duration: sceneConfig.duration
-    });
+      // Find the template configuration by templateId
+      const template = templateConfig.options.find(opt => opt.templateId === templateId);
+      if (!template) {
+        throw new Error(`Template configuration not found for templateId: ${templateId}`);
+      }
 
-    scene.addElement({
-      type: "audio",
-      source: voiceUrl,
-      volume: 1
-    });
-
-    return scene;
+      return template;
+    } catch (error) {
+      logger.error('Error getting template configuration:', error);
+      throw error;
+    }
   }
 
-  getMediaUrl(relativePath) {
-    if (!relativePath) {
-      throw new Error('Invalid relative path');
+  async validateTemplateCompatibility(jobData, template) {
+    try {
+      const { templateContent, aspectRatio, sceneAmount } = template;
+
+      // Check if job has the required number of scenes
+      if (!jobData.metadata?.scenes || !Array.isArray(jobData.metadata.scenes)) {
+        throw new Error('Job data does not contain any scenes');
+      }
+
+      const jobSceneCount = jobData.metadata.scenes.length;
+      if (jobSceneCount !== sceneAmount) {
+        throw new Error(`Scene count mismatch. Template requires ${sceneAmount} scenes, but job has ${jobSceneCount} scenes`);
+      }
+
+      // Check if job has required content types, ignoring 'text' since it's always generated
+      const jobContentTypes = new Set();
+      jobData.metadata.scenes.forEach(scene => {
+        if (scene.video) jobContentTypes.add('video');
+        if (scene.image) jobContentTypes.add('image');
+        if (scene.voice) jobContentTypes.add('voice');
+        if (scene.animation) jobContentTypes.add('animation');
+      });
+
+      // Filter out 'text' from content validation since it's always generated
+      const requiredContentTypes = templateContent.filter(type => type !== 'text');
+      
+      // For video content, either video OR animation is acceptable
+      const hasVideoContent = jobContentTypes.has('video') || jobContentTypes.has('animation');
+      const nonVideoContentTypes = requiredContentTypes.filter(type => type !== 'video' && type !== 'animation');
+      
+      // Check for missing non-video content types
+      const missingTypes = nonVideoContentTypes.filter(type => !jobContentTypes.has(type));
+      
+      // If video/animation is required but neither is present, add to missing types
+      if (requiredContentTypes.includes('video') && !hasVideoContent) {
+        missingTypes.push('video or animation');
+      }
+
+      if (missingTypes.length > 0) {
+        throw new Error(`Missing required content types: ${missingTypes.join(', ')}`);
+      }
+
+      // Check aspect ratio compatibility
+      const jobAspectRatio = jobData.metadata?.parameters?.llmGenParams?.image?.aspectRatio;
+      
+      if (jobAspectRatio && jobAspectRatio !== aspectRatio) {
+        throw new Error(`Aspect ratio mismatch. Template requires ${aspectRatio}, but job has ${jobAspectRatio}`);
+      }
+
+      // Validate that each scene has the required content based on modification properties
+      for (let i = 0; i < sceneAmount; i++) {
+        const scene = jobData.metadata.scenes[i];
+        if (!scene) {
+          throw new Error(`Missing scene at index ${i}`);
+        }
+
+        // Check each modification property for this scene
+        for (const [key, config] of Object.entries(template.modificationProperties)) {
+          if (key.includes(`Scene-${i + 1}`)) {
+            const { allowedContent } = config;
+            // For each scene, check if at least one of the allowed types is present
+            const hasRequiredContent = allowedContent.some(type => {
+              const lowerType = type.toLowerCase();
+              if (lowerType === 'text') {
+                // For text content, check in llmResult.scenes
+                return jobData.metadata?.llmResult?.scenes?.[i]?.description;
+              }
+              return scene[lowerType];
+            });
+            
+            if (!hasRequiredContent) {
+              throw new Error(`Scene ${i + 1} is missing required content. At least one of these types is required: ${allowedContent.join(' or ')}`);
+            }
+          }
+        }
+      }
+
+      return true;
+    } catch (error) {
+      logger.error('Template compatibility validation failed:', error);
+      throw error;
     }
-    // Ensure the path uses forward slashes
-    const normalizedPath = relativePath.replace(/\\/g, '/');
-    return `${this.mediaBaseUrl}${normalizedPath}`;
+  }
+
+  getContentTypeFromScene(scene, allowedContent) {
+    for (const type of allowedContent) {
+      if (scene[type.toLowerCase()]) {
+        return type;
+      }
+    }
+    return null;
+  }
+
+  async mapJobContentToModifications(jobData, template) {
+    try {
+      logger.info('Starting content mapping with job data:', {
+        jobId: jobData.job_id,
+        hasMetadata: !!jobData.metadata,
+        sceneCount: jobData.metadata?.scenes?.length,
+        firstScene: jobData.metadata?.scenes?.[0] || null
+      });
+
+      const modifications = {};
+
+      // Get LLM result properties for text content
+      const llmProperties = await assemblyDataAccess.getLLMResultProperties(jobData.job_id, { includeScenes: true });
+      logger.info('Retrieved LLM properties for content mapping:', {
+        hasTitle: !!llmProperties.title,
+        hasDescription: !!llmProperties.description,
+        hasScenes: !!llmProperties.scenes
+      });
+
+      // Map each modification property from template to job content
+      for (const [key, config] of Object.entries(template.modificationProperties)) {
+        const { keyPath, type, allowedContent } = config;
+        logger.info(`Processing modification for ${key}:`, { keyPath, type, allowedContent });
+
+        // Handle array of keyPaths
+        let sceneContent = null;
+        let usedPath = null;
+
+        // For text type, first try to get content from LLM properties
+        if (type === 'text') {
+          // Check if this is a scene-specific text
+          const sceneMatch = key.match(/Text-Scene-(\d+)/);
+          if (sceneMatch) {
+            const sceneNum = parseInt(sceneMatch[1]);
+            // Access description directly from llmResult.scenes array
+            sceneContent = jobData.metadata?.llmResult?.scenes?.[sceneNum - 1]?.description;
+            logger.info(`Attempting to get scene ${sceneNum} description:`, {
+              hasLLMResult: !!jobData.metadata?.llmResult,
+              hasScenes: !!jobData.metadata?.llmResult?.scenes,
+              sceneIndex: sceneNum - 1,
+              foundDescription: !!sceneContent
+            });
+          } else {
+            // For non-scene text, check global properties
+            const propertyMatch = keyPath.match(/metadata\.llmResult\.(\w+)/);
+            if (propertyMatch) {
+              const property = propertyMatch[1];
+              sceneContent = llmProperties[property];
+            }
+          }
+
+          if (sceneContent) {
+            modifications[key] = sceneContent;
+            logger.info(`Added text content for ${key} from LLM properties`);
+            continue;
+          }
+        }
+
+        // If not text type or text content not found in LLM properties, proceed with normal path lookup
+        if (Array.isArray(keyPath)) {
+          // Try each keyPath until we find content
+          for (const path of keyPath) {
+            const content = _.get(jobData, path);
+            if (content) {
+              sceneContent = content;
+              usedPath = path;
+              logger.info(`Found content using keyPath: ${path}`, { key });
+              break;
+            }
+          }
+        } else {
+          sceneContent = _.get(jobData, keyPath);
+          usedPath = keyPath;
+        }
+
+        if (!sceneContent) {
+          const error = `Required content not found for ${key}. Tried paths: ${Array.isArray(keyPath) ? keyPath.join(', ') : keyPath}`;
+          logger.error(error);
+          throw new Error(error);
+        }
+
+        // For text type that wasn't found in LLM properties
+        if (type === 'text') {
+          modifications[key] = sceneContent;
+          logger.info(`Added text content for ${key} from job data`);
+          continue;
+        }
+
+        // Extract the content source type from the used path
+        let contentSource;
+        const sceneContentMatch = usedPath.match(/scenes\[\d+\]\.(\w+)\.publicUrl/);
+        const globalContentMatch = usedPath.match(/metadata\.(\w+)\.publicUrl/);
+        
+        if (sceneContentMatch) {
+          contentSource = sceneContentMatch[1];
+        } else if (globalContentMatch) {
+          contentSource = globalContentMatch[1];
+        } else {
+          const error = `Could not determine content source type from path: ${usedPath}`;
+          logger.error(error);
+          throw new Error(error);
+        }
+
+        // Verify the content source is allowed
+        if (!allowedContent.includes(contentSource)) {
+          const error = `Content source ${contentSource} not allowed for ${key}. Allowed sources: ${allowedContent.join(', ')}`;
+          logger.error(error);
+          throw new Error(error);
+        }
+
+        // Get file extension from URL, removing any query parameters
+        const urlWithoutParams = sceneContent.split('?')[0];
+        const fileExtension = urlWithoutParams.split('.').pop().toLowerCase();
+        let isValidFileType = false;
+
+        switch (type) {
+          case 'video':
+            isValidFileType = ['mp4', 'mov', 'avi', 'webm'].includes(fileExtension);
+            break;
+          case 'audio':
+            isValidFileType = ['mp3', 'wav', 'ogg', 'm4a'].includes(fileExtension);
+            break;
+          case 'image':
+            isValidFileType = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
+            break;
+          default:
+            // For any other types, assume valid
+            isValidFileType = true;
+        }
+
+        if (!isValidFileType) {
+          const validExtensions = {
+            video: ['mp4', 'mov', 'avi', 'webm'],
+            audio: ['mp3', 'wav', 'ogg', 'm4a'],
+            image: ['jpg', 'jpeg', 'png', 'gif', 'webp']
+          };
+          const expectedExtensions = validExtensions[type] || [];
+          const error = `Invalid file type for ${key}. Expected ${type} file (${expectedExtensions.join(', ')}) but got extension .${fileExtension}`;
+          logger.error(error);
+          throw new Error(error);
+        }
+
+        // Use the URL directly since it's already a signed URL
+        modifications[key] = sceneContent;
+        logger.info(`Added URL for ${key} from ${contentSource} source with file type ${type}`);
+      }
+
+      logger.info('Completed content mapping with modifications:', { 
+        modificationKeys: Object.keys(modifications)
+      });
+
+      return modifications;
+    } catch (error) {
+      logger.error('Error mapping job content to modifications:', error);
+      throw error;
+    }
   }
 
   async close() {
     logger.info('Closing Assembly Service');
-  }
-
-  async saveLocalOutput(jobId, videoUrl, metadata) {
-    try {
-      // Create output path structure
-      const dateFolder = new Date().toISOString().split('T')[0];
-      const outputPath = path.join(
-        config.output.directory,
-        'assembly',
-        dateFolder,
-        jobId
-      );
-
-      // Ensure directory exists
-      await fs.mkdir(outputPath, { recursive: true });
-      
-      // Save metadata
-      const metadataPath = path.join(outputPath, 'metadata.json');
-      await fs.writeFile(
-        metadataPath, 
-        JSON.stringify({
-          jobId,
-          videoUrl,
-          createdAt: new Date().toISOString(),
-          ...metadata
-        }, null, 2)
-      );
-
-      // Download and save video file
-      if (videoUrl) {
-        const videoPath = path.join(outputPath, 'assembled_video.mp4');
-        const response = await fetch(videoUrl);
-        const buffer = await response.buffer();
-        await fs.writeFile(videoPath, buffer);
-      }
-
-      logger.info('Saved local output files:', {
-        jobId,
-        outputPath,
-        files: ['metadata.json', 'assembled_video.mp4']
-      });
-
-      return {
-        outputPath,
-        metadataPath
-      };
-    } catch (error) {
-      logger.error('Failed to save local output:', {
-        jobId,
-        error: error.message
-      });
-      // Don't throw - this is just for testing
-    }
   }
 }
 
