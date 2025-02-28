@@ -34,25 +34,36 @@ class AssemblyService {
 
   async createVideoProject(assemblyId, jobId, templateId) {
     try {
-      logger.info(`Creating video project for job: ${jobId} with template: ${templateId}`);
+      logger.info('Creating video project:', { assemblyId, jobId, templateId });
 
       // Get job data
       const jobData = await jobDataAccess.getJob(jobId);
       if (!jobData) {
         throw new Error(`Job not found: ${jobId}`);
       }
+      logger.info('Retrieved job data:', { jobId, status: jobData.status });
 
       // Get template configuration
       const templateConfig = await this.getTemplateConfig(templateId);
       if (!templateConfig) {
         throw new Error('Template configuration not found');
       }
+      logger.info('Retrieved template configuration:', { 
+        templateId, 
+        sceneCount: templateConfig.sceneAmount,
+        aspectRatio: templateConfig.aspectRatio 
+      });
 
       // Validate template compatibility with job content
       await this.validateTemplateCompatibility(jobData, templateConfig);
+      logger.info('Template compatibility validated successfully');
 
       // Map job content to template modifications
       const modifications = await this.mapJobContentToModifications(jobData, templateConfig);
+      logger.info('Job content mapped to modifications:', { 
+        modificationKeys: Object.keys(modifications),
+        sceneCount: templateConfig.sceneAmount
+      });
 
       // Construct webhook URL
       const webhookUrl = `${config.assembly.webhookBaseUrl}/api/assembly/webhook`;
@@ -79,40 +90,34 @@ class AssemblyService {
       });
 
       logger.info('Render started successfully:', {
-        renderId: renderResponse.id,
         assemblyId,
-        jobId
+        jobId,
+        renderId: renderResponse.id
       });
 
       // Update assembly record with render ID
       await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
         project_id: renderResponse.id,
         status: 'processing',
-        assembly_config: {
-          modifications,
-          webhookUrl,
-          templateId
+        metadata: {
+          renderId: renderResponse.id,
+          startTime: new Date().toISOString()
         }
       });
 
-      // No need for background monitoring when using webhooks
       return {
-        status: 'processing',
-        message: 'Video project created and render started',
         assemblyId,
+        status: 'processing',
         renderId: renderResponse.id
       };
     } catch (error) {
-      logger.error('Error in createVideoProject:', error);
-      // Update assembly record with error status
-      if (assemblyId) {
-        await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-          status: 'error',
-          error_message: error.message
-        }).catch(updateError => {
-          logger.error('Error updating assembly status:', updateError);
-        });
-      }
+      logger.error('Error creating video project:', {
+        error: error.message,
+        stack: error.stack,
+        assemblyId,
+        jobId,
+        templateId
+      });
       throw error;
     }
   }

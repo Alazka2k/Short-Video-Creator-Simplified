@@ -2,6 +2,10 @@ const express = require('express');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const axios = require('axios');
+const assemblyDataAccess = require('./data/assemblyDataAccess');
+const storageService = require('../../shared/utils/storage');
+const path = require('path');
+const fs = require('fs');
 
 function createServer(assemblyServiceInterface, storageService) {
   const app = express();
@@ -17,7 +21,7 @@ function createServer(assemblyServiceInterface, storageService) {
 
   // Health check endpoint
   app.get('/health', (req, res) => {
-    res.json({ status: 'Assembly Service is healthy' });
+    res.json({ status: 'ok' });
   });
 
   // Assemble video endpoint
@@ -134,75 +138,148 @@ function createServer(assemblyServiceInterface, storageService) {
                 responseType: 'stream'
               });
 
-              const storageKey = `assembly/${assemblyId}.mp4`;
-              await storageService.s3.upload({
-                Bucket: storageService.bucket,
-                Key: storageKey,
-                Body: response.data,
-                ContentType: 'video/mp4'
-              }).promise();
+              // Format date as YYYY-MM-DD
+              const date = new Date().toISOString().split('T')[0];
+              const storageKey = `assembly/${date}/${jobId}/final.mp4`;
+              
+              logger.info('Generated storage key:', { storageKey });
 
-              const publicUrl = await storageService.getSignedUrl(storageKey, 3600);
-
-              // Update assembly record with storage information
-              await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-                status: 'completed',
-                storage_key: storageKey,
-                public_url: publicUrl,
-                metadata: {
-                  completedAt: new Date().toISOString(),
-                  renderId: render_id,
-                  creatomateUrl: url
-                },
-                updated_at: new Date()
+              // Download video to temp location first
+              const tempDir = path.join(process.env.TEMP || '/tmp', 'assembly-downloads');
+              logger.info('Creating temporary directory:', { tempDir });
+              await fs.promises.mkdir(tempDir, { recursive: true });
+              
+              const tempPath = path.join(tempDir, `${jobId}-final.mp4`);
+              logger.info('Starting video download to temp file:', { tempPath });
+              
+              // Stream to temp file
+              const writer = fs.createWriteStream(tempPath);
+              response.data.pipe(writer);
+              
+              await new Promise((resolve, reject) => {
+                writer.on('finish', () => {
+                  logger.info('Video download completed successfully:', { tempPath });
+                  resolve();
+                });
+                writer.on('error', (err) => {
+                  logger.error('Error downloading video:', err);
+                  reject(err);
+                });
               });
 
-              logger.info('Assembly completed successfully:', { 
-                assemblyId, 
+              // Upload using storage service and get signed URL
+              logger.info('Starting upload to S3:', { tempPath, serviceType: 'assembly' });
+              const { url: signedUrl, storageKey: finalStorageKey } = await storageService.uploadFile(tempPath, 'assembly');
+              logger.info('Upload to S3 completed:', { 
+                storageKey: finalStorageKey,
+                signedUrl: signedUrl
+              });
+
+              // Clean up temp file
+              logger.info('Cleaning up temporary file:', { tempPath });
+              await fs.promises.unlink(tempPath);
+              logger.info('Temporary file deleted successfully');
+
+              logger.info('Video processing completed successfully:', { 
                 jobId,
-                renderId: render_id,
-                storageKey, 
-                publicUrl 
+                assemblyId,
+                storageKey: finalStorageKey,
+                duration: req.body.duration,
+                resolution: `${req.body.width}x${req.body.height}`,
+                frameRate: req.body.frame_rate
               });
-            } catch (storageError) {
-              logger.error('Error storing assembled video:', storageError);
-              await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-                status: 'error',
-                error_message: `Failed to store assembled video: ${storageError.message}`,
-                updated_at: new Date()
+
+              // Update assembly output record
+              await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+                status: 'completed',
+                storage_key: finalStorageKey,
+                public_url: signedUrl,
+                metadata: {
+                  renderId: render_id,
+                  completedAt: new Date().toISOString(),
+                  duration: req.body.duration,
+                  fileSize: req.body.file_size,
+                  resolution: {
+                    width: req.body.width,
+                    height: req.body.height
+                  },
+                  frameRate: req.body.frame_rate
+                }
               });
+
+              logger.info('Assembly completed successfully:', {
+                assemblyId,
+                jobId,
+                storageKey: finalStorageKey,
+                renderId: render_id
+              });
+
+              return res.json({
+                status: 'completed',
+                assemblyId,
+                storageKey: finalStorageKey
+              });
+            } catch (error) {
+              logger.error('Error storing assembled video:', error);
+              await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+                status: 'failed',
+                metadata: {
+                  error: error.message,
+                  errorStack: error.stack,
+                  failedAt: new Date().toISOString()
+                }
+              });
+              throw error;
             }
-          } else {
-            logger.error('No video URL provided in webhook for completed render');
-            await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-              status: 'error',
-              error_message: 'No video URL provided in webhook',
-              updated_at: new Date()
-            });
           }
           break;
 
         case 'failed':
-          await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-            status: 'error',
-            error_message: error || 'Render failed',
-            updated_at: new Date()
+          logger.error('Render failed:', {
+            assemblyId,
+            jobId,
+            renderId: render_id,
+            error
           });
-          logger.error('Assembly failed:', { jobId, assemblyId, renderId: render_id, error });
-          break;
+
+          await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+            status: 'failed',
+            metadata: {
+              error: error || 'Unknown render error',
+              failedAt: new Date().toISOString()
+            }
+          });
+
+          return res.json({
+            status: 'failed',
+            assemblyId,
+            error
+          });
 
         default:
-          logger.info('Assembly status update:', { jobId, assemblyId, renderId: render_id, status });
-          await assemblyServiceInterface.service.assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-            status: status === 'processing' ? 'processing' : 'pending',
-            updated_at: new Date()
+          logger.info('Received status update:', {
+            assemblyId,
+            jobId,
+            status,
+            renderId: render_id
+          });
+
+          await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+            status: status,
+            metadata: {
+              renderId: render_id,
+              updatedAt: new Date().toISOString()
+            }
+          });
+
+          return res.json({
+            status: status,
+            assemblyId
           });
       }
-
-      res.json({ message: 'Webhook processed successfully' });
     } catch (error) {
       logger.error('Error processing webhook:', error);
-      res.status(500).json({ error: 'Failed to process webhook' });
+      return res.status(500).json({ error: 'Failed to process webhook' });
     }
   });
 

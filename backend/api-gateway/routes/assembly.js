@@ -43,6 +43,8 @@ router.post('/assemble',
           logger.info('Checking for user token:', {
             hasUserToken: !!userToken,
             tokenStart: userToken ? `${userToken}` : null
+            //tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null
+
           });
 
           if (userToken) {
@@ -52,7 +54,7 @@ router.post('/assemble',
             
             try {
               const profileResponse = await axios.get(profileUrl, {
-                headers: { 
+                headers: {
                   'Authorization': `Bearer ${userToken}`,
                   'Content-Type': 'application/json'
                 }
@@ -126,11 +128,24 @@ router.post('/assemble',
         });
       }
 
+      logger.info('Forwarding assembly request to Assembly service:', { 
+        jobId, 
+        templateId,
+        userId: actualUserId,
+        isApiUser 
+      });
+
       // Create assembly output record
       const assemblyId = await assemblyDataAccess.createAssemblyOutput(jobId, actualUserId, templateId);
 
       // Start video assembly process
       await assemblyService.createVideoProject(assemblyId, jobId, templateId);
+
+      logger.info('Assembly request processed:', { 
+        assemblyId,
+        jobId,
+        status: 'processing' 
+      });
 
       return res.status(202).json({
         message: 'Video assembly started',
@@ -138,7 +153,7 @@ router.post('/assemble',
         status: 'processing'
       });
     } catch (error) {
-      logger.error('Error starting video assembly:', error);
+      logger.error('Error in assembly request:', error);
       return res.status(500).json({
         error: 'Failed to start video assembly',
         details: error.message
@@ -249,21 +264,14 @@ router.get('/template/:templateId',
 // Webhook endpoint - no auth required as it's called by Creatomate
 router.post('/webhook', async (req, res) => {
   try {
-    logger.info('Received webhook from Creatomate:', req.body);
-    
-    const { render_id, status, error, metadata, url } = req.body;
+    const { render_id, status, metadata } = req.body;
     const { assemblyId, jobId } = JSON.parse(metadata || '{}');
 
-    if (!assemblyId) {
-      logger.error('No assemblyId found in webhook metadata');
-      return res.status(400).json({ error: 'Missing assemblyId in metadata' });
-    }
-
-    logger.info('Processing webhook for assembly:', {
-      assemblyId,
-      jobId,
+    logger.info('Received Creatomate webhook:', {
+      renderId: render_id,
       status,
-      renderId: render_id
+      assemblyId,
+      jobId
     });
 
     // Forward the webhook to the assembly service
@@ -272,16 +280,14 @@ router.post('/webhook', async (req, res) => {
       req.body
     );
 
-    logger.info('Webhook forwarded successfully:', {
-      assemblyId,
-      status,
-      response: response.data
-    });
-
-    res.json(response.data);
+    logger.info('Webhook forwarded to Assembly service');
+    return res.json(response.data);
   } catch (error) {
     logger.error('Error processing webhook:', error);
-    res.status(500).json({ error: 'Failed to process webhook' });
+    return res.status(error.response?.status || 500).json({
+      error: 'Failed to process webhook',
+      details: error.response?.data || error.message
+    });
   }
 });
 

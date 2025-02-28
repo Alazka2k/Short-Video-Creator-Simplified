@@ -1,22 +1,49 @@
 const winston = require('winston');
+const { format } = winston;
 const path = require('path');
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.printf(({ level, message, ...meta }) => {
-      let logMessage = `[${level}]: ${message}`;
-      if (Object.keys(meta).length > 0) {
-        logMessage += '\n' + JSON.stringify(meta, null, 2);
+// Helper function to handle circular references
+const getCircularReplacer = () => {
+  const seen = new WeakSet();
+  return (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
       }
-      return logMessage;
-    })
+      seen.add(value);
+    }
+    return value;
+  };
+};
+
+// Custom format for log messages
+const customFormat = format.printf(({ level, message, timestamp, ...meta }) => {
+  let logMessage = `${level}: ${message}`;
+  
+  if (Object.keys(meta).length > 0) {
+    try {
+      logMessage += '\n' + JSON.stringify(meta, getCircularReplacer(), 2);
+    } catch (error) {
+      logMessage += '\n[Error serializing metadata]';
+    }
+  }
+  
+  return logMessage;
+});
+
+// Configure winston logger
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    customFormat
   ),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
+      format: format.combine(
+        format.colorize(),
+        customFormat
       )
     }),
     new winston.transports.File({ 
