@@ -44,7 +44,16 @@ function createServer(assemblyServiceInterface, storageService) {
 
       try {
         const result = await assemblyServiceInterface.generateContent(jobId, templateId);
-        res.json(result);
+        
+        // Return enhanced response
+        res.json({
+          message: "Video assembly started",
+          assemblyId: result.assemblyId,
+          jobId,
+          templateId,
+          creatomateId: result.creatomateId,
+          status: "processing"
+        });
       } catch (error) {
         logger.error('Error generating content:', error);
         res.status(500).json({
@@ -119,8 +128,8 @@ function createServer(assemblyServiceInterface, storageService) {
   app.post('/webhook', async (req, res) => {
     try {
       logger.info('Assembly Service: Processing webhook:', req.body);
-      const { render_id, status, error, metadata, url } = req.body;
-      const { assemblyId, jobId } = JSON.parse(metadata || '{}');
+      const { id: creatomateId, status, error, metadata, url } = req.body;
+      const { assemblyId, jobId, templateId } = JSON.parse(metadata || '{}');
 
       if (!assemblyId) {
         logger.error('No assemblyId found in webhook metadata');
@@ -189,47 +198,67 @@ function createServer(assemblyServiceInterface, storageService) {
                 frameRate: req.body.frame_rate
               });
 
-              // Update assembly output record
+              // Update assembly output record with completion data
               await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
                 status: 'completed',
                 storage_key: finalStorageKey,
                 public_url: signedUrl,
+                creatomate_id: creatomateId,
+                template_id: templateId,
                 metadata: {
-                  renderId: render_id,
-                  completedAt: new Date().toISOString(),
+                  scenes: jobData.metadata?.scenes?.length || 0,
                   duration: req.body.duration,
                   fileSize: req.body.file_size,
+                  frameRate: req.body.frame_rate,
                   resolution: {
                     width: req.body.width,
                     height: req.body.height
-                  },
-                  frameRate: req.body.frame_rate
+                  }
                 }
               });
 
               logger.info('Assembly completed successfully:', {
                 assemblyId,
                 jobId,
+                templateId,
                 storageKey: finalStorageKey,
-                renderId: render_id
+                creatomateId,
+                status: 'completed'
               });
 
               return res.json({
                 status: 'completed',
                 assemblyId,
-                storageKey: finalStorageKey
+                jobId,
+                templateId,
+                creatomateId,
+                storageKey: finalStorageKey,
+                metadata: {
+                  duration: req.body.duration,
+                  resolution: `${req.body.width}x${req.body.height}`,
+                  frameRate: req.body.frame_rate
+                }
               });
             } catch (error) {
               logger.error('Error storing assembled video:', error);
+              
+              // Update assembly record with error status
               await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
                 status: 'failed',
+                creatomate_id: creatomateId,
                 metadata: {
                   error: error.message,
                   errorStack: error.stack,
-                  failedAt: new Date().toISOString()
+                  failedAt: new Date().toISOString(),
+                  stage: 'video_processing'
                 }
               });
-              throw error;
+
+              return res.status(500).json({
+                status: 'failed',
+                error: 'Failed to process assembled video',
+                details: error.message
+              });
             }
           }
           break;
@@ -238,22 +267,26 @@ function createServer(assemblyServiceInterface, storageService) {
           logger.error('Render failed:', {
             assemblyId,
             jobId,
-            renderId: render_id,
+            creatomateId: creatomateId,
             error
           });
 
           await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
             status: 'failed',
+            creatomate_id: creatomateId,
             metadata: {
               error: error || 'Unknown render error',
-              failedAt: new Date().toISOString()
+              failedAt: new Date().toISOString(),
+              stage: 'creatomate_render'
             }
           });
 
           return res.json({
             status: 'failed',
             assemblyId,
-            error
+            creatomateId,
+            error,
+            stage: 'creatomate_render'
           });
 
         default:
@@ -261,25 +294,54 @@ function createServer(assemblyServiceInterface, storageService) {
             assemblyId,
             jobId,
             status,
-            renderId: render_id
+            creatomateId: creatomateId
           });
 
           await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-            status: status,
+            status: status === 'processing' ? 'processing' : 'pending',
+            creatomate_id: creatomateId,
             metadata: {
-              renderId: render_id,
-              updatedAt: new Date().toISOString()
+              renderId: creatomateId,
+              lastStatusUpdate: new Date().toISOString(),
+              currentStatus: status
             }
           });
 
           return res.json({
             status: status,
-            assemblyId
+            assemblyId,
+            creatomateId: creatomateId,
+            lastUpdate: new Date().toISOString()
           });
       }
     } catch (error) {
       logger.error('Error processing webhook:', error);
-      return res.status(500).json({ error: 'Failed to process webhook' });
+      
+      // Try to update assembly status if we have the ID
+      if (req.body?.metadata) {
+        try {
+          const { assemblyId } = JSON.parse(req.body.metadata);
+          if (assemblyId) {
+            await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+              status: 'failed',
+              metadata: {
+                error: error.message,
+                errorStack: error.stack,
+                failedAt: new Date().toISOString(),
+                stage: 'webhook_processing'
+              }
+            });
+          }
+        } catch (updateError) {
+          logger.error('Failed to update assembly status:', updateError);
+        }
+      }
+      
+      return res.status(500).json({
+        status: 'failed',
+        error: 'Failed to process webhook',
+        details: error.message
+      });
     }
   });
 

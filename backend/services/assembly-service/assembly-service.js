@@ -69,6 +69,13 @@ class AssemblyService {
       const webhookUrl = `${config.assembly.webhookBaseUrl}/api/assembly/webhook`;
       logger.info('Using webhook URL:', { webhookUrl });
 
+      // Prepare render configuration
+      const renderConfig = {
+        templateId: templateId,
+        modifications: modifications,
+        webhook_url: webhookUrl
+      };
+
       // Start the render process
       logger.info('Starting render with Creatomate:', {
         jobId,
@@ -79,9 +86,7 @@ class AssemblyService {
       });
 
       const renderResponse = await this.client.render({
-        templateId: templateId,
-        modifications: modifications,
-        webhook_url: webhookUrl,
+        ...renderConfig,
         metadata: JSON.stringify({
           jobId,
           assemblyId,
@@ -95,20 +100,27 @@ class AssemblyService {
         renderId: renderResponse.id
       });
 
-      // Update assembly record with render ID
+      // Update assembly record with render ID and configuration
       await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-        project_id: renderResponse.id,
+        creatomate_id: renderResponse.id,
         status: 'processing',
+        assembly_config: renderConfig,
         metadata: {
           renderId: renderResponse.id,
-          startTime: new Date().toISOString()
+          startTime: new Date().toISOString(),
+          templateConfig,
+          jobData: {
+            id: jobData.job_id,
+            status: jobData.status,
+            scenes: jobData.metadata?.scenes?.length || 0
+          }
         }
       });
 
       return {
         assemblyId,
         status: 'processing',
-        renderId: renderResponse.id
+        creatomateId: renderResponse.id
       };
     } catch (error) {
       logger.error('Error creating video project:', {
@@ -118,6 +130,17 @@ class AssemblyService {
         jobId,
         templateId
       });
+
+      // Update assembly record with error status
+      await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
+        status: 'failed',
+        metadata: {
+          error: error.message,
+          errorStack: error.stack,
+          failedAt: new Date().toISOString()
+        }
+      });
+
       throw error;
     }
   }

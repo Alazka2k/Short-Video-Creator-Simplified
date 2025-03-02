@@ -294,14 +294,41 @@ class AssemblyDataAccess {
 
   async updateAssemblyOutput(assemblyId, updates) {
     try {
+      const existingAssembly = await knex('assembly_outputs')
+        .where('assembly_id', assemblyId)
+        .first();
+
+      if (!existingAssembly) {
+        throw new Error(`Assembly not found with ID: ${assemblyId}`);
+      }
+
       const updateData = {
         ...updates,
         updated_at: knex.fn.now()
       };
 
-      // If metadata is provided, merge it with existing metadata
+      // Handle metadata merging
       if (updates.metadata) {
-        updateData.metadata = knex.raw('metadata || ?::jsonb', [JSON.stringify(updates.metadata)]);
+        const existingMetadata = existingAssembly.metadata || {};
+        updateData.metadata = JSON.stringify({
+          ...existingMetadata,
+          ...updates.metadata
+        });
+      }
+
+      // Handle assembly_config
+      if (updates.assembly_config) {
+        updateData.assembly_config = updates.assembly_config;
+      }
+
+      // Ensure status is properly set
+      if (updates.status) {
+        updateData.status = updates.status;
+        logger.info('Updating assembly status:', {
+          assemblyId,
+          oldStatus: existingAssembly.status,
+          newStatus: updates.status
+        });
       }
 
       const [result] = await knex('assembly_outputs')
