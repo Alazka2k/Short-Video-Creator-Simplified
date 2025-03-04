@@ -1,0 +1,138 @@
+{
+    "job_id": "97e88eb3-69c9-4217-905d-f29568c50d4c",
+    "user_id": 30,
+    "created_at": "2025-02-11T10:13:19.002Z",
+    "updated_at": "2025-02-27T13:57:42.004Z",
+    "status": "completed",
+    "service_sequence": [
+        "llm",
+        "image",
+        "voice",
+        "music",
+        "video"
+    ],
+    "metadata": {
+        "jobId": "97e88eb3-69c9-4217-905d-f29568c50d4c",
+        "music": {
+            "style": "Epic orchestral with electronic elements",
+            "title": "Epic orchestral score infused with energetic electronic beats, capturing the essence of adventure, battle, and the indomitable spirit of a warrior. Dynamic rhythms intertwine with powerful crescendos, echoing the journey and strength of Son Goku.",
+            "fileName": "background_music.mp3",
+            "filePath": "data\\output\\music\\2025-02-11\\97e88eb3-69c9-4217-905d-f29568c50d4c\\background_music.mp3",
+            "metadata": {
+                "createdAt": "2025-02-11T10:13:55.275Z",
+                "generatedAt": "2025-02-11T10:15:00.406Z",
+                "generationId": "03c68f59-df3a-46b2-bc3d-791bc8b3ae44"
+            },
+            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/music/temp_1739268897866.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250227%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250227T135823Z&X-Amz-Expires=3600&X-Amz-Signature=290f75f8d1ad14421313795cdb59423aa276ad6a7c3259e1aadf1f6ee278e3e2&X-Amz-SignedHeaders=host",
+            "storageKey": "music/temp_1739268897866.mp3"
+        },
+        "scenes": [
+            {
+                "image": {
+                    "fileName": "image_scene_1.png",
+                    "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-02-11\\97e88eb3-69c9-4217-905d-f29568c50d4c\\scene_1\\image_scene_1.png",
+                    "imageUrl": "https://cdn.midjourney.com/be3466ea-08fa-44e9-b5b8-77957788ee95/0_2.png",
+                    "metadata": {
+                        "prompt": "A cosmic view of space with swirling galaxies, a radiant light beam focuses on a determined Son Goku in his iconic Super Saiyan form. The scene encapsulates the power and grace of a Saiyan warrior. Bright, golden energy flows around him, his hair standing tall and golden. High-angle view, evening, with a soft golden light, emphasizing his transformation and celestial connection.",
+                        "generatedAt": "2025-02-11T10:14:19.687Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250227%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250227T135823Z&X-Amz-Expires=3600&X-Amz-Signature=d1cc583c4ffa9c00d63e3255c2a91ce8c609033e77e440eed4ab1cc397669c4e&X-Amz-SignedHeaders=host",
+                    "storageKey": "image/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/image_scene_1.png",
+                    "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1338815357032599596/alazka_A_cosmic_view_of_space_with_swirling_galaxies_a_radiant_be3466ea-08fa-44e9-b5b8-77957788ee95.png?ex=67ac7477&is=67ab22f7&hm=e91011b858a9558918a0170dbe0755e8370bfe91f6e0b4537b42b5862a018320&"
+                },
+                "video": {
+                    "fileName": "video_scene_1.mp4",
+                    "filePath": "data\\output\\video\\2025-02-11\\97e88eb3-69c9-4217-905d-f29568c50d4c\\scene_1\\video_scene_1.mp4",
+                    "metadata": {
+                        "generatedAt": "2025-02-11T10:15:27.058Z",
+                        "generationId": "4f879f5f-8544-4ad0-a618-18fdf713b425",
+                        "sourceImageUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250211%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250211T101419Z&X-Amz-Expires=3600&X-Amz-Signature=685b8fbda796425c8702b930f44fbe71360c826b706fbc36183d6487d66c4bd7&X-Amz-SignedHeaders=host",
+                        "generationDuration": 59420
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/video/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/video_scene_1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250227%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250227T135823Z&X-Amz-Expires=3600&X-Amz-Signature=e0cefc32eca65cde8874b25102822e521ff6bbb99c4f3510855dcba1e0c1fbec&X-Amz-SignedHeaders=host",
+                    "storageKey": "video/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/video_scene_1.mp4"
+                },
+                "voice": {
+                    "fileName": "voice_scene_1.mp3",
+                    "filePath": "data\\output\\voice\\2025-02-11\\97e88eb3-69c9-4217-905d-f29568c50d4c\\scene_1\\voice_scene_1.mp3",
+                    "metadata": {
+                        "text": "\"From the heart of the universe, a hero emerges—Son Goku, the Saiyan warrior with the spirit of a thousand suns.\"",
+                        "modelId": "eleven_multilingual_v2",
+                        "generatedAt": "2025-02-11T10:13:55.727Z"
+                    },
+                    "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250227%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250227T135823Z&X-Amz-Expires=3600&X-Amz-Signature=0aed5018914d561b58d3dca3bd013c4f1e55ece73aa0e06fce0e44a1eacc360d&X-Amz-SignedHeaders=host",
+                    "storageKey": "voice/2025-02-11/97e88eb3-69c9-4217-905d-f29568c50d4c/scene_1/voice_scene_1.mp3",
+                    "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+                },
+                "sceneId": 1
+            }
+        ],
+        "status": "completed",
+        "endTime": "2025-02-11T10:15:27.064Z",
+        "llmResult": {
+            "music": {
+                "style": "Epic orchestral with electronic elements",
+                "title": "Saiyan Spirit",
+                "lyrics": "In the heart of stars, his spirit ignites, A warrior's journey, through endless nights. With strength unbroken, his legend flies, Son Goku rises, across the skies.",
+                "prompt": "Epic orchestral score infused with energetic electronic beats, capturing the essence of adventure, battle, and the indomitable spirit of a warrior. Dynamic rhythms intertwine with powerful crescendos, echoing the journey and strength of Son Goku."
+            },
+            "title": "Saiyan Spirit: The Legend of Son Goku",
+            "prompt": "A portrait about Son Goku",
+            "scenes": [
+                {
+                    "description": "\"From the heart of the universe, a hero emerges—Son Goku, the Saiyan warrior with the spirit of a thousand suns.\"",
+                    "video_prompt": "The camera zooms into Son Goku as energy swirls around him, capturing his Super Saiyan transformation. The scene shifts from a cosmic view to a close-up, showcasing his fierce determination and the vivid aura of golden energy.",
+                    "visual_prompt": "A cosmic view of space with swirling galaxies, a radiant light beam focuses on a determined Son Goku in his iconic Super Saiyan form. The scene encapsulates the power and grace of a Saiyan warrior. Bright, golden energy flows around him, his hair standing tall and golden. High-angle view, evening, with a soft golden light, emphasizing his transformation and celestial connection.",
+                    "camera_movement": "Zoom In",
+                    "visual_metadata": {
+                        "sValue": "500",
+                        "shotStyle": "--sref 2611275237",
+                        "aspectRatio": "9:16"
+                    }
+                }
+            ],
+            "hashtags": "#SonGoku #SaiyanLegend #DragonBallZ #AnimeIcon #GokuJourney",
+            "description": "Unleash the power and spirit of Son Goku in this epic portrayal of the Saiyan legend. Witness his journey from humble beginnings to becoming a universal hero, as he channels the force of a thousand suns."
+        },
+        "parameters": {
+            "llmGenParams": {
+                "image": {
+                    "sValue": "500",
+                    "shotStyle": "--sref 2611275237",
+                    "aspectRatio": "9:16"
+                },
+                "script": {
+                    "scriptTone": "Enthusiastic: Show passion for the subject matter (e.g., energetic delivery, expressing genuine interest)",
+                    "vocabulary": "Informative Tone: Focus on clarity and factual information",
+                    "pacingStructure": "Fast-Paced Rhythm: Quick cuts, dynamic camera movements, and rapid scene transitions to heighten tension.",
+                    "characterPerspective": "Content Creator: Shares personal experiences and opinions"
+                },
+                "general": {
+                    "sceneAmount": "1",
+                    "lengthDescription": "Your task is to write a 45 seconds video"
+                }
+            },
+            "serviceConfig": {
+                "skipImage": false,
+                "skipMusic": false,
+                "skipVoice": false,
+                "skipVisualization": false
+            },
+            "imageGenParams": {},
+            "musicGenParams": {
+                "instrumental": true
+            },
+            "videoGenParams": {
+                "aspectRatio": "16:9"
+            },
+            "voiceGenParams": {
+                "elevenlabsVoiceId": "pjcYQlDFKMbcOUp6F5GD"
+            },
+            "visualizationType": "video",
+            "animationGenParams": {}
+        }
+    },
+    "prompt": "A portrait about Son Goku",
+    "error": null,
+    "serviceConfig": {}
+}

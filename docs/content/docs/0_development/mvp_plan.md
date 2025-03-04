@@ -146,14 +146,13 @@
   - ✅ Enhanced / Possibility to download options (download all, download single scene)
   - ✅ Improve the grid view of the workbench (align the sizes of the grids to the images aspect ratio)
   - ⏳ Video Assembly
-    - ⏳ Fix the backend for the video assembly and enhance the functionality so we get a final video
-    - ⏳ Fix the frontend for the video assembly to send the correct request when pressing the data
+    - ✅ Fix the backend for the video assembly and enhance the functionality so we get a final video
+    - ⏳ Add a working frontend for the video assembly and select options to send the correct request when pressing the data
     - ⏳ Refactor the videos section to show all created videos
 
   ### 1.5 Dedicated Pages (⏳ In Progress)
 - ✅ Dedicated Features Page with interactive demos
 - ⏳ Refactor the Dashboard page
-- ⏳ Pricing preview
 - ⏳ FAQ Section
 - ⏳ Blog Entries
 - ⏳ Contact
@@ -189,6 +188,7 @@
 
 #### 2.1.2 Token & Billing System Frontend
 - [ ] Enhance the /dashboard/subscription page with the new API endpoints and integrate them
+- [ ] Add a new page for the pricing plans
 
 ### 2.2 Video Assembly (Backend)
 - Improve the final video assembly service with enhanced variables (depending on json2Video)

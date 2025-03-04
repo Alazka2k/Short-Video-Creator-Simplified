@@ -309,11 +309,14 @@ class AssemblyDataAccess {
 
       // Handle metadata merging
       if (updates.metadata) {
-        const existingMetadata = existingAssembly.metadata || {};
-        updateData.metadata = JSON.stringify({
+        const existingMetadata = typeof existingAssembly.metadata === 'object' 
+          ? existingAssembly.metadata 
+          : JSON.parse(existingAssembly.metadata || '{}');
+          
+        updateData.metadata = {
           ...existingMetadata,
           ...updates.metadata
-        });
+        };
       }
 
       // Handle assembly_config
@@ -331,10 +334,23 @@ class AssemblyDataAccess {
         });
       }
 
+      logger.info('Updating assembly output:', {
+        assemblyId,
+        status: updateData.status,
+        hasStorageKey: !!updateData.storage_key,
+        hasPublicUrl: !!updateData.public_url
+      });
+
       const [result] = await knex('assembly_outputs')
         .where('assembly_id', assemblyId)
         .update(updateData)
         .returning('*');
+
+      logger.info('Assembly output updated successfully:', {
+        assemblyId,
+        status: result.status,
+        updatedAt: result.updated_at
+      });
 
       return result;
     } catch (error) {

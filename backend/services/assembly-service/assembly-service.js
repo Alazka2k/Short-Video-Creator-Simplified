@@ -108,11 +108,16 @@ class AssemblyService {
         metadata: {
           renderId: renderResponse.id,
           startTime: new Date().toISOString(),
-          templateConfig,
           jobData: {
             id: jobData.job_id,
             status: jobData.status,
             scenes: jobData.metadata?.scenes?.length || 0
+          },
+          templateInfo: {
+            id: templateConfig.templateId,
+            name: templateConfig.name,
+            aspectRatio: templateConfig.aspectRatio,
+            sceneAmount: templateConfig.sceneAmount
           }
         }
       });

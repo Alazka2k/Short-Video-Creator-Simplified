@@ -277,57 +277,93 @@ router.get('/template/:templateId',
 // Webhook endpoint - no auth required as it's called by Creatomate
 router.post('/webhook', async (req, res) => {
   try {
-    const { id: creatomateId, status, metadata } = req.body;
-    const { assemblyId, jobId, templateId } = JSON.parse(metadata || '{}');
-
     logger.info('Received Creatomate webhook:', {
-      creatomateId,
-      status,
-      assemblyId,
-      jobId,
-      templateId
+      id: req.body.id,
+      status: req.body.status,
+      hasUrl: !!req.body.url,
+      hasError: !!req.body.error
     });
 
-    // Forward the webhook to the assembly service
-    const response = await axios.post(
-      `${config.services.assembly.url}/webhook`,
-      req.body
-    );
-
-    // Log completion status with enhanced details
-    if (response.data.status === 'completed') {
-      logger.info('Assembly completed successfully:', {
-        jobId,
-        assemblyId,
-        templateId,
-        creatomateId,
-        storageKey: response.data.storageKey
+    let parsedMetadata = {};
+    try {
+      parsedMetadata = JSON.parse(req.body.metadata || '{}');
+      logger.info('Parsed webhook metadata:', parsedMetadata);
+    } catch (parseError) {
+      logger.error('Error parsing webhook metadata:', {
+        error: parseError.message,
+        metadata: req.body.metadata
       });
-    } else if (response.data.status === 'failed') {
-      logger.error('Assembly failed:', {
-        jobId,
-        assemblyId,
-        templateId,
-        creatomateId,
-        error: response.data.error
-      });
-    } else {
-      logger.info('Assembly status update:', {
-        jobId,
-        assemblyId,
-        templateId,
-        creatomateId,
-        status: response.data.status
-      });
+      return res.status(400).json({ error: 'Invalid metadata format' });
     }
 
-    logger.info('Webhook forwarded to Assembly service');
-    return res.json(response.data);
+    const { assemblyId, jobId, templateId } = parsedMetadata;
+
+    if (!assemblyId) {
+      logger.error('No assemblyId found in webhook metadata');
+      return res.status(400).json({ error: 'Missing assemblyId in metadata' });
+    }
+
+    logger.info('Forwarding webhook to Assembly service');
+    
+    // Forward the webhook to the assembly service
+    try {
+      const response = await axios.post(
+        `${config.services.assembly.url}/webhook`,
+        req.body
+      );
+
+      // Log completion status with enhanced details
+      if (response.data.status === 'completed') {
+        logger.info('Assembly completed successfully:', {
+          jobId,
+          assemblyId,
+          templateId,
+          creatomateId: req.body.id,
+          storageKey: response.data.storageKey,
+          publicUrl: response.data.publicUrl
+        });
+      } else if (response.data.status === 'failed') {
+        logger.error('Assembly failed:', {
+          jobId,
+          assemblyId,
+          templateId,
+          creatomateId: req.body.id,
+          error: response.data.error,
+          details: response.data.details
+        });
+      } else {
+        logger.info('Assembly status update:', {
+          jobId,
+          assemblyId,
+          templateId,
+          creatomateId: req.body.id,
+          status: response.data.status
+        });
+      }
+
+      return res.json(response.data);
+    } catch (forwardError) {
+      logger.error('Error forwarding webhook to Assembly service:', {
+        error: forwardError.message,
+        stack: forwardError.stack,
+        responseStatus: forwardError.response?.status,
+        responseData: forwardError.response?.data
+      });
+      
+      return res.status(forwardError.response?.status || 500).json({
+        error: 'Failed to process webhook',
+        details: forwardError.response?.data || forwardError.message
+      });
+    }
   } catch (error) {
-    logger.error('Error processing webhook:', error);
-    return res.status(error.response?.status || 500).json({
+    logger.error('Error processing webhook:', {
+      error: error.message,
+      stack: error.stack
+    });
+    
+    return res.status(500).json({
       error: 'Failed to process webhook',
-      details: error.response?.data || error.message
+      details: error.message
     });
   }
 });

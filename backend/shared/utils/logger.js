@@ -1,6 +1,18 @@
 const winston = require('winston');
 const { format } = winston;
 const path = require('path');
+const fs = require('fs');
+
+// Create logs directory if it doesn't exist
+const logsDir = path.join(__dirname, '..', '..', 'logs');
+try {
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+} catch (error) {
+  console.error('Error creating logs directory:', error);
+  // Continue without file logging if directory creation fails
+}
 
 // Helper function to handle circular references
 const getCircularReplacer = () => {
@@ -31,6 +43,27 @@ const customFormat = format.printf(({ level, message, timestamp, ...meta }) => {
   return logMessage;
 });
 
+// Configure winston logger with transports
+const transports = [
+  new winston.transports.Console({
+    format: format.combine(
+      format.colorize(),
+      customFormat
+    )
+  })
+];
+
+// Only add file transport if logs directory exists
+if (fs.existsSync(logsDir)) {
+  transports.push(
+    new winston.transports.File({ 
+      filename: path.join(logsDir, 'app.log'),
+      maxsize: 10000000, // 10MB
+      maxFiles: 5,
+    })
+  );
+}
+
 // Configure winston logger
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -39,19 +72,7 @@ const logger = winston.createLogger({
     format.errors({ stack: true }),
     customFormat
   ),
-  transports: [
-    new winston.transports.Console({
-      format: format.combine(
-        format.colorize(),
-        customFormat
-      )
-    }),
-    new winston.transports.File({ 
-      filename: path.join(__dirname, '..', '..', 'logs', 'app.log'),
-      maxsize: 10000000, // 10MB
-      maxFiles: 5,
-    })
-  ]
+  transports: transports
 });
 
 // Override console.log

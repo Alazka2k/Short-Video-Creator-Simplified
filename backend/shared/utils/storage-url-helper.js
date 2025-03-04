@@ -29,9 +29,26 @@ class StorageUrlHelper {
     // Check if URL exists in cache and is not expiring soon
     const cached = this.cache.get(storageKey);
     if (cached && cached.expiresAt > Date.now() + this.EXPIRY_BUFFER) {
-      logger.info('URL still valid:', { storageKey });
+      logger.debug('URL still valid, skipping refresh:', { 
+        storageKey, 
+        expiresIn: Math.round((cached.expiresAt - Date.now()) / 1000) + ' seconds',
+        refreshedAt: new Date(cached.refreshedAt).toISOString()
+      });
       return false;
     }
+    
+    // If URL is not in cache or is expiring soon, log the reason
+    if (!cached) {
+      logger.info('URL not in cache, needs refresh:', { storageKey });
+    } else {
+      const expiresIn = Math.round((cached.expiresAt - Date.now()) / 1000);
+      logger.info('URL expiring soon, needs refresh:', { 
+        storageKey, 
+        expiresIn: expiresIn + ' seconds',
+        refreshedAt: new Date(cached.refreshedAt).toISOString()
+      });
+    }
+    
     return true;
   }
 

@@ -2,13 +2,57 @@
     "options": 
     [
         {
-            "id": "api-test",
-            "name": "API Test",
+            "id": "api-test-16-9",
+            "name": "API Test 16:9",
+            "description": "A test template for API testing",
+            "templateId": "345d569b-534c-4acd-a187-ed09dd37a5e1",
+            "templateContent": ["image", "text"],
+            "accountType": "free",
+            "sceneAmount": 3,
+            "aspectRatio": "16:9",
+            "subtitle": "false",
+            "modificationProperties":{
+                "Text-Scene-1.source":{
+                    "keyPath": ["metadata.llmResult.scenes[0].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-2.source":{
+                    "keyPath": ["metadata.llmResult.scenes[1].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-3.source":{
+                    "keyPath": ["metadata.llmResult.scenes[2].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Image-Scene-1.source":{
+                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-2.source":{
+                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-3.source":{
+                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                }
+            }
+        },
+        {
+            "id": "api-test-1-1",
+            "name": "API Test 1:1",
             "description": "A test template for API testing",
             "templateId": "ff6a0f93-a513-474c-9b76-106a13bbba8c",
             "templateContent": ["image", "text"],
+            "accountType": "free",
             "sceneAmount": 3,
-            "aspectRatio": "16:9",
+            "aspectRatio": "1:1",
             "subtitle": "false",
             "modificationProperties":{
                 "Text-Scene-1.source":{
@@ -49,6 +93,7 @@
         "description": "A short form video template with a subtitle",
         "templateId": "23e4588a-8650-4257-81ff-4d21c8da51e4",
         "templateContent": ["video", "animation", "voice", "text"],
+        "accountType": "premium",
         "sceneAmount": 3,
         "aspectRatio": "16:9",
         "subtitle": "true",

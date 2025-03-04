@@ -127,13 +127,40 @@ function createServer(assemblyServiceInterface, storageService) {
   // Webhook endpoint for Creatomate render status updates
   app.post('/webhook', async (req, res) => {
     try {
-      logger.info('Assembly Service: Processing webhook:', req.body);
+      logger.info('Assembly Service: Processing webhook:', {
+        id: req.body.id,
+        status: req.body.status,
+        hasUrl: !!req.body.url,
+        hasError: !!req.body.error,
+        metadata: req.body.metadata
+      });
+      
       const { id: creatomateId, status, error, metadata, url } = req.body;
-      const { assemblyId, jobId, templateId } = JSON.parse(metadata || '{}');
+      let parsedMetadata = {};
+      
+      try {
+        parsedMetadata = JSON.parse(metadata || '{}');
+        logger.info('Parsed webhook metadata:', parsedMetadata);
+      } catch (parseError) {
+        logger.error('Error parsing webhook metadata:', {
+          error: parseError.message,
+          metadata
+        });
+        return res.status(400).json({ error: 'Invalid metadata format' });
+      }
+      
+      const { assemblyId, jobId, templateId } = parsedMetadata;
 
       if (!assemblyId) {
         logger.error('No assemblyId found in webhook metadata');
         return res.status(400).json({ error: 'Missing assemblyId in metadata' });
+      }
+
+      // Get the current assembly data
+      const assemblyData = await assemblyDataAccess.getAssemblyOutput(assemblyId);
+      if (!assemblyData) {
+        logger.error('Assembly not found for webhook update:', { assemblyId });
+        return res.status(404).json({ error: 'Assembly not found' });
       }
 
       switch (status) {
@@ -178,7 +205,9 @@ function createServer(assemblyServiceInterface, storageService) {
 
               // Upload using storage service and get signed URL
               logger.info('Starting upload to S3:', { tempPath, serviceType: 'assembly' });
-              const { url: signedUrl, storageKey: finalStorageKey } = await storageService.uploadFile(tempPath, 'assembly');
+              const uploadResult = await storageService.uploadFile(tempPath, 'assembly');
+              const { url: signedUrl, storageKey: finalStorageKey } = uploadResult;
+              
               logger.info('Upload to S3 completed:', { 
                 storageKey: finalStorageKey,
                 signedUrl: signedUrl
@@ -189,10 +218,14 @@ function createServer(assemblyServiceInterface, storageService) {
               await fs.promises.unlink(tempPath);
               logger.info('Temporary file deleted successfully');
 
+              // Get scene count from assembly data
+              const sceneCount = assemblyData.metadata?.jobData?.scenes || 0;
+
               logger.info('Video processing completed successfully:', { 
                 jobId,
                 assemblyId,
                 storageKey: finalStorageKey,
+                publicUrl: signedUrl,
                 duration: req.body.duration,
                 resolution: `${req.body.width}x${req.body.height}`,
                 frameRate: req.body.frame_rate
@@ -206,14 +239,19 @@ function createServer(assemblyServiceInterface, storageService) {
                 creatomate_id: creatomateId,
                 template_id: templateId,
                 metadata: {
-                  scenes: jobData.metadata?.scenes?.length || 0,
+                  jobData: {
+                    id: jobId,
+                    scenes: sceneCount,
+                    status: assemblyData.metadata?.jobData?.status
+                  },
                   duration: req.body.duration,
                   fileSize: req.body.file_size,
                   frameRate: req.body.frame_rate,
                   resolution: {
                     width: req.body.width,
                     height: req.body.height
-                  }
+                  },
+                  templateInfo: assemblyData.metadata?.templateInfo || {}
                 }
               });
 
@@ -233,6 +271,7 @@ function createServer(assemblyServiceInterface, storageService) {
                 templateId,
                 creatomateId,
                 storageKey: finalStorageKey,
+                publicUrl: signedUrl,
                 metadata: {
                   duration: req.body.duration,
                   resolution: `${req.body.width}x${req.body.height}`,
