@@ -39,12 +39,13 @@ export class ApiClient {
   }
 
   public initialize() {
-    console.log('INITIALIZE CALLED', {
-      beforeInit: this.isInitialized,
-      baseURL: this.baseURL,
-      hasTokenGetter: !!this.getToken,
-      tokenGetter: this.getToken.toString()
-    });
+    //console.log('INITIALIZE CALLED', 
+    //{
+    //  beforeInit: this.isInitialized,
+    //  baseURL: this.baseURL,
+    //  hasTokenGetter: !!this.getToken,
+    //  tokenGetter: this.getToken.toString()
+    //});
 
     AuthLogger.log('Initializing API client instance', {
       hasBaseURL: !!this.baseURL,
@@ -66,11 +67,11 @@ export class ApiClient {
 
     this.isInitialized = true;
 
-    console.log('INITIALIZE COMPLETE', {
-      afterInit: this.isInitialized,
-      baseURL: this.baseURL,
-      hasTokenGetter: !!this.getToken
-    });
+    //console.log('INITIALIZE COMPLETE', {
+    //  afterInit: this.isInitialized,
+    //  baseURL: this.baseURL,
+    //  hasTokenGetter: !!this.getToken
+    //});
 
     AuthLogger.log('API client initialization complete', {
       isInitialized: this.isInitialized,
@@ -222,10 +223,10 @@ export const apiClient = new ApiClient({
 
 // Export a function to initialize the API client with auth
 export function initializeApiClient(getToken: () => Promise<string>): ApiClient {
-  console.log('initializeApiClient CALLED', {
-    hasToken: !!getToken,
-    tokenFunction: getToken.toString()
-  });
+  //console.log('initializeApiClient CALLED', {
+  //  hasToken: !!getToken,
+  //  tokenFunction: getToken.toString()
+  //});
 
   AuthLogger.log('Starting API client initialization', {
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
@@ -236,17 +237,17 @@ export function initializeApiClient(getToken: () => Promise<string>): ApiClient 
   apiClient.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   apiClient.getToken = getToken;
 
-  console.log('About to call initialize()', {
-    baseURL: apiClient.baseURL,
-    hasTokenGetter: !!apiClient.getToken,
-    isInitialized: apiClient.isInitialized
-  });
+  //console.log('About to call initialize()', {
+  //  baseURL: apiClient.baseURL,
+  //  hasTokenGetter: !!apiClient.getToken,
+  //  isInitialized: apiClient.isInitialized
+  //});
 
   apiClient.initialize();
 
-  console.log('After initialize() call', {
-    isInitialized: apiClient.isInitialized
-  });
+  //console.log('After initialize() call', {
+  //  isInitialized: apiClient.isInitialized
+  //});
 
   return apiClient;
 }

@@ -16,7 +16,6 @@ import scriptToneData from '@/data/video-creation/script/script-tone_select-opti
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
 import pacingData from '@/data/video-creation/script/pacing-structure_select-option.json'
 import perspectiveData from '@/data/video-creation/script/character-perspective_select-option.json'
-import transitionData from '@/data/video-creation/assembly/transition-select-option.json'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 import {
   Select,
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/tooltip"
 import { handleBulkDownload } from '@/lib/utils/download'
 import { toast } from '@/components/ui/use-toast'
+import { TemplateSelector } from '@/components/job-details/TemplateSelector'
 
 interface MediaContent {
   publicUrl: string
@@ -88,24 +88,11 @@ interface JobDetails {
   error: string | null
 }
 
-interface TransitionOption {
-  id: string
-  name: string
-  description: string
-  preview?: string
-}
-
-interface TransitionData {
-  options: TransitionOption[]
-}
-
 // Helper function to find option name by prompt
 const findOptionNameByPrompt = (data: any, prompt: string): string | undefined => {
-  if (!prompt) return undefined
-  
   for (const category of data.categories) {
     for (const option of category.options) {
-      if (option.prompt === prompt) {
+      if (option.promptDefinition === prompt) {
         return option.name
       }
     }
@@ -115,8 +102,6 @@ const findOptionNameByPrompt = (data: any, prompt: string): string | undefined =
 
 // Helper function to find shot style name by promptDefinition
 const findShotStyleName = (promptDefinition: string): string | undefined => {
-  if (!promptDefinition) return undefined
-  
   for (const category of shotStyleData.categories) {
     for (const option of category.options) {
       if (option.promptDefinition === promptDefinition) {
@@ -127,15 +112,13 @@ const findShotStyleName = (promptDefinition: string): string | undefined => {
   return undefined
 }
 
-// Add transitions from the JSON file
-const transitionOptions: TransitionOption[] = (transitionData as TransitionData).options
-
 export default function JobDetailsPage({ params }: { params: Promise<{ jobId: string }> }) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { job, loading, error, refreshUrls } = useJobDetails(resolvedParams.jobId)
-  const [selectedTransitions, setSelectedTransitions] = useState<Record<number, string>>({})
   const [isDownloading, setIsDownloading] = useState(false)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [isAssembling, setIsAssembling] = useState(false)
 
   // Extract all storage keys
   const storageKeys = job?.metadata?.scenes?.flatMap(scene => {
@@ -161,13 +144,6 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     return () => clearInterval(refreshInterval)
   }, [refreshUrls])
 
-  const handleTransitionChange = (sceneId: number, transitionId: string) => {
-    setSelectedTransitions(prev => ({
-      ...prev,
-      [sceneId]: transitionId
-    }))
-  }
-
   const handleDownloadAll = async () => {
     if (!job?.metadata?.scenes) {
       toast({
@@ -191,15 +167,40 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
   }
 
   const handleAssemble = async () => {
-    try {
-      const response = await apiClient.post('/api/assembly/create', {
-        jobId: resolvedParams.jobId,
-        transitions: selectedTransitions
+    if (!selectedTemplateId) {
+      toast({
+        variant: "destructive",
+        title: "Template required",
+        description: "Please select a template for your video.",
       })
-      // TODO: Handle assembly response
+      return
+    }
+
+    setIsAssembling(true)
+    try {
+      const response = await apiClient.post('/api/assembly/assemble', {
+        jobId: resolvedParams.jobId,
+        templateId: selectedTemplateId
+      })
+      
       console.log('Assembly started:', response)
+      
+      // Redirect to videos page
+      router.push('/videos')
+      
+      toast({
+        title: "Video assembly started",
+        description: "Your video is being assembled. Check the Videos page for updates.",
+      })
     } catch (error) {
-      console.error('Assembly failed:', error)
+      console.error('Assembly error:', error)
+      toast({
+        variant: "destructive",
+        title: "Assembly failed",
+        description: "Failed to start video assembly. Please try again.",
+      })
+    } finally {
+      setIsAssembling(false)
     }
   }
 
@@ -256,27 +257,23 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
         ...job.metadata,
         scenes: job.metadata.scenes.map(scene => ({
           ...scene,
-          image: scene.image?.storageKey ? {
+          image: scene.image ? {
             ...scene.image,
-            publicUrl: freshUrls[scene.image.storageKey] || scene.image.publicUrl
+            publicUrl: scene.image.storageKey ? freshUrls[scene.image.storageKey] || scene.image.publicUrl : scene.image.publicUrl
           } : scene.image,
-          video: scene.video?.storageKey ? {
+          video: scene.video ? {
             ...scene.video,
-            publicUrl: freshUrls[scene.video.storageKey] || scene.video.publicUrl
+            publicUrl: scene.video.storageKey ? freshUrls[scene.video.storageKey] || scene.video.publicUrl : scene.video.publicUrl
           } : scene.video,
-          animation: scene.animation?.storageKey ? {
-            ...scene.animation,
-            publicUrl: freshUrls[scene.animation.storageKey] || scene.animation.publicUrl
-          } : scene.animation,
-          voice: scene.voice?.storageKey ? {
+          voice: scene.voice ? {
             ...scene.voice,
-            publicUrl: freshUrls[scene.voice.storageKey] || scene.voice.publicUrl
-          } : scene.voice
-        })),
-        music: job.metadata.music?.storageKey ? {
-          ...job.metadata.music,
-          publicUrl: freshUrls[job.metadata.music.storageKey] || job.metadata.music.publicUrl
-        } : job.metadata.music
+            publicUrl: scene.voice.storageKey ? freshUrls[scene.voice.storageKey] || scene.voice.publicUrl : scene.voice.publicUrl
+          } : scene.voice,
+          animation: scene.animation ? {
+            ...scene.animation,
+            publicUrl: scene.animation.storageKey ? freshUrls[scene.animation.storageKey] || scene.animation.publicUrl : scene.animation.publicUrl
+          } : scene.animation,
+        }))
       }
     }
 
@@ -295,9 +292,14 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           <Button
             variant="default"
             onClick={handleAssemble}
+            disabled={isAssembling || !selectedTemplateId}
             className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 px-8"
           >
-            <PlayCircle className="w-4 h-4" />
+            {isAssembling ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <PlayCircle className="w-4 h-4" />
+            )}
             Assemble Video
           </Button>
 
@@ -344,6 +346,18 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           focus={focus}
         />
 
+        {/* Template Selector Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Select a Template</h2>
+          <TemplateSelector
+            aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio || '16:9'}
+            sceneCount={jobWithFreshUrls.metadata.scenes.length}
+            userPlanId="1" // Default to free tier for now
+            onSelectTemplate={setSelectedTemplateId}
+            selectedTemplateId={selectedTemplateId}
+          />
+        </div>
+
         {/* Content Preview Section */}
         <div className="grid gap-6">
           {jobWithFreshUrls.metadata.scenes.map((scene, index) => (
@@ -354,43 +368,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                 video={scene.video}
                 animation={scene.animation}
                 voice={scene.voice}
-                description={jobWithFreshUrls.metadata.llmResult?.scenes?.[scene.sceneId - 1]?.description}
+                description={jobWithFreshUrls.metadata.llmResult?.scenes?.[index]?.description}
                 aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
               />
-              
-              {/* Add transition selector after each scene except the last one */}
-              {index < jobWithFreshUrls.metadata.scenes.length - 1 && (
-                <div className="flex items-center justify-center gap-2 py-4">
-                  <div className="h-px w-full max-w-[200px] bg-border" />
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Select
-                            value={selectedTransitions[scene.sceneId]}
-                            onValueChange={(value) => handleTransitionChange(scene.sceneId, value)}
-                          >
-                            <SelectTrigger className="w-[180px] border-violet-500/20 hover:border-violet-500/40">
-                              <SelectValue placeholder="Select transition" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {transitionOptions.map((transition) => (
-                                <SelectItem key={transition.id} value={transition.id}>
-                                  {transition.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{transitionOptions.find(t => t.id === selectedTransitions[scene.sceneId])?.description || 'Select a transition effect'}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <div className="h-px w-full max-w-[200px] bg-border" />
-                </div>
-              )}
             </React.Fragment>
           ))}
 

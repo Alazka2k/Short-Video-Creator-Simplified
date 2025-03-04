@@ -63,7 +63,7 @@ export function ScenePreview({
   // Effect to trigger media loading for all types when URLs are ready
   useEffect(() => {
     if (Object.keys(freshUrls).length > 0) {
-      console.log('ScenePreview: Fresh URLs available, triggering media loading for scene', sceneId, freshUrls)
+      //console.log('ScenePreview: Fresh URLs available, triggering media loading for scene', sceneId, freshUrls)
     }
   }, [freshUrls, sceneId])
 
@@ -108,14 +108,14 @@ export function ScenePreview({
 
   const getMediaContent = () => {
     if (video?.storageKey && freshUrls[video.storageKey]) {
-      console.log('ScenePreview: Loading video for scene', sceneId, freshUrls[video.storageKey])
+      //console.log('ScenePreview: Loading video for scene', sceneId, freshUrls[video.storageKey])
       return (
         <VideoPreview
           url={freshUrls[video.storageKey]}
           className="w-full h-full object-contain"
           onError={() => handleMediaError('video')}
           onLoad={() => {
-            console.log('ScenePreview: Video loaded for scene', sceneId)
+            //console.log('ScenePreview: Video loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { video, ...rest } = prev
               return rest
@@ -126,14 +126,14 @@ export function ScenePreview({
     }
 
     if (animation?.storageKey && freshUrls[animation.storageKey]) {
-      console.log('ScenePreview: Loading animation for scene', sceneId, freshUrls[animation.storageKey])
+      //console.log('ScenePreview: Loading animation for scene', sceneId, freshUrls[animation.storageKey])
       return (
         <VideoPreview
           url={freshUrls[animation.storageKey]}
           className="w-full h-full object-contain"
           onError={() => handleMediaError('animation')}
           onLoad={() => {
-            console.log('ScenePreview: Animation loaded for scene', sceneId)
+            //console.log('ScenePreview: Animation loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { animation, ...rest } = prev
               return rest
@@ -144,7 +144,7 @@ export function ScenePreview({
     }
 
     if (image?.storageKey && freshUrls[image.storageKey]) {
-      console.log('ScenePreview: Loading image for scene', sceneId, freshUrls[image.storageKey])
+      //console.log('ScenePreview: Loading image for scene', sceneId, freshUrls[image.storageKey])
       return (
         <ImagePreview
           url={freshUrls[image.storageKey]}
@@ -152,7 +152,7 @@ export function ScenePreview({
           className="w-full h-full object-contain"
           onError={() => handleMediaError('image')}
           onLoad={() => {
-            console.log('ScenePreview: Image loaded for scene', sceneId)
+            //console.log('ScenePreview: Image loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { image, ...rest } = prev
               return rest
