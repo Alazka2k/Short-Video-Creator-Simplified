@@ -122,9 +122,18 @@ class AssemblyService {
         }
       });
 
+      // Get the updated assembly record to return the actual status
+      const updatedAssembly = await assemblyDataAccess.getAssemblyOutput(assemblyId);
+      
+      logger.info('Assembly output updated successfully:', {
+        assemblyId,
+        status: updatedAssembly.status,
+        updatedAt: updatedAssembly.updated_at
+      });
+
       return {
         assemblyId,
-        status: 'processing',
+        status: updatedAssembly.status,
         creatomateId: renderResponse.id
       };
     } catch (error) {

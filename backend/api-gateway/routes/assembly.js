@@ -135,11 +135,12 @@ router.post('/assemble',
         userId: req.user?.sub
       });
 
-      logger.info('Starting assembly process:', { 
+      logger.info('Forwarding request to Assembly service:', { 
         jobId,
         templateId,
         userId: actualUserId,
-        isApiUser 
+        isApiUser,
+        assemblyServiceUrl: config.services.assembly.url
       });
 
       // Create assembly output record
@@ -148,12 +149,12 @@ router.post('/assemble',
       // Start video assembly process
       const result = await assemblyService.createVideoProject(assemblyId, jobId, templateId);
 
-      logger.info('Assembly process initiated:', { 
+      logger.info('Received response from Assembly service:', { 
         assemblyId,
         jobId,
         templateId,
         creatomateId: result.creatomateId,
-        status: 'processing' 
+        status: result.status
       });
 
       return res.status(202).json({
@@ -162,7 +163,7 @@ router.post('/assemble',
         jobId,
         templateId,
         creatomateId: result.creatomateId,
-        status: 'processing'
+        status: result.status
       });
 
     } catch (error) {
@@ -303,7 +304,14 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).json({ error: 'Missing assemblyId in metadata' });
     }
 
-    logger.info('Forwarding webhook to Assembly service');
+    logger.info('Forwarding webhook to Assembly service:', {
+      assemblyId,
+      jobId,
+      templateId,
+      creatomateId: req.body.id,
+      webhookStatus: req.body.status,
+      assemblyServiceUrl: config.services.assembly.url
+    });
     
     // Forward the webhook to the assembly service
     try {
@@ -312,34 +320,14 @@ router.post('/webhook', async (req, res) => {
         req.body
       );
 
-      // Log completion status with enhanced details
-      if (response.data.status === 'completed') {
-        logger.info('Assembly completed successfully:', {
-          jobId,
-          assemblyId,
-          templateId,
-          creatomateId: req.body.id,
-          storageKey: response.data.storageKey,
-          publicUrl: response.data.publicUrl
-        });
-      } else if (response.data.status === 'failed') {
-        logger.error('Assembly failed:', {
-          jobId,
-          assemblyId,
-          templateId,
-          creatomateId: req.body.id,
-          error: response.data.error,
-          details: response.data.details
-        });
-      } else {
-        logger.info('Assembly status update:', {
-          jobId,
-          assemblyId,
-          templateId,
-          creatomateId: req.body.id,
-          status: response.data.status
-        });
-      }
+      logger.info('Received response from Assembly service webhook:', {
+        assemblyId,
+        jobId,
+        templateId,
+        status: response.data.status,
+        hasStorageKey: !!response.data.storageKey,
+        hasPublicUrl: !!response.data.publicUrl
+      });
 
       return res.json(response.data);
     } catch (forwardError) {

@@ -4,7 +4,7 @@ const logger = require('./logger');
 class StorageUrlHelper {
   constructor() {
     this.cache = new Map();
-    this.EXPIRY_BUFFER = 10 * 60 * 1000; // 10 minutes before expiration
+    this.EXPIRY_BUFFER = 30 * 60 * 1000; // 30 minutes in milliseconds
     this.BATCH_SIZE = 10;
     this.MAX_RETRIES = 3;
   }
@@ -45,7 +45,8 @@ class StorageUrlHelper {
       logger.info('URL expiring soon, needs refresh:', { 
         storageKey, 
         expiresIn: expiresIn + ' seconds',
-        refreshedAt: new Date(cached.refreshedAt).toISOString()
+        refreshedAt: new Date(cached.refreshedAt).toISOString(),
+        expiresAt: new Date(cached.expiresAt).toISOString()
       });
     }
     

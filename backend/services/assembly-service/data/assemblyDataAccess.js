@@ -26,11 +26,19 @@ class AssemblyDataAccess {
           job_id: jobId,
           user_id: userId,
           template_id: templateId,
-          status: 'pending',
+          status: 'started',
           created_at: knex.fn.now(),
           updated_at: knex.fn.now()
         })
         .returning('assembly_id');
+
+      logger.info('Created new assembly output record:', {
+        assemblyId: result.assembly_id,
+        jobId,
+        userId,
+        templateId,
+        status: 'started'
+      });
 
       return result.assembly_id;
     } catch (error) {
@@ -326,20 +334,57 @@ class AssemblyDataAccess {
 
       // Ensure status is properly set
       if (updates.status) {
-        updateData.status = updates.status;
-        logger.info('Updating assembly status:', {
-          assemblyId,
-          oldStatus: existingAssembly.status,
-          newStatus: updates.status
-        });
+        // Validate status is one of the allowed values
+        const validStatuses = ['started', 'processing', 'completed', 'failed'];
+        if (!validStatuses.includes(updates.status)) {
+          logger.warn('Invalid status provided, defaulting to processing:', {
+            assemblyId,
+            providedStatus: updates.status,
+            defaultingTo: 'processing'
+          });
+          updateData.status = 'processing';
+        } else {
+          // Don't override 'completed' status with 'processing'
+          if (existingAssembly.status === 'completed' && updates.status === 'processing') {
+            logger.warn('Attempted to override completed status with processing, ignoring:', {
+              assemblyId,
+              currentStatus: existingAssembly.status,
+              attemptedStatus: updates.status
+            });
+            delete updateData.status;
+          } else {
+            updateData.status = updates.status;
+          }
+        }
+        
+        if (updateData.status) {
+          logger.info('Updating assembly status:', {
+            assemblyId,
+            oldStatus: existingAssembly.status,
+            newStatus: updateData.status
+          });
+        }
       }
 
-      logger.info('Updating assembly output:', {
+      logger.info('Updating assembly output with data:', {
         assemblyId,
-        status: updateData.status,
+        status: updateData.status || existingAssembly.status,
         hasStorageKey: !!updateData.storage_key,
-        hasPublicUrl: !!updateData.public_url
+        hasPublicUrl: !!updateData.public_url,
+        updateKeys: Object.keys(updateData)
       });
+
+      // Use raw SQL to ensure the update is properly applied if status is changing
+      if (updateData.status && updateData.status !== existingAssembly.status) {
+        await knex.raw(
+          `UPDATE assembly_outputs SET status = ?, updated_at = NOW() WHERE assembly_id = ?`,
+          [updateData.status, assemblyId]
+        );
+        logger.info('Directly updated status with raw SQL:', {
+          assemblyId,
+          status: updateData.status
+        });
+      }
 
       const [result] = await knex('assembly_outputs')
         .where('assembly_id', assemblyId)

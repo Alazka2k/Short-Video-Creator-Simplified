@@ -6,6 +6,7 @@ const assemblyDataAccess = require('./data/assemblyDataAccess');
 const storageService = require('../../shared/utils/storage');
 const path = require('path');
 const fs = require('fs');
+const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV]);
 
 function createServer(assemblyServiceInterface, storageService) {
   const app = express();
@@ -242,7 +243,7 @@ function createServer(assemblyServiceInterface, storageService) {
                   jobData: {
                     id: jobId,
                     scenes: sceneCount,
-                    status: assemblyData.metadata?.jobData?.status
+                    status: assemblyData.metadata?.jobData?.status || 'completed'
                   },
                   duration: req.body.duration,
                   fileSize: req.body.file_size,
@@ -254,6 +255,24 @@ function createServer(assemblyServiceInterface, storageService) {
                   templateInfo: assemblyData.metadata?.templateInfo || {}
                 }
               });
+
+              // Verify the update was successful by retrieving the latest record
+              const updatedAssembly = await assemblyDataAccess.getAssemblyOutput(assemblyId);
+              logger.info('Verified assembly status after update:', {
+                assemblyId,
+                status: updatedAssembly.status,
+                expectedStatus: 'completed',
+                statusMatch: updatedAssembly.status === 'completed'
+              });
+
+              // If status wasn't updated correctly, log a warning but don't force it
+              if (updatedAssembly.status !== 'completed') {
+                logger.warn('Assembly status not updated to completed as expected', {
+                  assemblyId,
+                  currentStatus: updatedAssembly.status,
+                  expectedStatus: 'completed'
+                });
+              }
 
               logger.info('Assembly completed successfully:', {
                 assemblyId,
@@ -336,18 +355,39 @@ function createServer(assemblyServiceInterface, storageService) {
             creatomateId: creatomateId
           });
 
-          await assemblyDataAccess.updateAssemblyOutput(assemblyId, {
-            status: status === 'processing' ? 'processing' : 'pending',
+          // Get the current assembly data to check status
+          const currentAssembly = await assemblyDataAccess.getAssemblyOutput(assemblyId);
+          
+          // Only update status if not already completed
+          const newStatus = status === 'processing' ? 'processing' : 'pending';
+          const shouldUpdateStatus = currentAssembly.status !== 'completed';
+          
+          logger.info('Processing webhook status update:', {
+            assemblyId,
+            currentStatus: currentAssembly.status,
+            incomingStatus: status,
+            proposedNewStatus: newStatus,
+            willUpdateStatus: shouldUpdateStatus
+          });
+
+          const updateData = {
             creatomate_id: creatomateId,
             metadata: {
               renderId: creatomateId,
               lastStatusUpdate: new Date().toISOString(),
               currentStatus: status
             }
-          });
+          };
+          
+          // Only include status in the update if it should be updated
+          if (shouldUpdateStatus) {
+            updateData.status = newStatus;
+          }
+
+          await assemblyDataAccess.updateAssemblyOutput(assemblyId, updateData);
 
           return res.json({
-            status: status,
+            status: currentAssembly.status === 'completed' ? 'completed' : status,
             assemblyId,
             creatomateId: creatomateId,
             lastUpdate: new Date().toISOString()
