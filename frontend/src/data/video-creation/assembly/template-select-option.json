@@ -92,10 +92,55 @@
             }
         },
         {
+            "id": "slideshow-16-9-v3",
+            "name": "Slideshow 16:9 Version 3",
+            "description": "A slideshow template for 16:9 videos",
+            "templateId": "345d569b-534c-4acd-a187-ed09dd37a5e4",
+            "templateType": "slideshow",
+            "preview":"/assembly/preview/16-9/free/slideshow-16-9-v3.mp4",
+            "templateContent": ["image", "text"],
+            "planId": "1",
+            "aspectRatio": "16:9",
+            "sceneAmount": 3,
+            "subtitle": "false",
+            "modificationProperties":{
+                "Text-Scene-1.source":{
+                    "keyPath": ["metadata.llmResult.scenes[0].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-2.source":{
+                    "keyPath": ["metadata.llmResult.scenes[1].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-3.source":{
+                    "keyPath": ["metadata.llmResult.scenes[2].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Image-Scene-1.source":{
+                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-2.source":{
+                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-3.source":{
+                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                }
+            }
+        },
+        {
             "id": "video-16-9",
             "name": "Video 16:9",
             "description": "A video template for 16:9 videos",
-            "templateId": "b0ff9606-a1f0-4acf-a169-b90e50c0464b",
+            "templateId": "b0ff9606-a1f0-4acf-a169-b90e50c0464a",
             "templateType": "video",
             "preview":"/assembly/preview/16-9/free/video-16-9.mp4",
             "templateContent": ["image", "text"],
