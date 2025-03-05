@@ -26,10 +26,25 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [videosLoaded, setVideosLoaded] = useState<Record<number, boolean>>({});
+  const [videosPreloaded, setVideosPreloaded] = useState<Record<string, boolean>>({});
 
-  // Preload videos
+  // Check for cached video status
   useEffect(() => {
-    // Check if we have videos in sessionStorage
+    // Check if we have video preload status in sessionStorage
+    const cachedVideoStatus = sessionStorage.getItem('carousel-videos-preloaded');
+    if (cachedVideoStatus) {
+      try {
+        const parsed = JSON.parse(cachedVideoStatus);
+        setVideosPreloaded(parsed);
+      } catch (e) {
+        console.error('Error parsing cached video status:', e);
+      }
+    }
+  }, []);
+
+  // Preload all videos, not just the selected one
+  useEffect(() => {
+    // Check if we have thumbnails in sessionStorage
     const cachedThumbnails = sessionStorage.getItem('carousel-thumbnails');
     if (cachedThumbnails) {
       try {
@@ -44,31 +59,57 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     const preloadVideos = async () => {
       slides.forEach((slide, index) => {
         if (slide.isVideo) {
-          // Create a new Image object to preload the video URL
-          const preloadLink = document.createElement('link');
-          preloadLink.rel = 'preload';
-          preloadLink.as = 'video';
-          preloadLink.href = slide.src;
-          document.head.appendChild(preloadLink);
-          
-          // Set preload attribute on video elements
-          if (videoRefs.current[index]) {
-            const video = videoRefs.current[index];
-            if (video) {
-              video.preload = 'metadata';
-              
-              // Add loaded event listener
-              video.addEventListener('loadeddata', () => {
-                setVideosLoaded(prev => ({ ...prev, [index]: true }));
-              });
+          try {
+            // Skip if already preloaded
+            if (videosPreloaded[slide.src]) {
+              return;
             }
+
+            // Create a new blob URL for the video to ensure it's cached
+            fetch(slide.src)
+              .then(response => response.blob())
+              .then(blob => {
+                // Store the video in sessionStorage as preloaded
+                setVideosPreloaded(prev => {
+                  const newStatus = { ...prev, [slide.src]: true };
+                  try {
+                    sessionStorage.setItem('carousel-videos-preloaded', JSON.stringify(newStatus));
+                  } catch (e) {
+                    console.error('Error caching video status:', e);
+                  }
+                  return newStatus;
+                });
+
+                // Set up video element
+                if (videoRefs.current[index]) {
+                  const video = videoRefs.current[index];
+                  if (video) {
+                    video.preload = 'auto'; // Use auto instead of metadata for better performance
+                    
+                    // Add loaded event listener
+                    video.addEventListener('loadeddata', () => {
+                      setVideosLoaded(prev => ({ ...prev, [index]: true }));
+                    });
+                    
+                    // Add error event listener
+                    video.addEventListener('error', (e) => {
+                      console.error('Video element error:', e);
+                    });
+                  }
+                }
+              })
+              .catch(error => {
+                console.error('Error fetching video:', error);
+              });
+          } catch (error) {
+            console.error('Error preloading video:', error);
           }
         }
       });
     };
     
     preloadVideos();
-  }, [slides]);
+  }, [slides, videosPreloaded]);
 
   // Set up video refs array
   useEffect(() => {
@@ -85,59 +126,72 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
 
       slides.forEach((slide, index) => {
         if (slide.isVideo) {
-          // Create a temporary video element for thumbnail generation
-          const tempVideo = document.createElement('video');
-          tempVideo.crossOrigin = 'anonymous';
-          tempVideo.src = slide.src;
-          tempVideo.muted = true;
-          tempVideo.preload = 'metadata';
-          
-          // Set up event listener for when video metadata is loaded
-          tempVideo.addEventListener('loadeddata', () => {
-            // Seek to 0.5 second for thumbnail generation
-            tempVideo.currentTime = 0.5;
-          });
-          
-          // Capture frame when time updates after seeking
-          tempVideo.addEventListener('timeupdate', () => {
-            if (tempVideo.currentTime > 0) {
+          try {
+            // Create a temporary video element for thumbnail generation
+            const tempVideo = document.createElement('video');
+            tempVideo.crossOrigin = 'anonymous';
+            tempVideo.src = slide.src;
+            tempVideo.muted = true;
+            tempVideo.preload = 'metadata';
+            
+            // Set up event listener for when video metadata is loaded
+            tempVideo.addEventListener('loadeddata', () => {
               try {
-                const canvas = document.createElement('canvas');
-                canvas.width = tempVideo.videoWidth || 320;
-                canvas.height = tempVideo.videoHeight || 180;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-                  const thumbnail = canvas.toDataURL('image/jpeg', 0.7); // Reduce quality for better storage
-                  setThumbnails(prev => {
-                    const newThumbnails = { ...prev, [index]: thumbnail };
-                    // Cache thumbnails in sessionStorage
-                    try {
-                      sessionStorage.setItem('carousel-thumbnails', JSON.stringify(newThumbnails));
-                    } catch (e) {
-                      console.error('Error caching thumbnails:', e);
-                    }
-                    return newThumbnails;
-                  });
-                  
-                  // Clean up after thumbnail is generated
-                  tempVideo.pause();
-                  tempVideo.removeAttribute('src');
-                  tempVideo.load();
-                }
-              } catch (error) {
-                console.error('Error generating thumbnail:', error);
+                // Seek to 0.5 second for thumbnail generation
+                tempVideo.currentTime = 0.5;
+              } catch (e) {
+                console.error('Error seeking video:', e);
               }
-            }
-          });
-          
-          // Handle errors
-          tempVideo.addEventListener('error', (e) => {
-            console.error('Error loading video for thumbnail:', e);
-          });
-          
-          // Start loading the video
-          tempVideo.load();
+            });
+            
+            // Capture frame when time updates after seeking
+            tempVideo.addEventListener('timeupdate', () => {
+              if (tempVideo.currentTime > 0) {
+                try {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = tempVideo.videoWidth || 320;
+                  canvas.height = tempVideo.videoHeight || 180;
+                  const ctx = canvas.getContext('2d');
+                  if (ctx) {
+                    ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                    const thumbnail = canvas.toDataURL('image/jpeg', 0.7); // Reduce quality for better storage
+                    setThumbnails(prev => {
+                      const newThumbnails = { ...prev, [index]: thumbnail };
+                      // Cache thumbnails in sessionStorage
+                      try {
+                        sessionStorage.setItem('carousel-thumbnails', JSON.stringify(newThumbnails));
+                      } catch (e) {
+                        console.error('Error caching thumbnails:', e);
+                      }
+                      return newThumbnails;
+                    });
+                    
+                    // Clean up after thumbnail is generated
+                    tempVideo.pause();
+                    tempVideo.removeAttribute('src');
+                    tempVideo.load();
+                  }
+                } catch (error) {
+                  console.error('Error generating thumbnail:', error);
+                }
+              }
+            });
+            
+            // Handle errors
+            tempVideo.addEventListener('error', (e) => {
+              console.error('Error loading video for thumbnail:', e);
+              // Use a fallback thumbnail for videos that fail to load
+              setThumbnails(prev => ({
+                ...prev,
+                [index]: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iI2YxZjFmMSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM5OTkiPlZpZGVvIFByZXZpZXc8L3RleHQ+PC9zdmc+'
+              }));
+            });
+            
+            // Start loading the video
+            tempVideo.load();
+          } catch (error) {
+            console.error('Error in thumbnail generation:', error);
+          }
         }
       });
     };
@@ -295,7 +349,7 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
                               muted 
                               loop
                               playsInline
-                              preload="metadata"
+                              preload="auto"
                               onLoadedData={() => setVideosLoaded(prev => ({ ...prev, [index]: true }))}
                               onError={(e) => console.error('Video loading error:', e)}
                             />
@@ -365,27 +419,27 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
             </div>
           </div>
           
+          <div className="template-navigation flex justify-center mt-1 space-x-4">
+            <button 
+              onClick={handlePrevious}
+              className="template-navigation-button bg-background hover:bg-muted border border-border rounded-full p-2 transition-colors"
+              aria-label="Previous template"
+            >
+              <IconArrowNarrowRight className="w-5 h-5 transform rotate-180" />
+            </button>
+            <button 
+              onClick={handleNext}
+              className="template-navigation-button bg-background hover:bg-muted border border-border rounded-full p-2 transition-colors"
+              aria-label="Next template"
+            >
+              <IconArrowNarrowRight className="w-5 h-5" />
+            </button>
+          </div>
+          
           <div className="mt-2 text-center">
             <p className="text-sm text-muted-foreground">
               {currentIndex + 1} of {slides.length}
             </p>
-          </div>
-          
-          <div className="template-navigation">
-            <button 
-              onClick={handlePrevious}
-              className="template-navigation-button"
-              aria-label="Previous template"
-            >
-              <IconArrowNarrowRight className="w-4 h-4 transform rotate-180" />
-            </button>
-            <button 
-              onClick={handleNext}
-              className="template-navigation-button"
-              aria-label="Next template"
-            >
-              <IconArrowNarrowRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </div>

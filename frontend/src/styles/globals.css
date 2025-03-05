@@ -224,10 +224,10 @@ body {
 }
 
 .template-navigation {
-  @apply absolute bottom-4 right-4 flex space-x-2 z-10;
+  @apply flex justify-center mt-1 space-x-4;
 }
 
 .template-navigation-button {
-  @apply w-8 h-8 flex items-center justify-center bg-black/70 hover:bg-black/90 
-         rounded-full text-white shadow-lg transition-colors;
+  @apply flex items-center justify-center bg-background hover:bg-muted 
+         border border-border rounded-full p-2 text-foreground shadow-sm transition-colors;
 } 
