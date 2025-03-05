@@ -49,12 +49,6 @@ export default function DashboardLayout({
             className="absolute inset-0 bg-repeat opacity-20"
             style={{ backgroundImage: 'url("/background/dashboard/grid.svg")' }}
           />
-          
-          {/* Noise effect */}
-          <div 
-            className="absolute inset-0 opacity-25 mix-blend-soft-light"
-            style={{ backgroundImage: 'url("/background/dashboard/noise.svg")' }}
-          />
         </div>
 
         <DashboardHeader />

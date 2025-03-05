@@ -348,7 +348,6 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
         {/* Template Selector Section */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Select a Template</h2>
           <TemplateSelector
             aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio || '16:9'}
             sceneCount={jobWithFreshUrls.metadata.scenes.length}

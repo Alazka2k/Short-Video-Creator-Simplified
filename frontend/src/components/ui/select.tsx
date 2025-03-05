@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import { AnimatePresence, motion, MotionConfig } from "framer-motion"
 import { ChevronDownIcon, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 type TSelectData = {
   id: string
@@ -81,7 +82,7 @@ const Select = ({
               layoutId="dropdown"
               onClick={() => setOpen(true)}
               className={cn(
-                "overflow-hidden rounded-lg border border-input hover:border-primary/50 bg-background shadow-sm w-full py-2",
+                "overflow-hidden rounded-lg border border-input hover:border-primary/50 bg-background shadow-sm w-full cursor-pointer",
                 selected && "border-primary bg-primary/5",
                 className
               )}
@@ -96,7 +97,7 @@ const Select = ({
               }}
               layoutId="dropdown"
               className={cn(
-                "overflow-hidden rounded-lg w-full border border-input hover:border-primary/50 bg-background py-2 shadow-md",
+                "overflow-hidden rounded-lg w-full border border-input hover:border-primary/50 bg-background shadow-md",
                 className
               )}
               ref={ref}
@@ -124,34 +125,17 @@ const Select = ({
 
 export default Select
 
-const Head = ({ setOpen, title }: { setOpen: (open: boolean) => void, title: string }) => {
+const Head = ({ title, setOpen }: { title: string, setOpen: (open: boolean) => void }) => {
   return (
-    <motion.div
-      initial={{
-        opacity: 0,
-      }}
-      animate={{
-        opacity: 1,
-      }}
-      exit={{
-        opacity: 0,
-      }}
-      transition={{
-        delay: 0.1,
-      }}
-      layout
-      className="flex items-center justify-between p-4"
-    >
-      <motion.strong layout className="text-foreground">
-        {title}
-      </motion.strong>
+    <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+      <h3 className="text-sm font-medium">{title}</h3>
       <button
         onClick={() => setOpen(false)}
-        className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary"
+        className="rounded-full p-1 hover:bg-primary/5"
       >
-        <X className="text-secondary-foreground" size={12} />
+        <X size={16} className="text-muted-foreground" />
       </button>
-    </motion.div>
+    </div>
   )
 }
 
@@ -201,9 +185,9 @@ const SelectItem = ({
   return (
     <motion.div
       className={cn(
-        "group flex cursor-pointer items-center justify-between gap-2 p-4 py-3 hover:bg-primary/5",
+        "group flex cursor-pointer items-center justify-between gap-2 p-0 hover:bg-primary/5 w-full",
         isSelected && "bg-primary/5",
-        noDescription && "!p-2"
+        noDescription && "!p-0"
       )}
       variants={animation}
       initial="hidden"
@@ -213,15 +197,23 @@ const SelectItem = ({
       custom={order}
       onClick={() => onChange?.(order as string)}
     >
-      <div className="flex items-center gap-3 min-h-[48px]">
+      <div className="flex items-center gap-3 min-h-[48px] w-full px-4 py-3">
         <motion.div
           layout
           layoutId={`icon-${item?.id}`}
           className={iconClasses}
         >
-          {item?.custom || item?.icon}
+          {item?.custom || (item?.icon && item.icon.startsWith('/') ? (
+            <Image 
+              src={item.icon} 
+              alt={item.label || ''} 
+              width={24} 
+              height={24} 
+              className="object-contain"
+            />
+          ) : item?.icon)}
         </motion.div>
-        <motion.div layout className="flex flex-col space-y-1">
+        <motion.div layout className="flex flex-col space-y-1 flex-1">
           <motion.strong
             layoutId={`label-${item?.id}`}
             className="text-sm font-semibold text-foreground"
@@ -234,15 +226,15 @@ const SelectItem = ({
             </span>
           )}
         </motion.div>
+        {noDescription ? (
+          <motion.div
+            layout
+            className="flex items-center justify-center"
+          >
+            <ChevronDownIcon className="text-primary" size={20} />
+          </motion.div>
+        ) : null}
       </div>
-      {noDescription ? (
-        <motion.div
-          layout
-          className="flex items-center justify-center gap-2 pr-3"
-        >
-          <ChevronDownIcon className="text-primary" size={20} />
-        </motion.div>
-      ) : null}
     </motion.div>
   )
 } 

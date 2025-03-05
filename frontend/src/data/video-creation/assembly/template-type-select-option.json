@@ -1,0 +1,18 @@
+{
+    "options": [
+      {
+          "name": "Slideshow",
+          "description": "Templates where images are displayed in a slideshow format.",
+          "templateType": "slideshow",
+          "icon": "/assembly/icons/slideshow.png"
+      },
+      {
+        "name": "Video",
+        "description": "Templates where video content can be merged into a video.",
+        "templateType": "video",
+        "icon": "/assembly/icons/video.png"
+    }
+    ]
+  }
+  
+  

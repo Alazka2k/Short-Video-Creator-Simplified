@@ -1,11 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { Carousel } from '@/components/ui/carousel'
 import templateData from '@/data/video-creation/assembly/template-select-option.json'
+import Select from '@/components/ui/select'
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import templateTypeOptions from "@/data/video-creation/assembly/template-type-select-option.json"
+import Image from "next/image"
 
 interface Template {
   id?: string
@@ -21,6 +23,7 @@ interface Template {
   accountType?: string
   contentAllowed?: string[]
   modificationProperties?: Record<string, any>
+  templateType?: string
 }
 
 interface TemplateSelectorProps {
@@ -38,100 +41,154 @@ export function TemplateSelector({
   onSelectTemplate,
   selectedTemplateId
 }: TemplateSelectorProps) {
-  const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([])
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedTemplateType, setSelectedTemplateType] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  // Group templates by type
+  const templateGroups = templates.reduce((groups: Record<string, Template[]>, template) => {
+    const type = template.templateType || 'other'
+    if (!groups[type]) {
+      groups[type] = []
+    }
+    groups[type].push(template)
+    return groups
+  }, {})
+  
+  // Format template type options for the Select component
+  const formattedTemplateTypeOptions = templateTypeOptions.options.map(option => ({
+    id: option.templateType,
+    value: option.templateType,
+    label: option.name,
+    description: option.description,
+    icon: option.icon
+  }))
 
   useEffect(() => {
-    // Filter templates based on aspect ratio, scene count, and user plan
-    const templates = templateData.options.filter(template => {
-      // Check if aspect ratio matches (if specified)
-      const aspectRatioMatch = !aspectRatio || !template.aspectRatio || template.aspectRatio === aspectRatio;
-      
-      // Check if scene count matches (if specified)
-      const sceneCountMatch = !sceneCount || !template.sceneAmount || template.sceneAmount === sceneCount;
-      
-      // Check if user plan matches (if specified)
-      const planMatch = !userPlanId || !template.planId || template.planId === userPlanId;
-      
-      return aspectRatioMatch && sceneCountMatch && planMatch;
-    });
+    // Fetch templates from the API
+    const fetchTemplates = async () => {
+      try {
+        // For now, use the mock data
+        const templates = templateData.options.filter(template => {
+          // Filter by aspect ratio and scene count if provided
+          const aspectRatioMatch = !aspectRatio || template.aspectRatio === aspectRatio;
+          const sceneCountMatch = !sceneCount || template.sceneAmount === sceneCount;
+          const planMatch = !userPlanId || !template.planId || template.planId === userPlanId;
+          
+          return aspectRatioMatch && sceneCountMatch && planMatch;
+        });
+        
+        setTemplates(templates);
+        
+        // Set the first template type as selected if none is selected
+        if (!selectedTemplateType && templates.length > 0) {
+          const firstType = templateTypeOptions.options[0]?.templateType;
+          if (firstType) {
+            setSelectedTemplateType(firstType);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        setError('Failed to load templates');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    setFilteredTemplates(templates);
-    
-    // Auto-select the first template if none is selected and there are templates available
-    if (!selectedTemplateId && templates.length > 0) {
-      onSelectTemplate(templates[0].templateId);
-    }
-  }, [aspectRatio, sceneCount, userPlanId, onSelectTemplate, selectedTemplateId]);
+    fetchTemplates();
+  }, [aspectRatio, sceneCount, userPlanId, selectedTemplateType]);
 
-  if (filteredTemplates.length === 0) {
+  // Handle template type selection
+  const handleTemplateTypeChange = (value: string | null) => {
+    if (value) {
+      setSelectedTemplateType(value)
+      // Clear template selection when changing type
+      if (selectedTemplateId) {
+        onSelectTemplate('')
+      }
+    }
+  }
+
+  const handleClearSelection = () => {
+    onSelectTemplate('')
+  }
+
+  if (templates.length === 0) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-muted-foreground">No compatible templates found for your content.</p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Templates are filtered based on aspect ratio ({aspectRatio}), scene count ({sceneCount}), and your plan.
-        </p>
+      <div className="template-selector-container">
+        <div className="text-center">
+          <p className="text-muted-foreground">No compatible templates found for your content.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Templates are filtered based on aspect ratio ({aspectRatio}), scene count ({sceneCount}), and your plan.
+          </p>
+        </div>
       </div>
     )
   }
 
+  // Convert templates to carousel slide format
+  const mapTemplatesToSlides = (templates: Template[]) => {
+    return templates.map(template => ({
+      title: template.name || 'Untitled Template',
+      description: template.description || '',
+      src: template.preview || '',
+      templateId: template.templateId,
+      aspectRatio: template.aspectRatio,
+      isVideo: template.preview?.endsWith('.mp4')
+    }))
+  }
+
+  // Find the selected template name
+  const selectedTemplate = templates.find(t => t.templateId === selectedTemplateId)
+  const selectedTemplateName = selectedTemplate?.name || 'None'
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {filteredTemplates.map((template) => (
-        <Card 
-          key={template.templateId}
-          className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
-            selectedTemplateId === template.templateId 
-              ? 'ring-2 ring-primary ring-offset-2' 
-              : 'hover:border-primary/50'
-          }`}
-          onClick={() => onSelectTemplate(template.templateId)}
+    <div className="template-selector-container">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Template Selection</h2>
+        <p className="text-sm text-muted-foreground">
+          Select a template that matches your content. Templates are filtered based on your content's aspect ratio and scene count.
+        </p>
+      </div>
+      
+      <div className="mb-6">
+        <h3 className="text-base font-medium mb-3">Template Type</h3>
+        <Select 
+          data={formattedTemplateTypeOptions}
+          onChange={handleTemplateTypeChange}
+          value={selectedTemplateType || undefined}
+          title="Select Template Type"
+          allowDeselect={false}
+        />
+      </div>
+      
+      {selectedTemplateType && (
+        <div className="space-y-8">
+          <div className="w-full">
+            <Carousel 
+              slides={mapTemplatesToSlides(templateGroups[selectedTemplateType] || [])}
+              onSelectTemplate={onSelectTemplate}
+              selectedTemplateId={selectedTemplateId}
+              groupName={selectedTemplateType}
+            />
+          </div>
+        </div>
+      )}
+      
+      <div className="mt-6 pt-4 border-t border-border/40 flex justify-between items-center">
+        <p className="text-sm">
+          Selected template: <span className="font-medium">{selectedTemplateName}</span>
+        </p>
+        
+        <button 
+          className="text-sm text-primary hover:text-primary/80 transition-colors"
+          onClick={handleClearSelection}
         >
-          <CardContent className="p-0">
-            <div className="relative aspect-video w-full">
-              {template.preview ? (
-                template.preview.endsWith('.mp4') ? (
-                  <video 
-                    src={template.preview}
-                    className="w-full h-full object-cover"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                  />
-                ) : (
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={template.preview}
-                      alt={template.name || ''}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )
-              ) : (
-                <div className="flex items-center justify-center w-full h-full bg-muted">
-                  <p className="text-muted-foreground">No preview</p>
-                </div>
-              )}
-              
-              {selectedTemplateId === template.templateId && (
-                <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
-                  <Check size={16} />
-                </div>
-              )}
-            </div>
-            
-            <div className="p-4">
-              <h3 className="font-medium">{template.name || 'Untitled Template'}</h3>
-              <p className="text-sm text-muted-foreground">{template.description || 'No description available'}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs bg-muted px-2 py-1 rounded-md">{template.aspectRatio || 'Unknown'}</span>
-                <span className="text-xs bg-muted px-2 py-1 rounded-md">{template.sceneAmount || 'Unknown'} scenes</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+          Clear Selection
+        </button>
+      </div>
     </div>
   )
 } 
