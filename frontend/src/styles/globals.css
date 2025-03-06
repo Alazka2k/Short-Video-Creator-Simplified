@@ -220,7 +220,11 @@ body {
 }
 
 .template-selector-container {
-  @apply bg-card rounded-lg shadow-sm border border-border/40 p-6 mb-6;
+  @apply rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 p-[1px] mb-6;
+}
+
+.template-selector-container > div {
+  @apply bg-card rounded-xl p-6;
 }
 
 .template-navigation {

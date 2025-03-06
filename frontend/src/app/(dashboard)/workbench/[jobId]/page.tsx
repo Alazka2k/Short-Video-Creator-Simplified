@@ -358,35 +358,46 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
         </div>
 
         {/* Content Preview Section */}
-        <div className="grid gap-6">
-          {jobWithFreshUrls.metadata.scenes.map((scene, index) => (
-            <React.Fragment key={scene.sceneId}>
-              <ScenePreview
-                sceneId={scene.sceneId}
-                image={scene.image}
-                video={scene.video}
-                animation={scene.animation}
-                voice={scene.voice}
-                description={jobWithFreshUrls.metadata.llmResult?.scenes?.[index]?.description}
-                aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
-              />
-            </React.Fragment>
-          ))}
-
-          {/* Music Section (if exists) */}
-          {jobWithFreshUrls.metadata.music && (
-            <div className="rounded-lg border bg-card overflow-hidden">
-              <div className="p-4 border-b bg-muted/50">
-                <h3 className="font-medium">Background Music</h3>
-              </div>
-              <div className="p-6">
-                <AudioPlayer
-                  url={jobWithFreshUrls.metadata.music.publicUrl}
-                  title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
-                />
-              </div>
+        <div className="rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 p-[1px] mb-6">
+          <div className="bg-card rounded-xl p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Scene Previews</h2>
+              <p className="text-sm text-muted-foreground">
+                Preview all generated scenes with their content. Each scene includes images, videos, and audio that can be downloaded individually.
+              </p>
             </div>
-          )}
+            
+            <div className="grid gap-6">
+              {jobWithFreshUrls.metadata.scenes.map((scene, index) => (
+                <React.Fragment key={scene.sceneId}>
+                  <ScenePreview
+                    sceneId={scene.sceneId}
+                    image={scene.image}
+                    video={scene.video}
+                    animation={scene.animation}
+                    voice={scene.voice}
+                    description={jobWithFreshUrls.metadata.llmResult?.scenes?.[index]?.description}
+                    aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+                  />
+                </React.Fragment>
+              ))}
+
+              {/* Music Section (if exists) */}
+              {jobWithFreshUrls.metadata.music && (
+                <div className="rounded-lg border bg-card overflow-hidden">
+                  <div className="p-4 border-b bg-muted/50">
+                    <h3 className="font-medium">Background Music</h3>
+                  </div>
+                  <div className="p-6">
+                    <AudioPlayer
+                      url={jobWithFreshUrls.metadata.music.publicUrl}
+                      title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     )

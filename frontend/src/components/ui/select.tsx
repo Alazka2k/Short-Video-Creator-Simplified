@@ -82,8 +82,8 @@ const Select = ({
               layoutId="dropdown"
               onClick={() => setOpen(true)}
               className={cn(
-                "overflow-hidden rounded-lg border border-input hover:border-primary/50 bg-background shadow-sm w-full cursor-pointer",
-                selected && "border-primary bg-primary/5",
+                "overflow-hidden rounded-lg border border-input hover:border-primary/30 bg-background shadow-sm w-full cursor-pointer",
+                selected && "border-primary/40 bg-primary/5",
                 className
               )}
             >
@@ -97,7 +97,7 @@ const Select = ({
               }}
               layoutId="dropdown"
               className={cn(
-                "overflow-hidden rounded-lg w-full border border-input hover:border-primary/50 bg-background shadow-md",
+                "overflow-hidden rounded-lg w-full border border-input hover:border-primary/30 bg-background shadow-md",
                 className
               )}
               ref={ref}
@@ -178,7 +178,7 @@ const SelectItem = ({
 }: SelectItemProps) => {
   const iconClasses = cn(
     "flex items-center justify-center rounded-full border",
-    isSelected ? "border-primary bg-primary/10" : "border-primary/20 bg-primary/5",
+    isSelected ? "border-primary/40 bg-primary/5" : "border-primary/20 bg-primary/5",
     item?.custom ? "h-12 w-12" : "h-10 w-10"
   );
 

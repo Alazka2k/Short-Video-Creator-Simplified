@@ -146,59 +146,61 @@ export function TemplateSelector({
 
   return (
     <div className="template-selector-container">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Template Selection</h2>
-        <p className="text-sm text-muted-foreground">
-          Select a template that matches your content. Templates are filtered based on your content's aspect ratio and scene count.
-        </p>
-      </div>
-      
-      {/* Always show selected template information if something is selected */}
-      {selectedTemplateId && selectedTemplateId !== '' && (
-        <div className="mb-4 flex justify-center">
-          <div className="inline-flex items-center bg-primary/10 text-primary px-4 py-2 rounded-full">
-            <span className="text-sm mr-2">Selected:</span>
-            <span className="font-medium text-sm">{selectedTemplateName}</span>
-            {/* This is outcommented for the moment - shows information about the template type when a template is selected from a different template type */}
-            {/*{selectedTemplateTypeName && selectedTemplateTypeName !== selectedTemplateType && (
-              <span className="text-xs ml-2 text-muted-foreground">({selectedTemplateTypeName})</span>
-            )}*/}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6 ml-2 hover:bg-primary/20" 
-              onClick={handleClearSelection}
-            >
-              <span className="sr-only">Clear selection</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </Button>
-          </div>
+      <div>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-2">Template Selection</h2>
+          <p className="text-sm text-muted-foreground">
+            Select a template that matches your content. Templates are filtered based on your content's aspect ratio and scene count.
+          </p>
         </div>
-      )}
-      
-      <div className="mb-6">
-        <h3 className="text-base font-medium mb-3">Template Type</h3>
-        <Select 
-          data={formattedTemplateTypeOptions}
-          onChange={handleTemplateTypeChange}
-          value={selectedTemplateType || undefined}
-          title="Select Template Type"
-          allowDeselect={false}
-        />
-      </div>
-      
-      {selectedTemplateType && (
-        <div className="space-y-8">
-          <div className="w-full">
-            <Carousel 
-              slides={mapTemplatesToSlides(templates.filter(t => t.templateType === selectedTemplateType))}
-              onSelectTemplate={(templateId: string) => onSelectTemplate(templateId)}
-              selectedTemplateId={selectedTemplateId}
-              groupName={selectedTemplateType}
-            />
+        
+        {/* Always show selected template information if something is selected */}
+        {selectedTemplateId && selectedTemplateId !== '' && (
+          <div className="mb-4 flex justify-center">
+            <div className="inline-flex items-center bg-primary/10 text-primary px-4 py-2 rounded-full">
+              <span className="text-sm mr-2">Selected:</span>
+              <span className="font-medium text-sm">{selectedTemplateName}</span>
+              {/* This is outcommented for the moment - shows information about the template type when a template is selected from a different template type */}
+              {/*{selectedTemplateTypeName && selectedTemplateTypeName !== selectedTemplateType && (
+                <span className="text-xs ml-2 text-muted-foreground">({selectedTemplateTypeName})</span>
+              )}*/}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 ml-2 hover:bg-primary/20" 
+                onClick={handleClearSelection}
+              >
+                <span className="sr-only">Clear selection</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </Button>
+            </div>
           </div>
+        )}
+        
+        <div className="mb-6">
+          <h3 className="text-base font-medium mb-3">Template Type</h3>
+          <Select 
+            data={formattedTemplateTypeOptions}
+            onChange={handleTemplateTypeChange}
+            value={selectedTemplateType || undefined}
+            title="Select Template Type"
+            allowDeselect={false}
+          />
         </div>
-      )}
+        
+        {selectedTemplateType && (
+          <div className="space-y-8">
+            <div className="w-full">
+              <Carousel 
+                slides={mapTemplatesToSlides(templates.filter(t => t.templateType === selectedTemplateType))}
+                onSelectTemplate={(templateId: string) => onSelectTemplate(templateId)}
+                selectedTemplateId={selectedTemplateId}
+                groupName={selectedTemplateType}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 } 
