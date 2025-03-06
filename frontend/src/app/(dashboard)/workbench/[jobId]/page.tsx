@@ -33,6 +33,7 @@ import {
 import { handleBulkDownload } from '@/lib/utils/download'
 import { toast } from '@/components/ui/use-toast'
 import { TemplateSelector } from '@/components/job-details/TemplateSelector'
+import { useAssembly } from '@/lib/hooks/useAssembly'
 
 interface MediaContent {
   publicUrl: string
@@ -119,6 +120,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
   const [isDownloading, setIsDownloading] = useState(false)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [isAssembling, setIsAssembling] = useState(false)
+  const { assembleVideo } = useAssembly()
 
   // Extract all storage keys
   const storageKeys = job?.metadata?.scenes?.flatMap(scene => {
@@ -176,31 +178,46 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
       return
     }
 
+    // Show toast notification immediately
+    toast({
+      title: "Video assembly started",
+      description: "Your video is being assembled. Check the Videos page when complete.",
+    });
+
     setIsAssembling(true)
     try {
-      const response = await apiClient.post('/api/assembly/assemble', {
+      const result = await assembleVideo({
         jobId: resolvedParams.jobId,
         templateId: selectedTemplateId
-      })
+      });
       
-      console.log('Assembly started:', response)
+      if (result.status === 'error') {
+        throw new Error(result.error || 'Assembly failed');
+      }
       
-      // Redirect to videos page
-      router.push('/videos')
+      console.log('Assembly completed:', result);
       
-      toast({
-        title: "Video assembly started",
-        description: "Your video is being assembled. Check the Videos page for updates.",
-      })
+      // Only open videos page in a new tab if the assembly is completed
+      if (result.status === 'completed') {
+        // Open videos page in a new tab with the correct URL
+        const videosUrl = window.location.origin + '/videos';
+        window.open(videosUrl, '_blank');
+        
+        // Show completion notification
+        toast({
+          title: "Video assembly completed",
+          description: "Your video has been assembled successfully. Opening Videos page.",
+        });
+      }
     } catch (error) {
-      console.error('Assembly error:', error)
+      console.error('Assembly error:', error);
       toast({
         variant: "destructive",
         title: "Assembly failed",
         description: "Failed to start video assembly. Please try again.",
-      })
+      });
     } finally {
-      setIsAssembling(false)
+      setIsAssembling(false);
     }
   }
 
@@ -296,11 +313,16 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
             className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 px-8"
           >
             {isAssembling ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Assembling...
+              </>
             ) : (
-              <PlayCircle className="w-4 h-4" />
+              <>
+                <PlayCircle className="w-4 h-4" />
+                Assemble Video
+              </>
             )}
-            Assemble Video
           </Button>
 
           <Button

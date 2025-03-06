@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './useAuth';
+import { apiClient } from '@/lib/api/apiClient';
 
 interface AssemblyOptions {
   jobId: string;
@@ -8,7 +9,7 @@ interface AssemblyOptions {
 }
 
 interface AssemblyResult {
-  assemblyId?: string;
+  assemblyId?: string | number;
   status: string;
   error?: string;
 }
@@ -17,7 +18,11 @@ export function useAssembly() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AssemblyResult | null>(null);
   const { toast } = useToast();
-  const { getToken } = useAuth();
+  const auth = useAuth();
+  
+  if (!auth) {
+    throw new Error('useAssembly must be used within an AuthProvider');
+  }
 
   const assembleVideo = async ({ jobId, templateId }: AssemblyOptions): Promise<AssemblyResult> => {
     if (!jobId || !templateId) {
@@ -34,37 +39,28 @@ export function useAssembly() {
     setResult(null);
 
     try {
-      const token = await getToken();
-      
-      const response = await fetch('/api/assembly', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      // Use apiClient for consistency with the rest of the application
+      const response = await apiClient.post<{ 
+        message: string;
+        assemblyId: string | number;
+        jobId: string;
+        templateId: string;
+        status: string;
+      }>(
+        '/api/assembly/assemble', 
+        {
           jobId,
           templateId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to assemble video');
-      }
+        }
+      );
 
       const result = {
-        assemblyId: data.assemblyId,
-        status: 'success',
+        assemblyId: response.assemblyId,
+        status: response.status || 'success',
       };
 
       setResult(result);
-      toast({
-        title: 'Assembly Started',
-        description: 'Video assembly has been initiated successfully.',
-      });
-
+      
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -87,27 +83,15 @@ export function useAssembly() {
     }
   };
 
-  const getAssemblyStatus = async (assemblyId: string): Promise<any> => {
+  const getAssemblyStatus = async (assemblyId: string | number): Promise<any> => {
     if (!assemblyId) {
       return { status: 'error', error: 'Assembly ID is required' };
     }
 
     try {
-      const token = await getToken();
-      
-      const response = await fetch(`/api/assembly/${assemblyId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to get assembly status');
-      }
-
-      return data;
+      // Use apiClient for consistency with the rest of the application
+      const response = await apiClient.get(`/api/assembly/${assemblyId}`);
+      return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
