@@ -11,6 +11,7 @@ import { AudioPlayer } from '@/components/job-details/AudioPlayer'
 import { apiClient } from '@/lib/api/apiClient'
 import { AuthLogger } from '@/lib/debug/auth-logger'
 import { JobHeader } from '@/components/job-details/JobHeader'
+import { JobActions } from '@/components/job-details/JobActions'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
 import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
@@ -30,7 +31,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { handleBulkDownload } from '@/lib/utils/download'
 import { toast } from '@/components/ui/use-toast'
 import { TemplateSelector } from '@/components/job-details/TemplateSelector'
 import { useAssembly } from '@/lib/hooks/useAssembly'
@@ -146,81 +146,6 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     return () => clearInterval(refreshInterval)
   }, [refreshUrls])
 
-  const handleDownloadAll = async () => {
-    if (!job?.metadata?.scenes) {
-      toast({
-        variant: "destructive",
-        title: "Download failed",
-        description: "No content available to download",
-      })
-      return
-    }
-
-    setIsDownloading(true)
-    try {
-      await handleBulkDownload(
-        job.metadata.scenes, 
-        job.job_id,
-        job.metadata.llmResult?.title || `content_${job.job_id}`
-      )
-    } finally {
-      setIsDownloading(false)
-    }
-  }
-
-  const handleAssemble = async () => {
-    if (!selectedTemplateId) {
-      toast({
-        variant: "destructive",
-        title: "Template required",
-        description: "Please select a template for your video.",
-      })
-      return
-    }
-
-    // Show toast notification immediately
-    toast({
-      title: "Video assembly started",
-      description: "Your video is being assembled. Check the Videos page when complete.",
-    });
-
-    setIsAssembling(true)
-    try {
-      const result = await assembleVideo({
-        jobId: resolvedParams.jobId,
-        templateId: selectedTemplateId
-      });
-      
-      if (result.status === 'error') {
-        throw new Error(result.error || 'Assembly failed');
-      }
-      
-      console.log('Assembly completed:', result);
-      
-      // Only open videos page in a new tab if the assembly is completed
-      if (result.status === 'completed') {
-        // Open videos page in a new tab with the correct URL
-        const videosUrl = window.location.origin + '/videos';
-        window.open(videosUrl, '_blank');
-        
-        // Show completion notification
-        toast({
-          title: "Video assembly completed",
-          description: "Your video has been assembled successfully. Opening Videos page.",
-        });
-      }
-    } catch (error) {
-      console.error('Assembly error:', error);
-      toast({
-        variant: "destructive",
-        title: "Assembly failed",
-        description: "Failed to start video assembly. Please try again.",
-      });
-    } finally {
-      setIsAssembling(false);
-    }
-  }
-
   const renderContent = () => {
     if (loading) {
       return (
@@ -296,49 +221,12 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
     return (
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => router.push('/workbench')}
-            className="gap-2 border-2 hover:border-primary/50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Workbench
-          </Button>
-
-          <Button
-            variant="default"
-            onClick={handleAssemble}
-            disabled={isAssembling || !selectedTemplateId}
-            className="gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 px-8"
-          >
-            {isAssembling ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Assembling...
-              </>
-            ) : (
-              <>
-                <PlayCircle className="w-4 h-4" />
-                Assemble Video
-              </>
-            )}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleDownloadAll}
-            disabled={isDownloading || !job?.metadata?.scenes}
-            className="gap-2 border-2 hover:border-primary/50 transition-colors"
-          >
-            {isDownloading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            {isDownloading ? 'Downloading...' : 'Download All'}
-          </Button>
-        </div>
+        <JobActions 
+          jobId={resolvedParams.jobId}
+          selectedTemplateId={selectedTemplateId}
+          scenes={jobWithFreshUrls.metadata.scenes}
+          title={jobWithFreshUrls.metadata.llmResult?.title || 'Untitled Content'}
+        />
 
         {/* Job Header */}
         <JobHeader
@@ -431,31 +319,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
       <div className="main-gradient" />
       <div className="gradient-overlay" />
 
-      <div className="container max-w-7xl mx-auto py-12">
-        <div className="relative">
-          {/* Main content */}
-          <div className="relative">
-            {/* Main interface */}
-            <div className="relative z-10 bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
-              <div className="p-8">
-                {renderContent()}
-              </div>
-            </div>
-            {/* Border gradient effect */}
-            <div className="absolute inset-0 -z-10 rounded-xl">
-              <div className="absolute inset-[-3px] rounded-xl">
-                <HoverBorderGradient
-                  as="div"
-                  containerClassName="w-full h-full"
-                  className="bg-transparent"
-                  duration={3}
-                />
-              </div>
-              {/* Inner mask to hide gradient from center */}
-              <div className="absolute inset-[1px] bg-background rounded-lg" />
-            </div>
-          </div>
-        </div>
+      <div className="container relative z-10 py-8">
+        {renderContent()}
       </div>
     </div>
   )

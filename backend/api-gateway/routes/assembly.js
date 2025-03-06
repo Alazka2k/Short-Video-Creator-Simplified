@@ -22,6 +22,8 @@ router.post('/assemble',
   serviceAuthMiddleware,
   async (req, res) => {
     try {
+      logger.info('Processing assembly request');
+      
       // Log token details for debugging
       const tokenInfo = {
         type: req.user.gty === 'client-credentials' ? 'M2M' : 'User',
@@ -38,13 +40,14 @@ router.post('/assemble',
 
       if (tokenInfo.type === 'M2M') {
         try {
+          // Get the Authorization header from the original request
+          const authHeader = req.headers.authorization;
           const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
 
           logger.info('Checking for user token:', {
             hasUserToken: !!userToken,
-            tokenStart: userToken ? `${userToken}` : null
-            //tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null
-
+            tokenStart: userToken ? `${userToken}` : null,
+            profileEndpoint: '/api/auth/profile'
           });
 
           if (userToken) {
@@ -52,12 +55,31 @@ router.post('/assemble',
             const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
             
+            logger.info('Making profile request with user token:', {
+              url: profileUrl,
+              gatewayUrl,
+              headers: {
+                'Authorization': `Bearer ${userToken.substring(0, 20)}...`, // Log partial token for security
+                'Content-Type': 'application/json'
+              }
+            });
+
             try {
               const profileResponse = await axios.get(profileUrl, {
-                headers: {
+                headers: { 
                   'Authorization': `Bearer ${userToken}`,
                   'Content-Type': 'application/json'
                 }
+              });
+
+              logger.info('Profile response received:', {
+                status: profileResponse.status,
+                hasUser: !!profileResponse.data?.user,
+                userData: profileResponse.data?.user ? {
+                  auth0Id: profileResponse.data.user.auth0_id,
+                  email: profileResponse.data.user.email
+                } : null,
+                fullResponse: profileResponse.data // Log full response for debugging
               });
 
               if (profileResponse.data?.user) {
@@ -67,7 +89,8 @@ router.post('/assemble',
                 
                 logger.info('Looking up user in database:', { 
                   auth0Id,
-                  email: profileResponse.data.user.email
+                  email: profileResponse.data.user.email,
+                  tokenPayload: decodedToken // Log the full payload for debugging
                 });
                 
                 if (!auth0Id) {
@@ -86,19 +109,46 @@ router.post('/assemble',
                       auth0Id,
                       email: dbUser.email 
                     });
+                  } else {
+                    logger.warn('User not found in database:', { 
+                      auth0Id,
+                      email: profileResponse.data.user.email 
+                    });
                   }
                 } catch (dbError) {
                   logger.error('Database error looking up user:', {
                     error: dbError.message,
                     stack: dbError.stack,
-                    auth0Id
+                    auth0Id,
+                    email: profileResponse.data.user.email
                   });
                 }
+              } else {
+                logger.warn('No user data in profile response:', {
+                  responseData: profileResponse.data
+                });
               }
             } catch (profileError) {
               logger.error('Error getting user profile:', {
                 error: profileError.message,
-                stack: profileError.stack
+                stack: profileError.stack,
+                response: {
+                  status: profileError.response?.status,
+                  data: profileError.response?.data
+                },
+                requestConfig: {
+                  url: profileUrl,
+                  method: 'GET',
+                  baseURL: config.services.auth.url,
+                  headers: {
+                    'Authorization': 'Bearer [REDACTED]',
+                    'Content-Type': 'application/json'
+                  }
+                },
+                configDump: {
+                  authUrl: config.services.auth.url,
+                  fullConfig: JSON.stringify(config.services.auth)
+                }
               });
               logger.warn('Falling back to API user due to profile error');
             }
@@ -132,7 +182,9 @@ router.post('/assemble',
       logger.info('Assembly request received:', {
         jobId,
         templateId,
-        userId: req.user?.sub
+        userId: req.user?.sub,
+        actualUserId,
+        isApiUser
       });
 
       logger.info('Forwarding request to Assembly service:', { 
@@ -184,6 +236,143 @@ router.get('/status/:assemblyId',
   serviceAuthMiddleware,
   async (req, res) => {
     try {
+      logger.info('Processing assembly status request');
+      
+      // Log token details for debugging
+      const tokenInfo = {
+        type: req.user.gty === 'client-credentials' ? 'M2M' : 'User',
+        sub: req.user.sub,
+        auth0Id: req.user.auth0_id,
+        databaseUser: req.user.databaseUser
+      };
+      
+      logger.info('Token and user context:', tokenInfo);
+
+      // If this is an M2M token, try to get the actual user profile
+      let actualUserId = req.user.databaseUser?.userId;
+      let isApiUser = req.user.databaseUser?.isApiUser || false;
+
+      if (tokenInfo.type === 'M2M') {
+        try {
+          // Get the Authorization header from the original request
+          const authHeader = req.headers.authorization;
+          const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
+
+          logger.info('Checking for user token:', {
+            hasUserToken: !!userToken,
+            tokenStart: userToken ? `${userToken}` : null,
+            profileEndpoint: '/api/auth/profile'
+          });
+
+          if (userToken) {
+            // Try to get user profile using the user token
+            const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
+            const profileUrl = `${gatewayUrl}/api/auth/profile`;
+            
+            logger.info('Making profile request with user token:', {
+              url: profileUrl,
+              gatewayUrl,
+              headers: {
+                'Authorization': `Bearer ${userToken.substring(0, 20)}...`, // Log partial token for security
+                'Content-Type': 'application/json'
+              }
+            });
+
+            try {
+              const profileResponse = await axios.get(profileUrl, {
+                headers: { 
+                  'Authorization': `Bearer ${userToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              logger.info('Profile response received:', {
+                status: profileResponse.status,
+                hasUser: !!profileResponse.data?.user,
+                userData: profileResponse.data?.user ? {
+                  auth0Id: profileResponse.data.user.auth0_id,
+                  email: profileResponse.data.user.email
+                } : null,
+                fullResponse: profileResponse.data // Log full response for debugging
+              });
+
+              if (profileResponse.data?.user) {
+                // Get auth0_id from the decoded token
+                const decodedToken = jwt.decode(userToken);
+                const auth0Id = decodedToken?.auth0_id;
+                
+                logger.info('Looking up user in database:', { 
+                  auth0Id,
+                  email: profileResponse.data.user.email,
+                  tokenPayload: decodedToken // Log the full payload for debugging
+                });
+                
+                if (!auth0Id) {
+                  logger.error('No auth0_id found in token:', { decodedToken });
+                  throw new Error('No auth0_id found in token');
+                }
+                
+                try {
+                  // Look up user in database
+                  const dbUser = await authDataAccess.findUserByAuth0Id(auth0Id);
+                  if (dbUser) {
+                    actualUserId = dbUser.user_id;
+                    isApiUser = false;
+                    logger.info('Found user in database:', { 
+                      userId: actualUserId,
+                      auth0Id,
+                      email: dbUser.email 
+                    });
+                  } else {
+                    logger.warn('User not found in database:', { 
+                      auth0Id,
+                      email: profileResponse.data.user.email 
+                    });
+                  }
+                } catch (dbError) {
+                  logger.error('Database error looking up user:', {
+                    error: dbError.message,
+                    stack: dbError.stack,
+                    auth0Id,
+                    email: profileResponse.data.user.email
+                  });
+                }
+              } else {
+                logger.warn('No user data in profile response:', {
+                  responseData: profileResponse.data
+                });
+              }
+            } catch (profileError) {
+              logger.error('Error getting user profile:', {
+                error: profileError.message,
+                stack: profileError.stack,
+                response: {
+                  status: profileError.response?.status,
+                  data: profileError.response?.data
+                },
+                requestConfig: {
+                  url: profileUrl,
+                  method: 'GET',
+                  baseURL: config.services.auth.url,
+                  headers: {
+                    'Authorization': 'Bearer [REDACTED]',
+                    'Content-Type': 'application/json'
+                  }
+                },
+                configDump: {
+                  authUrl: config.services.auth.url,
+                  fullConfig: JSON.stringify(config.services.auth)
+                }
+              });
+              logger.warn('Falling back to API user due to profile error');
+            }
+          }
+        } catch (error) {
+          logger.error('Error processing user token:', error);
+          logger.warn('Falling back to API user');
+        }
+      }
+
       const { assemblyId } = req.params;
 
       // Validate assembly ID format (UUID)
@@ -194,6 +383,13 @@ router.get('/status/:assemblyId',
           details: 'Assembly ID must be a valid UUID'
         });
       }
+
+      logger.info('Assembly status request received:', {
+        assemblyId,
+        userId: req.user?.sub,
+        actualUserId,
+        isApiUser
+      });
 
       const assembly = await assemblyDataAccess.getAssemblyOutput(assemblyId);
 
@@ -231,7 +427,152 @@ router.get('/templates/:aspectRatio',
   serviceAuthMiddleware,
   async (req, res) => {
     try {
+      logger.info('Processing templates request');
+      
+      // Log token details for debugging
+      const tokenInfo = {
+        type: req.user.gty === 'client-credentials' ? 'M2M' : 'User',
+        sub: req.user.sub,
+        auth0Id: req.user.auth0_id,
+        databaseUser: req.user.databaseUser
+      };
+      
+      logger.info('Token and user context:', tokenInfo);
+
+      // If this is an M2M token, try to get the actual user profile
+      let actualUserId = req.user.databaseUser?.userId;
+      let isApiUser = req.user.databaseUser?.isApiUser || false;
+
+      if (tokenInfo.type === 'M2M') {
+        try {
+          // Get the Authorization header from the original request
+          const authHeader = req.headers.authorization;
+          const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
+
+          logger.info('Checking for user token:', {
+            hasUserToken: !!userToken,
+            tokenStart: userToken ? `${userToken}` : null,
+            profileEndpoint: '/api/auth/profile'
+          });
+
+          if (userToken) {
+            // Try to get user profile using the user token
+            const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
+            const profileUrl = `${gatewayUrl}/api/auth/profile`;
+            
+            logger.info('Making profile request with user token:', {
+              url: profileUrl,
+              gatewayUrl,
+              headers: {
+                'Authorization': `Bearer ${userToken.substring(0, 20)}...`, // Log partial token for security
+                'Content-Type': 'application/json'
+              }
+            });
+
+            try {
+              const profileResponse = await axios.get(profileUrl, {
+                headers: { 
+                  'Authorization': `Bearer ${userToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              logger.info('Profile response received:', {
+                status: profileResponse.status,
+                hasUser: !!profileResponse.data?.user,
+                userData: profileResponse.data?.user ? {
+                  auth0Id: profileResponse.data.user.auth0_id,
+                  email: profileResponse.data.user.email
+                } : null,
+                fullResponse: profileResponse.data // Log full response for debugging
+              });
+
+              if (profileResponse.data?.user) {
+                // Get auth0_id from the decoded token
+                const decodedToken = jwt.decode(userToken);
+                const auth0Id = decodedToken?.auth0_id;
+                
+                logger.info('Looking up user in database:', { 
+                  auth0Id,
+                  email: profileResponse.data.user.email,
+                  tokenPayload: decodedToken // Log the full payload for debugging
+                });
+                
+                if (!auth0Id) {
+                  logger.error('No auth0_id found in token:', { decodedToken });
+                  throw new Error('No auth0_id found in token');
+                }
+                
+                try {
+                  // Look up user in database
+                  const dbUser = await authDataAccess.findUserByAuth0Id(auth0Id);
+                  if (dbUser) {
+                    actualUserId = dbUser.user_id;
+                    isApiUser = false;
+                    logger.info('Found user in database:', { 
+                      userId: actualUserId,
+                      auth0Id,
+                      email: dbUser.email 
+                    });
+                  } else {
+                    logger.warn('User not found in database:', { 
+                      auth0Id,
+                      email: profileResponse.data.user.email 
+                    });
+                  }
+                } catch (dbError) {
+                  logger.error('Database error looking up user:', {
+                    error: dbError.message,
+                    stack: dbError.stack,
+                    auth0Id,
+                    email: profileResponse.data.user.email
+                  });
+                }
+              } else {
+                logger.warn('No user data in profile response:', {
+                  responseData: profileResponse.data
+                });
+              }
+            } catch (profileError) {
+              logger.error('Error getting user profile:', {
+                error: profileError.message,
+                stack: profileError.stack,
+                response: {
+                  status: profileError.response?.status,
+                  data: profileError.response?.data
+                },
+                requestConfig: {
+                  url: profileUrl,
+                  method: 'GET',
+                  baseURL: config.services.auth.url,
+                  headers: {
+                    'Authorization': 'Bearer [REDACTED]',
+                    'Content-Type': 'application/json'
+                  }
+                },
+                configDump: {
+                  authUrl: config.services.auth.url,
+                  fullConfig: JSON.stringify(config.services.auth)
+                }
+              });
+              logger.warn('Falling back to API user due to profile error');
+            }
+          }
+        } catch (error) {
+          logger.error('Error processing user token:', error);
+          logger.warn('Falling back to API user');
+        }
+      }
+
       const { aspectRatio } = req.params;
+      
+      logger.info('Templates request received:', {
+        aspectRatio,
+        userId: req.user?.sub,
+        actualUserId,
+        isApiUser
+      });
+      
       const templates = await assemblyDataAccess.listTemplatesByAspectRatio(aspectRatio);
 
       return res.json({
