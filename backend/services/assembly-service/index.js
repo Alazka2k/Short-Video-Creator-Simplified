@@ -3,6 +3,7 @@ const createServer = require('./server');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const storageService = require('../../shared/utils/storage');
+const assemblyDataAccess = require('./data/assemblyDataAccess');
 
 class AssemblyServiceInterface {
   constructor() {
@@ -44,6 +45,16 @@ class AssemblyServiceInterface {
       return await this.service.getProjectStatus(jobId);
     } catch (error) {
       logger.error('Error getting assembly status:', error);
+      throw error;
+    }
+  }
+
+  async getAllAssemblyOutputs(filters = {}) {
+    try {
+      logger.info('Getting all assembly outputs with filters:', filters);
+      return await assemblyDataAccess.getAllAssemblyOutputs(filters);
+    } catch (error) {
+      logger.error('Error getting assembly outputs:', error);
       throw error;
     }
   }

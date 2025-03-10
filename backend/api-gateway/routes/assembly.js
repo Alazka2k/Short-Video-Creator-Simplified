@@ -9,9 +9,10 @@ const authDataAccess = require('../../services/auth-service/data/authDataAccess'
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const config = require('../../shared/utils/config');
+const extractUserFromToken = require('../middleware/userTokenExtractor');
 
 // Initialize assembly service
-const assemblyService = new AssemblyService();
+const assemblyServiceInstance = new AssemblyService();
 
 /**
  * Start video assembly for a job using a template
@@ -199,7 +200,7 @@ router.post('/assemble',
       const assemblyId = await assemblyDataAccess.createAssemblyOutput(jobId, actualUserId, templateId);
 
       // Start video assembly process
-      const result = await assemblyService.createVideoProject(assemblyId, jobId, templateId);
+      const result = await assemblyServiceInstance.createVideoProject(assemblyId, jobId, templateId);
 
       logger.info('Received response from Assembly service:', { 
         assemblyId,
@@ -696,5 +697,132 @@ router.post('/webhook', async (req, res) => {
     });
   }
 });
+
+// Log user context and token details for debugging
+const logUserContext = (req, res, next) => {
+  logger.debug('User context:', {
+    userId: req.user?.sub,
+    permissions: req.user?.permissions,
+    token: req.headers.authorization?.substring(0, 20) + '...'
+  });
+  next();
+};
+
+// GET endpoint to retrieve all assembly outputs with pagination and filtering
+router.get('/videos', 
+  verifyAuth0Token,
+  checkPermission('/api/assembly/videos'),
+  serviceAuthMiddleware,
+  extractUserFromToken,
+  async (req, res) => {
+    try {
+      // Try to get user ID from x-user-token if present
+      let userId = req.user.databaseUser.userId;
+      let isApiUser = req.user.databaseUser.isApiUser;
+
+      const userToken = req.header('x-user-token');
+      if (userToken) {
+        try {
+          const decodedUserToken = jwt.decode(userToken);
+          if (decodedUserToken?.auth0_id) {
+            const user = await authDataAccess.findUserByAuth0Id(decodedUserToken.auth0_id);
+            if (user) {
+              userId = user.user_id;
+              isApiUser = false;
+            }
+          }
+        } catch (tokenError) {
+          logger.warn('Error decoding user token:', tokenError);
+        }
+      }
+
+      logger.info('Getting assembly outputs with filters:', {
+        userId,
+        isApiUser,
+        query: req.query
+      });
+
+      const filters = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 20,
+        sortBy: req.query.sortBy || 'created_at',
+        sortOrder: req.query.sortOrder || 'desc',
+        status: req.query.status,
+        startDate: req.query.startDate,
+        endDate: req.query.endDate
+      };
+
+      // Add user ID if not API user
+      if (!isApiUser) {
+        filters.userId = userId.toString();
+      }
+
+      logger.info('Making request to assembly service:', {
+        url: `${config.services.assembly.url}/videos`,
+        filters,
+        userId,
+        isApiUser
+      });
+
+      try {
+        const response = await axios.get(`${config.services.assembly.url}/videos`, {
+          params: filters,
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000  // 30 seconds timeout
+        });
+
+        logger.info('Assembly outputs retrieved:', {
+          status: response.status,
+          hasData: !!response.data,
+          userId,
+          isApiUser,
+          outputCount: response.data?.data?.length || 0,
+          pagination: response.data?.pagination
+        });
+
+        // Process URLs in the response data - only refresh the final assembled video URL
+        const StorageUrlHelper = require('../../shared/utils/storage-url-helper');
+        const processedData = await Promise.all(response.data.data.map(async output => {
+          // Only refresh the final video URL if it exists
+          if (output.public_url) {
+            const refreshedOutput = await StorageUrlHelper.refreshUrlsInObject({
+              publicUrl: output.public_url,
+              storageKey: output.storage_key
+            });
+            output.public_url = refreshedOutput.publicUrl;
+          }
+          return output;
+        }));
+
+        res.json({
+          data: processedData,
+          pagination: response.data.pagination
+        });
+      } catch (error) {
+        logger.error('Assembly outputs request error:', {
+          error: error.message,
+          stack: error.stack,
+          status: error.response?.status
+        });
+
+        res.status(error.response?.status || 500).json({
+          error: 'Failed to get assembly outputs',
+          details: error.response?.data?.details || error.message
+        });
+      }
+    } catch (error) {
+      logger.error('Assembly outputs request error:', {
+        error: error.message,
+        stack: error.stack,
+        status: error.response?.status
+      });
+
+      res.status(error.response?.status || 500).json({
+        error: 'Failed to get assembly outputs',
+        details: error.response?.data?.details || error.message
+      });
+    }
+  }
+);
 
 module.exports = router; 

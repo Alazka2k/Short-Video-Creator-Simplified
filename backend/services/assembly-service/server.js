@@ -7,6 +7,7 @@ const storageService = require('../../shared/utils/storage');
 const path = require('path');
 const fs = require('fs');
 const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV]);
+const { AssemblyServiceInterface } = require('./index');
 
 function createServer(assemblyServiceInterface, storageService) {
   const app = express();
@@ -421,6 +422,29 @@ function createServer(assemblyServiceInterface, storageService) {
         error: 'Failed to process webhook',
         details: error.message
       });
+    }
+  });
+
+  // Endpoint to get all assembly outputs with pagination and filtering
+  app.get('/videos', async (req, res) => {
+    try {
+      const filters = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 20,
+        sortBy: req.query.sortBy || 'created_at',
+        sortOrder: req.query.sortOrder || 'desc',
+        status: req.query.status,
+        userId: req.query.userId,
+        startDate: req.query.startDate,
+        endDate: req.query.endDate
+      };
+
+      logger.info('Getting assembly outputs with filters:', filters);
+      const result = await assemblyServiceInterface.getAllAssemblyOutputs(filters);
+      res.json(result);
+    } catch (error) {
+      logger.error('Error in /videos endpoint:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

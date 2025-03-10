@@ -524,6 +524,148 @@ class AssemblyDataAccess {
       throw error;
     }
   }
+
+  /**
+   * Get all assembly outputs with pagination and filtering
+   * @param {Object} filters - Filter parameters
+   * @param {number} filters.page - Page number
+   * @param {number} filters.limit - Items per page
+   * @param {string} filters.sortBy - Field to sort by
+   * @param {string} filters.sortOrder - Sort order (asc/desc)
+   * @param {string} filters.status - Filter by status
+   * @param {string} filters.userId - Filter by user ID
+   * @param {string} filters.startDate - Filter by start date
+   * @param {string} filters.endDate - Filter by end date
+   * @returns {Object} Paginated assembly outputs with metadata
+   */
+  async getAllAssemblyOutputs(filters = {}) {
+    try {
+      let query = knex('assembly_outputs');
+
+      // Apply filters
+      if (filters.status) {
+        query = query.where('status', filters.status);
+      }
+
+      if (filters.userId) {
+        query = query.where('user_id', filters.userId);
+      }
+
+      // Date range filters
+      if (filters.startDate) {
+        query = query.where('created_at', '>=', filters.startDate);
+      }
+
+      if (filters.endDate) {
+        query = query.where('created_at', '<=', filters.endDate);
+      }
+
+      // Get total count before pagination
+      const [{ count }] = await query.clone().count();
+
+      // Apply sorting
+      const sortBy = filters.sortBy || 'created_at';
+      const sortOrder = filters.sortOrder?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+      query = query.orderBy(sortBy, sortOrder);
+
+      // Apply pagination
+      const page = parseInt(filters.page) || 1;
+      const limit = parseInt(filters.limit) || 20;
+      const offset = (page - 1) * limit;
+      query = query.offset(offset).limit(limit);
+
+      // Execute query
+      const assemblyOutputs = await query;
+
+      // Process results and refresh URLs if needed
+      const processedOutputs = await Promise.all(assemblyOutputs.map(async output => {
+        // Parse metadata
+        const metadata = typeof output.metadata === 'string' ? 
+          JSON.parse(output.metadata || '{}') : output.metadata || {};
+
+        // Refresh URL if needed
+        let publicUrl = output.public_url;
+        if (publicUrl && output.storage_key) {
+          try {
+            publicUrl = await StorageUrlHelper.getFreshUrl(publicUrl);
+            
+            // Update database if URL changed
+            if (publicUrl !== output.public_url) {
+              await knex('assembly_outputs')
+                .where('assembly_id', output.assembly_id)
+                .update({ 
+                  public_url: publicUrl,
+                  updated_at: knex.fn.now()
+                });
+            }
+          } catch (urlError) {
+            logger.error('Error refreshing URL for assembly output:', {
+              assemblyId: output.assembly_id,
+              error: urlError.message
+            });
+          }
+        }
+
+        // Get job details to include in response
+        let jobDetails = null;
+        try {
+          if (output.job_id) {
+            const job = await knex('jobs')
+              .where('job_id', output.job_id)
+              .first('job_id', 'status', 'metadata');
+              
+            if (job) {
+              const jobMetadata = typeof job.metadata === 'string' ? 
+                JSON.parse(job.metadata || '{}') : job.metadata || {};
+                
+              jobDetails = {
+                job_id: job.job_id,
+                status: job.status,
+                title: jobMetadata.llmResult?.title || 'Untitled',
+                description: jobMetadata.llmResult?.description || '',
+                sceneCount: jobMetadata.scenes?.length || 0
+              };
+            }
+          }
+        } catch (jobError) {
+          logger.error('Error getting job details for assembly output:', {
+            assemblyId: output.assembly_id,
+            jobId: output.job_id,
+            error: jobError.message
+          });
+        }
+
+        return {
+          assembly_id: output.assembly_id,
+          job_id: output.job_id,
+          user_id: output.user_id,
+          template_id: output.template_id,
+          status: output.status,
+          created_at: output.created_at,
+          updated_at: output.updated_at,
+          storage_key: output.storage_key,
+          public_url: publicUrl,
+          creatomate_id: output.creatomate_id,
+          metadata: metadata,
+          job: jobDetails
+        };
+      }));
+
+      // Return paginated response
+      return {
+        data: processedOutputs,
+        pagination: {
+          total: parseInt(count),
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit)
+        }
+      };
+    } catch (error) {
+      logger.error('Error getting assembly outputs:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new AssemblyDataAccess();
