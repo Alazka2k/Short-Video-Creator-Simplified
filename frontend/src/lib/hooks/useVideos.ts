@@ -5,6 +5,14 @@ import { useStorageUrls } from './useStorageUrls'
 import { handleBulkDownload } from '@/lib/utils/download'
 import { toast } from '@/components/ui/use-toast'
 import { useState } from 'react'
+import { localStore } from '@/lib/utils/storage-manager'
+
+const VIDEOS_CACHE_KEY = 'completed_videos'
+
+interface CacheData {
+  data: VideosResponse
+  timestamp: number
+}
 
 interface VideoState {
   filters: {
@@ -116,13 +124,47 @@ export function useVideos() {
         queryParams.append('platform', state.filters.platform)
       }
 
+      // Get fresh data from API
       const response = await apiClient.get<VideosResponse>(
         `/api/assembly/videos?${queryParams.toString()}`,
         { headers }
       )
+
+      // Get cached completed videos
+      const cachedData = localStore.get<VideosResponse>(VIDEOS_CACHE_KEY)
+      
+      if (cachedData) {
+        // Create a map of existing videos by ID for quick lookup
+        const existingVideos = new Map(
+          cachedData.data.map(video => [video.assembly_id, video])
+        )
+        
+        // Filter out completed videos that are already cached
+        const newCompletedVideos = response.data.filter(video => 
+          video.status === 'completed' && !existingVideos.has(video.assembly_id)
+        )
+        
+        // If we found new completed videos, update the cache
+        if (newCompletedVideos.length > 0) {
+          const updatedCache = {
+            ...cachedData,
+            data: [...cachedData.data, ...newCompletedVideos]
+          }
+          localStore.set(VIDEOS_CACHE_KEY, updatedCache)
+        }
+      } else {
+        // If no cache exists, create it with completed videos
+        const completedVideos = {
+          ...response,
+          data: response.data.filter(video => video.status === 'completed')
+        }
+        localStore.set(VIDEOS_CACHE_KEY, completedVideos)
+      }
       
       return response
-    }
+    },
+    staleTime: 30000, // Consider data stale after 30 seconds
+    gcTime: Infinity  // Never garbage collect the data
   })
 
   // Extract storage keys from videos

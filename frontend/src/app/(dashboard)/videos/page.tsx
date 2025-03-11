@@ -1,31 +1,48 @@
 'use client';
 
 import { VideoOverview } from '@/components/videos/VideoOverview';
+import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
 
 export default function VideosPage() {
   return (
-    <div className="relative flex-1 space-y-8 p-8 pt-6">
-      {/* Background decorations */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-grid-white/[0.02]" />
-      </div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background */}
+      <div className="main-gradient" />
+      <div className="gradient-overlay" />
 
-      {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          My Videos
-        </h2>
-        <p className="text-muted-foreground mt-2">
-          Browse and manage your assembled videos
-        </p>
-      </div>
+      <div className="container max-w-7xl mx-auto py-12">
+        <div className="relative">
+          {/* Header section */}
+          <div className="text-center space-y-2 mb-8">
+            <h1 className="text-4xl font-bold tracking-tight gradient-primary-text">
+              My Videos
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Browse and manage your assembled videos
+            </p>
+          </div>
 
-      {/* Content */}
-      <div className="relative">
-        <VideoOverview />
+          {/* Videos interface */}
+          <div className="relative">
+            <div className="relative z-10 bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="p-8">
+                <VideoOverview />
+              </div>
+            </div>
+            {/* Border gradient effect */}
+            <div className="absolute inset-0 -z-10 rounded-xl">
+              <div className="absolute inset-[-3px] rounded-xl">
+                <HoverBorderGradient
+                  as="div"
+                  containerClassName="w-full h-full"
+                  className="bg-transparent"
+                  duration={3}
+                />
+              </div>
+              <div className="absolute inset-[1px] bg-background rounded-lg" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

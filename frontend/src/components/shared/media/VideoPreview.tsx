@@ -103,7 +103,6 @@ export function VideoPreview({
           onError={handleError}
           controls
           muted
-          autoPlay
           loop
           playsInline
           crossOrigin="anonymous"
