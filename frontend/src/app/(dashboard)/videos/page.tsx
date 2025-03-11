@@ -1,10 +1,6 @@
-import { Metadata } from 'next';
-import { VideoList } from '@/components/videos/video-list';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'My Videos - Video Creator',
-  description: 'Browse and manage your created videos',
-};
+import { VideoOverview } from '@/components/videos/VideoOverview';
 
 export default function VideosPage() {
   return (
@@ -23,13 +19,13 @@ export default function VideosPage() {
           My Videos
         </h2>
         <p className="text-muted-foreground mt-2">
-          Browse and manage your created videos
+          Browse and manage your assembled videos
         </p>
       </div>
 
       {/* Content */}
       <div className="relative">
-        <VideoList />
+        <VideoOverview />
       </div>
     </div>
   );

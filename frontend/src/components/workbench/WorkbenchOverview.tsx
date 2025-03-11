@@ -1,9 +1,9 @@
 import { useWorkbench } from '@/lib/hooks/useWorkbench'
-import { JobList } from './sections/JobList'
-import { FilterBar } from './sections/FilterBar'
-import { Pagination } from './sections/Pagination'
 import { BentoGrid, BentoItem } from '@/components/ui/bento-grid'
 import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as VoiceIcon } from 'lucide-react'
+import { FilterBar } from '@/components/shared/filters/FilterBar'
+import { Pagination } from '@/components/shared/pagination/Pagination'
+import { DownloadButton } from '@/components/shared/buttons/DownloadButton'
 
 interface Scene {
   image?: { publicUrl: string }
@@ -78,7 +78,6 @@ export function WorkbenchOverview() {
   return (
     <div className="space-y-6">
       <FilterBar
-        filters={filters}
         onFilterChange={handleFilterChange}
       />
       

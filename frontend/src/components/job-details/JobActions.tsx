@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { AssemblyButton } from './AssemblyButton';
-import { DownloadAllButton } from './DownloadAllButton';
+import { AssemblyButton } from './buttons/AssemblyButton';
+import { DownloadButton } from '@/components/shared/buttons/DownloadButton';
+import { handleBulkDownload } from '@/lib/utils/download';
 
 interface JobActionsProps {
   jobId: string;
@@ -20,6 +21,10 @@ interface JobActionsProps {
 export function JobActions({ jobId, selectedTemplateId, scenes, title }: JobActionsProps) {
   const router = useRouter();
 
+  const handleDownload = async () => {
+    await handleBulkDownload(scenes, jobId, title || 'content');
+  };
+
   return (
     <div className="flex items-center justify-between">
       <Button 
@@ -36,10 +41,12 @@ export function JobActions({ jobId, selectedTemplateId, scenes, title }: JobActi
         selectedTemplateId={selectedTemplateId} 
       />
 
-      <DownloadAllButton 
-        jobId={jobId} 
-        scenes={scenes} 
-        title={title} 
+      <DownloadButton 
+        onDownload={handleDownload}
+        title="Download All"
+        disabled={!scenes || scenes.length === 0}
+        variant="outline"
+        showIcon={true}
       />
     </div>
   );

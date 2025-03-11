@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { AudioPlayer } from './AudioPlayer'
-import { ImagePreview } from './ImagePreview'
-import { VideoPreview } from './VideoPreview'
+import { AudioPlayer } from '@/components/shared/media/AudioPlayer'
+import { ImagePreview } from '@/components/shared/media/ImagePreview'
+import { VideoPreview } from '@/components/shared/media/VideoPreview'
 import { cn } from '@/lib/utils'
 import { AuthLogger } from '@/lib/debug/auth-logger'
 import { ChevronDown, SquareLibrary, Download, RefreshCw, ChevronUp } from 'lucide-react'
@@ -148,57 +148,54 @@ export function ScenePreview({
 
   const getMediaContent = () => {
     if (video?.storageKey && freshUrls[video.storageKey]) {
-      //console.log('ScenePreview: Loading video for scene', sceneId, freshUrls[video.storageKey])
       return (
-        <VideoPreview
-          url={freshUrls[video.storageKey]}
-          className="w-full h-full object-contain"
-          onError={() => handleMediaError('video')}
-          onLoad={() => {
-            //console.log('ScenePreview: Video loaded for scene', sceneId)
-            setMediaErrors(prev => {
-              const { video, ...rest } = prev
-              return rest
-            })
-          }}
-        />
+        <div className="w-full h-full">
+          <VideoPreview
+            url={freshUrls[video.storageKey]}
+            aspectRatio={aspectRatio}
+            onError={() => handleMediaError('video')}
+            onLoad={() => {
+              setMediaErrors(prev => {
+                const { video, ...rest } = prev
+                return rest
+              })
+            }}
+          />
+        </div>
       )
     }
 
     if (animation?.storageKey && freshUrls[animation.storageKey]) {
-      //console.log('ScenePreview: Loading animation for scene', sceneId, freshUrls[animation.storageKey])
       return (
-        <VideoPreview
-          url={freshUrls[animation.storageKey]}
-          className="w-full h-full object-contain"
-          onError={() => handleMediaError('animation')}
-          onLoad={() => {
-            //console.log('ScenePreview: Animation loaded for scene', sceneId)
-            setMediaErrors(prev => {
-              const { animation, ...rest } = prev
-              return rest
-            })
-          }}
-        />
+        <div className="w-full h-full">
+          <VideoPreview
+            url={freshUrls[animation.storageKey]}
+            aspectRatio={aspectRatio}
+            onError={() => handleMediaError('animation')}
+            onLoad={() => {
+              setMediaErrors(prev => {
+                const { animation, ...rest } = prev
+                return rest
+              })
+            }}
+          />
+        </div>
       )
     }
 
     if (image?.storageKey && freshUrls[image.storageKey]) {
-      //console.log('ScenePreview: Loading image for scene', sceneId, freshUrls[image.storageKey])
       return (
         <ImagePreview
           url={freshUrls[image.storageKey]}
           alt={description || image.metadata?.prompt || `Scene ${sceneId} Image`}
-          className="w-full h-full object-contain"
+          aspectRatio={aspectRatio}
           onError={() => handleMediaError('image')}
           onLoad={() => {
-            //console.log('ScenePreview: Image loaded for scene', sceneId)
             setMediaErrors(prev => {
               const { image, ...rest } = prev
               return rest
             })
           }}
-          aspectRatio={aspectRatio}
         />
       )
     }
@@ -254,12 +251,11 @@ export function ScenePreview({
             <div className="flex items-center justify-center p-6 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
               {/* Main Media Container */}
               <div className={cn(
-                "relative w-full overflow-hidden rounded-lg border border-violet-500/20",
-                getAspectRatioClass(aspectRatio),
+                "relative w-full",
                 // Add max-width constraints based on aspect ratio
-                aspectRatio === "9:16" && "max-w-[300px]",
-                aspectRatio === "1:1" && "max-w-[400px]",
-                aspectRatio === "16:9" && "max-w-[550px]"
+                aspectRatio === "9:16" && "max-w-[300px] mx-auto",
+                aspectRatio === "1:1" && "max-w-[400px] mx-auto",
+                aspectRatio === "16:9" && "max-w-full"
               )}>
                 {getMediaContent()}
                 {Object.entries(mediaErrors).map(([type, error]) => (

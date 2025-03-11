@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button'
 import { useJobDetails } from '@/lib/hooks/useJobDetails'
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
 import { ScenePreview } from '@/components/job-details/ScenePreview'
-import { AudioPlayer } from '@/components/job-details/AudioPlayer'
+import { AudioPlayer } from '@/components/shared/media/AudioPlayer'
 import { apiClient } from '@/lib/api/apiClient'
 import { AuthLogger } from '@/lib/debug/auth-logger'
-import { JobHeader } from '@/components/job-details/JobHeader'
+import { JobHeader } from '@/components/job-details/sections/JobHeader'
 import { JobActions } from '@/components/job-details/JobActions'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
 import scriptToneData from '@/data/video-creation/script/script-tone_select-option.json'
@@ -32,7 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { toast } from '@/components/ui/use-toast'
-import { TemplateSelector } from '@/components/job-details/TemplateSelector'
+import { TemplateSelector } from '@/components/job-details/sections/TemplateSelector'
 import { useAssembly } from '@/lib/hooks/useAssembly'
 
 interface MediaContent {
@@ -294,8 +294,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
               {/* Music Section (if exists) */}
               {jobWithFreshUrls.metadata.music && (
-                <div className="rounded-lg border bg-card overflow-hidden">
-                  <div className="p-4 border-b bg-muted/50">
+                <div className="rounded-lg border border-border bg-card overflow-hidden">
+                  <div className="p-4 border-b border-border bg-muted/10">
                     <h3 className="font-medium">Background Music</h3>
                   </div>
                   <div className="p-6">
