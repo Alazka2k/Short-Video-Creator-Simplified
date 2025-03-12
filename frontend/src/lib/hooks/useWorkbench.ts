@@ -5,6 +5,9 @@ import { useState } from 'react'
 import { useStorageUrls } from './useStorageUrls'
 import { handleBulkDownload } from '@/lib/utils/download'
 import { toast } from '@/components/ui/use-toast'
+import { localStore } from '@/lib/utils/storage-manager'
+
+const WORKBENCH_CACHE_KEY = 'workbench_jobs'
 
 interface WorkbenchState {
   filters: {
@@ -47,10 +50,22 @@ export function useWorkbench() {
   const { 
     data: jobsResponse,
     isLoading,
-    error
+    error,
+    refetch
   } = useQuery({
     queryKey: ['jobs', state.pagination, state.filters],
     queryFn: async () => {
+      const m2mToken = await getM2MToken()
+      const userToken = localStorage.getItem("access_token")
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${m2mToken}`
+      }
+      
+      if (userToken) {
+        headers['x-user-token'] = userToken
+      }
+
       const queryParams = new URLSearchParams({
         page: state.pagination.page.toString(),
         limit: state.pagination.limit.toString(),
@@ -66,24 +81,43 @@ export function useWorkbench() {
         queryParams.append('services', state.filters.services.join(','))
       }
 
-      const m2mToken = await getM2MToken()
-      const userToken = localStorage.getItem("access_token")
-      
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`
-      }
-      
-      if (userToken) {
-        headers['x-user-token'] = userToken
-      }
-
+      // Get fresh data from API
       const response = await apiClient.get<JobsResponse>(
         `/api/job/jobs?${queryParams.toString()}`,
         { headers }
       )
+
+      // Get cached jobs
+      const cachedData = localStore.get<JobsResponse>(WORKBENCH_CACHE_KEY)
+      
+      if (cachedData) {
+        // Create a map of existing jobs by ID for quick lookup
+        const existingJobs = new Map(
+          cachedData.data.map(job => [job.job_id, job])
+        )
+        
+        // Filter out jobs that are already cached
+        const newJobs = response.data.filter(job => 
+          !existingJobs.has(job.job_id)
+        )
+        
+        // If we found new jobs, update the cache
+        if (newJobs.length > 0) {
+          const updatedCache = {
+            ...cachedData,
+            data: [...cachedData.data, ...newJobs]
+          }
+          localStore.set(WORKBENCH_CACHE_KEY, updatedCache)
+        }
+      } else {
+        // If no cache exists, create it
+        localStore.set(WORKBENCH_CACHE_KEY, response)
+      }
       
       return response
-    }
+    },
+    staleTime: 30000, // Consider data stale after 30 seconds
+    gcTime: Infinity  // Never garbage collect the data
   })
 
   // Extract preview storage keys from jobs
@@ -91,12 +125,7 @@ export function useWorkbench() {
     if (!job.metadata?.scenes?.[0]) return []
     
     const scene = job.metadata.scenes[0]
-    if (scene.video?.storageKey) {
-      return [scene.video.storageKey]
-    }
-    if (scene.animation?.storageKey) {
-      return [scene.animation.storageKey]
-    }
+    // Prefer image for preview
     if (scene.image?.storageKey) {
       return [scene.image.storageKey]
     }
@@ -170,30 +199,16 @@ export function useWorkbench() {
     const aspectRatio = getAspectRatio(job)
     const gridSpan = calculateGridSpan(aspectRatio)
     
-    const updatedScene = {
-      ...scene,
-      video: scene.video && {
-        ...scene.video,
-        publicUrl: previewUrls[scene.video.storageKey] || scene.video.publicUrl
-      },
-      animation: scene.animation && {
-        ...scene.animation,
-        publicUrl: previewUrls[scene.animation.storageKey] || scene.animation.publicUrl
-      },
-      image: scene.image && {
-        ...scene.image,
-        publicUrl: previewUrls[scene.image.storageKey] || scene.image.publicUrl
-      }
-    }
+    // Always use image for preview if available
+    const previewUrl = scene.image?.storageKey ? 
+      previewUrls[scene.image.storageKey] || scene.image.publicUrl :
+      undefined
 
     return {
       ...job,
       aspectRatio,
       gridSpan,
-      metadata: {
-        ...job.metadata,
-        scenes: [updatedScene, ...job.metadata.scenes.slice(1)]
-      }
+      previewUrl
     }
   }) || []
 

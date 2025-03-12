@@ -44,9 +44,10 @@ export function VideoCard({ video, onDownload, onShare }: VideoCardProps) {
               <div className="flex items-center gap-2">
                 <DownloadButton
                   onDownload={onDownload}
-                  variant="ghost"
+                  variant="outline"
                   showIcon
-                  title=""
+                  title="Download"
+                  className="border-2 hover:border-primary/50 transition-colors"
                 />
                 <SocialShareButtons
                   videoUrl={video.thumbnailUrl}

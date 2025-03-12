@@ -4,6 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import { CheckIcon } from "lucide-react";
 import Image from "next/image";
 
+/**
+ * Interface representing a slide in the carousel
+ * @property {string} title - The title of the slide
+ * @property {string} [description] - Optional description of the slide
+ * @property {string} src - Source URL for the slide image or video
+ * @property {string} templateId - Unique identifier for the template
+ * @property {string} [aspectRatio] - Optional aspect ratio (e.g., "16:9", "1:1", "9:16")
+ * @property {boolean} [isVideo] - Whether the slide is a video
+ */
 interface SlideData {
   title: string;
   description?: string;
@@ -13,6 +22,13 @@ interface SlideData {
   isVideo?: boolean;
 }
 
+/**
+ * Props for the Carousel component
+ * @property {SlideData[]} slides - Array of slide data to display
+ * @property {function} onSelectTemplate - Callback when a template is selected
+ * @property {string | null} selectedTemplateId - ID of the currently selected template
+ * @property {string} [groupName] - Optional group name for the carousel
+ */
 interface CarouselProps {
   slides: SlideData[];
   onSelectTemplate: (templateId: string) => void;
@@ -20,6 +36,15 @@ interface CarouselProps {
   groupName?: string;
 }
 
+/**
+ * Carousel component for displaying and selecting templates
+ * Features:
+ * - Supports both image and video templates
+ * - Automatic thumbnail generation for videos
+ * - Caching of video preload status and thumbnails
+ * - Responsive design with different aspect ratios
+ * - Navigation controls and selection state
+ */
 export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupName }: CarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
@@ -28,7 +53,9 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
   const [videosLoaded, setVideosLoaded] = useState<Record<number, boolean>>({});
   const [videosPreloaded, setVideosPreloaded] = useState<Record<string, boolean>>({});
 
-  // Check for cached video status
+  /**
+   * Initialize video preload status from session storage
+   */
   useEffect(() => {
     // Check if we have video preload status in sessionStorage
     const cachedVideoStatus = sessionStorage.getItem('carousel-videos-preloaded');
@@ -42,7 +69,9 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     }
   }, []);
 
-  // Preload all videos, not just the selected one
+  /**
+   * Preload all videos and retrieve cached thumbnails
+   */
   useEffect(() => {
     // Check if we have thumbnails in sessionStorage
     const cachedThumbnails = sessionStorage.getItem('carousel-thumbnails');
@@ -111,12 +140,17 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     preloadVideos();
   }, [slides, videosPreloaded]);
 
-  // Set up video refs array
+  /**
+   * Initialize video refs array to match slides length
+   */
   useEffect(() => {
     videoRefs.current = videoRefs.current.slice(0, slides.length);
   }, [slides]);
 
-  // Generate thumbnails for video slides
+  /**
+   * Generate thumbnails for video slides
+   * Creates a temporary video element, seeks to a frame, and captures it as a thumbnail
+   */
   useEffect(() => {
     const generateThumbnails = async () => {
       // Skip if we already have thumbnails from sessionStorage
@@ -199,7 +233,10 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     generateThumbnails();
   }, [slides, thumbnails]);
 
-  // Control video playback based on hover and selection
+  /**
+   * Control video playback based on hover and selection state
+   * Plays videos when hovered or selected, pauses otherwise
+   */
   useEffect(() => {
     videoRefs.current.forEach((videoRef, index) => {
       if (!videoRef) return;
@@ -222,16 +259,29 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     });
   }, [currentIndex, selectedTemplateId, slides, hoveredIndex, videosLoaded]);
 
+  /**
+   * Navigate to the previous slide
+   * @param {React.MouseEvent} e - Click event
+   */
   const handlePrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentIndex(prev => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
+  /**
+   * Navigate to the next slide
+   * @param {React.MouseEvent} e - Click event
+   */
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentIndex(prev => (prev === slides.length - 1 ? 0 : prev + 1));
   };
 
+  /**
+   * Handle template selection
+   * Toggles selection if already selected
+   * @param {string} templateId - ID of the template to select
+   */
   const handleSelect = (templateId: string) => {
     // If already selected, deselect it
     if (templateId === selectedTemplateId) {
@@ -241,14 +291,24 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     }
   };
 
+  /**
+   * Handle mouse enter event on a slide
+   * @param {number} index - Index of the hovered slide
+   */
   const handleMouseEnter = (index: number) => {
     setHoveredIndex(index);
   };
 
+  /**
+   * Handle mouse leave event on a slide
+   */
   const handleMouseLeave = () => {
     setHoveredIndex(null);
   };
 
+  /**
+   * Render empty state when no slides are available
+   */
   if (slides.length === 0) {
     return (
       <div className="flex items-center justify-center h-[200px] text-muted-foreground">
@@ -257,11 +317,18 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
     );
   }
 
+  /**
+   * Main carousel render
+   */
   return (
     <div className="relative w-full max-w-xl mx-auto">
       <div className="overflow-hidden rounded-lg">
         <div className="relative max-w-2xl mx-auto">
-          <div className="overflow-hidden rounded-lg relative h-[220px]">
+          <div className={`overflow-hidden rounded-lg relative ${
+            slides[currentIndex].aspectRatio === '9:16' ? 'h-[380px]' : 'h-[280px]'
+          } ${
+            slides[currentIndex].aspectRatio === '9:16' ? 'py-4' : 'py-1'
+          }`}>
             <div 
               className="flex absolute top-0 left-0 right-0 bottom-0 transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -270,40 +337,64 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
                 const isSelected = slide.templateId === selectedTemplateId;
                 const isActive = index === currentIndex;
                 
-                // Calculate aspect ratio styles
+                /**
+                 * Calculate styles based on aspect ratio for the main slide
+                 * @param {string} [ratio] - Aspect ratio string (e.g., "16:9")
+                 * @returns {Object} CSS style object
+                 */
                 const getAspectRatioStyle = (ratio?: string) => {
                   if (!ratio) return {};
                   
-                  // Default to 16:9 if no valid ratio
-                  const [width, height] = (ratio || '16:9').split(':').map(Number);
-                  
+                  // Adjust sizes for different aspect ratios
                   if (ratio === '16:9') {
-                    return { width: '320px', height: '180px' };
+                    return { width: '320px', height: '180px'};
                   } else if (ratio === '1:1') {
-                    return { width: '180px', height: '180px' };
+                    return { width: '220px', height: '220px'};
                   } else if (ratio === '9:16') {
-                    return { width: '101px', height: '180px' };
+                    return { width: '180px', height: '320px'}; // No top margin for 9:16
                   }
                   
                   // Fallback to calculated aspect ratio
+                  const [width, height] = (ratio || '16:9').split(':').map(Number);
                   return { 
                     width: `${(width / height) * 180}px`, 
-                    height: '180px' 
+                    height: '180px'
                   };
+                };
+
+                /**
+                 * Calculate preview sizes for navigation thumbnails
+                 * @param {string} [ratio] - Aspect ratio string
+                 * @returns {Object} CSS style object for preview thumbnails
+                 */
+                const getPreviewStyle = (ratio?: string) => {
+                  if (!ratio) return {};
+                  
+                  if (ratio === '16:9') {
+                    return { width: '80px', height: '180px' };
+                  } else if (ratio === '1:1') {
+                    return { width: '60px', height: '220px' };
+                  } else if (ratio === '9:16') {
+                    return { width: '45px', height: '320px' };
+                  }
+                  
+                  return { width: '80px', height: '45px' };
                 };
                 
                 const aspectRatioStyle = getAspectRatioStyle(slide.aspectRatio);
+                const previewStyle = getPreviewStyle(slide.aspectRatio);
                 
                 return (
                   <div 
                     key={slide.templateId} 
                     className="min-w-full px-2 flex items-center justify-center relative"
                   >
-                    {/* Show previous slide partially */}
+                    {/* Previous slide preview with adjusted size */}
                     {index > 0 && (
                       <div 
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-20 h-[180px] opacity-50 cursor-pointer"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-50 cursor-pointer"
                         onClick={handlePrevious}
+                        style={previewStyle}
                       >
                         {slides[index - 1].isVideo && thumbnails[index - 1] ? (
                           <div className="w-full h-full">
@@ -332,20 +423,20 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
                       onClick={() => handleSelect(slide.templateId)}
                       onMouseEnter={() => handleMouseEnter(index)}
                       onMouseLeave={handleMouseLeave}
+                      data-aspect-ratio={slide.aspectRatio || '16:9'}
                     >
                       <div 
-                        className="relative rounded-lg overflow-hidden"
+                        className="relative rounded-lg overflow-hidden shadow-sm"
                         style={aspectRatioStyle}
                       >
                         {slide.isVideo ? (
                           <>
                             <video 
-                              ref={el => {
+                              ref={(el) => {
                                 videoRefs.current[index] = el;
-                                return undefined;
                               }}
                               src={slide.src} 
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover rounded-lg"
                               muted 
                               loop
                               playsInline
@@ -358,7 +449,7 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
                                 <img 
                                   src={thumbnails[index]} 
                                   alt={slide.title} 
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover rounded-lg"
                                 />
                               </div>
                             )}
@@ -367,15 +458,25 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
                           <img
                             src={slide.src} 
                             alt={slide.title} 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-lg"
                           />
                         )}
                         
-                        <div className="template-card-overlay flex flex-col justify-end p-4 absolute inset-0">
-                          <h4 className="text-lg font-semibold text-white">{slide.title}</h4>
-                          {slide.description && (
-                            <p className="text-sm text-white/80 mt-1">{slide.description}</p>
-                          )}
+                        <div className="template-card-overlay">
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <div className="max-w-[90%] mx-auto text-center">
+                              <h4 className={`text-lg font-semibold text-white mb-2 ${
+                                slide.aspectRatio === '9:16' ? 'text-base' : 'text-base'
+                              }`}>
+                                {slide.title}
+                              </h4>
+                              {slide.description && (
+                                <p className="text-xs text-white/90 line-clamp-3 mb-2">
+                                  {slide.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         
                         {isSelected && (
@@ -386,11 +487,12 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
                       </div>
                     </div>
                     
-                    {/* Show next slide partially */}
+                    {/* Next slide preview with adjusted size */}
                     {index < slides.length - 1 && (
                       <div 
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-20 h-[180px] opacity-50 cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-50 cursor-pointer"
                         onClick={handleNext}
+                        style={previewStyle}
                       >
                         {slides[index + 1].isVideo && thumbnails[index + 1] ? (
                           <div className="w-full h-full">
@@ -419,7 +521,10 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
             </div>
           </div>
           
-          <div className="template-navigation flex justify-center mt-1 space-x-4">
+          {/* Navigation buttons - adjust margin based on aspect ratio */}
+          <div className={`template-navigation flex justify-center ${
+            slides[currentIndex].aspectRatio === '9:16' ? 'mt-1' : 'mt-0'  // Reduced margin for 1:1 and 16:9
+          } space-x-4`}>
             <button 
               onClick={handlePrevious}
               className="template-navigation-button bg-background hover:bg-muted border border-border rounded-full p-2 transition-colors"
@@ -436,6 +541,7 @@ export function Carousel({ slides, onSelectTemplate, selectedTemplateId, groupNa
             </button>
           </div>
           
+          {/* Pagination indicator */}
           <div className="mt-2 text-center">
             <p className="text-sm text-muted-foreground">
               {currentIndex + 1} of {slides.length}

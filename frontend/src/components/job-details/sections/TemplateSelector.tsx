@@ -177,7 +177,7 @@ export function TemplateSelector({
           </div>
         )}
         
-        <div className="mb-6">
+        <div className={`mb-${selectedTemplateType && templates.find(t => t.templateType === selectedTemplateType)?.aspectRatio === '9:16' ? '6' : '1'}`}>
           <h3 className="text-base font-medium mb-3">Template Type</h3>
           <Select 
             data={formattedTemplateTypeOptions}
@@ -189,7 +189,7 @@ export function TemplateSelector({
         </div>
         
         {selectedTemplateType && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="w-full">
               <Carousel 
                 slides={mapTemplatesToSlides(templates.filter(t => t.templateType === selectedTemplateType))}

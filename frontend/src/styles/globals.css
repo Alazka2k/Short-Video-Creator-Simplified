@@ -208,11 +208,12 @@ body {
   outline: 4px solid hsl(var(--primary));
   outline-offset: -4px;
   overflow: visible;
+  border-radius: 0.5rem;
 }
 
 .template-card-overlay {
   @apply absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent 
-         opacity-100 transition-opacity duration-300;
+         opacity-100 transition-opacity duration-300 rounded-lg;
 }
 
 .template-card:hover .template-card-overlay {
@@ -234,4 +235,22 @@ body {
 .template-navigation-button {
   @apply flex items-center justify-center bg-background hover:bg-muted 
          border border-border rounded-full p-2 text-foreground shadow-sm transition-colors;
+}
+
+/* Remove margin-bottom from template cards as it's handled by marginTop in the component */
+.template-card[data-aspect-ratio] {
+  margin-bottom: 0;
+}
+
+/* Ensure consistent spacing for different aspect ratios */
+.template-card[data-aspect-ratio="16:9"] {
+  margin-bottom: 2px;
+}
+
+.template-card[data-aspect-ratio="1:1"] {
+  margin-bottom: 2px;
+}
+
+.template-card[data-aspect-ratio="9:16"] {
+  margin-bottom: 2px;
 } 

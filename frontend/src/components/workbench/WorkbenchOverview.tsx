@@ -4,6 +4,7 @@ import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as V
 import { FilterBar } from '@/components/shared/filters/FilterBar'
 import { Pagination } from '@/components/shared/pagination/Pagination'
 import { DownloadButton } from '@/components/shared/buttons/DownloadButton'
+import { ImagePreview } from '@/components/shared/media/ImagePreview'
 
 interface Scene {
   image?: { publicUrl: string }
@@ -27,15 +28,6 @@ export function WorkbenchOverview() {
 
   const getBentoItems = (): BentoItem[] => {
     return jobs.map(job => {
-      // Get the first scene's preview content
-      const firstScene = job.metadata?.scenes?.[0]
-      let previewUrl = null
-
-      // Prefer image for preview, regardless of whether video/animation exists
-      if (firstScene?.image?.publicUrl) {
-        previewUrl = firstScene.image.publicUrl
-      }
-
       // Get active services for this job
       const services = []
       if (job.metadata?.scenes?.some((scene: Scene) => scene.image)) {
@@ -58,11 +50,18 @@ export function WorkbenchOverview() {
         icon: null,
         services,
         meta: new Date(job.created_at).toLocaleDateString(),
-        previewUrl,
+        previewUrl: job.previewUrl,
         gridSpan: job.gridSpan,
         aspectRatio: job.aspectRatio,
         onDownload: () => handleJobDownload(job),
-        isDownloading: downloadingJobs[job.job_id]
+        isDownloading: downloadingJobs[job.job_id],
+        PreviewComponent: job.previewUrl ? (
+          <ImagePreview
+            url={job.previewUrl}
+            aspectRatio={job.aspectRatio}
+            alt={job.metadata?.llmResult?.title || 'Content preview'}
+          />
+        ) : null
       }
     })
   }

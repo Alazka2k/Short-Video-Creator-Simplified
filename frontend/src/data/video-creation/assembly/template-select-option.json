@@ -7,7 +7,7 @@
             "description": "A slideshow template for 16:9 videos",
             "templateId": "345d569b-534c-4acd-a187-ed09dd37a5e1",
             "templateType": "slideshow",
-            "preview":"/assembly/preview/16-9/free/slideshow-16-9.mp4",
+            "preview":"/assembly/preview/free/16-9/slideshow-16-9.mp4",
             "templateContent": ["image", "text"],
             "planId": "1",
             "aspectRatio": "16:9",
@@ -48,11 +48,11 @@
         },
         {
             "id": "slideshow-16-9-v2",
-            "name": "Slideshow 16:9 Version 2",
+            "name": "Different Slideshow 16:9 Version 2",
             "description": "A slideshow template for 16:9 videos",
             "templateId": "b0ff9606-a1f0-4acf-a169-b90e50c0464b",
             "templateType": "slideshow",
-            "preview":"/assembly/preview/16-9/free/slideshow-16-9-v2.mp4",
+            "preview":"/assembly/preview/free/16-9/slideshow-16-9-v2.mp4",
             "templateContent": ["image", "text"],
             "planId": "1",
             "aspectRatio": "16:9",
@@ -93,14 +93,104 @@
         },
         {
             "id": "slideshow-16-9-v3",
-            "name": "Slideshow 16:9 Version 3",
+            "name": "Another Slideshow 16:9 Version 3",
             "description": "A slideshow template for 16:9 videos",
             "templateId": "345d569b-534c-4acd-a187-ed09dd37a5e4",
             "templateType": "slideshow",
-            "preview":"/assembly/preview/16-9/free/slideshow-16-9-v3.mp4",
+            "preview":"/assembly/preview/free/16-9/slideshow-16-9-v3.mp4",
             "templateContent": ["image", "text"],
             "planId": "1",
             "aspectRatio": "16:9",
+            "sceneAmount": 3,
+            "subtitle": "false",
+            "modificationProperties":{
+                "Text-Scene-1.source":{
+                    "keyPath": ["metadata.llmResult.scenes[0].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-2.source":{
+                    "keyPath": ["metadata.llmResult.scenes[1].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-3.source":{
+                    "keyPath": ["metadata.llmResult.scenes[2].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Image-Scene-1.source":{
+                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-2.source":{
+                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-3.source":{
+                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                }
+            }
+        },
+        {
+            "id": "slideshow-9-16",
+            "name": "Slideshow 9:16",
+            "description": "A slideshow template for 9:16 videos",
+            "templateId": "14029139-3186-45f5-a52a-26cc6a50347f",
+            "templateType": "slideshow",
+            "preview":"/assembly/preview/free/9-16/slideshow-9-16.mp4",
+            "templateContent": ["image", "text"],
+            "planId": "1",
+            "aspectRatio": "9:16",
+            "sceneAmount": 3,
+            "subtitle": "false",
+            "modificationProperties":{
+                "Text-Scene-1.source":{
+                    "keyPath": ["metadata.llmResult.scenes[0].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-2.source":{
+                    "keyPath": ["metadata.llmResult.scenes[1].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-3.source":{
+                    "keyPath": ["metadata.llmResult.scenes[2].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Image-Scene-1.source":{
+                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-2.source":{
+                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-3.source":{
+                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                }
+            }
+        },
+        {
+            "id": "slideshow-1-1",
+            "name": "Slideshow 1:1",
+            "description": "A slideshow template for 1:1 videos",
+            "templateId": "77370368-29ec-4e37-9cb9-31edd0559468",
+            "templateType": "slideshow",
+            "preview":"/assembly/preview/free/1-1/slideshow-1-1.mp4",
+            "templateContent": ["image", "text"],
+            "planId": "1",
+            "aspectRatio": "1:1",
             "sceneAmount": 3,
             "subtitle": "false",
             "modificationProperties":{
@@ -142,7 +232,7 @@
             "description": "A video template for 16:9 videos",
             "templateId": "b0ff9606-a1f0-4acf-a169-b90e50c0464a",
             "templateType": "video",
-            "preview":"/assembly/preview/16-9/free/video-16-9.mp4",
+            "preview":"/assembly/preview/free/16-9/video-16-9.mp4",
             "templateContent": ["image", "text"],
             "planId": "1",
             "aspectRatio": "16:9",
@@ -180,111 +270,6 @@
                     "allowedContent": ["image"]
                 }
             }
-        },
-        {
-            "id": "api-test-1-1",
-            "name": "API Test 1:1",
-            "description": "A test template for API testing",
-            "templateId": "ff6a0f93-a513-474c-9b76-106a13bbba8c",
-            "templateType": "slideshow",
-            
-            "templateContent": ["image", "text"],
-            "accountType": "free",
-            "sceneAmount": 3,
-            "aspectRatio": "1:1",
-            "subtitle": "false",
-            "modificationProperties":{
-                "Text-Scene-1.source":{
-                    "keyPath": ["metadata.llmResult.scenes[0].description"],
-                    "type": "text",
-                    "allowedContent": ["text"]
-                },
-                "Text-Scene-2.source":{
-                    "keyPath": ["metadata.llmResult.scenes[1].description"],
-                    "type": "text",
-                    "allowedContent": ["text"]
-                },
-                "Text-Scene-3.source":{
-                    "keyPath": ["metadata.llmResult.scenes[2].description"],
-                    "type": "text",
-                    "allowedContent": ["text"]
-                },
-                "Image-Scene-1.source":{
-                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
-                    "type": "image",
-                    "allowedContent": ["image"]
-                },
-                "Image-Scene-2.source":{
-                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
-                    "type": "image",
-                    "allowedContent": ["image"]
-                },
-                "Image-Scene-3.source":{
-                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
-                    "type": "image",
-                    "allowedContent": ["image"]
-                }
-            }
-        },
-      {
-        "id": "short-form-video",
-        "name": "Short Form Video",
-        "description": "A short form video template with a subtitle",
-        "templateId": "23e4588a-8650-4257-81ff-4d21c8da51e4",
-        "templateType": "video",
-        "templateContent": ["video", "animation", "voice", "text"],
-        "planId": "2",
-        "sceneAmount": 3,
-        "aspectRatio": "16:9",
-        "subtitle": "true",
-        "modificationProperties":{
-            "Video-Scene-1.source":{
-                "keyPath": ["metadata.scenes[0].video.publicUrl", "metadata.scenes[0].animation.publicUrl"],
-                "type": "video",
-                "allowedContent": ["video", "animation"]
-            },
-            "Voice-Scene-1.source":{
-                "keyPath": ["metadata.scenes[0].voice.publicUrl"],
-                "type": "audio",
-                "allowedContent": ["voice"]
-            },
-            "Video-Scene-2.source":{
-                "keyPath": ["metadata.scenes[1].video.publicUrl", "metadata.scenes[1].animation.publicUrl"],
-                "type": "video",
-                "allowedContent": ["video", "animation"]
-            },
-            "Voice-Scene-2.source":{
-                "keyPath": ["metadata.scenes[1].voice.publicUrl"],
-                "type": "audio",
-                "allowedContent": ["voice"]
-            },
-            "Video-Scene-3.source":{
-                "keyPath": ["metadata.scenes[2].video.publicUrl", "metadata.scenes[2].animation.publicUrl"],
-                "type": "video",
-                "allowedContent": ["video", "animation"]
-            },
-            "Voice-Scene-3.source":{    
-                "keyPath": "metadata.scenes[2].voice.publicUrl",
-                "type": "audio",
-                "allowedContent": ["voice"]
-            }
         }
-      },
-      {
-        "id": "short-form-video-with-image",
-        "name": "Short Form Video with Image",
-        "templateId": "c62b3867-d74c-499a-83c2-1ee7f99d54f4",
-        "templateType": "slideshow",
-        "contentAllowed": ["image", "voice", "text"],
-        "aspectRatio": "9:16",
-        "subtitle": "true",     
-        "description": "A short form video template for images and voiceover with a subtitle",
-        "modificationProperties":{
-            "Video-Scene-1.source":{
-                "type": "video",
-                "allowedContent": ["video", "animation"]
-            }
-        }
-      }
     ]
 }
