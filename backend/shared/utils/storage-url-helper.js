@@ -1,5 +1,6 @@
 const storageService = require('./storage');
 const logger = require('./logger');
+const config = require('./config');
 
 class StorageUrlHelper {
   constructor() {
@@ -54,7 +55,11 @@ class StorageUrlHelper {
   }
 
   extractStorageKeyFromUrl(url) {
-    if (!url || !url.includes('short-video-creator-dev.s3')) return null;
+    if (!url) return null;
+    
+    const bucketName = config.services.storage.config.bucket;
+    if (!url.includes(`${bucketName}.s3`)) return null;
+
     const urlWithoutParams = url.split('?')[0];
     const match = urlWithoutParams.match(/\.com\/(.*)/);
     return match?.[1] || null;

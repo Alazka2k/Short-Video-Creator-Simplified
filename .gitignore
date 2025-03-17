@@ -3,6 +3,12 @@ node_modules/
 
 # Configuration files with sensitive information
 config/default.json
+.env
+.env.development
+.env.staging
+.env.production
+.env.local
+.env.*.local
 
 # Generated files
 full_source_code.txt

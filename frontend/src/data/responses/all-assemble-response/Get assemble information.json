@@ -1,0 +1,299 @@
+{
+    "data": [
+        {
+            "job_id": "bde9e65f-57aa-475c-ae46-ef20dfe758ed",
+            "user_id": 30,
+            "created_at": "2025-03-06T17:23:18.032Z",
+            "updated_at": "2025-03-10T08:55:37.927Z",
+            "status": "completed_with_errors",
+            "service_sequence": [
+                "llm",
+                "image",
+                "voice"
+            ],
+            "metadata": {
+                "jobId": "bde9e65f-57aa-475c-ae46-ef20dfe758ed",
+                "music": null,
+                "scenes": [
+                    {
+                        "image": {
+                            "fileName": "image_scene_1.png",
+                            "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-03-06\\bde9e65f-57aa-475c-ae46-ef20dfe758ed\\scene_1\\image_scene_1.png",
+                            "imageUrl": "https://cdn.midjourney.com/12e17472-9034-48e8-b054-a1e3d839e1a9/0_0.png",
+                            "metadata": {
+                                "prompt": "A bustling street in Berlin, showcasing a mix of historical and modern architecture. People walking, trams gliding by, under the warm morning sun. Eye-level view capturing the lively energy of the city; --sref 20240806 --ar 9:16",
+                                "generatedAt": "2025-03-06T17:23:52.038Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-03-06/bde9e65f-57aa-475c-ae46-ef20dfe758ed/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=aabacf0839afa6241d5fc16d172694d81bef855f97b115d0c6f7e9eaca5afdec&X-Amz-SignedHeaders=host",
+                            "storageKey": "image/2025-03-06/bde9e65f-57aa-475c-ae46-ef20dfe758ed/scene_1/image_scene_1.png",
+                            "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1347258369248858192/alazka_A_bustling_street_in_Berlin_showcasing_a_mix_of_histori_12e17472-9034-48e8-b054-a1e3d839e1a9.png?ex=67cb2ba2&is=67c9da22&hm=53071a6f1f9e9bf200035877d355645003851573a944bc28482817337c624d72&"
+                        },
+                        "voice": {
+                            "fileName": "voice_scene_1.mp3",
+                            "filePath": "data\\output\\voice\\2025-03-06\\bde9e65f-57aa-475c-ae46-ef20dfe758ed\\scene_1\\voice_scene_1.mp3",
+                            "metadata": {
+                                "text": "A bustling Berlin street, where history and modernity collide. Discover the heartbeat of Germany's vibrant capital.",
+                                "modelId": "eleven_multilingual_v2",
+                                "generatedAt": "2025-03-06T17:23:28.475Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-03-06/bde9e65f-57aa-475c-ae46-ef20dfe758ed/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=3be4d4a3c6d90c87d37f58fd07be8d197bd67452fa104f1e9e2bb60c683bd2c6&X-Amz-SignedHeaders=host",
+                            "storageKey": "voice/2025-03-06/bde9e65f-57aa-475c-ae46-ef20dfe758ed/scene_1/voice_scene_1.mp3",
+                            "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                        },
+                        "sceneId": 1
+                    }
+                ],
+                "status": "completed_with_errors",
+                "endTime": "2025-03-06T17:23:52.237Z",
+                "llmResult": {
+                    "music": {
+                        "style": "Fusion of traditional German folk and modern electronic beats",
+                        "title": "Deutschland Pulse",
+                        "lyrics": "From ancient lore to future's core, Germany's heart beats evermore. Where history and progress meet, In Germany, life is sweet.",
+                        "prompt": "Energetic and uplifting track with a blend of traditional German instruments and modern electronic beats, capturing the dynamic essence of Germany."
+                    },
+                    "title": "Germany: The Powerhouse of Europe",
+                    "prompt": "Create me a marketing video about germany",
+                    "scenes": [
+                        {
+                            "description": "A bustling Berlin street, where history and modernity collide. Discover the heartbeat of Germany's vibrant capital.",
+                            "video_prompt": "A lively street in Berlin, with a steady stream of people and trams, as the camera pans left to capture the vibrant fusion of old and new architecture.",
+                            "visual_prompt": "A bustling street in Berlin, showcasing a mix of historical and modern architecture. People walking, trams gliding by, under the warm morning sun. Eye-level view capturing the lively energy of the city; --sref 20240806 --ar 9:16",
+                            "camera_movement": "Pan Left",
+                            "visual_metadata": {
+                                "sValue": "500",
+                                "shotStyle": "--sref 20240806",
+                                "aspectRatio": "9:16"
+                            }
+                        }
+                    ],
+                    "hashtags": "#Germany #EuropeanPowerhouse #InnovateWithGermany #GermanyHistory #GermanCulture",
+                    "description": "Discover the essence of Germany in this captivating short video. Dive into its rich history, vibrant culture, and unrivaled innovation."
+                },
+                "parameters": {
+                    "llmGenParams": {
+                        "image": {
+                            "sValue": "500",
+                            "shotStyle": "--sref 20240806",
+                            "aspectRatio": "9:16"
+                        },
+                        "script": {
+                            "scriptTone": "",
+                            "vocabulary": "",
+                            "pacingStructure": "",
+                            "characterPerspective": ""
+                        },
+                        "general": {
+                            "sceneAmount": 1,
+                            "lengthDescription": "Maximum 5-10 seconds video for testing purposes"
+                        }
+                    },
+                    "serviceConfig": {
+                        "skipImage": false,
+                        "skipMusic": true,
+                        "skipVoice": false,
+                        "skipVisualization": true
+                    },
+                    "imageGenParams": {},
+                    "videoGenParams": {
+                        "aspectRatio": "9:16"
+                    },
+                    "voiceGenParams": {
+                        "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                    },
+                    "visualizationType": "image",
+                    "animationGenParams": {}
+                }
+            },
+            "prompt": "Create me a marketing video about germany",
+            "error": null
+        },
+        {
+            "job_id": "a04ee952-7e75-4e27-964d-5ff7373c96ed",
+            "user_id": 30,
+            "created_at": "2025-03-06T16:51:30.399Z",
+            "updated_at": "2025-03-10T08:55:37.928Z",
+            "status": "completed_with_errors",
+            "service_sequence": [
+                "llm",
+                "image",
+                "voice"
+            ],
+            "metadata": {
+                "jobId": "a04ee952-7e75-4e27-964d-5ff7373c96ed",
+                "music": null,
+                "scenes": [
+                    {
+                        "image": {
+                            "fileName": "image_scene_1.png",
+                            "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-03-06\\a04ee952-7e75-4e27-964d-5ff7373c96ed\\scene_1\\image_scene_1.png",
+                            "imageUrl": "https://cdn.midjourney.com/bc248003-e10f-4d64-85ce-fdf8b28f702b/0_1.png",
+                            "metadata": {
+                                "prompt": "A stunning view of Neuschwanstein Castle sitting majestically on a lush green hill, bathed in the golden light of sunrise. The castle's towers and turrets reach toward the sky, surrounded by a sea of trees. Eye-level view, morning light, creating a serene and enchanting atmosphere; --ar 9:16",
+                                "generatedAt": "2025-03-06T16:52:24.797Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_1/image_scene_1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=32159ba89b24bab550453033c1f17f97de265a046cc9ae617aca697e718013dd&X-Amz-SignedHeaders=host",
+                            "storageKey": "image/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_1/image_scene_1.png",
+                            "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1347250439409766430/alazka_A_stunning_view_of_Neuschwanstein_Castle_sitting_majest_bc248003-e10f-4d64-85ce-fdf8b28f702b.png?ex=67cb243f&is=67c9d2bf&hm=4ba749307bdeef66460be37406690a1438eb52f14ff0ad9909f132389de458e1&"
+                        },
+                        "voice": {
+                            "fileName": "voice_scene_1.mp3",
+                            "filePath": "data\\output\\voice\\2025-03-06\\a04ee952-7e75-4e27-964d-5ff7373c96ed\\scene_1\\voice_scene_1.mp3",
+                            "metadata": {
+                                "text": "Unveil the majestic castles perched atop lush hills, inviting you to explore their ancient halls and timeless beauty.",
+                                "modelId": "eleven_multilingual_v2",
+                                "generatedAt": "2025-03-06T16:51:44.510Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_1/voice_scene_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=e8d84222dada6f15b7577e4184a25cf7cb324c0890402ef510e7efa6d162d62a&X-Amz-SignedHeaders=host",
+                            "storageKey": "voice/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_1/voice_scene_1.mp3",
+                            "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                        },
+                        "sceneId": 1
+                    },
+                    {
+                        "image": {
+                            "fileName": "image_scene_2.png",
+                            "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-03-06\\a04ee952-7e75-4e27-964d-5ff7373c96ed\\scene_2\\image_scene_2.png",
+                            "imageUrl": "https://cdn.midjourney.com/a5a3ae54-3bc8-4097-b719-95f421e1c020/0_0.png",
+                            "metadata": {
+                                "prompt": "A bustling Berlin street scene with the Brandenburg Gate standing proudly in the background. Crowds of people walk and cycle, while colorful street art adds vibrancy. Low-angle view, midday sun casting dynamic shadows, capturing the city's lively spirit; --ar 9:16",
+                                "generatedAt": "2025-03-06T16:52:58.912Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_2/image_scene_2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=67d00057c5dd5b1ca747950fb3aedf8b9f6ef943b44eaa503147cf09c80f3db1&X-Amz-SignedHeaders=host",
+                            "storageKey": "image/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_2/image_scene_2.png",
+                            "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1347250588794097784/alazka_A_bustling_Berlin_street_scene_with_the_Brandenburg_Gat_a5a3ae54-3bc8-4097-b719-95f421e1c020.png?ex=67cb2463&is=67c9d2e3&hm=5f1ed5e20abe72b410249e638659b187822e1209c98b66fcf33e139be393b14b&"
+                        },
+                        "voice": {
+                            "fileName": "voice_scene_2.mp3",
+                            "filePath": "data\\output\\voice\\2025-03-06\\a04ee952-7e75-4e27-964d-5ff7373c96ed\\scene_2\\voice_scene_2.mp3",
+                            "metadata": {
+                                "text": "Experience the vibrant energy of Berlin, where history and modernity blend seamlessly in a city that never sleeps.",
+                                "modelId": "eleven_multilingual_v2",
+                                "generatedAt": "2025-03-06T16:51:44.519Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_2/voice_scene_2.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=b27f6838dbbf439d19068de3728243e097e5c25ad7c06677374178716a388a4b&X-Amz-SignedHeaders=host",
+                            "storageKey": "voice/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_2/voice_scene_2.mp3",
+                            "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                        },
+                        "sceneId": 2
+                    },
+                    {
+                        "image": {
+                            "fileName": "image_scene_3.png",
+                            "filePath": "C:\\Code\\Short-Video-Creator-Simplified\\data\\output\\image\\2025-03-06\\a04ee952-7e75-4e27-964d-5ff7373c96ed\\scene_3\\image_scene_3.png",
+                            "imageUrl": "https://cdn.midjourney.com/261c5010-6175-4896-b1f8-740dab2b8ee8/0_3.png",
+                            "metadata": {
+                                "prompt": "A beautifully set table filled with traditional German dishes like sausages, pretzels, and a frothy pint of beer. The scene is warmly lit, creating an inviting and cozy ambiance. Overhead view, evening light, highlighting the textures and colors of the food; --ar 9:16",
+                                "generatedAt": "2025-03-06T16:53:40.139Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/image/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_3/image_scene_3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=4a49b3ccb75920778d81b8773b0f1c3146be323ce56f7aff9ba249eab2a7f9ec&X-Amz-SignedHeaders=host",
+                            "storageKey": "image/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_3/image_scene_3.png",
+                            "originalUrl": "https://cdn.discordapp.com/attachments/1179126715721719948/1347250757476421653/alazka_A_beautifully_set_table_filled_with_traditional_German__261c5010-6175-4896-b1f8-740dab2b8ee8.png?ex=67cb248b&is=67c9d30b&hm=68488bf5bdfec418e2a71cf71d7753cd87c4ecb67b6f340aebbbc63372a556e0&"
+                        },
+                        "voice": {
+                            "fileName": "voice_scene_3.mp3",
+                            "filePath": "data\\output\\voice\\2025-03-06\\a04ee952-7e75-4e27-964d-5ff7373c96ed\\scene_3\\voice_scene_3.mp3",
+                            "metadata": {
+                                "text": "Indulge in the culinary delights of Germany, where every dish tells a story of tradition and flavor.",
+                                "modelId": "eleven_multilingual_v2",
+                                "generatedAt": "2025-03-06T16:51:44.504Z"
+                            },
+                            "publicUrl": "https://short-video-creator-dev.s3.eu-central-1.amazonaws.com/voice/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_3/voice_scene_3.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA2LIP2C3YA7IXSTFC%2F20250310%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250310T085553Z&X-Amz-Expires=3600&X-Amz-Signature=c7c6ae51838a58798da7cd87feb0dadeac94f57ad4c2ab1503693fa8a8dea62b&X-Amz-SignedHeaders=host",
+                            "storageKey": "voice/2025-03-06/a04ee952-7e75-4e27-964d-5ff7373c96ed/scene_3/voice_scene_3.mp3",
+                            "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                        },
+                        "sceneId": 3
+                    }
+                ],
+                "status": "completed_with_errors",
+                "endTime": "2025-03-06T16:53:40.192Z",
+                "llmResult": {
+                    "music": {
+                        "style": "Orchestral with traditional folk influences, lively and uplifting",
+                        "title": "Germany's Melody",
+                        "lyrics": "In the land of tales and dreams, Where rivers flow and castles gleam. From bustling streets to fields of green, Germany's heart forever seen.",
+                        "prompt": "A lively and uplifting orchestral soundtrack with traditional German folk influences, featuring violins, accordions, and rhythmic drum beats, celebrating the rich cultural heritage and vibrant spirit of Germany."
+                    },
+                    "title": "Discover Germany: A Land of Wonders",
+                    "prompt": "Create me a marketing video about germany",
+                    "scenes": [
+                        {
+                            "description": "Unveil the majestic castles perched atop lush hills, inviting you to explore their ancient halls and timeless beauty.",
+                            "video_prompt": "A sweeping aerial shot of Neuschwanstein Castle, the camera zooms in gracefully as the morning sunlight highlights the intricate details of the castle's architecture, surrounded by a lush forest.",
+                            "visual_prompt": "A stunning view of Neuschwanstein Castle sitting majestically on a lush green hill, bathed in the golden light of sunrise. The castle's towers and turrets reach toward the sky, surrounded by a sea of trees. Eye-level view, morning light, creating a serene and enchanting atmosphere; --ar 9:16",
+                            "camera_movement": "Zoom In",
+                            "visual_metadata": {
+                                "sValue": "500",
+                                "aspectRatio": "9:16"
+                            }
+                        },
+                        {
+                            "description": "Experience the vibrant energy of Berlin, where history and modernity blend seamlessly in a city that never sleeps.",
+                            "video_prompt": "A dynamic street-level shot of Berlin, panning right to capture the lively atmosphere around the Brandenburg Gate, with people and bicycles weaving through the scene.",
+                            "visual_prompt": "A bustling Berlin street scene with the Brandenburg Gate standing proudly in the background. Crowds of people walk and cycle, while colorful street art adds vibrancy. Low-angle view, midday sun casting dynamic shadows, capturing the city's lively spirit; --ar 9:16",
+                            "camera_movement": "Pan Right",
+                            "visual_metadata": {
+                                "sValue": "500",
+                                "aspectRatio": "9:16"
+                            }
+                        },
+                        {
+                            "description": "Indulge in the culinary delights of Germany, where every dish tells a story of tradition and flavor.",
+                            "video_prompt": "A close-up shot of a table laden with German delicacies, the camera gently pulls out to reveal the delicious spread and warm ambiance of a traditional German feast.",
+                            "visual_prompt": "A beautifully set table filled with traditional German dishes like sausages, pretzels, and a frothy pint of beer. The scene is warmly lit, creating an inviting and cozy ambiance. Overhead view, evening light, highlighting the textures and colors of the food; --ar 9:16",
+                            "camera_movement": "Pull Out",
+                            "visual_metadata": {
+                                "sValue": "500",
+                                "aspectRatio": "9:16"
+                            }
+                        }
+                    ],
+                    "hashtags": "#DiscoverGermany #TravelGermany #ExploreEurope #GermanCulture #AdventureAwaits",
+                    "description": "Embark on a whirlwind tour of Germany, where history meets modernity and picturesque landscapes captivate the soul."
+                },
+                "parameters": {
+                    "llmGenParams": {
+                        "image": {
+                            "sValue": "500",
+                            "shotStyle": "",
+                            "aspectRatio": "9:16"
+                        },
+                        "script": {
+                            "scriptTone": "",
+                            "vocabulary": "",
+                            "pacingStructure": "",
+                            "characterPerspective": ""
+                        },
+                        "general": {
+                            "sceneAmount": 3,
+                            "lengthDescription": "15 seconds with the first 5 seconds containing the hook"
+                        }
+                    },
+                    "serviceConfig": {
+                        "skipImage": false,
+                        "skipMusic": true,
+                        "skipVoice": false,
+                        "skipVisualization": true
+                    },
+                    "imageGenParams": {},
+                    "videoGenParams": {
+                        "aspectRatio": "9:16"
+                    },
+                    "voiceGenParams": {
+                        "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF"
+                    },
+                    "visualizationType": "image",
+                    "animationGenParams": {}
+                }
+            },
+            "prompt": "Create me a marketing video about germany",
+            "error": null
+        }
+    ],
+    "pagination": {
+        "total": 37,
+        "page": 1,
+        "limit": 20,
+        "totalPages": 2
+    }
+}

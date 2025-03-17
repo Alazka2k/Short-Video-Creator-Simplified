@@ -6,26 +6,24 @@ const config = require('./config');
 
 class StorageService {
   constructor() {
-    const env = process.env.NODE_ENV || 'development';
-    
     if (!config.services?.storage) {
       throw new Error('Storage configuration not found in config.services.storage');
     }
     
     const storageConfig = config.services.storage.config;
     if (!storageConfig) {
-      throw new Error(`Storage configuration not found for environment: ${env}`);
+      throw new Error('Storage configuration not found');
     }
 
     // Configure AWS credentials
     const credentials = {
-      accessKeyId: process.env[`${env.toUpperCase()}_AWS_ACCESS_KEY_ID`],
-      secretAccessKey: process.env[`${env.toUpperCase()}_AWS_SECRET_ACCESS_KEY`]
+      accessKeyId: storageConfig.accessKeyId,
+      secretAccessKey: storageConfig.secretAccessKey
     };
 
     // Validate credentials before initializing
     if (!credentials.accessKeyId || !credentials.secretAccessKey) {
-      throw new Error(`AWS credentials not found for environment: ${env}`);
+      throw new Error('AWS credentials not found in configuration');
     }
 
     // Configure AWS SDK
@@ -39,7 +37,6 @@ class StorageService {
     this.cdnUrl = storageConfig.cdnUrl;
 
     logger.info('Storage Service initialized:', {
-      environment: env,
       region: storageConfig.region,
       bucket: storageConfig.bucket,
       hasCredentials: !!credentials.accessKeyId && !!credentials.secretAccessKey

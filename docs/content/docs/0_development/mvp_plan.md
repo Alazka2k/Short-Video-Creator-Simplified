@@ -145,25 +145,10 @@
   - ✅ Visual content preview (job details page)
   - ✅ Enhanced / Possibility to download options (download all, download single scene)
   - ✅ Improve the grid view of the workbench (align the sizes of the grids to the images aspect ratio)
-  - ⏳ Video Assembly
+  - ✅ Video Assembly
     - ✅ Fix the backend for the video assembly and enhance the functionality so we get a final video
-    - ⏳ Add a working frontend for the video assembly and select options to send the correct request when pressing the data
-    - ⏳ Refactor the videos section to show all created videos
-
-  ### 1.5 Dedicated Pages (⏳ In Progress)
-- ✅ Dedicated Features Page with interactive demos
-- ⏳ Refactor the Dashboard page
-- ⏳ FAQ Section
-- ⏳ Blog Entries
-- ⏳ Contact
-- ⏳ Privacy Policy
-- ⏳ Terms of Service
-- ⏳ About
-- ⏳ Remove "Careers" from the footer
-- ⏳ Settings page
-  - ⏳ Settings for social media channels
-  - ⏳ Settings for the video preferences (e.g. default style, voice, resolution)
-- ⏳ Refactor the features marketing page
+    - ✅ Add a working frontend for the video assembly and select options to send the correct request when pressing the data
+    - ✅ Refactor the videos section to show all created videos
 
 
 ## Phase 2: Implement Missing Core Features
@@ -207,17 +192,34 @@
 #### 2.3.4. Video Dashboard Enhancements (Frontend)
 - [ ] Update the Dashboard with the latest status
 
-## Phase 3: Fix known bugs and security issues
+## Phase 3: Finalize static frontend pages
 
-### 3.1. Fix known bugs
+  ### 3.1 Dedicated Pages (⏳ In Progress)
+- ✅ Dedicated Features Page with interactive demos
+- ⏳ Refactor the Dashboard page
+- ⏳ FAQ Section
+- ⏳ Blog Entries
+- ⏳ Contact
+- ⏳ Privacy Policy
+- ⏳ Terms of Service
+- ⏳ About
+- ⏳ Remove "Careers" from the footer
+- ⏳ Settings page
+  - ⏳ Settings for social media channels
+  - ⏳ Settings for the video preferences (e.g. default style, voice, resolution)
+- ⏳ Refactor the features marketing page
+
+## Phase 4: Fix known bugs and security issues
+
+### 4.1. Fix known bugs
 - [ ] Fix the social login which is not working right now
 - [ ] Fix the refresh of the links to the files from the s3 bucket cloud. Right now the won´t be visible anymore after 30mins on the dashboard
 - [ ] Job Service with Animation is not working and gives an error
 
-### 3.2. Security issues
+### 4.2. Security issues
 - [ ] Fix the encryption of password and username from the frontend (currently it is visible in the network tab of the browser)
 
-## Phase 3: Testing & Refinement
+## Phase 5: Testing & Refinement
 - User authentication
 - Video Service testing
 - User flow testing
@@ -225,45 +227,45 @@
 - Performance optimization
 - Documentation updates
 
-## Phase 4: Deployment of version 0.1.0
+## Phase 6: Deployment of version 0.1.0
 - Deploy to Staging environment
 - Test the deployment on the staging environment
 - Deploy to Production environment
 
-## Phase 5: Post-MVP Enhancements
+## Phase 7: Post-MVP Enhancements
 
-### 5.1. Important and Critical Enhancements
+### 7.1. Important and Critical Enhancements
 - [ ] Music Generation with lyrics
 - [ ] Find a way to align voice length with video scene length
 - [ ] Select Option for Video Duration is not working well
 - [ ] Improve the loading feedback after job execution
 
-### 5.2. Feature, Profile and Protected Routes Enhancements
-#### 5.2.1 Profile Management (Frontend?)
+### 7.2. Feature, Profile and Protected Routes Enhancements
+#### 7.2.1 Profile Management (Frontend?)
 - [ ] Add progress visualization (after execution of a job)
 
-#### 5.2.2 High Priority Enhancements Content Creation to Video Features (Frontend)
+#### 7.2.2 High Priority Enhancements Content Creation to Video Features (Frontend)
 - [ ] Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0) with new input
 - [ ] Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
 
-#### 5.2.3 Video Assembly Enhancements (Frontend)
+#### 7.2.3 Video Assembly Enhancements (Frontend)
 - [ ] Add more video assembly options in the Content Overview page
 
-#### 5.2.4 Functionality Enhancements Content Creation to Video Features (Frontend)
+#### 7.2.4 Functionality Enhancements Content Creation to Video Features (Frontend)
 - [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
 
-#### 5.2.5 Functionality Enhancements Video Creation Flow (Frontend)
+#### 7.2.5 Functionality Enhancements Video Creation Flow (Frontend)
 - [ ] Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 
-### 5.3. Profile Management Enhancements
-#### 5.3.1 Profile Management (Frontend?)
+### 7.3. Profile Management Enhancements
+#### 7.3.1 Profile Management (Frontend?)
 - [ ] Add profile editing functionality
 - [ ] Update name/display name
 - [ ] Change profile picture
 - [ ] Manage notification preferences
 - [ ] Configure video preferences (default style, voice, resolution)
 
-#### 5.2.2 Profile Management (Backend)
+#### 7.3.2 Profile Management (Backend)
 - [ ] Implement user settings API endpoints
 - [ ] POST /api/auth/profile/update - Update profile information
 - [ ] POST /api/auth/preferences/update - Update user preferences
@@ -275,7 +277,7 @@
 - [ ] Add form validation and error handling
 - [ ] Implement optimistic updates for better UX
 
-#### 5.2.3 Protected Routes Enhancement
+#### 7.3.3 Protected Routes Enhancement
 - [ ] Implement role-based access control (RBAC)
   - [ ] Define user roles (free, premium, admin)
   - [ ] Add role-based route protection
@@ -285,19 +287,19 @@
   - [ ] Analytics dashboard
   - [ ] API access
 
-### 5.3 Authentication Flow Improvement
+### 7.3 Authentication Flow Improvement
 - [ ] Improve authentication flow
 - [ ] Better token refresh handling
 - [ ] Loading states during auth checks
 - [ ] Proper redirects for unauthenticated users
 
 
-### 5.4 Enhance error handling and feedback
+### 7.4 Enhance error handling and feedback
 - [ ] Show upgrade prompts for premium features
 - [ ] Display proper unauthorized access messages
 - [ ] Handle expired subscriptions
 
-### 5.5 Advanced Progress Tracking System
+### 7.5 Advanced Progress Tracking System
 - [ ] Use Redis for real-time progress updates
 - [ ] Track individual service progress (LLM, Image, Voice, Video, Music)
 - [ ] Track scene-level progress for multi-scene videos
@@ -306,7 +308,7 @@
 - [ ] Support progress visualization in the frontend dashboard
 - [ ] Enable progress notifications (email, in-app)
 
-### 5.5 Optimize service startup process:
+### 7.5 Optimize service startup process:
 - [ ] Reduce redundant logging
 - [ ] Centralize common initialization
 - [ ] Improve configuration loading
