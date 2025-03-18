@@ -10,11 +10,21 @@
     },
     {
         "sceneAmount": 3,
-        "description": "A short video teaser, perfect for capturing attention quickly.",
-        "lengthDescription": "15 seconds with the first 5 seconds containing the hook",
+        "description": "Three slides of content material.",
+        "lengthDescription": "15 seconds of video material or three consistent images",
+        "name": "Video Clip",
+        "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
+        "icon": "/creation/duration-icons/video-teaser.png",
+        "planId": "1"
+    },
+    {
+        "sceneAmount": 5,
+        "description": "Content material for a short video teaser, perfect for capturing attention quickly.",
+        "lengthDescription": "25 seconds of video material - five consistent images",
         "name": "Video Teaser",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
-        "icon": "/creation/duration-icons/video-teaser.png"
+        "icon": "/creation/duration-icons/video-teaser.png",
+        "planId": "1"
     },
     {
         "sceneAmount": 9,
@@ -22,7 +32,8 @@
         "lengthDescription": "Under one minute content for short videos. Monetization with YouTube Shorts is possible.",
         "name": "YouTube Short",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
-        "icon": "/creation/duration-icons/youtube-shorts.png"
+        "icon": "/creation/duration-icons/youtube-shorts.png",
+        "planId": "2"
     },
     {
         "sceneAmount": 13,
@@ -30,7 +41,8 @@
         "lengthDescription": "Over one minute content for short videos. Monetization with Tiktok is possible.",
         "name": "Short TikTok Video",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
-        "icon": "/creation/duration-icons/tiktok.png"
+        "icon": "/creation/duration-icons/tiktok.png",
+        "planId": "3"
     },
     {
         "sceneAmount": 20,
@@ -41,10 +53,9 @@
         "icon": "/creation/duration-icons/image-series.png"
 
     },
-
     {
-        "sceneAmount": 50,
-        "description": "A podcast format, ideal for in-depth discussions.",
+        "sceneAmount": 250,
+        "description": "A podcast format, ideal for in-depth discussions. About 30 minutes of content.",
         "lengthDescription": "A long podcast format, ideal for in-depth discussions or learning audio content.",
         "name": "Podcast",
         "serviceRestrictions": ["voice"],

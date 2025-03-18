@@ -1,0 +1,158 @@
+# SaaS Pricing Model for AI Content Creation
+
+## Tier Structure Overview
+
+| Feature | Free Tier | Basic Tier | Creator Tier | Professional Tier |
+|---------|-----------|------------|-------------------|-------------------|
+| **Monthly Price** | €0 | €24.99 (24.99*12=€299.88) | €39.99 (39.99*12=€479.88) | €59.99 (59.99*12=€719.88) |
+| **Annual Price** | €0 | €19.99/month (€239.88) | €34.99/month (€419.88) | €49.99/month (€599.88) |
+| **Tokens per Month** | 300 | 2,500 | 6,500 | 10,000 |
+| **Max Scenes per Job** | 5 (Consistent Content Material) | 13 (For YouTube Shorts and Tiktok) | Up to 20 (Long Image Story) | Unlimited (All Video duration options) |
+| **Max Jobs per Month** | 10 | 45 | Unlimited | Unlimited |
+| **Video Quality** | - | 540p | 540p | 720p |
+| **Content Types** | Image, Text, Voice | Image, Voice, Animation, Video, Music | All | All |
+| **Recreation Option (not yet implemented)** | Disabled | Disabled | Enabled (Only Images, Voice and Music) | Enabled (All Content Types) |
+| **Script Settings** | Disabled | Enabled | Enabled | Enabled |
+| **Visual Selection** | 2 (One Realistic, One Abstract) | 9 Visuals | Unlimited | Unlimited |
+| **Voice Selection** | 3 Standard | 9 Voices | Unlimited | Unlimited |
+| **Assembly Templates Selection** | 3 Standard | 10 Templates | Unlimited | Unlimited |
+| **Watermark for Assembly** | Yes | No | No | No |
+| **Support** | Community | Community | Email (24h) | Email (24h) |
+
+- Settings (which is allowed / which not) for each option (script, visual, voice, assembly) are directly set in the configuration json files for each option (e.g. template-select-option.json with property planId). Higher plans always include the lower plans ids.
+
+## Additional Token Packages
+
+| Name | Tokens | Price |
+|---------|---------|-------|
+| Starter Pack| 1,000 | €9.99 |
+| Creator Pack| 2,500 | €24.99 |
+| Pro Pack | 6,000 | €39.99 |
+| Studio Pack | 15,000 | €99.99 |
+
+## Token Costs per Service
+
+| Service | Token Cost |
+|---------|------------|
+| LLM (Text Generation) - Fixed per Job | 5 |
+| Image per Scene | 10 |
+| Voice-Over per Scene | 5 |
+| Animation per Scene | 30 |
+| Video per Scene | 50 |
+| Music (complete Job) | 20 |
+| Assembly (Compilation) (complete Job) | 20 |
+
+## Usage Scenarios
+
+### Scenario 1: Video Clip with Images (Free Tier)
+- Format: 3 scenes, 15 seconds
+- LLM: 5 Tokens
+- 3 Scenes with Image: 30 Tokens
+- 3 Scenes with Voice-Over: 15 Tokens
+- Assembly: 20 Tokens
+- **Total**: 70 Tokens
+- **Monthly Capacity**: 4 video clips (280 tokens) with Free Tier (300 tokens/month)
+
+### Scenario 2: Video Teaser with Images (Free Tier)
+- Format: 5 scenes, 25 seconds
+- LLM: 5 Tokens
+- 5 Scenes with Image: 50 Tokens
+- 5 Scenes with Voice-Over: 25 Tokens
+- Assembly: 20 Tokens
+- **Total**: 100 Tokens
+- **Monthly Capacity**: 3 video teasers (300 tokens) with Free Tier (300 tokens/month)
+
+### Scenario 3: YouTube Short with Images (Basic Tier)
+- Format: 9 scenes, under 1 minute
+- LLM: 5 Tokens
+- 9 Scenes with Image: 90 Tokens
+- 9 Scenes with Voice-Over: 45 Tokens
+- Music: 20 Tokens
+- Assembly: 20 Tokens
+- **Total**: 180 Tokens
+- **Monthly Capacity**: 13 YouTube Shorts (2,340 tokens) with Basic Tier (2,500 tokens/month)
+
+### Scenario 4: YouTube Short with Animation (Basic Tier)
+- Format: 9 scenes, under 1 minute
+- LLM: 5 Tokens
+- 9 Scenes with Image: 90 Tokens
+- 9 Scenes with Animation: 270 Tokens
+- 9 Scenes with Voice-Over: 45 Tokens
+- Music: 20 Tokens
+- Assembly: 20 Tokens
+- **Total**: 450 Tokens
+- **Monthly Capacity**: 5 animated YouTube Shorts (2,250 tokens) with Basic Tier (2,500 tokens/month)
+
+### Scenario 5: Long Image Story with Images (Creator Tier)
+- Format: 20 scenes, image-based story
+- LLM: 5 Tokens
+- 20 Scenes with Image: 200 Tokens
+- 20 Scenes with Voice-Over: 100 Tokens
+- Music: 20 Tokens
+- Assembly: 20 Tokens
+- **Total**: 345 Tokens
+- **Monthly Capacity**: 18 long image stories (6,210 tokens) with Creator Tier (6,500 tokens/month)
+
+### Scenario 6: Content Series with Mixed Types (Creator Tier)
+- 2 Long Image Stories (690 Tokens)
+- 4 Video Teasers (400 Tokens)
+- 3 YouTube Shorts with Animation (1,350 Tokens)
+- 3 TikTok Videos (720 Tokens)
+- **Total**: 3,160 Tokens
+- **Monthly Capacity**: 2 complete content series (6,320 tokens) with Creator Tier (6,500 tokens/month)
+
+### Scenario 7: High-Volume Social Media Campaign (Creator Tier)
+- 10 YouTube Shorts (1,800 Tokens)
+- 15 TikTok Videos (3,600 Tokens)
+- 5 Long Image Stories (1,725 Tokens)
+- **Total**: 7,125 Tokens
+- **Monthly Capacity**: 1 complete campaign with Creator Tier (6,500 tokens/month) + 625 tokens from token package
+
+### Scenario 8: Professional Video Production (Professional Tier)
+- Format: 13 scenes, over 1 minute
+- LLM: 5 Tokens
+- 13 Scenes with Image: 130 Tokens
+- 13 Scenes with Video: 650 Tokens
+- 13 Scenes with Voice-Over: 65 Tokens
+- Music: 20 Tokens
+- Assembly: 20 Tokens
+- **Total**: 890 Tokens
+- **Monthly Capacity**: 11 high-quality videos (9,790 tokens) with Professional Tier (10,000 tokens/month)
+
+### Scenario 9: Podcast Series (Professional Tier)
+- Format: 250 scenes, audio format
+- LLM: 5 Tokens
+- 250 Scenes with Voice-Over: 1,250 Tokens
+- **Total**: 1,255 Tokens
+- **Monthly Capacity**: 7 podcasts (8,785 tokens) with Professional Tier (10,000 tokens/month)
+
+### Scenario 10: Comprehensive Content Strategy (Professional Tier)
+- 2 Long Image Stories (690 Tokens)
+- 4 Video Teasers (400 Tokens)
+- 3 YouTube Shorts with Animation (1,350 Tokens)
+- 3 TikTok Videos with Video (2,670 Tokens)
+- 2 Podcast Episodes (2,510 Tokens)
+- **Total**: 7,620 Tokens
+- **Monthly Capacity**: 1 complete content strategy (7,620 tokens) with Professional Tier (10,000 tokens/month), leaving 2,380 tokens for additional content
+
+## Market Positioning Recommendations
+
+1. **Price Positioning**:
+   - Prices are competitively positioned between affordable consumer tools and expensive enterprise solutions
+   - Annual subscriptions with approximately 20% discount encourage long-term customer retention
+
+2. **Marketing Focus**:
+   - High-quality AI-generated content without technical expertise
+   - Time and cost savings compared to traditional content creation
+   - Flexibility through token system for different usage profiles
+
+3. **Upsell Strategies**:
+   - Free tier as entry point with clear limitations (quality, watermark)
+   - Automatic notifications for low token balance
+   - Discounts for larger token packages or tier upgrades
+
+## Implementation Plan
+
+1. **Phase 1**: Launch with Free, Basic and Professional Tier
+2. **Phase 2** (after 6 months): Analysis of usage patterns and adjustment of token allocation/costs
+3. **Phase 3** (after 12 months): Optional Enterprise Tier based on market feedback

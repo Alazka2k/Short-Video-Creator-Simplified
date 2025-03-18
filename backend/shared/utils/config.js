@@ -4,7 +4,7 @@ const path = require('path');
 const logger = require('./logger');
 
 function loadEnvConfig() {
-  const env = process.env.NODE_ENV || 'development';
+  const env = process.env.NODE_ENV;
   const envFile = `.env.${env}`;
   const rootDir = path.join(__dirname, '..', '..', '..');
   const envPath = path.join(rootDir, envFile);
@@ -24,6 +24,13 @@ function loadEnvConfig() {
       input: path.join(rootDir, 'data', 'input'),
       output: path.join(rootDir, 'data', 'output'),
       test: path.join(rootDir, 'tests', 'test_output')
+    },
+    db: {
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      name: process.env.DB_NAME,
+      port: process.env.DB_PORT
     },
     llm: {
       provider: process.env.LLM_PROVIDER,
@@ -132,6 +139,7 @@ function loadEnvConfig() {
 
 function validateConfig(config) {
   const requiredConfigs = [
+    ['db.host', 'db.user', 'db.password', 'db.name', 'db.port'],
     ['llm.provider', 'llm.model', 'llm.apiKey'],
     ['voiceGen.provider', 'voiceGen.apiKey', 'voiceGen.outputDirectory'],
     ['imageGen.provider', 'imageGen.serverId', 'imageGen.channelId', 'imageGen.salaiToken'],

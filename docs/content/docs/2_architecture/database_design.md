@@ -47,6 +47,9 @@ erDiagram
 
     %% Billing and Payments
     plans ||--o{ user_subscriptions : includes
+    token_packages ||--o{ payments : purchased_via
+    plans ||--o{ payments : paid_for
+    user_subscriptions ||--o{ payments : generated
 
     %% Entity Definitions
     users {
@@ -83,9 +86,38 @@ erDiagram
     plans {
         int plan_id PK
         varchar plan_name
+        varchar billing_frequency
         int monthly_token_allocation
         decimal price
-        text description
+        decimal monthly_price
+        decimal annual_price
+        boolean active
+        int max_scenes_per_job
+        int max_jobs_per_month
+        varchar video_quality
+        int visual_selection_count
+        int voice_selection_count
+        int template_selection_count
+        boolean has_watermark
+        boolean script_settings_enabled
+        boolean recreation_enabled
+        jsonb recreation_content_types
+        varchar support_level
+        jsonb allowed_content_types
+        jsonb marketing_description
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    token_packages {
+        int package_id PK
+        varchar package_name
+        int token_allocation
+        decimal price
+        boolean active
+        jsonb marketing_description
+        timestamp created_at
+        timestamp updated_at
     }
 
     user_subscriptions {
@@ -94,7 +126,13 @@ erDiagram
         int plan_id FK
         date start_date
         date end_date
+        timestamp current_period_start
+        timestamp current_period_end
+        timestamp canceled_at
+        timestamp ended_at
         varchar status
+        timestamp created_at
+        timestamp updated_at
     }
 
     tokens {
@@ -110,6 +148,16 @@ erDiagram
         uuid job_id FK
         varchar transaction_type
         int amount
+        varchar service_type
+        int scene_id
+        uuid llm_id
+        uuid image_id
+        uuid voice_id
+        uuid animation_id
+        uuid video_id
+        uuid music_id
+        uuid assembly_id
+        jsonb metadata
         timestamp transaction_date
     }
 
@@ -121,6 +169,14 @@ erDiagram
         varchar payment_method
         varchar status
         timestamp payment_date
+        varchar payment_type
+        int plan_id FK
+        int package_id FK
+        int subscription_id FK
+        varchar external_payment_id
+        date billing_period_start
+        date billing_period_end
+        jsonb payment_metadata
     }
 
     llm_inputs {
@@ -240,11 +296,44 @@ erDiagram
   - Includes timestamps for job creation and updates
 
 ### Billing and Payments
-- **plans**: Subscription plan definitions with token allocations and pricing
-- **user_subscriptions**: Tracks user plan subscriptions with start/end dates and status
+- **plans**: Subscription plan definitions with expanded features
+  - Multiple billing frequencies (monthly, yearly)
+  - Pricing details including monthly_price, annual_price
+  - Content limits (scenes per job, jobs per month)
+  - Quality settings (video quality, visual/voice/template counts)
+  - Feature flags (watermark, script settings, recreation options)
+  - Allowed content types and recreation content types as JSON arrays
+  - Support level information
+  - Marketing descriptions for presentation
+  - Active status flag to manage available plans
+
+- **token_packages**: One-time purchase token packages
+  - Package name and token allocation
+  - Price information
+  - Marketing description for display
+  - Active status to control availability
+
+- **user_subscriptions**: Tracks user plan subscriptions with enhanced period tracking
+  - Start/end dates and current period tracking
+  - Cancellation and ending timestamps
+  - Status tracking (active, canceled)
+
 - **tokens**: Manages user token balances with last update tracking
-- **token_transactions**: Records all token usage with transaction types and amounts
-- **payments**: Stores payment history with amounts, methods, and status tracking
+
+- **token_transactions**: Enhanced token usage tracking
+  - Transaction types (allocation, deduction, purchase)
+  - Amount tracking
+  - Service type identification (llm, image, voice, etc.)
+  - Service-specific IDs for detailed tracking
+  - Metadata for additional transaction details
+
+- **payments**: Comprehensive payment history with enhanced tracking
+  - Standard payment details (amount, currency, method, status)
+  - Payment type classification (subscription_initial, subscription_renewal, token_package)
+  - References to related entities (plan, package, subscription)
+  - External payment processor IDs
+  - Billing period tracking
+  - Payment metadata for additional details
 
 ### LLM Service
 - **llm_inputs**: 
@@ -313,8 +402,10 @@ erDiagram
 
 4. **Billing Integration**:
    - Plans connect to user subscriptions
+   - Plans and token packages connect to payments
    - Subscriptions influence token availability
    - Token usage tracks across all operations
+   - Payments track all financial transactions with full context
 
 ## Data Flow
 
@@ -322,65 +413,74 @@ erDiagram
    - Account creation in users table
    - Role assignment in user_roles
    - Subscription setup in user_subscriptions
+   - Initial payment recorded in payments table
 
-2. **Job Creation**:
+2. **Subscription Management**:
+   - Plan selection from active plans
+   - Subscription creation/update
+   - Payment processing and recording
+   - Token allocation based on plan
+
+3. **Token Package Purchases**:
+   - Package selection from active packages
+   - Payment processing and recording
+   - Token allocation to user balance
+
+4. **Job Creation**:
    - Job record created with UUID
    - Initial prompt and parameters stored
    - Service sequence defined
 
-3. **Content Generation**:
+5. **Content Generation**:
    - LLM processing creates input and output records
    - Scene breakdown stored in llm_scenes
    - Service outputs created per scene
+   - Token transactions recorded for each service
 
-4. **Resource Tracking**:
+6. **Resource Tracking**:
    - Token transactions recorded for each operation
    - Payment records created for purchases
    - Resource usage tracked in metadata
 
-5. **Final Assembly**:
+7. **Final Assembly**:
    - Assembly configuration stored
    - Final video details recorded
    - Job status updated to complete
 
 ## Recent Enhancements
 
-1. **UUID Implementation**:
+1. **Enhanced Plan Structure**:
+   - Expanded plan details with operational limits
+   - Support for multiple billing frequencies
+   - Feature flags for capabilities like recreation
+   - Tiered content type permissions
+   - Marketing descriptions for display
+
+2. **Token Package Management**:
+   - Dedicated token_packages table
+   - Active status control
+   - Marketing descriptions
+
+3. **Enhanced Payment Tracking**:
+   - Payment type classification
+   - Direct links to plans, packages, and subscriptions
+   - External payment IDs
+   - Billing period tracking
+   - Payment metadata support
+
+4. **Improved Token Transaction Tracking**:
+   - Service-specific tracking
+   - Enhanced metadata
+   - Better job and scene linkage
+
+5. **UUID Implementation**:
    - Consistent UUID usage across all tables
    - Improved scalability and security
    - Better distributed system support
 
-2. **Metadata Management**:
+6. **Metadata Management**:
    - Standardized JSON metadata storage
    - Enhanced error tracking
    - Improved service configuration storage
 
-3. **Service Integration**:
-   - Added assembly_outputs table
-   - Standardized timestamps across tables
-   - Enhanced scene-job relationships
-
-4. **Performance Optimization**:
-   - Direct job-scene linkage
-   - Efficient query paths
-   - Optimized relationship structures
-
-## Data Flow
-
-1. A user creates an account, stored in the `users` table.
-2. The user subscribes to a plan, recorded in `user_subscriptions`.
-3. When a job is created, it's stored in the `jobs` table, including the initial prompt.
-4. The LLM service processes the job, storing inputs in `llm_inputs` and outputs in `llm_outputs`.
-5. Individual scenes from the LLM output are stored in `llm_scenes`, now linked directly to the job.
-6. As each subsequent service (image, voice, animation, video) processes the job, outputs are stored in respective tables.
-7. Token usage for the job is recorded in `token_transactions`.
-8. Payments for subscriptions or token purchases are stored in the `payments` table.
-
-## Recent Changes
-
-1. The `jobs` table now includes a `prompt` column to store the initial input prompt.
-2. The `job_id` in the `jobs` table is now a UUID instead of an integer for improved scalability and security.
-3. The `llm_scenes` table now includes a `job_id` column for direct linkage to jobs, optimizing queries and data retrieval.
-4. All service output tables (image, voice, music, animation, video) now use the UUID `job_id` for consistency.
-
-These changes improve data organization, query efficiency, and provide a more direct link between jobs and their associated scenes and outputs across all services.
+These enhancements provide a more robust foundation for the subscription and token-based billing system, while maintaining the existing content generation workflow. The structure now better supports various billing models, detailed usage tracking, and comprehensive payment history.

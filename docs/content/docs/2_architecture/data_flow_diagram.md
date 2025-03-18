@@ -175,12 +175,13 @@ Implementation Status: Complete
    - Resource management
    - Service coordination
 
-#### Planned Services:
 8. **Auth Service** (Port 3009)
    - Social login (Google, Apple)
    - Email/password authentication
    - JWT token management
    - Session handling
+
+#### Planned Services:
 
 9. **Billing Service** (Port 3010)
    - Credit system management
@@ -192,8 +193,10 @@ Implementation Status: Complete
 
 #### Database (PostgreSQL)
 
-#### File Storage
-Implementation Status: Complete (Local)
+#### File Storage (Local // AWS S3)
+
+##### Local Implementation
+Implementation Status: Complete (Local // Old Implementation)
 ```plaintext
 data/output/
 ├── llm/
@@ -222,6 +225,7 @@ data/output/
         └── [jobId]/
 ```
 
+##### AWS S3 Implementation (Complete)
 
 ## Data Flow
 
@@ -237,10 +241,10 @@ data/output/
 5. Result delivered to user
 
 ### 2. File Management Flow
-1. Services generate content
-2. Files stored in local filesystem
+1. Services generate content for each scene
+2. Files stored in S3 and link stored in database with url and storage key
 3. Metadata stored in database
-4. Paths tracked in job records
+4. Sequence tracked in job records
 5. Cleanup handled by Job Service
 
 ## Implementation Status
@@ -249,21 +253,15 @@ data/output/
 - API Gateway
 - LLM Service with database
 - Service endpoints
-- Basic job orchestration
+- Job orchestration
 - Local file storage
 - Database structure
+- Authentication Service with auth0
+- Storage Service with AWS S3
+- Video Assembly Service
 
 ### In Development
-- Video Assembly Service
-- JSON2Video integration
-- Final video compilation
-
-### Planned
-- Frontend application
-- Authentication system
-- Billing system
-- Premium features
-- Advanced error handling
+- Billing Service
 
 ## Deployment Strategy
 - Development: Local environment

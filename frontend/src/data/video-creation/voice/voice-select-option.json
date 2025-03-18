@@ -11,7 +11,8 @@
                     "tags": ["Epic", "Deep", "Dramatic", "Male"],
                     "elevenlabsVoiceId": "FF7KdobWPaiR0vkcALHF",
                     "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/FF7KdobWPaiR0vkcALHF/M0VmTmIFXsie1kg33XBh.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/epic-movie-narrator.png"
+                    "personaUrl": "/creation/voice-selection-persona/epic-movie-narrator.png",
+                    "planId": "1"
                 },
                 {
                     "id": "villainous-character",
@@ -20,7 +21,8 @@
                     "tags": ["Villainous", "Eloquent", "Wicked", "Female"],
                     "elevenlabsVoiceId": "flHkNRp1BlvT73UL6gyz",
                     "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/user/yA8yDNUx4dZ4gwL9ztbTpUEIyR12/voices/flHkNRp1BlvT73UL6gyz/Wi2FL0vNQp7bJAeSrJaz.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/villainous-character.png"
+                    "personaUrl": "/creation/voice-selection-persona/villainous-character.png",
+                    "planId": "2"
                 },
                 {
                     "id": "mountain-king",
@@ -29,7 +31,8 @@
                     "tags": ["Rich", "Rugged", "Characters", "Male"],
                     "elevenlabsVoiceId": "qNkzaJoHLLdpvgh5tISm",
                     "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/qNkzaJoHLLdpvgh5tISm/N0JJBx37oVjY5Juzh0QY.mp3",
-                    "personaUrl": "/creation/voice-selection-persona/mountain-king.png"
+                    "personaUrl": "/creation/voice-selection-persona/mountain-king.png",
+                    "planId": "3"
                 }
             ]
         },

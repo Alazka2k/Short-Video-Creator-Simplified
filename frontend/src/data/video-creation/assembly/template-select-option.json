@@ -9,7 +9,6 @@
             "templateType": "slideshow",
             "preview":"/assembly/preview/free/16-9/slideshow-16-9.mp4",
             "templateContent": ["image", "text"],
-            "planId": "1",
             "aspectRatio": "16:9",
             "sceneAmount": 3,
             "subtitle": "false",
@@ -44,7 +43,8 @@
                     "type": "image",
                     "allowedContent": ["image"]
                 }
-            }
+            },
+            "planId": "1"
         },
         {
             "id": "slideshow-16-9-v2",
@@ -54,7 +54,6 @@
             "templateType": "slideshow",
             "preview":"/assembly/preview/free/16-9/slideshow-16-9-v2.mp4",
             "templateContent": ["image", "text"],
-            "planId": "1",
             "aspectRatio": "16:9",
             "sceneAmount": 3,
             "subtitle": "false",
@@ -89,7 +88,8 @@
                     "type": "image",
                     "allowedContent": ["image"]
                 }
-            }
+            },
+            "planId": "2"
         },
         {
             "id": "slideshow-16-9-v3",
@@ -99,7 +99,6 @@
             "templateType": "slideshow",
             "preview":"/assembly/preview/free/16-9/slideshow-16-9-v3.mp4",
             "templateContent": ["image", "text"],
-            "planId": "1",
             "aspectRatio": "16:9",
             "sceneAmount": 3,
             "subtitle": "false",
@@ -134,7 +133,8 @@
                     "type": "image",
                     "allowedContent": ["image"]
                 }
-            }
+            },
+            "planId": "3"
         },
         {
             "id": "slideshow-9-16",

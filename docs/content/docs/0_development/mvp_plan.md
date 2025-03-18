@@ -114,7 +114,7 @@
 - ✅ Implement scene transitions
 - ✅ Add content preview functionality
 
-### ⏳ 1.4 Video Creation Flow (⏳ In Progress)
+### ✅ 1.4 Video Creation Flow (✅ Completed)
 - ✅ Implement basic video creation form
 - ✅ Add script settings with categorized options
   - ✅ Character perspective selection
@@ -150,53 +150,42 @@
     - ✅ Add a working frontend for the video assembly and select options to send the correct request when pressing the data
     - ✅ Refactor the videos section to show all created videos
 
-
 ## Phase 2: Implement Missing Core Features
 
 ### 2.1 Payment / Billing / Subscription Integration System as a new Service (Backend)
-- Implement Stripe integration
-- Create simple pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand
-- Integrate additional token purchase options (e.g. 1000 tokens for $10, 5000 tokens for $50, 10000 tokens for $100, etc., exact pricing needs to be defined)
+
+- ✅ Create pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand
+- Integrate additional token purchase options (pay as you go)
 - Add subscription management and add / integrate the different subscription roles to the users
+- Add logic for substraction of tokens depending on usage and limitations / features depending on the subscription plan
+- Implement Stripe integration
 - Setup usage tracking
 - Implement basic billing
 
-#### 2.1.1 Token & Billing System Backend
-- [ ] GET /api/billing/usage - Get token usage statistics
-- [ ] GET /api/billing/plans - Get available billing plans
-- [ ] GET /api/billing/transactions - Get transaction history
-- [ ] POST /api/billing/subscribe - Subscribe to a plan
-- [ ] POST /api/billing/purchase - Purchase tokens
-- [ ] POST /api/billing/change - Change subscription plan
-- [ ] POST /api/billing/cancel - Cancel subscription
-- [ ] GET /api/billing/history - Get billing history
+#### 2.2 Token & Billing System Backend
+- ⏳ GET /api/billing/usage - Get token usage statistics
+- ⏳ GET /api/billing/plans - Get available billing plans
+- ⏳ GET /api/billing/transactions - Get transaction history
+- ⏳ POST /api/billing/subscribe - Subscribe to a plan
+- ⏳ POST /api/billing/purchase - Purchase tokens
+- ⏳ POST /api/billing/change - Change subscription plan
+- ⏳ POST /api/billing/cancel - Cancel subscription
+- ⏳ GET /api/billing/history - Get billing history
 
-#### 2.1.2 Token & Billing System Frontend
-- [ ] Enhance the /dashboard/subscription page with the new API endpoints and integrate them
-- [ ] Add a new page for the pricing plans
+#### 2.3 Token & Billing System Frontend
+- ⏳ Update the /dashboard page with new overview about the tokens and the usage
+- ⏳ Enhance the /dashboard/subscription page with real plans, the possibillity to change the plan and to add new tokens (pay as you go)
+- ⏳ Add a new page for the pricing plans on the features page
 
-### 2.2 Video Assembly (Backend)
-- Improve the final video assembly service with enhanced variables (depending on json2Video)
-
-### 2.3 Video and Project Management Enhancements
-
-#### 2.3.1 Video Management (Backend)
-- [ ] GET /api/videos - Fetch video list with pagination and filters
-
-#### 2.3.2. Frontend Enhancements of "My Videos" with new API endpoints (Frontend)
-- [ ] Connect and add backend implementation for "My videos" view
-
-#### 2.3.3. Video Assembly Enhancements (Frontend)
-- [ ] Add video download functionality
-
-#### 2.3.4. Video Dashboard Enhancements (Frontend)
-- [ ] Update the Dashboard with the latest status
+### 2.4 User setting frontend page
+- ⏳ Settings page
+  - ⏳ Settings for social media channels
+  - ⏳ Settings for the video preferences (e.g. default style, voice, resolution)
 
 ## Phase 3: Finalize static frontend pages
 
   ### 3.1 Dedicated Pages (⏳ In Progress)
-- ✅ Dedicated Features Page with interactive demos
-- ⏳ Refactor the Dashboard page
+- ⏳ Update Features Page with current content creation flow
 - ⏳ FAQ Section
 - ⏳ Blog Entries
 - ⏳ Contact
@@ -204,17 +193,15 @@
 - ⏳ Terms of Service
 - ⏳ About
 - ⏳ Remove "Careers" from the footer
-- ⏳ Settings page
-  - ⏳ Settings for social media channels
-  - ⏳ Settings for the video preferences (e.g. default style, voice, resolution)
 - ⏳ Refactor the features marketing page
+- ⏳ Update Login Page (currently inconsistent look)
 
 ## Phase 4: Fix known bugs and security issues
 
 ### 4.1. Fix known bugs
 - [ ] Fix the social login which is not working right now
 - [ ] Fix the refresh of the links to the files from the s3 bucket cloud. Right now the won´t be visible anymore after 30mins on the dashboard
-- [ ] Job Service with Animation is not working and gives an error
+- [ ] Job Service with Animation is sometimes not working and gives an error (I think depends on the template of animation)
 
 ### 4.2. Security issues
 - [ ] Fix the encryption of password and username from the frontend (currently it is visible in the network tab of the browser)
