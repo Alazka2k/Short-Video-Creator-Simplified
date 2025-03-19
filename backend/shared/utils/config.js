@@ -85,8 +85,9 @@ function loadEnvConfig() {
       assembly: { url: process.env.ASSEMBLY_SERVICE_URL },
       job: { url: process.env.JOB_SERVICE_URL },
       auth: { url: process.env.AUTH_SERVICE_URL },
-      billing: { url: process.env.BILLING_SERVICE_URL },
+      subscription: { url: process.env.SUBSCRIPTION_SERVICE_URL },
       docs: { url: process.env.DOCS_SERVICE_URL },
+      frontend: { url: process.env.FRONTEND_URL },
       storage: {
         type: 'aws',
         config: {
@@ -195,6 +196,7 @@ function logConfiguration(config) {
     logger.info('Assembly configuration:', config.assembly);
     logger.info('Storage configuration:', config.services.storage);
     logger.info('Auth configuration:', config.auth);
+    logger.info('Subscription configuration:', config.subscription);
   } else {
     // In staging/production, log only non-sensitive information
     logger.info('LLM configuration:', { provider: config.llm.provider, model: config.llm.model });
@@ -214,6 +216,8 @@ function logConfiguration(config) {
         domain: config.auth.auth0.domain,
         audience: config.auth.auth0.audience
       }
+    });
+    logger.info('Subscription configuration:', {
     });
   }
 }

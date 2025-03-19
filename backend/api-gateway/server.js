@@ -21,44 +21,25 @@ const jobRoutes = require('./routes/job');
 const assemblyRoutes = require('./routes/assembly');
 const storageRoutes = require('./routes/storage');
 const downloadRoutes = require('./routes/download');
+const subscriptionRoutes = require('./routes/subscription');
 
 // Log environment configuration
 logger.info('Environment Configuration:', {
   NODE_ENV: process.env.NODE_ENV,
-  isDefined: process.env.NODE_ENV !== undefined,
-  type: typeof process.env.NODE_ENV
 });
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.API_GATEWAY_PORT;
 
 // CORS configuration
 const getFrontendUrl = () => {
-  const env = process.env.NODE_ENV || 'development';
-  
-  // Log available frontend URLs for debugging
-  logger.info('Available Frontend URLs:', {
-    development: process.env.DEVELOPMENT_FRONTEND_URL || `http://localhost:${process.env.DEVELOPMENT_FRONTEND_PORT || 4000}`,
-    staging: process.env.STAGING_FRONTEND_URL,
-    production: process.env.PRODUCTION_FRONTEND_URL
-  });
-
-  switch (env) {
-    case 'development':
-      return process.env.DEVELOPMENT_FRONTEND_URL || `http://localhost:${process.env.DEVELOPMENT_FRONTEND_PORT || 4000}`;
-    case 'staging':
-      return process.env.STAGING_FRONTEND_URL;
-    case 'production':
-      return process.env.PRODUCTION_FRONTEND_URL;
-    default:
-      return `http://localhost:4000`; // Fallback for safety
-  }
+  return config.services.frontend?.url;
 };
 
 const frontendUrl = getFrontendUrl();
 
 logger.info('CORS Configuration:', {
-  currentEnvironment: process.env.NODE_ENV,
+  currentEnvironment: config.env,
   selectedFrontendUrl: frontendUrl,
   port: PORT
 });
@@ -126,6 +107,7 @@ app.use('/api/job', jobRoutes);
 app.use('/api/assembly', assemblyRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/download', downloadRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // Auth routes
 app.use('/api/auth', authRoutes);

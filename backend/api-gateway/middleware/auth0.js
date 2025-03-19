@@ -39,25 +39,23 @@
 const { auth } = require('express-oauth2-jwt-bearer');
 const logger = require('../../shared/utils/logger');
 const authService = require('../../services/auth-service/auth-service');
+const config = require('../../shared/utils/config');
 
 // Get environment-specific Auth0 M2M configuration
-const envPrefix = process.env.NODE_ENV?.toUpperCase();
-const auth0Domain = process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`];
-const auth0Audience = process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`];
+const auth0Domain = config.auth.auth0.domain;
+const auth0Audience = config.auth.auth0.audience;
 
 // Log configuration (without sensitive data)
 logger.info('Auth0 Gateway Configuration:', {
-  domain: auth0Domain,
-  audience: auth0Audience,
   environment: process.env.NODE_ENV,
-  envPrefix
+  domain: auth0Domain,
+  audience: auth0Audience
 });
 
 // Validate Auth0 configuration
 if (!auth0Domain || !auth0Audience) {
   logger.error('Auth0 M2M configuration missing or incorrect:', {
     environment: process.env.NODE_ENV,
-    envPrefix,
     hasDomain: !!auth0Domain,
     hasAudience: !!auth0Audience,
     availableEnvVars: Object.keys(process.env).filter(key => key.includes('AUTH0'))
@@ -74,7 +72,8 @@ const SERVICE_ENDPOINTS = [
   '/api/video',
   '/api/music',
   '/api/assembly',
-  '/api/job'
+  '/api/job',
+  '/api/subscription'
 ];
 
 // Initialize Auth0 JWT middleware

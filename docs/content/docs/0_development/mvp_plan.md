@@ -154,27 +154,36 @@
 
 ### 2.1 Payment / Billing / Subscription Integration System as a new Service (Backend)
 
-- ✅ Create pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand
-- Integrate additional token purchase options (pay as you go)
-- Add subscription management and add / integrate the different subscription roles to the users
-- Add logic for substraction of tokens depending on usage and limitations / features depending on the subscription plan
-- Implement Stripe integration
-- Setup usage tracking
-- Implement basic billing
+- ✅ Create pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand and additional token purchase possibilities
+- ✅ Rename service from "billing-service" to "subscription-service" for clarity and consistency
+- ✅ Create a comprehensive architecture with server, data access layers, and API endpoints
+- ✅ Implement database schema for plans, subscriptions, tokens, and payments
+- ✅ Set up API Gateway routes with proper authentication and user data protection
+- ⏳ Add subscription management, payment management and token management logic
+- ⏳ Implement Stripe integration
+- ⏳ Add logic for subtraction of tokens depending on usage and limitations / features depending on the subscription plan
+- ⏳ Set up usage tracking
+- ⏳ Implement basic billing
 
 #### 2.2 Token & Billing System Backend
-- ⏳ GET /api/billing/usage - Get token usage statistics
-- ⏳ GET /api/billing/plans - Get available billing plans
-- ⏳ GET /api/billing/transactions - Get transaction history
-- ⏳ POST /api/billing/subscribe - Subscribe to a plan
-- ⏳ POST /api/billing/purchase - Purchase tokens
-- ⏳ POST /api/billing/change - Change subscription plan
-- ⏳ POST /api/billing/cancel - Cancel subscription
-- ⏳ GET /api/billing/history - Get billing history
+- ✅ GET /api/subscription/token-costs - Get token costs for different services
+- ✅ GET /api/subscription/plans - Get available subscription plans
+- ✅ GET /api/subscription/plans/:planId - Get specific plan details
+- ✅ GET /api/subscription/token-packages - Get available token packages
+- ✅ GET /api/subscription/tokens/balance/:userId - Get user's token balance
+- ✅ GET /api/subscription/transactions/user/:userId - Get transaction history
+- ✅ GET /api/subscription/payments/user/:userId - Get payment history
+- ✅ POST /api/subscription/subscriptions - Subscribe to a plan
+- ✅ POST /api/subscription/tokens/purchase - Purchase tokens
+- ✅ PUT /api/subscription/subscriptions/:subscriptionId - Change subscription plan
+- ✅ POST /api/subscription/subscriptions/:subscriptionId/cancel - Cancel subscription
+- ⏳ Implement token deduction functionality for service usage
+- ⏳ Connect job service to token deduction API
+- ⏳ Add plan feature limitation enforcement
 
 #### 2.3 Token & Billing System Frontend
 - ⏳ Update the /dashboard page with new overview about the tokens and the usage
-- ⏳ Enhance the /dashboard/subscription page with real plans, the possibillity to change the plan and to add new tokens (pay as you go)
+- ⏳ Enhance the /dashboard/subscription page with real plans, the possibility to change the plan and to add new tokens (pay as you go)
 - ⏳ Add a new page for the pricing plans on the features page
 
 ### 2.4 User setting frontend page

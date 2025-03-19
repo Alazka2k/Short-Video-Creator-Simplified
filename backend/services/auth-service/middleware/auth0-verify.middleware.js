@@ -20,17 +20,15 @@ const config = require('../../../shared/utils/config');
 const { getRequiredPermission } = require('../../../api-gateway/config/permissions');
 const authDataAccess = require('../data/authDataAccess');
 
-// Get environment-specific Auth0 configuration
-const envPrefix = process.env.NODE_ENV?.toUpperCase();
-const auth0Domain = process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`];
-const auth0Audience = process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`];
+// Get environment-specific Auth0 M2M configuration
+const auth0Domain = config.auth.auth0.domain;
+const auth0Audience = config.auth.auth0.audience;
 
 // Log Auth0 configuration
 logger.info('Auth0 Configuration:', {
-  domain: auth0Domain,
-  audience: auth0Audience,
   environment: process.env.NODE_ENV,
-  envPrefix
+  domain: auth0Domain,
+  audience: auth0Audience
 });
 
 // Initialize JWKS client for Auth0 public key retrieval

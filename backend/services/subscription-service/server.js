@@ -1,0 +1,291 @@
+const express = require('express');
+const cors = require('cors');
+const logger = require('../../shared/utils/logger');
+const config = require('../../shared/utils/config');
+
+function createServer(subscriptionService) {
+  const app = express();
+  
+  // Middleware
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(cors());
+
+  // Request logging middleware
+  app.use((req, res, next) => {
+    logger.info(`Subscription Service: Received ${req.method} request for ${req.url}`);
+    logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+    logger.info(`Request body: ${JSON.stringify(req.body)}`);
+    next();
+  });
+
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({ status: 'Subscription Service is healthy' });
+  });
+
+  // Plans endpoints
+  app.get('/plans', async (req, res) => {
+    try {
+      const { billingFrequency, includeInactive } = req.query;
+      let plans;
+      
+      if (billingFrequency) {
+        plans = await subscriptionService.getPlansByFrequency(billingFrequency, includeInactive === 'true');
+      } else {
+        plans = await subscriptionService.getAllPlans(includeInactive === 'true');
+      }
+      
+      res.json(plans);
+    } catch (error) {
+      logger.error('Error fetching plans:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.get('/plans/:planId', async (req, res) => {
+    try {
+      const { planId } = req.params;
+      const plan = await subscriptionService.getPlanById(planId);
+      
+      if (!plan) {
+        return res.status(404).json({ error: 'Plan not found' });
+      }
+      
+      res.json(plan);
+    } catch (error) {
+      logger.error('Error fetching plan:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Subscriptions endpoints
+  app.get('/subscriptions/user/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const subscription = await subscriptionService.getUserActiveSubscription(userId);
+      
+      if (!subscription) {
+        return res.status(404).json({ error: 'No active subscription found' });
+      }
+      
+      res.json(subscription);
+    } catch (error) {
+      logger.error('Error fetching user subscription:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.post('/subscriptions', async (req, res) => {
+    try {
+      const subscriptionData = req.body;
+      const newSubscription = await subscriptionService.createSubscription(subscriptionData);
+      res.status(201).json(newSubscription);
+    } catch (error) {
+      logger.error('Error creating subscription:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.put('/subscriptions/:subscriptionId', async (req, res) => {
+    try {
+      const { subscriptionId } = req.params;
+      const subscriptionData = req.body;
+      const updatedSubscription = await subscriptionService.updateSubscription(subscriptionId, subscriptionData);
+      
+      if (!updatedSubscription) {
+        return res.status(404).json({ error: 'Subscription not found' });
+      }
+      
+      res.json(updatedSubscription);
+    } catch (error) {
+      logger.error('Error updating subscription:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.post('/subscriptions/:subscriptionId/cancel', async (req, res) => {
+    try {
+      const { subscriptionId } = req.params;
+      const { reason } = req.body;
+      const cancelledSubscription = await subscriptionService.cancelSubscription(subscriptionId, reason);
+      
+      if (!cancelledSubscription) {
+        return res.status(404).json({ error: 'Subscription not found' });
+      }
+      
+      res.json(cancelledSubscription);
+    } catch (error) {
+      logger.error('Error cancelling subscription:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Token packages endpoints
+  app.get('/token-packages', async (req, res) => {
+    try {
+      const { includeInactive } = req.query;
+      const packages = await subscriptionService.getAllTokenPackages(includeInactive === 'true');
+      res.json(packages);
+    } catch (error) {
+      logger.error('Error fetching token packages:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.get('/token-packages/:packageId', async (req, res) => {
+    try {
+      const { packageId } = req.params;
+      const tokenPackage = await subscriptionService.getTokenPackageById(packageId);
+      
+      if (!tokenPackage) {
+        return res.status(404).json({ error: 'Token package not found' });
+      }
+      
+      res.json(tokenPackage);
+    } catch (error) {
+      logger.error('Error fetching token package:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Tokens and transactions endpoints
+  app.get('/tokens/balance/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const balance = await subscriptionService.getUserTokenBalance(userId);
+      res.json({ userId, balance });
+    } catch (error) {
+      logger.error('Error fetching token balance:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.post('/tokens/allocate', async (req, res) => {
+    try {
+      const { userId, subscriptionId, tokenAmount, description } = req.body;
+      const transaction = await subscriptionService.allocateSubscriptionTokens(userId, subscriptionId, tokenAmount, description);
+      res.status(201).json(transaction);
+    } catch (error) {
+      logger.error('Error allocating tokens:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.post('/tokens/deduct', async (req, res) => {
+    try {
+      const { userId, jobId, serviceName, tokenAmount, metadata } = req.body;
+      const transaction = await subscriptionService.recordTokenUsage(userId, jobId, serviceName, tokenAmount, metadata);
+      res.status(201).json(transaction);
+    } catch (error) {
+      logger.error('Error deducting tokens:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.post('/tokens/purchase', async (req, res) => {
+    try {
+      const { userId, packageId, paymentMethod, paymentDetails } = req.body;
+      const result = await subscriptionService.purchaseTokenPackage(userId, packageId, paymentMethod, paymentDetails);
+      res.status(201).json(result);
+    } catch (error) {
+      logger.error('Error purchasing token package:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.get('/transactions/user/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { limit, offset } = req.query;
+      const transactions = await subscriptionService.getUserTokenTransactions(
+        userId,
+        parseInt(limit) || 100,
+        parseInt(offset) || 0
+      );
+      res.json(transactions);
+    } catch (error) {
+      logger.error('Error fetching token transactions:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Get token costs for services
+  app.get('/token-costs', async (req, res) => {
+    try {
+      const costs = await subscriptionService.getAllTokenCosts();
+      res.json(costs);
+    } catch (error) {
+      logger.error('Error fetching token costs:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Calculate job token cost
+  app.post('/calculate-job-cost', async (req, res) => {
+    try {
+      const jobData = req.body;
+      const cost = await subscriptionService.calculateJobTokenCost(jobData);
+      res.json(cost);
+    } catch (error) {
+      logger.error('Error calculating job token cost:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Payments endpoints
+  app.get('/payments/user/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { limit, offset } = req.query;
+      const payments = await subscriptionService.getUserPayments(
+        userId,
+        parseInt(limit) || 100,
+        parseInt(offset) || 0
+      );
+      res.json(payments);
+    } catch (error) {
+      logger.error('Error fetching payments:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  app.get('/payments/summary/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const summary = await subscriptionService.getUserPaymentSummary(userId);
+      res.json(summary);
+    } catch (error) {
+      logger.error('Error fetching payment summary:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Stripe webhook handler
+  app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+    try {
+      const signature = req.headers['stripe-signature'];
+      const event = await subscriptionService.handleStripeWebhook(req.body, signature);
+      res.json({ received: true, type: event.type });
+    } catch (error) {
+      logger.error('Error handling Stripe webhook:', error);
+      res.status(400).json({ error: 'Webhook Error', details: error.message });
+    }
+  });
+
+  // Catch-all route for unhandled requests
+  app.use('*', (req, res) => {
+    logger.warn(`Subscription Service: Received unhandled request: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
+  });
+
+  // Error handling middleware
+  app.use((err, req, res, next) => {
+    logger.error(`Subscription Service: Unhandled error: ${err.stack}`);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  });
+
+  return app;
+}
+
+module.exports = createServer; 
