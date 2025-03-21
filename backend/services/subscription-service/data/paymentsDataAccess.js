@@ -74,26 +74,39 @@ class PaymentsDataAccess {
   /**
    * Create a new payment record
    * @param {Object} paymentData - The payment data
-   * @returns {Promise<Object>} - The created payment
+   * @param {Object} trx - Optional Knex transaction object
+   * @returns {Promise<Object>} - The created payment record
    */
-  async createPayment(paymentData) {
+  async createPayment(paymentData, trx) {
     try {
       this.logger.info('Creating new payment record:', paymentData);
       
-      // Set timestamps
-      paymentData.created_at = knex.fn.now();
-      paymentData.updated_at = knex.fn.now();
+      // Ensure required fields are present
+      if (!paymentData.user_id) {
+        throw new Error('user_id is required to create a payment');
+      }
       
-      const [newPayment] = await knex(this.tableName)
+      if (paymentData.amount === undefined || paymentData.amount === null) {
+        throw new Error('amount is required to create a payment');
+      }
+      
+      // Set timestamp
+      paymentData.payment_date = paymentData.payment_date || knex.fn.now();
+      
+      // Determine which knex instance to use
+      const query = trx ? trx(this.tableName) : knex(this.tableName);
+      
+      // Insert the payment record
+      const [newPayment] = await query
         .insert(paymentData)
         .returning('*');
       
       this.logger.info('Payment record created successfully:', { 
         paymentId: newPayment.payment_id,
         userId: newPayment.user_id,
-        amount: newPayment.amount,
-        paymentType: newPayment.payment_type
+        amount: newPayment.amount
       });
+      
       return this.formatPayment(newPayment);
     } catch (error) {
       this.logger.error('Error creating payment record:', error);
@@ -109,35 +122,34 @@ class PaymentsDataAccess {
    * @param {number} amount - The payment amount
    * @param {string} paymentProvider - The payment provider (e.g., 'stripe', 'paypal')
    * @param {string} externalPaymentId - The external payment ID from the provider
-   * @param {string} paymentType - The payment type ('subscription_initial' or 'subscription_renewal')
-   * @param {Object} billingPeriod - The billing period details {start: Date, end: Date}
+   * @param {string} paymentType - The payment type ('subscription_initial', 'subscription_renewal')
+   * @param {Object} billingPeriod - The billing period { start, end }
+   * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object>} - The created payment record
    */
-  async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, externalPaymentId, paymentType = 'subscription_initial', billingPeriod = {}) {
+  async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, externalPaymentId, paymentType = 'subscription_initial', billingPeriod = {}, trx) {
     try {
       this.logger.info('Creating subscription payment record:', {
-        userId, subscriptionId, planId, amount, paymentType
+        userId, subscriptionId, planId, amount
       });
       
       const paymentData = {
         user_id: userId,
         amount,
         payment_provider: paymentProvider,
+        payment_method: 'credit_card',
+        currency: 'eur',
         external_payment_id: externalPaymentId,
         payment_type: paymentType,
         status: 'completed',
         plan_id: planId,
         subscription_id: subscriptionId,
         billing_period_start: billingPeriod.start || null,
-        billing_period_end: billingPeriod.end || null,
-        payment_metadata: JSON.stringify({
-          paymentFor: 'subscription',
-          subscriptionId,
-          planId
-        })
+        billing_period_end: billingPeriod.end || null
       };
       
-      return this.createPayment(paymentData);
+      // Don't store redundant data in metadata
+      return this.createPayment(paymentData, trx);
     } catch (error) {
       this.logger.error('Error creating subscription payment record:', error);
       throw error;
@@ -163,14 +175,12 @@ class PaymentsDataAccess {
         user_id: userId,
         amount,
         payment_provider: paymentProvider,
+        payment_method: 'credit_card',
+        currency: 'eur',
         external_payment_id: externalPaymentId,
         payment_type: 'token_package',
         status: 'completed',
-        package_id: packageId,
-        payment_metadata: JSON.stringify({
-          paymentFor: 'tokenPackage',
-          packageId
-        })
+        package_id: packageId
       };
       
       return this.createPayment(paymentData);
@@ -317,15 +327,22 @@ class PaymentsDataAccess {
     // Format amount as float
     formattedPayment.amount = parseFloat(payment.amount) || 0;
     
-    // Parse payment_metadata if it exists
+    // Parse payment_metadata if it exists and is a string
     if (payment.payment_metadata) {
       try {
-        formattedPayment.payment_metadata = JSON.parse(payment.payment_metadata);
+        if (typeof payment.payment_metadata === 'string') {
+          formattedPayment.payment_metadata = JSON.parse(payment.payment_metadata);
+        } else {
+          // If it's already an object, use it directly
+          formattedPayment.payment_metadata = payment.payment_metadata;
+        }
       } catch (error) {
         this.logger.warn('Error parsing payment metadata JSON:', { 
           paymentId: payment.payment_id, 
           error: error.message 
         });
+        // Set to empty object rather than keeping the unparsed string
+        formattedPayment.payment_metadata = {};
       }
     }
     

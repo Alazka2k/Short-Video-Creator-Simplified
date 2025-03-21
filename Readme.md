@@ -17,6 +17,7 @@
 14. [Testing](#testing)
 15. [Source Code Export](#source-code-export)
 16. [Storage Setup](#storage-setup)
+17. [Applying Database Migrations](#applying-database-migrations)
 
 ## Introduction
 
@@ -1206,3 +1207,56 @@ The project includes an integrated documentation system:
 - Additional cloud provider support
 - Enhanced backup systems
 - Improved monitoring tools
+
+## Applying Database Migrations
+
+Database migrations are managed using Knex.js and can be run using the following commands:
+
+### Running All Pending Migrations
+
+**For Windows PowerShell:**
+```powershell
+$env:NODE_ENV="development" ; npx knex migrate:latest
+```
+
+**For Windows Command Prompt:**
+```cmd
+set NODE_ENV=development && npx knex migrate:latest
+```
+
+**For Unix-like systems (Linux/macOS):**
+```bash
+NODE_ENV=development npx knex migrate:latest
+```
+
+### Running Specific Migrations
+
+To run migrations up to a specific file:
+
+```bash
+NODE_ENV=development npx knex migrate:up 20250320000005_token_transactions_constraints.js
+```
+
+### Rolling Back Migrations
+
+To roll back the most recent migration:
+
+```bash
+NODE_ENV=development npx knex migrate:down
+```
+
+To roll back all migrations:
+
+```bash
+NODE_ENV=development npx knex migrate:rollback --all
+```
+
+### Checking Migration Status
+
+To see which migrations have been run and which are pending:
+
+```bash
+NODE_ENV=development npx knex migrate:status
+```
+
+These commands need to be run from the project root directory where the `knexfile.js` is located.

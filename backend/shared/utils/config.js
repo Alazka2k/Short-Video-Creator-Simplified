@@ -75,6 +75,10 @@ function loadEnvConfig() {
       apiKey: process.env.ASSEMBLY_API_KEY,
       webhookBaseUrl: process.env.ASSEMBLY_WEBHOOK_BASE_URL
     },
+    subscription: {
+      apiKey: process.env.STRIPE_API_KEY,
+      webhookBaseUrl: process.env.STRIPE_WEBHOOK_BASE_URL
+    },
     services: {
       llm: { url: process.env.LLM_SERVICE_URL },
       image: { url: process.env.IMAGE_SERVICE_URL },
@@ -150,7 +154,8 @@ function validateConfig(config) {
     ['assembly.provider', 'assembly.apiKey', 'assembly.webhookBaseUrl'],
     ['auth.auth0.domain', 'auth.auth0.clientId', 'auth.auth0.clientSecret', 'auth.auth0.audience'],
     ['auth.jwt.secret'],
-    ['services.storage.config.region', 'services.storage.config.bucket', 'services.storage.config.cdnUrl']
+    ['services.storage.config.region', 'services.storage.config.bucket', 'services.storage.config.cdnUrl'],
+    ['subscription.apiKey', 'subscription.webhookBaseUrl']
   ];
 
   for (const configGroup of requiredConfigs) {

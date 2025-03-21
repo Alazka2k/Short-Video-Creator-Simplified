@@ -68,20 +68,34 @@ class SubscriptionServiceInterface {
   /**
    * Subscriptions API Methods
    */
-  async getUserActiveSubscription(userId) {
+  async getUserSubscriptions(userId) {
     try {
-      return await this.dataAccess.subscriptions.getUserActiveSubscription(userId);
+      logger.info('Getting user subscriptions:', { userId });
+      
+      if (!userId) {
+        logger.warn('Invalid userId provided to getUserSubscriptions');
+        throw new Error('User ID is required');
+      }
+      
+      return await this.dataAccess.subscriptions.getUserSubscriptions(userId);
     } catch (error) {
-      logger.error('Error in getUserActiveSubscription:', error);
+      logger.error('Error in getUserSubscriptions:', error);
       throw error;
     }
   }
 
-  async getUserSubscriptions(userId) {
+  async getUserActiveSubscription(userId) {
     try {
-      return await this.dataAccess.subscriptions.getUserSubscriptions(userId);
+      logger.info('Getting user active subscription:', { userId });
+      
+      if (!userId) {
+        logger.warn('Invalid userId provided to getUserActiveSubscription');
+        throw new Error('User ID is required');
+      }
+      
+      return await this.dataAccess.subscriptions.getUserActiveSubscription(userId);
     } catch (error) {
-      logger.error('Error in getUserSubscriptions:', error);
+      logger.error('Error in getUserActiveSubscription:', error);
       throw error;
     }
   }
@@ -97,38 +111,180 @@ class SubscriptionServiceInterface {
 
   async createSubscription(subscriptionData) {
     try {
-      // Create the subscription in the database
-      const subscription = await this.dataAccess.subscriptions.createSubscription(subscriptionData);
+      logger.info('Creating new subscription:', subscriptionData);
       
-      // Create a payment record if this is a paid subscription
-      if (subscriptionData.payment_provider && subscriptionData.external_payment_id) {
-        await this.dataAccess.payments.createSubscriptionPayment(
-          subscriptionData.user_id,
-          subscription.subscription_id,
-          subscription.plan_id,
-          subscriptionData.amount || 0,
-          subscriptionData.payment_provider,
-          subscriptionData.external_payment_id,
-          'subscription_initial',
-          {
-            startDate: subscription.start_date,
-            endDate: subscription.end_date
+      // Get database connection for transaction
+      if (!this.dataAccess.subscriptions.knex) {
+        logger.error('Database connection not initialized in subscriptions data access');
+        throw new Error('Database connection not initialized');
+      }
+      
+      // Start transaction
+      let trx;
+      try {
+        trx = await this.dataAccess.subscriptions.knex.transaction();
+        
+        // Check for existing subscription
+        const existingSubscription = await this.dataAccess.subscriptions.getUserActiveSubscription(subscriptionData.userId, trx);
+        
+        // If the user has an active subscription with the same plan, prevent creating a duplicate
+        if (existingSubscription && existingSubscription.plan_id === parseInt(subscriptionData.planId)) {
+          await trx.rollback();
+          logger.warn('User already has an active subscription with this plan:', {
+            userId: subscriptionData.userId,
+            planId: subscriptionData.planId,
+            existingSubscriptionId: existingSubscription.subscription_id
+          });
+          throw new Error('User already has an active subscription with this plan');
+        }
+        
+        // If the user has an active subscription with a different plan, cancel it
+        if (existingSubscription) {
+          logger.info('User has an active subscription that will be cancelled before upgrading:', { 
+            userId: subscriptionData.userId,
+            existingSubscriptionId: existingSubscription.subscription_id,
+            existingPlanId: existingSubscription.plan_id,
+            newPlanId: subscriptionData.planId
+          });
+          
+          // Cancel existing subscription before creating new one
+          await this.dataAccess.subscriptions.cancelSubscription(
+            existingSubscription.subscription_id, 
+            'Upgraded to new subscription plan',
+            trx
+          );
+        }
+        
+        // Prepare subscription data
+        // Don't set endDate unless it's explicitly provided
+        // This is critical for subscriptions that auto-renew and don't have a predetermined end date
+        if (!subscriptionData.endDate && !subscriptionData.currentPeriodEnd) {
+          try {
+            // Get plan details to determine billing frequency
+            const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
+            if (plan) {
+              const startDate = new Date(subscriptionData.startDate || new Date());
+              
+              // Only set currentPeriodEnd - don't set an endDate for the subscription itself
+              let periodEnd;
+              
+              if (plan.billing_frequency === 'monthly') {
+                periodEnd = new Date(startDate);
+                periodEnd.setMonth(periodEnd.getMonth() + 1);
+              } else if (plan.billing_frequency === 'yearly') {
+                periodEnd = new Date(startDate);
+                periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+              }
+              
+              if (periodEnd) {
+                subscriptionData.currentPeriodEnd = periodEnd;
+              }
+            }
+          } catch (error) {
+            logger.warn('Error determining billing period from plan:', error);
+            // Continue with subscription creation even if this fails
           }
-        );
+        }
+        
+        // Create the subscription
+        const newSubscription = await this.dataAccess.subscriptions.createSubscription(subscriptionData, trx);
+        
+        // Create payment record if payment data is provided
+        if (subscriptionData.paymentProvider && subscriptionData.externalPaymentId) {
+          let paymentRecord;
+          try {
+            // Get plan for correct billing period calculation
+            const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
+            if (!plan) {
+              throw new Error(`Plan not found: ${subscriptionData.planId}`);
+            }
+            
+            // Calculate billing period based on plan frequency
+            const startDate = new Date(subscriptionData.startDate || new Date());
+            let endDate;
+            
+            if (plan.billing_frequency === 'monthly') {
+              endDate = new Date(startDate);
+              endDate.setMonth(endDate.getMonth() + 1);
+            } else if (plan.billing_frequency === 'yearly') {
+              endDate = new Date(startDate);
+              endDate.setFullYear(endDate.getFullYear() + 1);
+            }
+            
+            // Create the payment record with correct billing period
+            paymentRecord = await this.dataAccess.payments.createSubscriptionPayment(
+              subscriptionData.userId,
+              newSubscription.subscription_id,
+              subscriptionData.planId,
+              subscriptionData.amount || 0,
+              subscriptionData.paymentProvider,
+              subscriptionData.externalPaymentId,
+              'subscription_initial',
+              {
+                start: startDate,
+                end: endDate
+              },
+              trx
+            );
+            
+            logger.info('Payment record created for subscription', {
+              subscriptionId: newSubscription.subscription_id,
+              userId: subscriptionData.userId,
+              paymentId: paymentRecord.payment_id
+            });
+          } catch (paymentError) {
+            logger.error('Error creating payment record:', paymentError);
+            // Continue with subscription creation even if payment record fails
+          }
+          
+          // Allocate tokens based on the plan
+          try {
+            // Get plan details
+            const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
+            if (!plan) {
+              throw new Error(`Plan not found: ${subscriptionData.planId}`);
+            }
+            
+            // Allocate tokens based on monthly allocation
+            const tokenAmount = plan.monthly_token_allocation;
+            if (tokenAmount > 0) {
+              await this.dataAccess.tokenTransactions.allocateSubscriptionTokens(
+                subscriptionData.userId,
+                newSubscription.subscription_id,
+                tokenAmount,
+                `Initial token allocation for ${plan.plan_name} subscription`,
+                paymentRecord ? paymentRecord.payment_id : null,  // Pass payment ID if available
+                trx
+              );
+              
+              logger.info('Tokens allocated for new subscription', {
+                subscriptionId: newSubscription.subscription_id,
+                userId: subscriptionData.userId,
+                tokenAmount,
+                paymentId: paymentRecord ? paymentRecord.payment_id : null
+              });
+            }
+          } catch (tokenError) {
+            logger.error('Error allocating tokens for subscription:', tokenError);
+            // Roll back the transaction if token allocation fails
+            await trx.rollback();
+            throw new Error(`Failed to allocate tokens: ${tokenError.message}`);
+          }
+        }
+        
+        // Commit the transaction
+        await trx.commit();
+        logger.info('Subscription creation transaction committed successfully');
+        
+        return newSubscription;
+      } catch (error) {
+        // Roll back the transaction if anything failed
+        if (trx) {
+          await trx.rollback();
+          logger.error('Subscription creation transaction rolled back:', error);
+        }
+        throw error;
       }
-      
-      // Allocate tokens for the subscription
-      const plan = await this.dataAccess.plans.getPlanById(subscription.plan_id);
-      if (plan && plan.monthly_token_allocation > 0) {
-        await this.allocateSubscriptionTokens(
-          subscription.user_id,
-          subscription.subscription_id,
-          plan.monthly_token_allocation,
-          'Initial subscription token allocation'
-        );
-      }
-      
-      return subscription;
     } catch (error) {
       logger.error('Error in createSubscription:', error);
       throw error;
@@ -260,23 +416,64 @@ class SubscriptionServiceInterface {
     }
   }
 
+  /**
+   * Record token usage for a service
+   * @param {string} userId - The user ID
+   * @param {string} jobId - The job ID
+   * @param {string} serviceName - The service name
+   * @param {number} tokenAmount - The token amount to deduct
+   * @param {Object} metadata - Additional metadata about the usage
+   * @returns {Promise<Object>} - The updated token balance
+   */
   async recordTokenUsage(userId, jobId, serviceName, tokenAmount, metadata = {}) {
     try {
-      // Check if user has enough tokens
-      const balance = await this.dataAccess.tokenTransactions.getUserTokenBalance(userId);
-      if (balance < tokenAmount) {
-        throw new Error(`Insufficient token balance. Required: ${tokenAmount}, Available: ${balance}`);
+      // Ensure positive token amount
+      const amount = Math.abs(tokenAmount);
+      
+      logger.info('Recording token usage:', {
+        userId, jobId, serviceName, amount, metadata
+      });
+      
+      // Check if user has sufficient tokens
+      const tokenBalance = await this.dataAccess.tokenTransactions.getUserTokenBalance(userId);
+      
+      if (tokenBalance.balance < amount) {
+        throw new Error(`Insufficient token balance. Required: ${amount}, Available: ${tokenBalance.balance}`);
       }
-
-      return await this.dataAccess.tokenTransactions.recordTokenUsage(
-        userId,
-        jobId,
-        serviceName,
-        tokenAmount,
-        metadata
-      );
+      
+      // Record the usage transaction using generalized schema
+      const enhancedMetadata = {
+        ...metadata,
+        serviceType: serviceName,
+        jobId: jobId,
+        cost: amount
+      };
+      
+      // Determine content ID if available in metadata
+      let relatedEntityType = 'job';
+      let relatedEntityId = jobId;
+      
+      if (metadata.contentId) {
+        // If content ID is provided, use service name as the entity type
+        relatedEntityType = serviceName;
+        relatedEntityId = metadata.contentId;
+      }
+      
+      await this.dataAccess.tokenTransactions.createTransaction({
+        userId: userId,
+        transactionType: 'deduction',
+        tokenAmount: -amount, // Negative amount for deduction
+        description: `Used ${amount} tokens for ${serviceName}`,
+        externalServiceName: metadata.externalServiceName || serviceName,
+        relatedEntityType: relatedEntityType,
+        relatedEntityId: relatedEntityId,
+        metadata: enhancedMetadata
+      });
+      
+      // Get updated token balance
+      return await this.dataAccess.tokenTransactions.getUserTokenBalance(userId);
     } catch (error) {
-      logger.error('Error in recordTokenUsage:', error);
+      logger.error('Error recording token usage:', error);
       throw error;
     }
   }

@@ -143,17 +143,21 @@ class TokenPackagesDataAccess {
     try {
       this.logger.info('Creating new token package:', packageData);
       
-      // Set timestamps
-      packageData.created_at = knex.fn.now();
-      packageData.updated_at = knex.fn.now();
+      // Convert camelCase to snake_case for database
+      const dbPackageData = {
+        package_name: packageData.packageName,
+        token_allocation: packageData.tokenAllocation,
+        price: packageData.price,
+        active: packageData.active !== undefined ? packageData.active : true,
+        marketing_description: packageData.marketingDescription ? JSON.stringify(packageData.marketingDescription) : null
+      };
       
-      // Ensure active status is set
-      if (packageData.active === undefined) {
-        packageData.active = true;
-      }
+      // Set timestamps
+      dbPackageData.created_at = knex.fn.now();
+      dbPackageData.updated_at = knex.fn.now();
       
       const [newPackage] = await knex(this.tableName)
-        .insert(packageData)
+        .insert(dbPackageData)
         .returning('*');
       
       this.logger.info('Token package created successfully:', { 

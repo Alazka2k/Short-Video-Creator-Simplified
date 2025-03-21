@@ -22,6 +22,7 @@
  * - /api/music - Music generation endpoints (create:music)
  * - /api/assembly - Assembly service endpoints (create:assembly)
  * - /api/job - Job management endpoints (create:job)
+ * - /api/subscription - Subscription management endpoints (create:subscription)
  * 
  * Required M2M Scopes:
  * - create:llm - Access to LLM generation
@@ -32,6 +33,7 @@
  * - create:music - Access to music generation
  * - create:assembly - Access to assembly operations
  * - create:job - Access to job management
+ * - create:subscription - Access to subscription management
  * 
  * @module api-gateway/middleware/auth0
  */

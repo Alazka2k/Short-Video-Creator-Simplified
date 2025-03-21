@@ -1,0 +1,810 @@
+# Subscription Service API Reference
+
+The Subscription Service provides endpoints for managing subscription plans, user subscriptions, token transactions, and payment history. This document outlines all available endpoints with request and response examples.
+
+**Base URL**: `/api/subscription`
+
+All endpoints include proper authentication and authorization checks.
+
+---
+
+## Plan Management
+
+### 1. ✅ List All Plans
+Retrieves all available subscription plans.
+
+**Endpoint**: `GET /plans`
+
+**Parameters**:
+- `includeInactive` (optional, query): Set to `true` to include inactive plans. Default is `false`.
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "plan_id": 1,
+      "plan_name": "Free",
+      "price": 0.00,
+      "monthly_price": 0.00,
+      "billing_frequency": "monthly",
+      "monthly_token_allocation": 300,
+      "active": true,
+      "max_scenes_per_job": 5,
+      "max_jobs_per_month": 10,
+      "video_quality": null,
+      "visual_selection_count": 2,
+      "voice_selection_count": 3,
+      "template_selection_count": 3,
+      "has_watermark": true,
+      "script_settings_enabled": false,
+      "support_level": "community",
+      "allowed_content_types": ["image", "text", "voice"],
+      "recreation_enabled": false,
+      "recreation_content_types": [],
+      "marketing_description": {
+        "features": [
+          "Free tier with basic features",
+          "Limited to 5 scenes per job",
+          "300 tokens per month"
+        ]
+      },
+      "created_at": "2023-11-01T12:00:00.000Z",
+      "updated_at": "2023-11-01T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 2. ✅ Get Plan Details
+Retrieves details for a specific plan.
+
+**Endpoint**: `GET /plans/:planId`
+
+**URL Parameters**:
+- `planId`: The ID of the plan (integer)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "plan_id": 2,
+    "plan_name": "Basic Tier",
+    "price": 24.99,
+    "monthly_price": 24.99,
+    "billing_frequency": "monthly",
+    "monthly_token_allocation": 2500,
+    "active": true,
+    "max_scenes_per_job": 13,
+    "max_jobs_per_month": 45,
+    "video_quality": "540p",
+    "visual_selection_count": 9,
+    "voice_selection_count": 9,
+    "template_selection_count": 10,
+    "has_watermark": false,
+    "script_settings_enabled": true,
+    "support_level": "community",
+    "allowed_content_types": ["image", "voice", "animation", "video", "music"],
+    "recreation_enabled": false,
+    "recreation_content_types": [],
+    "marketing_description": {
+      "features": [
+        "All content types",
+        "YouTube Shorts & TikTok support",
+        "Enhanced quality options"
+      ]
+    },
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-01T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+## Subscription Management
+
+### 1. ✅ Get User's Current Subscription
+Retrieves the active subscription for a user.
+
+**Endpoint**: `GET /subscriptions/user/:userId`
+
+**URL Parameters**:
+- `userId`: The numeric ID of the user (e.g., "30")
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "subscription_id": 123,
+    "user_id": 30,
+    "plan_id": 2,
+    "status": "active",
+    "start_date": "2023-11-01T00:00:00.000Z",
+    "end_date": "2023-12-01T00:00:00.000Z",
+    "current_period_start": "2023-11-01T00:00:00.000Z",
+    "current_period_end": "2023-12-01T00:00:00.000Z",
+    "canceled_at": null,
+    "ended_at": null,
+    "external_subscription_id": "sub_stripe123",
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-01T12:00:00.000Z",
+    "plan_name": "Basic Tier",
+    "billing_frequency": "monthly",
+    "monthly_price": 24.99,
+    "annual_price": 299.88,
+    "monthly_token_allocation": 2500,
+    "video_quality": "540p",
+    "max_scenes_per_job": 13,
+    "max_jobs_per_month": 45,
+    "allowed_content_types": ["image", "voice", "animation", "video", "music"],
+    "recreation_content_types": [],
+    "support_level": "community"
+  }
+}
+```
+
+### 2. ✅ Create New Subscription
+Creates a new subscription for a user.
+
+**Use Case**:
+- Primary use: Create a brand new subscription for a user who doesn't have one
+- Secondary use: Replace an existing subscription with a new one
+- When a user already has an active subscription, calling this endpoint will:
+  1. Cancel the existing subscription
+  2. Create a completely new subscription record
+  3. Allocate tokens based on the new plan
+- This is like a "replacement" operation rather than a modification
+
+**Free Tier Subscriptions**:
+- For free tier subscriptions (plan ID 1), payment-related fields (`paymentProvider`, `externalPaymentId`, `amount`) should be omitted
+- The system will create the subscription without generating any payment records
+- This works for both new user registrations and downgrades from paid plans
+- Token allocation will still occur if the free tier plan provides any tokens
+
+**Endpoint**: `POST /subscriptions`
+
+**Example Free Tier Subscription Request:**
+```json
+{
+  "userId": 30,
+  "planId": 1,  // Free tier plan ID
+  "startDate": "2023-11-01T00:00:00.000Z",
+  "status": "active"
+  // No payment fields needed for free tier
+}
+```
+
+**Payment-Related Fields (for paid subscriptions):**
+```json
+{
+  "userId": 30,
+  "planId": 2,
+  "paymentProvider": "stripe",  // Payment provider: "stripe"
+  "paymentMethod": "credit_card",  // Optional - Payment method: "credit_card", "bank_transfer", "paypal", etc.
+  "externalPaymentId": "pi_123456789",  // Payment ID from payment processor
+  "amount": 24.99,  // Amount charged for the subscription (number, not string)
+  "startDate": "2023-11-01T00:00:00.000Z",
+  "status": "active"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "subscription_id": 123,
+    "user_id": 30,
+    "plan_id": 2,
+    "status": "active",
+    "start_date": "2023-11-01T00:00:00.000Z",
+    "end_date": "2023-12-01T00:00:00.000Z",
+    "current_period_start": "2023-11-01T00:00:00.000Z",
+    "current_period_end": "2023-12-01T00:00:00.000Z",
+    "canceled_at": null,
+    "ended_at": null,
+    "external_subscription_id": "sub_stripe123",
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-01T12:00:00.000Z",
+    "plan": {
+      "plan_id": 2,
+      "plan_name": "Basic Tier",
+      "billing_frequency": "monthly",
+      "monthly_price": 24.99,
+      "annual_price": 299.88,
+      "monthly_token_allocation": 2500,
+      "video_quality": "540p",
+      "max_scenes_per_job": 13,
+      "max_jobs_per_month": 45,
+      "allowed_content_types": ["image", "voice", "animation", "video", "music"],
+      "recreation_content_types": [],
+      "support_level": "community"
+    }
+  }
+}
+```
+
+### 3. ✅ Update Subscription
+Updates an existing subscription.
+
+**Use Case**:
+- Primary use: Modify properties of an existing subscription without creating a new record
+- Typical scenarios:
+  1. Change the end date or billing period
+  2. Update payment details
+  3. Upgrade/downgrade a plan within the same subscription record
+  4. Change the status (e.g., to temporarily pause)
+- The subscription ID remains the same throughout the changes
+- Unlike POST, this preserves the same subscription record instead of creating a new one
+- When changing plans, new tokens will be allocated based on the new plan's allocation
+
+**Endpoint**: `PUT /subscriptions/:subscriptionId`
+
+**URL Parameters**:
+- `subscriptionId`: The numeric ID of the subscription (e.g., 123)
+
+**Request Body (all fields optional)**:
+```json
+{
+  "planId": 3,
+  "status": "active",
+  "externalSubscriptionId": "sub_stripe456",
+  "startDate": "2023-11-01T00:00:00.000Z",
+  "endDate": "2024-11-01T00:00:00.000Z",
+  "currentPeriodStart": "2023-11-01T00:00:00.000Z",
+  "currentPeriodEnd": "2024-11-01T00:00:00.000Z",
+  "canceledAt": "2023-11-15T00:00:00.000Z"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "subscription_id": 123,
+    "user_id": 30,
+    "plan_id": 3,
+    "status": "active",
+    "start_date": "2023-11-01T00:00:00.000Z",
+    "end_date": "2024-11-01T00:00:00.000Z",
+    "current_period_start": "2023-11-01T00:00:00.000Z",
+    "current_period_end": "2024-11-01T00:00:00.000Z",
+    "canceled_at": "2023-11-15T00:00:00.000Z",
+    "ended_at": null,
+    "external_subscription_id": "sub_stripe456",
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-15T12:00:00.000Z",
+    "plan": {
+      "plan_id": 3,
+      "plan_name": "Creator Tier",
+      "billing_frequency": "yearly",
+      "monthly_token_allocation": 6500
+    }
+  }
+}
+```
+
+### 4. ✅ Cancel Subscription
+Cancels an active subscription.
+
+**Endpoint**: `POST /subscriptions/:subscriptionId/cancel`
+
+**URL Parameters**:
+- `subscriptionId`: The numeric ID of the subscription (e.g., 123)
+
+**Request Body**:
+```json
+{
+  "cancellationReason": "Switching to free tier plan"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "subscription_id": 123,
+    "user_id": 30,
+    "plan_id": 3,
+    "status": "cancelled",
+    "start_date": "2023-11-01T00:00:00.000Z",
+    "end_date": "2024-11-01T00:00:00.000Z",
+    "current_period_start": "2023-11-01T00:00:00.000Z",
+    "current_period_end": "2024-11-01T00:00:00.000Z",
+    "canceled_at": "2023-11-20T12:00:00.000Z",
+    "ended_at": null,
+    "cancellation_reason": "Switching to different plan",
+    "external_subscription_id": "sub_stripe456",
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-20T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+## Token Management
+
+### 1. Get Token Balance
+Retrieves the current token balance for a user.
+
+**Endpoint**: `GET /tokens/balance/:userId`
+
+**URL Parameters**:
+- `userId`: The numeric ID of the user (e.g., "30")
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": 30,
+    "balance": 2350,
+    "last_updated": "2023-11-15T12:00:00.000Z"
+  }
+}
+```
+
+### 2. Allocate Tokens
+Allocates tokens to a user, typically from subscription or manual administrative action.
+
+**Endpoint**: `POST /tokens/allocate`
+
+**Request Body**:
+```json
+{
+  "userId": 30,
+  "tokenAmount": 500,
+  "description": "Monthly subscription allocation",
+  "relatedEntityType": "subscription",
+  "relatedEntityId": "123"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "transactionId": 456,
+    "userId": 30,
+    "transactionType": "allocation",
+    "tokenAmount": 500,
+    "description": "Monthly subscription allocation",
+    "relatedEntityType": "subscription",
+    "relatedEntityId": "123",
+    "transactionDate": "2023-11-05T12:30:45.000Z",
+    "metadata": {
+      "source": "subscription"
+    }
+  }
+}
+```
+
+### 3. Deduct Tokens
+Deducts tokens from a user's balance for service usage.
+
+**Endpoint**: `POST /tokens/deduct`
+
+**Request Body**:
+```json
+{
+  "userId": 30,
+  "tokenAmount": 25,
+  "description": "Token usage for image generation",
+  "relatedEntityType": "job",
+  "relatedEntityId": "job-123",
+  "externalServiceName": "stable-diffusion-xl",
+  "metadata": {
+    "jobId": "job-123",
+    "sceneCount": 5,
+    "contentId": "img-456"
+  }
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "transactionId": 457,
+    "userId": 30,
+    "transactionType": "deduction",
+    "tokenAmount": -25,
+    "description": "Token usage for image generation",
+    "relatedEntityType": "job",
+    "relatedEntityId": "job-123",
+    "externalServiceName": "stable-diffusion-xl",
+    "transactionDate": "2023-11-05T14:22:30.000Z",
+    "metadata": {
+      "jobId": "job-123",
+      "sceneCount": 5,
+      "contentId": "img-456"
+    }
+  }
+}
+```
+
+### 4. Get Transaction History
+Retrieves a user's token transaction history.
+
+**Endpoint**: `GET /transactions/user/:userId`
+
+**URL Parameters**:
+- `userId` - User ID to get transaction history for
+
+**Query Parameters**:
+- `limit` (optional) - Maximum number of transactions to return (default: 100)
+- `offset` (optional) - Offset to start from (default: 0)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "transactionId": 457,
+        "userId": 30,
+        "transactionType": "deduction",
+        "tokenAmount": -25,
+        "description": "Token usage for image generation",
+        "relatedEntityType": "job",
+        "relatedEntityId": "job-123",
+        "externalServiceName": "stable-diffusion-xl",
+        "transactionDate": "2023-11-05T14:22:30.000Z",
+        "metadata": {
+          "jobId": "job-123",
+          "sceneCount": 5,
+          "contentId": "img-456"
+        }
+      },
+      {
+        "transactionId": 456,
+        "userId": 30,
+        "transactionType": "allocation",
+        "tokenAmount": 500,
+        "description": "Monthly subscription allocation",
+        "relatedEntityType": "subscription",
+        "relatedEntityId": "123",
+        "transactionDate": "2023-11-05T12:30:45.000Z",
+        "metadata": {
+          "source": "subscription"
+        }
+      },
+      {
+        "transactionId": 455,
+        "userId": 30,
+        "transactionType": "purchase",
+        "tokenAmount": 2500,
+        "description": "Token package purchase",
+        "relatedEntityType": "token_package",
+        "relatedEntityId": "2",
+        "transactionDate": "2023-11-01T10:15:20.000Z",
+        "metadata": {
+          "source": "purchase",
+          "packageId": 2
+        }
+      }
+    ],
+    "totalCount": 3,
+    "currentBalance": 2975
+  }
+}
+```
+
+### 5. Get Token Costs
+Retrieves token costs for different services.
+
+**Endpoint**: `GET /token-costs`
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "llm": 5,
+    "image": 10,
+    "voice": 5,
+    "animation": 30,
+    "video": 50,
+    "music": 20,
+    "assembly": 20
+  }
+}
+```
+
+### 6. Calculate Job Cost
+Calculates token cost for a job with multiple services.
+
+**Endpoint**: `POST /calculate-job-cost`
+
+**Request Body**:
+```json
+{
+  "sceneCount": 5,
+  "services": {
+    "llm": true,
+    "image": true,
+    "voice": true,
+    "music": true,
+    "assembly": true
+  }
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "total": 120,
+    "breakdown": {
+      "llm": 5,
+      "image": 50,
+      "voice": 25,
+      "music": 20,
+      "assembly": 20
+    },
+    "sceneCount": 5
+  }
+}
+```
+
+---
+
+## Token Packages
+
+### 1. List All Token Packages
+Retrieves all available token packages.
+
+**Endpoint**: `GET /token-packages`
+
+**Parameters**:
+- `includeInactive` (optional, query): Set to `true` to include inactive packages. Default is `false`.
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "package_id": 1,
+      "package_name": "Starter Pack",
+      "token_allocation": 1000,
+      "price": 9.99,
+      "active": true,
+      "marketing_description": {
+        "features": ["1,000 additional tokens", "Never expires"]
+      },
+      "created_at": "2023-11-01T12:00:00.000Z",
+      "updated_at": "2023-11-01T12:00:00.000Z"
+    },
+    {
+      "package_id": 2,
+      "package_name": "Creator Pack",
+      "token_allocation": 2500,
+      "price": 24.99,
+      "active": true,
+      "marketing_description": {
+        "features": ["2,500 additional tokens", "Never expires", "Best value for basic users"]
+      },
+      "created_at": "2023-11-01T12:00:00.000Z",
+      "updated_at": "2023-11-01T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 2. Get Token Package Details
+Retrieves details for a specific token package.
+
+**Endpoint**: `GET /token-packages/:packageId`
+
+**URL Parameters**:
+- `packageId`: The ID of the token package (integer)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "package_id": 2,
+    "package_name": "Creator Pack",
+    "token_allocation": 2500,
+    "price": 24.99,
+    "active": true,
+    "marketing_description": {
+      "features": ["2,500 additional tokens", "Never expires", "Best value for basic users"]
+    },
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-01T12:00:00.000Z"
+  }
+}
+```
+
+### 3. Create Token Package
+Creates a new token package.
+
+**Endpoint**: `POST /token-packages`
+
+**Request Body**:
+```json
+{
+  "packageName": "Pro Pack",
+  "tokenAllocation": 6000,
+  "price": 39.99,
+  "active": true,
+  "marketingDescription": {
+    "features": ["6,000 additional tokens", "Never expires", "Perfect for power users"]
+  }
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "package_id": 3,
+    "package_name": "Pro Pack",
+    "token_allocation": 6000,
+    "price": 39.99,
+    "active": true,
+    "marketing_description": {
+      "features": ["6,000 additional tokens", "Never expires", "Perfect for power users"]
+    },
+    "created_at": "2023-11-20T12:00:00.000Z",
+    "updated_at": "2023-11-20T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+## Payment History
+
+### 1. Get Payment History
+Retrieves payment history for a user.
+
+**Endpoint**: `GET /payments/user/:userId`
+
+**URL Parameters**:
+- `userId`: The numeric ID of the user (e.g., "30")
+
+**Query Parameters**:
+- `limit` (optional): Maximum number of results to return (default: 100)
+- `offset` (optional): Number of results to skip (default: 0)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "payments": [
+      {
+        "payment_id": 789,
+        "user_id": 30,
+        "amount": 24.99,
+        "currency": "EUR",
+        "payment_method": "stripe",
+        "status": "completed",
+        "payment_date": "2023-11-15T14:25:00.000Z",
+        "payment_type": "token_package",
+        "package_id": 2,
+        "external_payment_id": "pi_3NvZN2Iuyt123456"
+      },
+      {
+        "payment_id": 788,
+        "user_id": 30,
+        "amount": 24.99,
+        "currency": "EUR",
+        "payment_method": "stripe",
+        "status": "completed",
+        "payment_date": "2023-11-01T12:00:00.000Z",
+        "payment_type": "subscription_initial",
+        "plan_id": 2,
+        "subscription_id": 123,
+        "external_payment_id": "pi_3NvZN1Iuyt123456",
+        "billing_period_start": "2023-11-01",
+        "billing_period_end": "2023-12-01"
+      }
+    ],
+    "count": 2,
+    "total": 2
+  }
+}
+```
+
+### 2. Create Payment Record
+Creates a new payment record.
+
+**Endpoint**: `POST /payments`
+
+**Request Body**:
+```json
+{
+  "userId": 30,
+  "amount": 24.99,
+  "paymentProvider": "stripe",
+  "externalPaymentId": "pi_3NvZN2Iuyt123456",
+  "paymentType": "token_package",
+  "packageId": 2,
+  "status": "completed"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": 790,
+    "user_id": 30,
+    "amount": 24.99,
+    "payment_provider": "stripe",
+    "external_payment_id": "pi_3NvZN2Iuyt123456",
+    "payment_type": "token_package",
+    "package_id": 2,
+    "status": "completed",
+    "payment_date": "2023-11-20T12:00:00.000Z",
+    "created_at": "2023-11-20T12:00:00.000Z",
+    "updated_at": "2023-11-20T12:00:00.000Z"
+  }
+}
+```
+
+### 3. Get Payment Summary
+Retrieves a summary of payments for a user.
+
+**Endpoint**: `GET /payments/summary/:userId`
+
+**URL Parameters**:
+- `userId`: The numeric ID of the user (e.g., "30")
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "totalSpent": 49.98,
+    "subscriptionTotal": 24.99,
+    "tokenPackageTotal": 24.99,
+    "currentPlan": {
+      "plan_id": 2,
+      "plan_name": "Basic Tier",
+      "monthly_price": 24.99,
+      "billing_frequency": "monthly"
+    },
+    "lastPayment": {
+      "payment_id": 789,
+      "amount": 24.99,
+      "payment_date": "2023-11-15T14:25:00.000Z",
+      "payment_type": "token_package"
+    }
+  }
+}
+```
+
+## Coming Soon Endpoints
+
+The following endpoints are currently in development:
+
+### 1. Check Token Availability (Pre-authorization)
+**Endpoint**: `POST /tokens/check`
+
+### 2. Get Monthly Job Count
+**Endpoint**: `GET /jobs/count/:userId/monthly`
+
+### 3. Check Feature Availability
+**Endpoint**: `GET /features/available/:userId/:featureCode`
+
+### 4. Check Usage Limits
+**Endpoint**: `GET /limits/check/:userId/:limitType`

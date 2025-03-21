@@ -154,42 +154,117 @@
 
 ### 2.1 Payment / Billing / Subscription Integration System as a new Service (Backend)
 
-- ✅ Create pricing plans with different features (e.g. number of videos, number of characters, number of scenes, etc.) and tokens (each subscription plan has a different number of tokens), each service has a different token consumption (e.g. image generation has a higher token consumption than voice generation, complete video generation has a higher token consumption than image generation) -> Calculation needs to be done for each service beforehand and additional token purchase possibilities
-- ✅ Rename service from "billing-service" to "subscription-service" for clarity and consistency
-- ✅ Create a comprehensive architecture with server, data access layers, and API endpoints
-- ✅ Implement database schema for plans, subscriptions, tokens, and payments
-- ✅ Set up API Gateway routes with proper authentication and user data protection
-- ⏳ Add subscription management, payment management and token management logic
-- ⏳ Implement Stripe integration
-- ⏳ Add logic for subtraction of tokens depending on usage and limitations / features depending on the subscription plan
-- ⏳ Set up usage tracking
-- ⏳ Implement basic billing
+#### 2.1.1. Subscription Service (Renamed from Billing Service)
+- ✅ Create subscription service
+- ✅ Rename "billing-service" to "subscription-service" for clarity
+- ✅ Implement subscription service endpoints 
+  - ✅ Plan Management: GET /plans, GET /plans/:planId
+  - ✅ Subscription Management: GET /subscriptions/user/:userId, POST /subscriptions, PUT /subscriptions/:subscriptionId, POST /subscriptions/:subscriptionId/cancel
+  - ✅ Token Management: GET /tokens/balance/:userId, POST /tokens/allocate, POST /tokens/deduct, POST /tokens/purchase, GET /transactions/user/:userId, GET /token-costs, POST /calculate-job-cost
+  - ✅ Payment History: GET /payments/user/:userId, GET /payments/summary/:userId
+  - ⏳ Additional Token Endpoints: POST /tokens/check (pre-authorization), GET /jobs/count/:userId/monthly
+- ✅ Set up subscription service data access layers
+  - ✅ Plan Data Access (plans table)
+  - ✅ Subscription Data Access (user_subscriptions table)
+  - ✅ Token Transaction Data Access (token_transactions table)
+  - ✅ Token Package Data Access (token_packages table)
+  - ✅ Token Balance Data Access (tokens table)
+  - ✅ Payment Data Access (payments table)
+- ✅ Implement token calculator utility
+- ✅ Create service initialization logic
+- ✅ Set up proper error handling and logging
 
-#### 2.2 Token & Billing System Backend
-- ✅ GET /api/subscription/token-costs - Get token costs for different services
+#### 2.1.2. Database Schema
+- ✅ Design and implement subscription plans table
+- ✅ Create user_subscriptions table for tracking active subscriptions
+- ✅ Implement tokens table for user token balances
+- ✅ Create token_transactions table for tracking token usage
+- ✅ Implement token_packages table for additional token purchases
+- ✅ Create payments table for tracking payment history
+
+#### 2.1.3. API Gateway Routes
+- ✅ Create subscription routes in API Gateway
+- ✅ Implement authentication middleware for subscription routes
+- ✅ Set up proper forwarding to subscription service
+- ✅ Add logging for subscription-related requests
+
+#### 2.1.4. Service-Level Token Deduction
+- ⏳ Implement token deduction in each individual service (LLM, Image, Voice, etc.)
+- ⏳ Add token cost calculation per service
+- ⏳ Create token pre-authorization checks (without deducting)
+- ⏳ Implement proper error handling for insufficient tokens
+- ⏳ Add detailed metadata for token transactions
+
+#### 2.1.5. Plan Limitation Enforcement
+- ⏳ Create middleware for checking subscription features
+- ⏳ Implement validation for content types based on plan
+- ⏳ Add restriction logic for premium features
+- ⏳ Create validation for max scenes per job
+- ⏳ Implement monthly job count tracking and limits
+
+#### 2.1.6. Testing with Postman
+- ⏳ Create comprehensive Postman collection for all endpoints
+- ⏳ Set up test users for each subscription tier
+- ⏳ Generate auth tokens for testing with real user personas
+- ⏳ Develop test scripts for common workflows
+- ⏳ Document expected responses and error scenarios
+
+#### 2.1.7. Stripe Integration
+- ⏳ Configure Stripe products and prices to match plans
+- ⏳ Implement credit card payment processing
+- ⏳ Set up subscription creation in Stripe
+- ⏳ Handle subscription lifecycle events via webhooks
+- ⏳ Add token package purchases
+
+### 2.2. Backend API Endpoints for Token and Billing Management
+
+#### 2.2.1. Token Management Endpoints
+- ✅ GET /api/subscription/tokens/balance/:userId - Get user's current token balance
+- ✅ POST /api/subscription/tokens/allocate - Allocate new tokens to a user
+- ✅ POST /api/subscription/tokens/deduct - Deduct tokens for service usage
+- ✅ GET /api/subscription/transactions/user/:userId - Get token transaction history
+- ✅ GET /api/subscription/token-costs - Get token costs for various operations
+- ⏳ POST /api/subscription/tokens/check - Check if user has sufficient tokens without deducting
+- ⏳ GET /api/subscription/jobs/count/:userId/monthly - Get user's monthly job count
+
+#### 2.2.2. Subscription Management Endpoints
 - ✅ GET /api/subscription/plans - Get available subscription plans
-- ✅ GET /api/subscription/plans/:planId - Get specific plan details
-- ✅ GET /api/subscription/token-packages - Get available token packages
-- ✅ GET /api/subscription/tokens/balance/:userId - Get user's token balance
-- ✅ GET /api/subscription/transactions/user/:userId - Get transaction history
-- ✅ GET /api/subscription/payments/user/:userId - Get payment history
-- ✅ POST /api/subscription/subscriptions - Subscribe to a plan
-- ✅ POST /api/subscription/tokens/purchase - Purchase tokens
-- ✅ PUT /api/subscription/subscriptions/:subscriptionId - Change subscription plan
-- ✅ POST /api/subscription/subscriptions/:subscriptionId/cancel - Cancel subscription
-- ⏳ Implement token deduction functionality for service usage
-- ⏳ Connect job service to token deduction API
-- ⏳ Add plan feature limitation enforcement
+- ✅ GET /api/subscription/plans/:planId - Get details of a specific plan
+- ✅ GET /api/subscription/subscriptions/user/:userId - Get user's active subscription
+- ✅ POST /api/subscription/subscriptions - Create a new subscription for a user
+- ✅ PUT /api/subscription/subscriptions/:subscriptionId - Update a subscription
+- ✅ POST /api/subscription/subscriptions/:subscriptionId/cancel - Cancel a subscription
 
-#### 2.3 Token & Billing System Frontend
-- ⏳ Update the /dashboard page with new overview about the tokens and the usage
-- ⏳ Enhance the /dashboard/subscription page with real plans, the possibility to change the plan and to add new tokens (pay as you go)
-- ⏳ Add a new page for the pricing plans on the features page
+#### 2.2.3. Payment Management Endpoints
+- ✅ GET /api/subscription/payments/user/:userId - Get user's payment history
+- ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
+- ⏳ POST /api/subscription/payments/method - Add or update payment method
+- ⏳ POST /api/subscription/payments/process - Process a payment for token purchase
 
-### 2.4 User setting frontend page
-- ⏳ Settings page
-  - ⏳ Settings for social media channels
-  - ⏳ Settings for the video preferences (e.g. default style, voice, resolution)
+#### 2.2.4. Plan Limitation APIs
+- ⏳ GET /api/subscription/jobs/count/:userId/monthly - Get user's monthly job count
+- ⏳ POST /api/subscription/features/check - Check if a feature is available in user's plan
+- ⏳ POST /api/subscription/limits/check - Check if user has exceeded usage limits
+
+### 2.3. Frontend Dashboard Pages for Subscription and Tokens
+
+#### 2.3.1. Subscription Management UI
+- ⏳ Create subscription plan comparison page
+- ⏳ Implement subscription management interface
+- ⏳ Add plan upgrade/downgrade flow
+- ⏳ Create payment method management screen
+
+#### 2.3.2. Token Management UI
+- ⏳ Add token balance display to dashboard
+- ⏳ Create token usage history visualization
+- ⏳ Implement token package purchase interface
+- ⏳ Add low balance warnings and notifications
+
+#### 2.3.3. User Account Pages
+- ⏳ Create payment history and receipts view
+- ⏳ Implement subscription detail page
+- ⏳ Add token transaction history page
+- ⏳ Create billing information management page
 
 ## Phase 3: Finalize static frontend pages
 

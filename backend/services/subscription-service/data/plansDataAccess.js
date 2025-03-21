@@ -187,6 +187,62 @@ class PlansDataAccess {
   }
   
   /**
+   * Safely parse a JSON string
+   * Tries multiple approaches to handle different formats
+   */
+  safeParseJson(value, fieldName, planId) {
+    // Return empty array for null values
+    if (!value) {
+      return [];
+    }
+    
+    // If it's already an array or object, return it
+    if (Array.isArray(value) || typeof value === 'object') {
+      return value;
+    }
+    
+    // First try standard JSON parse
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      // First error message, but we'll try other approaches
+    }
+    
+    // If it looks like a comma-separated string, convert to array
+    if (typeof value === 'string' && value.includes(',')) {
+      try {
+        const items = value.split(',').map(item => item.trim());
+        return items;
+      } catch (error) {
+        // Still failed, log and continue
+      }
+    }
+    
+    // Final fallback - if it's a string, wrap it in an array
+    if (typeof value === 'string') {
+      try {
+        // Check if it's a stringified array that just needs one more parse
+        if (value.startsWith('[') && value.endsWith(']')) {
+          const cleanValue = value.replace(/\\"/g, '"'); // Fix escaped quotes
+          return JSON.parse(cleanValue);
+        } else {
+          return [value]; // Single string item as array
+        }
+      } catch (error) {
+        this.logger.warn(`Error parsing ${fieldName} after multiple attempts:`, { 
+          planId, 
+          value,
+          error: error.message 
+        });
+        return []; // Return empty array as final fallback
+      }
+    }
+    
+    this.logger.warn(`Could not parse ${fieldName}:`, { planId, value });
+    return []; // Return empty array as final fallback
+  }
+  
+  /**
    * Format plan data by parsing JSON fields
    * @param {Object} plan - The plan data from the database
    * @returns {Object} - The formatted plan data
@@ -198,30 +254,28 @@ class PlansDataAccess {
       ...plan
     };
     
-    // Parse JSON fields
+    // Parse JSON fields using the safe parser
     if (plan.marketing_description) {
       try {
         formattedPlan.marketing_description = JSON.parse(plan.marketing_description);
       } catch (error) {
         this.logger.warn('Error parsing marketing_description JSON:', { planId: plan.plan_id, error: error.message });
+        // Keep original value if parsing fails
       }
     }
     
-    if (plan.allowed_content_types) {
-      try {
-        formattedPlan.allowed_content_types = JSON.parse(plan.allowed_content_types);
-      } catch (error) {
-        this.logger.warn('Error parsing allowed_content_types JSON:', { planId: plan.plan_id, error: error.message });
-      }
-    }
+    // Parse content type fields with robust handling
+    formattedPlan.allowed_content_types = this.safeParseJson(
+      plan.allowed_content_types, 
+      'allowed_content_types',
+      plan.plan_id
+    );
     
-    if (plan.recreation_content_types) {
-      try {
-        formattedPlan.recreation_content_types = JSON.parse(plan.recreation_content_types);
-      } catch (error) {
-        this.logger.warn('Error parsing recreation_content_types JSON:', { planId: plan.plan_id, error: error.message });
-      }
-    }
+    formattedPlan.recreation_content_types = this.safeParseJson(
+      plan.recreation_content_types,
+      'recreation_content_types',
+      plan.plan_id
+    );
     
     // Format dates
     formattedPlan.created_at = plan.created_at ? new Date(plan.created_at).toISOString() : null;

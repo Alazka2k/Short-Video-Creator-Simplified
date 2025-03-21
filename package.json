@@ -7,19 +7,15 @@
     "dev": "cross-env NODE_ENV=development concurrently \"npm run dev:frontend\" \"npm run dev:docs\" \"npm run dev:all-services\"",
     "staging": "cross-env NODE_ENV=staging concurrently \"npm run staging:frontend\" \"npm run staging:docs\" \"npm run staging:all-services\"",
     "prod": "cross-env NODE_ENV=production concurrently \"npm run prod:frontend\" \"npm run prod:docs\" \"npm run prod:all-services\"",
-    
     "dev:frontend": "cd frontend && cross-env NODE_ENV=development npm run dev",
     "staging:frontend": "cd frontend && cross-env NODE_ENV=staging npm run dev",
     "prod:frontend": "cd frontend && cross-env NODE_ENV=production npm run start",
-    
     "dev:docs": "cd docs-site && cross-env NODE_ENV=development npm start",
     "staging:docs": "cd docs-site && cross-env NODE_ENV=staging npm start",
     "prod:docs": "cd docs-site && cross-env NODE_ENV=production npm start",
-    
-    "dev:all-services": "cross-env NODE_ENV=development concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:llm\" \"npm run dev:image\" \"npm run dev:voice\" \"npm run dev:animation\" \"npm run dev:video\" \"npm run dev:music\" \"npm run dev:assembly\" \"npm run dev:ngrok\" \"npm run dev:job\"",
-    "staging:all-services": "cross-env NODE_ENV=staging concurrently \"npm run staging:gateway\" \"npm run staging:auth\" \"npm run staging:llm\" \"npm run staging:image\" \"npm run staging:voice\" \"npm run staging:animation\" \"npm run staging:video\" \"npm run staging:music\" \"npm run staging:assembly\" \"npm run staging:job\"",
-    "prod:all-services": "cross-env NODE_ENV=production concurrently \"npm run prod:gateway\" \"npm run prod:auth\" \"npm run prod:llm\" \"npm run prod:image\" \"npm run prod:voice\" \"npm run prod:animation\" \"npm run prod:video\" \"npm run prod:music\" \"npm run prod:assembly\" \"npm run prod:job\"",
-    
+    "dev:all-services": "cross-env NODE_ENV=development concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:llm\" \"npm run dev:image\" \"npm run dev:voice\" \"npm run dev:animation\" \"npm run dev:video\" \"npm run dev:music\" \"npm run dev:assembly\" \"npm run dev:job\" \"npm run dev:subscription\"",
+    "staging:all-services": "cross-env NODE_ENV=staging concurrently \"npm run staging:gateway\" \"npm run staging:auth\" \"npm run staging:llm\" \"npm run staging:image\" \"npm run staging:voice\" \"npm run staging:animation\" \"npm run staging:video\" \"npm run staging:music\" \"npm run staging:assembly\" \"npm run staging:job\" \"npm run staging:subscription\"",
+    "prod:all-services": "cross-env NODE_ENV=production concurrently \"npm run prod:gateway\" \"npm run prod:auth\" \"npm run prod:llm\" \"npm run prod:image\" \"npm run prod:voice\" \"npm run prod:animation\" \"npm run prod:video\" \"npm run prod:music\" \"npm run prod:assembly\" \"npm run prod:job\" \"npm run prod:subscription\"",
     "dev:gateway": "cross-env NODE_ENV=development node backend/api-gateway/server.js",
     "dev:auth": "cross-env NODE_ENV=development node backend/services/auth-service/auth-service.js",
     "dev:llm": "cross-env NODE_ENV=development node backend/services/llm-service/index.js",
@@ -29,8 +25,9 @@
     "dev:video": "cross-env NODE_ENV=development node backend/services/video-service/index.js",
     "dev:music": "cross-env NODE_ENV=development node backend/services/music-service/index.js",
     "dev:assembly": "cross-env NODE_ENV=development node backend/services/assembly-service/index.js",
-    "dev:job": "cross-env NODE_ENV=development node backend/services/job-service/index.js",  
-
+    "dev:ngrok": "cross-env NODE_ENV=development ngrok http 3000",
+    "dev:job": "cross-env NODE_ENV=development node backend/services/job-service/index.js",
+    "dev:subscription": "cross-env NODE_ENV=development node backend/services/subscription-service/index.js",
     "staging:gateway": "cross-env NODE_ENV=staging node backend/api-gateway/server.js",
     "staging:auth": "cross-env NODE_ENV=staging node backend/services/auth-service/auth-service.js",
     "staging:llm": "cross-env NODE_ENV=staging node backend/services/llm-service/index.js",
@@ -41,7 +38,7 @@
     "staging:music": "cross-env NODE_ENV=staging node backend/services/music-service/index.js",
     "staging:assembly": "cross-env NODE_ENV=staging node backend/services/assembly-service/index.js",
     "staging:job": "cross-env NODE_ENV=staging node backend/services/job-service/index.js",
-    
+    "staging:subscription": "cross-env NODE_ENV=staging node backend/services/subscription-service/index.js",
     "prod:gateway": "cross-env NODE_ENV=production node backend/api-gateway/server.js",
     "prod:auth": "cross-env NODE_ENV=production node backend/services/auth-service/auth-service.js",
     "prod:llm": "cross-env NODE_ENV=production node backend/services/llm-service/index.js",
@@ -52,7 +49,7 @@
     "prod:music": "cross-env NODE_ENV=production node backend/services/music-service/index.js",
     "prod:assembly": "cross-env NODE_ENV=production node backend/services/assembly-service/index.js",
     "prod:job": "cross-env NODE_ENV=production node backend/services/job-service/index.js",
-    
+    "prod:subscription": "cross-env NODE_ENV=production node backend/services/subscription-service/index.js",
     "test": "cross-env NODE_ENV=development npm run test:all",
     "test:all": "cross-env NODE_ENV=development concurrently \"npm run test:llm\" \"npm run test:voice\" \"npm run test:image\"",
     "test:llm": "cross-env NODE_ENV=development node tests/llm-test.js",
@@ -69,21 +66,17 @@
     "test:integration": "node tests/integration-test.js",
     "test:db-connection": "node tests/database/test_db_connection.js",
     "test:assembly": "cross-env NODE_ENV=development jest tests/assembly --detectOpenHandles",
-
     "create:docs": "node scripts/setup_hugo_docs.js",
     "create:code": "node scripts/export-source-code.js",
-
     "reset:db": "node database/resetDatabase.js",
     "reset:db:dev": "cross-env NODE_ENV=development npm run reset:db",
     "reset:db:staging": "cross-env NODE_ENV=staging npm run reset:db",
     "reset:db:prod": "cross-env NODE_ENV=production npm run reset:db",
-
     "migrate": "knex migrate:latest",
     "migrate:dev": "knex migrate:latest --env development",
     "migrate:prod": "knex migrate:latest --env production",
     "migrate:status": "knex migrate:status",
     "migrate:rollback": "knex migrate:down",
-    
     "start": "concurrently \"npm run start:frontend\" \"npm run start:docs\" \"npm run start:all\"",
     "start:frontend": "cd frontend && npm run start",
     "start:docs": "node backend/services/docs-service/server.js",
@@ -98,13 +91,12 @@
     "start:assembly": "node backend/services/assembly-service/index.js",
     "start:job": "node backend/services/job-service/index.js",
     "start:auth": "node backend/services/auth-service/auth-service.js",
+    "start:subscription": "node backend/services/subscription-service/index.js",
     "test:s3": "node tests/storage/s3-test.js",
     "test:s3:voice": "node tests/storage/voice-s3-test.js",
-
     "deploy:auth:dev": "node deployment/scripts/update-auth0-settings.js development",
     "deploy:auth:staging": "node deployment/scripts/update-auth0-settings.js staging",
     "deploy:auth:prod": "node deployment/scripts/update-auth0-settings.js production",
-
     "build": "npm run build:app && npm run build:docs",
     "build:app": "cd frontend && npm run build",
     "build:docs": "cd docs-site && npm run build",
@@ -172,10 +164,11 @@
     "semiver": "^1.1.0",
     "sharp": "^0.33.5",
     "snowyflake": "^2.0.0",
+    "stripe": "^17.7.0",
     "tailwind-merge": "^2.5.5",
     "tough-cookie": "^4.1.4",
     "uuid": "^8.3.2",
-    "winston": "^3.14.2",
+    "winston": "^3.14.0",
     "ws": "^8.13.0",
     "zod": "^3.23.8",
     "zustand": "^5.0.2"

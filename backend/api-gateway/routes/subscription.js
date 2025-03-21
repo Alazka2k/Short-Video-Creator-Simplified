@@ -165,16 +165,44 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
       logger.info('User context for forwarded request:', userContext);
     }
     
+    // Prepare the request data
+    const requestData = {
+      ...req.body,
+      ...additionalData
+    };
+    
+    // Security check for user ID handling
+    if (userContext.isApiUser) {
+      // For API users (admin), allow them to specify any user ID
+      // This permits admin users to work with any user's data for testing
+      logger.info('API user detected - using provided userId value for admin operations');
+      
+      // Ensure we have either userId or user_id in the request
+      if (!requestData.userId && !requestData.user_id && userContext.actualUserId) {
+        requestData.userId = userContext.actualUserId.toString();
+      }
+    } else {
+      // For regular users, enforce that they can only use their own user ID
+      // This prevents users from accessing or modifying other users' data
+      if (userContext.actualUserId) {
+        // Force the user ID to be the authenticated user's ID for security
+        requestData.userId = userContext.actualUserId.toString();
+        
+        // Log if we're overriding a different user ID for security
+        if (requestData.user_id && requestData.user_id !== userContext.actualUserId.toString()) {
+          logger.warn('Security: Overriding provided user_id with authenticated user ID', {
+            providedUserId: requestData.user_id,
+            authenticatedUserId: userContext.actualUserId
+          });
+        }
+      }
+    }
+    
     // Forward the request with authentication headers
     const response = await axios({
       method: req.method,
       url,
-      data: {
-        ...req.body,
-        ...additionalData,
-        // Include user information if available
-        ...(userContext.actualUserId && { userId: userContext.actualUserId.toString() })
-      },
+      data: requestData,
       headers: {
         'Content-Type': 'application/json',
         'x-service-auth': req.headers['x-service-auth'] || process.env.SERVICE_AUTH_TOKEN,
@@ -200,7 +228,27 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
     
     // Forward the error response
     if (error.response) {
-      res.status(error.response.status).json(error.response.data);
+      // Extract the error details from the subscription service response
+      const status = error.response.status || 500;
+      let errorData = error.response.data;
+      
+      // Format the error for consistent client-side handling
+      if (typeof errorData === 'string') {
+        errorData = { error: 'Subscription Service Error', details: errorData };
+      }
+      
+      // Check for specific error types based on message content
+      if (errorData.details && errorData.details.includes('already has an active subscription with this plan')) {
+        // Send a 409 Conflict for duplicate subscription attempts
+        return res.status(409).json({
+          error: 'Duplicate Subscription',
+          details: 'User already has an active subscription with this plan',
+          code: 'DUPLICATE_SUBSCRIPTION'
+        });
+      }
+      
+      // For other errors, forward the original error response
+      res.status(status).json(errorData);
     } else {
       res.status(500).json({ 
         error: 'Error communicating with subscription service',
@@ -243,8 +291,14 @@ router.get('/subscriptions/user/:userId',
       // Security check: Ensure users can only access their own data
       // unless they have special permissions
       const requestedUserId = req.params.userId;
-      const hasAdminPermission = req.user.permissions && 
-        req.user.permissions.includes('read:any_subscription');
+      
+      // Check if this is an API user or if token has read:subscription permission
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('read:subscription')) ||
+        tokenScopes.includes('read:subscription') ||
+        isApiUser;
         
       if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
         return res.status(403).json({
@@ -282,8 +336,13 @@ router.post('/subscriptions',
       
       // If userId not provided in request body, use the authenticated user's ID
       const requestBody = { ...req.body };
-      if (!requestBody.user_id && userContext.actualUserId) {
-        requestBody.user_id = userContext.actualUserId.toString();
+      if (!requestBody.userId && userContext.actualUserId) {
+        requestBody.userId = userContext.actualUserId.toString();
+      }
+      
+      // Remove any user_id property to avoid confusion - we only use userId consistently
+      if (requestBody.user_id) {
+        delete requestBody.user_id;
       }
       
       await forwardToSubscriptionService(req, res, '/subscriptions', requestBody);
@@ -291,7 +350,7 @@ router.post('/subscriptions',
       logger.error('Error creating subscription:', {
         error: error.message,
         stack: error.stack,
-        userId: req.body.user_id || 'unknown'
+        userId: req.body.userId || 'unknown'
       });
       
       res.status(500).json({
@@ -384,8 +443,14 @@ router.get('/tokens/balance/:userId',
       // Security check: Ensure users can only access their own data
       // unless they have special permissions
       const requestedUserId = req.params.userId;
-      const hasAdminPermission = req.user.permissions && 
-        req.user.permissions.includes('read:any_tokens');
+      
+      // Check if this is an API user or if token has read:tokens permission
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('read:tokens')) ||
+        tokenScopes.includes('read:tokens') ||
+        isApiUser;
         
       if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
         return res.status(403).json({
@@ -476,8 +541,14 @@ router.get('/transactions/user/:userId',
       // Security check: Ensure users can only access their own data
       // unless they have special permissions
       const requestedUserId = req.params.userId;
-      const hasAdminPermission = req.user.permissions && 
-        req.user.permissions.includes('read:any_transactions');
+      
+      // Check if this is an API user or if token has read:transactions permission
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('read:transactions')) ||
+        tokenScopes.includes('read:transactions') ||
+        isApiUser;
         
       if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
         return res.status(403).json({
@@ -534,8 +605,14 @@ router.get('/payments/user/:userId',
       // Security check: Ensure users can only access their own data
       // unless they have special permissions
       const requestedUserId = req.params.userId;
-      const hasAdminPermission = req.user.permissions && 
-        req.user.permissions.includes('read:any_payments');
+      
+      // Check if this is an API user or if token has read:payments permission
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('read:payments')) ||
+        tokenScopes.includes('read:payments') ||
+        isApiUser;
         
       if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
         return res.status(403).json({
@@ -574,8 +651,14 @@ router.get('/payments/summary/:userId',
       // Security check: Ensure users can only access their own data
       // unless they have special permissions
       const requestedUserId = req.params.userId;
-      const hasAdminPermission = req.user.permissions && 
-        req.user.permissions.includes('read:any_payments');
+      
+      // Check if this is an API user or if token has read:payments permission
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('read:payments')) ||
+        tokenScopes.includes('read:payments') ||
+        isApiUser;
         
       if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
         return res.status(403).json({

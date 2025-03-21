@@ -19,6 +19,7 @@ class TokenTransactionsDataAccess {
   constructor() {
     this.tableName = 'token_transactions';
     this.logger = logger;
+    this.knex = knex;
   }
 
   /**
@@ -73,24 +74,47 @@ class TokenTransactionsDataAccess {
   /**
    * Create a new token transaction
    * @param {Object} transactionData - The transaction data
+   * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object>} - The created token transaction
    */
-  async createTransaction(transactionData) {
+  async createTransaction(transactionData, trx) {
     try {
       this.logger.info('Creating new token transaction:', transactionData);
       
-      // Set timestamps
-      transactionData.created_at = knex.fn.now();
+      // Convert camelCase to snake_case for database and use generalized schema
+      const dbTransactionData = {
+        user_id: transactionData.userId,
+        transaction_type: transactionData.transactionType,
+        token_amount: transactionData.tokenAmount,
+        description: transactionData.description,
+        external_service_name: transactionData.externalServiceName,
+        metadata: transactionData.metadata ? JSON.stringify(transactionData.metadata) : null
+      };
       
-      const [newTransaction] = await knex(this.tableName)
-        .insert(transactionData)
+      // Add related entity information if provided
+      if (transactionData.relatedEntityType && transactionData.relatedEntityId) {
+        dbTransactionData.related_entity_type = transactionData.relatedEntityType;
+        dbTransactionData.related_entity_id = transactionData.relatedEntityId;
+      }
+      
+      // For allocations with payment information
+      if (transactionData.paymentId) {
+        dbTransactionData.payment_id = transactionData.paymentId;
+      }
+      
+      // Determine which knex instance to use
+      const query = trx ? trx(this.tableName) : knex(this.tableName);
+      
+      // Insert the transaction
+      const [newTransaction] = await query
+        .insert(dbTransactionData)
         .returning('*');
       
       this.logger.info('Token transaction created successfully:', { 
         transactionId: newTransaction.transaction_id,
         userId: newTransaction.user_id,
-        type: newTransaction.transaction_type,
-        amount: newTransaction.token_amount
+        transactionType: newTransaction.transaction_type,
+        tokenAmount: newTransaction.token_amount
       });
       
       return this.formatTransaction(newTransaction);
@@ -101,31 +125,38 @@ class TokenTransactionsDataAccess {
   }
   
   /**
-   * Allocate subscription tokens to a user
+   * Allocate tokens to a user from their subscription
    * @param {string} userId - The user ID
    * @param {number} subscriptionId - The subscription ID
-   * @param {number} tokenAmount - The token amount to allocate
-   * @param {string} description - Optional description of the allocation
+   * @param {number} tokenAmount - The amount of tokens to allocate
+   * @param {string} description - Description of the allocation
+   * @param {number|null} paymentId - Optional payment ID related to this allocation
+   * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object>} - The created token transaction
    */
-  async allocateSubscriptionTokens(userId, subscriptionId, tokenAmount, description = 'Monthly subscription token allocation') {
+  async allocateSubscriptionTokens(userId, subscriptionId, tokenAmount, description = 'Monthly subscription token allocation', paymentId = null, trx) {
     try {
-      this.logger.info('Allocating subscription tokens to user:', {
-        userId,
-        subscriptionId,
-        tokenAmount
+      this.logger.info('Allocating subscription tokens:', {
+        userId, subscriptionId, tokenAmount, 
+        paymentId: paymentId || 'none',
+        hasTransaction: !!trx,
       });
       
       const transactionData = {
-        user_id: userId,
-        transaction_type: 'subscription_allocation',
-        token_amount: tokenAmount,
-        related_entity_type: 'subscription',
-        related_entity_id: subscriptionId,
-        description: description
+        userId,
+        transactionType: 'allocation',
+        tokenAmount,
+        description,
+        relatedEntityType: 'subscription',
+        relatedEntityId: subscriptionId.toString()
       };
       
-      return this.createTransaction(transactionData);
+      // Add payment ID if provided
+      if (paymentId) {
+        transactionData.paymentId = paymentId;
+      }
+      
+      return this.createTransaction(transactionData, trx);
     } catch (error) {
       this.logger.error('Error allocating subscription tokens:', error);
       throw error;
@@ -133,30 +164,27 @@ class TokenTransactionsDataAccess {
   }
   
   /**
-   * Record token package purchase
+   * Record a token package purchase
    * @param {string} userId - The user ID
    * @param {number} packageId - The token package ID
-   * @param {number} tokenAmount - The token amount purchased
-   * @param {number} paymentId - The payment ID
+   * @param {number} tokenAmount - The amount of tokens purchased
+   * @param {number} paymentId - The ID of the payment record
    * @returns {Promise<Object>} - The created token transaction
    */
   async recordTokenPackagePurchase(userId, packageId, tokenAmount, paymentId) {
     try {
       this.logger.info('Recording token package purchase:', {
-        userId,
-        packageId,
-        tokenAmount,
-        paymentId
+        userId, packageId, tokenAmount, paymentId
       });
       
       const transactionData = {
-        user_id: userId,
-        transaction_type: 'purchase',
-        token_amount: tokenAmount,
-        related_entity_type: 'token_package',
-        related_entity_id: packageId,
-        payment_id: paymentId,
-        description: `Purchased ${tokenAmount} tokens`
+        userId,
+        transactionType: 'purchase',
+        tokenAmount,
+        description: `Token package purchase: ${tokenAmount} tokens`,
+        relatedEntityType: 'token_package',
+        relatedEntityId: packageId.toString(),
+        paymentId
       };
       
       return this.createTransaction(transactionData);
@@ -167,33 +195,43 @@ class TokenTransactionsDataAccess {
   }
   
   /**
-   * Record token usage
+   * Record token usage for a service
    * @param {string} userId - The user ID
-   * @param {number} jobId - The job ID
-   * @param {string} serviceName - The service name (e.g., 'llm', 'image', 'voice')
-   * @param {number} tokenAmount - The token amount used
-   * @param {Object} metadata - Optional metadata for the usage
+   * @param {string} jobId - The job ID
+   * @param {string} serviceName - The name of the service
+   * @param {number} tokenAmount - The amount of tokens used
+   * @param {Object} metadata - Additional metadata
    * @returns {Promise<Object>} - The created token transaction
    */
   async recordTokenUsage(userId, jobId, serviceName, tokenAmount, metadata = {}) {
     try {
       this.logger.info('Recording token usage:', {
-        userId,
-        jobId,
-        serviceName,
-        tokenAmount
+        userId, jobId, serviceName, tokenAmount
       });
       
+      // Ensure metadata is an object
+      const metadataObj = typeof metadata === 'object' ? metadata : {};
+      
       const transactionData = {
-        user_id: userId,
-        transaction_type: 'usage',
-        token_amount: tokenAmount,
-        related_entity_type: 'job',
-        related_entity_id: jobId,
-        service_name: serviceName,
-        metadata: JSON.stringify(metadata),
-        description: `Used ${tokenAmount} tokens for ${serviceName}`
+        userId,
+        transactionType: 'deduction',
+        tokenAmount: -Math.abs(tokenAmount), // Ensure it's negative for deductions
+        description: `Token usage for ${serviceName}`,
+        relatedEntityType: 'job',
+        relatedEntityId: jobId,
+        externalServiceName: serviceName,
+        metadata: {
+          ...metadataObj,
+          jobId,
+          service: serviceName
+        }
       };
+      
+      // If specific content ID is provided in metadata, use it
+      if (metadata.contentId) {
+        transactionData.relatedEntityType = serviceName;
+        transactionData.relatedEntityId = metadata.contentId;
+      }
       
       return this.createTransaction(transactionData);
     } catch (error) {
@@ -366,30 +404,43 @@ class TokenTransactionsDataAccess {
   }
   
   /**
-   * Format transaction data
-   * @param {Object} transaction - The transaction data from the database
-   * @returns {Object} - The formatted transaction data
+   * Format transaction data for API response
+   * @param {Object} transaction - The transaction from database
+   * @returns {Object} - Formatted transaction
    */
   formatTransaction(transaction) {
     if (!transaction) return null;
     
+    // Convert snake_case to camelCase for API
     const formattedTransaction = {
-      ...transaction
+      transactionId: transaction.transaction_id,
+      userId: transaction.user_id,
+      transactionType: transaction.transaction_type,
+      tokenAmount: transaction.token_amount,
+      description: transaction.description,
+      externalServiceName: transaction.external_service_name,
+      relatedEntityType: transaction.related_entity_type,
+      relatedEntityId: transaction.related_entity_id,
+      paymentId: transaction.payment_id,
+      transactionDate: transaction.transaction_date || transaction.created_at
     };
     
-    // Format dates
-    formattedTransaction.created_at = transaction.created_at ? new Date(transaction.created_at).toISOString() : null;
-    
-    // Parse metadata if it exists
+    // Parse metadata if it's a string, otherwise use as is
     if (transaction.metadata) {
       try {
-        formattedTransaction.metadata = JSON.parse(transaction.metadata);
+        // Check if metadata is already an object
+        if (typeof transaction.metadata === 'object' && transaction.metadata !== null) {
+          formattedTransaction.metadata = transaction.metadata;
+        } else {
+          // If it's a string, parse it
+          formattedTransaction.metadata = JSON.parse(transaction.metadata);
+        }
       } catch (error) {
-        this.logger.warn('Error parsing transaction metadata JSON:', { 
-          transactionId: transaction.transaction_id,
-          error: error.message 
-        });
+        this.logger.warn('Error parsing transaction metadata:', error);
+        formattedTransaction.metadata = {};
       }
+    } else {
+      formattedTransaction.metadata = {};
     }
     
     return formattedTransaction;

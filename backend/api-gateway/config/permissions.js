@@ -44,6 +44,11 @@ const SERVICE_PERMISSIONS = {
     upload: 'upload:media',
     manage: 'manage:media'
   },
+  subscription: {
+    create: 'create:subscription',
+    read: 'read:subscription',
+    manage: 'manage:subscription'
+  },
   user: {
     manage_projects: 'manage:projects',
     use_templates: 'use:templates',
@@ -103,6 +108,24 @@ const ENDPOINT_PERMISSIONS = {
   // Download Service Endpoints
   '/api/download': SERVICE_PERMISSIONS.storage.download,
   '/api/download/*': SERVICE_PERMISSIONS.storage.download,
+
+  // Subscription Service Endpoints
+  '/api/subscription': SERVICE_PERMISSIONS.subscription.create,
+  '/api/subscription': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/*': SERVICE_PERMISSIONS.subscription.create,
+  '/api/subscription/*': SERVICE_PERMISSIONS.subscription.read,
+
+  // Plan Management Endpoints 
+  '/api/subscription/plans': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/plans/*': SERVICE_PERMISSIONS.subscription.read,
+
+  // Current Subscription Endpoints
+  '/api/subscription/current': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/current/*': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/transactions': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/transactions/*': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/history': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/history/*': SERVICE_PERMISSIONS.subscription.read,
 
   // User Service Endpoints (for frontend access)
   '/api/user/profile': SERVICE_PERMISSIONS.user.api_access,

@@ -5,7 +5,7 @@ const config = require('../../shared/utils/config');
 
 function createServer(subscriptionService) {
   const app = express();
-  
+
   // Middleware
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -80,10 +80,43 @@ function createServer(subscriptionService) {
     try {
       const subscriptionData = req.body;
       const newSubscription = await subscriptionService.createSubscription(subscriptionData);
-      res.status(201).json(newSubscription);
+      res.status(201).json({
+        success: true,
+        data: newSubscription
+      });
     } catch (error) {
       logger.error('Error creating subscription:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      
+      // Check for specific error types
+      if (error.message && error.message.includes('already has an active subscription with this plan')) {
+        return res.status(409).json({
+          success: false,
+          error: 'Duplicate Subscription',
+          details: error.message,
+          code: 'DUPLICATE_SUBSCRIPTION'
+        });
+      }
+      
+      // Check for validation errors
+      if (error.message && (
+        error.message.includes('is required') ||
+        error.message.includes('Invalid') ||
+        error.message.includes('must be a valid')
+      )) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation Error',
+          details: error.message,
+          code: 'VALIDATION_ERROR'
+        });
+      }
+      
+      // For all other errors
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        details: error.message
+      });
     }
   });
 
@@ -91,16 +124,57 @@ function createServer(subscriptionService) {
     try {
       const { subscriptionId } = req.params;
       const subscriptionData = req.body;
+      
+      // First check if the subscription exists
+      const existingSubscription = await subscriptionService.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
+      
+      if (!existingSubscription) {
+        logger.error(`Subscription not found with ID: ${subscriptionId}`);
+        return res.status(404).json({ 
+          success: false,
+          error: 'Subscription not found',
+          message: `No subscription exists with ID: ${subscriptionId}`
+        });
+      }
+      
       const updatedSubscription = await subscriptionService.updateSubscription(subscriptionId, subscriptionData);
       
       if (!updatedSubscription) {
-        return res.status(404).json({ error: 'Subscription not found' });
+        return res.status(500).json({ 
+          success: false,
+          error: 'Failed to update subscription',
+          message: 'An error occurred while updating the subscription' 
+        });
       }
       
-      res.json(updatedSubscription);
+      res.json({
+        success: true,
+        data: updatedSubscription
+      });
     } catch (error) {
       logger.error('Error updating subscription:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      
+      // Handle validation errors specifically 
+      if (error.message && (
+          error.message.includes('Invalid startDate') ||
+          error.message.includes('Invalid endDate') ||
+          error.message.includes('Invalid currentPeriodStart') ||
+          error.message.includes('Invalid currentPeriodEnd') ||
+          error.message.includes('Invalid canceledAt') ||
+          error.message.includes('Invalid endedAt')
+      )) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid date format',
+          message: error.message
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error', 
+        message: error.message 
+      });
     }
   });
 

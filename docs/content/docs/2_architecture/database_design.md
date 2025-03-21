@@ -84,14 +84,14 @@ erDiagram
     }
 
     plans {
-        int plan_id PK
-        varchar plan_name
-        varchar billing_frequency
-        int monthly_token_allocation
-        decimal price
-        decimal monthly_price
-        decimal annual_price
-        boolean active
+        int plan_id PK  // 1 for free tier, 2 for basic (monthly paid), 3 for basic (yearly paid), 4 for creator (monthly paid), 5 for creator (yearly paid), 6 for professional (monthly paid), 7 for professional (yearly paid)
+        varchar plan_name // free tier, basic, creator, professional
+        varchar billing_frequency // monthly, yearly
+        int monthly_token_allocation // 300 for free tier, 2500 for basic, 6500 for creator, 10000 for professional
+        decimal price // 0 for free tier (plan_id 1), 24.99 for monthly basic (plan_id 2), 239.88 for yearly basic (plan_id 3), 39.99 for monthly creator (plan_id 4), 419.88 for yearly creator (plan_id 5), 59.99 for monthly professional (plan_id 6), 599.88 for yearly professional (plan_id 7)
+        decimal monthly_price // 0 for free tier (plan_id 1), 24.99 (plan_id 2), 19.99 (plan_id 3), 39.99 (plan_id 4), 34.99 (plan_id 5), 59.99 (plan_id 6), 49.99 (plan_id 7)
+        decimal annual_price // 0 for free tier (plan_id 1), 299.88 (plan_id 2), 239.88 (plan_id 3), 479.88 (plan_id 4), 419.88 (plan_id 5), 719.88 (plan_id 6), 599.88 (plan_id 7)
+        boolean active // true for active plans, false for inactive plans
         int max_scenes_per_job
         int max_jobs_per_month
         varchar video_quality
@@ -133,6 +133,7 @@ erDiagram
         varchar status
         timestamp created_at
         timestamp updated_at
+        varchar external_subscription_id
     }
 
     tokens {
@@ -148,17 +149,14 @@ erDiagram
         uuid job_id FK
         varchar transaction_type
         int amount
-        varchar service_type
-        int scene_id
-        uuid llm_id
-        uuid image_id
-        uuid voice_id
-        uuid animation_id
-        uuid video_id
-        uuid music_id
-        uuid assembly_id
         jsonb metadata
-        timestamp transaction_date
+        timestamp created_at
+        timestamp updated_at
+        varchar description
+        varchar external_service_name
+        varchar related_entity_type
+        varchar related_entity_id
+        int payment_id FK
     }
 
     payments {
@@ -169,7 +167,7 @@ erDiagram
         varchar payment_method
         varchar status
         timestamp payment_date
-        varchar payment_type
+        varchar payment_type // token_package, subscription_initial, subscription_renewal
         int plan_id FK
         int package_id FK
         int subscription_id FK
@@ -177,6 +175,7 @@ erDiagram
         date billing_period_start
         date billing_period_end
         jsonb payment_metadata
+        varchar payment_provider
     }
 
     llm_inputs {
