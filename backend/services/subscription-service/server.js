@@ -223,37 +223,234 @@ function createServer(subscriptionService) {
     }
   });
 
+  // Create a new token package
+  app.post('/token-packages', async (req, res) => {
+    try {
+      const packageData = req.body;
+      
+      // Validate required fields
+      if (!packageData.packageName) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'Package name is required'
+        });
+      }
+      
+      if (!packageData.tokenAllocation || typeof packageData.tokenAllocation !== 'number' || packageData.tokenAllocation <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'Token allocation must be a positive number'
+        });
+      }
+      
+      if (!packageData.price || typeof packageData.price !== 'number' || packageData.price < 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'Price must be a non-negative number'
+        });
+      }
+      
+      logger.info('Creating new token package:', packageData);
+      
+      const newPackage = await subscriptionService.dataAccess.tokenPackages.createTokenPackage(packageData);
+      
+      res.status(201).json({
+        success: true,
+        data: newPackage
+      });
+    } catch (error) {
+      logger.error('Error creating token package:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error', 
+        details: error.message 
+      });
+    }
+  });
+
   // Tokens and transactions endpoints
   app.get('/tokens/balance/:userId', async (req, res) => {
     try {
       const { userId } = req.params;
+      logger.info('Handling token balance request for user:', { userId });
+      
       const balance = await subscriptionService.getUserTokenBalance(userId);
-      res.json({ userId, balance });
+      
+      res.json({
+        success: true,
+        data: {
+          user_id: userId,
+          balance: balance.balance,
+          last_updated: balance.lastUpdated
+        }
+      });
     } catch (error) {
       logger.error('Error fetching token balance:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error', 
+        details: error.message 
+      });
     }
   });
 
   app.post('/tokens/allocate', async (req, res) => {
     try {
-      const { userId, subscriptionId, tokenAmount, description } = req.body;
-      const transaction = await subscriptionService.allocateSubscriptionTokens(userId, subscriptionId, tokenAmount, description);
-      res.status(201).json(transaction);
+      const { userId, tokenAmount, description, relatedEntityType, relatedEntityId, paymentId } = req.body;
+      
+      // Validate required fields
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'userId is required'
+        });
+      }
+      
+      if (!tokenAmount || typeof tokenAmount !== 'number' || tokenAmount <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'tokenAmount must be a positive number'
+        });
+      }
+      
+      // Validate entity relationships based on type
+      if (!relatedEntityType) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'relatedEntityType is required'
+        });
+      }
+      
+      // For subscription and token_package types, relatedEntityId is required
+      if ((relatedEntityType === 'subscription' || relatedEntityType === 'token_package') && !relatedEntityId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: `relatedEntityId is required for ${relatedEntityType} allocations`
+        });
+      }
+      
+      // For the 'other' type, relatedEntityId is optional
+      if (relatedEntityType !== 'subscription' && 
+          relatedEntityType !== 'token_package' && 
+          relatedEntityType !== 'other') {
+        return res.status(400).json({
+          success: false, 
+          error: 'Bad Request', 
+          details: 'relatedEntityType must be one of: subscription, token_package, other' 
+        });
+      }
+      
+      logger.info('Allocating tokens to user:', { 
+        userId, 
+        tokenAmount, 
+        relatedEntityType,
+        relatedEntityId: relatedEntityId || 'none',
+        description 
+      });
+      
+      // Use the appropriate service method
+      let transaction;
+      if (relatedEntityType === 'subscription') {
+        transaction = await subscriptionService.allocateSubscriptionTokens(
+          userId, 
+          relatedEntityId, 
+          tokenAmount, 
+          description
+        );
+      } else {
+        transaction = await subscriptionService.allocateTokens(
+          userId,
+          tokenAmount,
+          relatedEntityType,
+          relatedEntityId,
+          description,
+          paymentId
+        );
+      }
+      
+      res.status(201).json({
+        success: true,
+        data: transaction
+      });
     } catch (error) {
       logger.error('Error allocating tokens:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ 
+        success: false, 
+        error: 'Internal server error', 
+        details: error.message 
+      });
     }
   });
 
   app.post('/tokens/deduct', async (req, res) => {
     try {
-      const { userId, jobId, serviceName, tokenAmount, metadata } = req.body;
-      const transaction = await subscriptionService.recordTokenUsage(userId, jobId, serviceName, tokenAmount, metadata);
-      res.status(201).json(transaction);
+      const { 
+        userId, 
+        jobId, 
+        serviceName, 
+        tokenAmount, 
+        metadata,
+        description,
+        relatedEntityType,
+        relatedEntityId,
+        externalServiceName
+      } = req.body;
+      
+      // Validate required fields
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'userId is required'
+        });
+      }
+      
+      if (!tokenAmount || typeof tokenAmount !== 'number' || tokenAmount <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Bad Request',
+          details: 'tokenAmount must be a positive number'
+        });
+      }
+      
+      logger.info('Deducting tokens from user:', { 
+        userId, 
+        tokenAmount,
+        serviceName: serviceName || 'N/A',
+        relatedEntityType: relatedEntityType || 'N/A',
+        relatedEntityId: relatedEntityId || 'N/A' 
+      });
+      
+      const transaction = await subscriptionService.recordTokenUsage(
+        userId, 
+        jobId, 
+        serviceName, 
+        tokenAmount, 
+        metadata || {}, 
+        description,
+        relatedEntityType,
+        relatedEntityId,
+        externalServiceName
+      );
+      
+      res.status(201).json({
+        success: true,
+        data: transaction
+      });
     } catch (error) {
       logger.error('Error deducting tokens:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ 
+        success: false, 
+        error: 'Internal server error', 
+        details: error.message 
+      });
     }
   });
 

@@ -429,6 +429,46 @@ router.get('/token-packages/:packageId', serviceAuthMiddleware, async (req, res)
 });
 
 /**
+ * @route POST /api/subscription/token-packages
+ * @description Create a new token package
+ * @access Protected - requires manage:token_packages permission (admin only)
+ */
+router.post('/token-packages', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/token-packages'), 
+  async (req, res) => {
+    try {
+      // Only allow admin users to create token packages
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:token_packages')) ||
+        tokenScopes.includes('manage:token_packages') ||
+        isApiUser;
+        
+      if (!hasAdminPermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Only administrators can create token packages'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/token-packages');
+    } catch (error) {
+      logger.error('Error creating token package:', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      res.status(500).json({
+        error: 'Failed to create token package',
+        details: error.message
+      });
+    }
+});
+
+/**
  * @route GET /api/subscription/tokens/balance/:userId
  * @description Get token balance for a user
  * @access Protected - requires read:tokens permission

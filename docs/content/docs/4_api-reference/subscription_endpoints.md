@@ -162,8 +162,8 @@ Creates a new subscription for a user.
 **Free Tier Subscriptions**:
 - For free tier subscriptions (plan ID 1), payment-related fields (`paymentProvider`, `externalPaymentId`, `amount`) should be omitted
 - The system will create the subscription without generating any payment records
-- This works for both new user registrations and downgrades from paid plans
-- Token allocation will still occur if the free tier plan provides any tokens
+- Token allocation will automatically occur based on the free tier's monthly token allocation (usually 300 tokens)
+- Users will immediately have access to these tokens after the subscription is created
 
 **Endpoint**: `POST /subscriptions`
 
@@ -331,7 +331,7 @@ Cancels an active subscription.
 
 ## Token Management
 
-### 1. Get Token Balance
+### 1. ✅ Get Token Balance
 Retrieves the current token balance for a user.
 
 **Endpoint**: `GET /tokens/balance/:userId`
@@ -351,21 +351,57 @@ Retrieves the current token balance for a user.
 }
 ```
 
-### 2. Allocate Tokens
-Allocates tokens to a user, typically from subscription or manual administrative action.
+### 2. ✅ Allocate Tokens
+Allocates tokens to a user, with flexible options for tracking the source of the allocation.
 
 **Endpoint**: `POST /tokens/allocate`
 
-**Request Body**:
+**Required Fields**:
+- `userId`: User ID to allocate tokens to
+- `tokenAmount`: Amount of tokens to allocate (positive number)
+- `relatedEntityType`: Source of the tokens, must be one of:
+  - `"subscription"`: For subscription-based allocations
+  - `"token_package"`: For token package purchases
+  - `"other"`: For administrative or bonus allocations
+
+**Request Body Examples**:
+
+1. **Subscription allocation**:
 ```json
 {
   "userId": 30,
   "tokenAmount": 500,
   "description": "Monthly subscription allocation",
   "relatedEntityType": "subscription",
-  "relatedEntityId": "123"
+  "relatedEntityId": 123
 }
 ```
+
+2. **Token package allocation**:
+```json
+{
+  "userId": 30,
+  "tokenAmount": 2500,
+  "description": "Creator Pack purchase",
+  "relatedEntityType": "token_package",
+  "relatedEntityId": 2
+}
+```
+
+3. **Other allocation** (bonus, promotional, etc.):
+```json
+{
+  "userId": 30,
+  "tokenAmount": 100,
+  "description": "Welcome bonus tokens",
+  "relatedEntityType": "other"
+}
+```
+
+**Notes**:
+- For `"subscription"` and `"token_package"` types, `relatedEntityId` is required and should be the ID of the subscription or token package
+- For `"other"` type, `relatedEntityId` is optional
+- The `description` field is optional and will use a default message if not provided
 
 **Response Example**:
 ```json
@@ -380,14 +416,12 @@ Allocates tokens to a user, typically from subscription or manual administrative
     "relatedEntityType": "subscription",
     "relatedEntityId": "123",
     "transactionDate": "2023-11-05T12:30:45.000Z",
-    "metadata": {
-      "source": "subscription"
-    }
+    "metadata": {}
   }
 }
 ```
 
-### 3. Deduct Tokens
+### 3. ✅ Deduct Tokens
 Deducts tokens from a user's balance for service usage.
 
 **Endpoint**: `POST /tokens/deduct`
@@ -432,7 +466,7 @@ Deducts tokens from a user's balance for service usage.
 }
 ```
 
-### 4. Get Transaction History
+### 4. ✅ Get Transaction History
 Retrieves a user's token transaction history.
 
 **Endpoint**: `GET /transactions/user/:userId`
@@ -475,9 +509,7 @@ Retrieves a user's token transaction history.
         "relatedEntityType": "subscription",
         "relatedEntityId": "123",
         "transactionDate": "2023-11-05T12:30:45.000Z",
-        "metadata": {
-          "source": "subscription"
-        }
+        "metadata": {}
       },
       {
         "transactionId": 455,
@@ -500,7 +532,7 @@ Retrieves a user's token transaction history.
 }
 ```
 
-### 5. Get Token Costs
+### 5. ✅ Get Token Costs
 Retrieves token costs for different services.
 
 **Endpoint**: `GET /token-costs`
@@ -521,7 +553,7 @@ Retrieves token costs for different services.
 }
 ```
 
-### 6. Calculate Job Cost
+### 6. ✅ Calculate Job Cost
 Calculates token cost for a job with multiple services.
 
 **Endpoint**: `POST /calculate-job-cost`
@@ -562,7 +594,7 @@ Calculates token cost for a job with multiple services.
 
 ## Token Packages
 
-### 1. List All Token Packages
+### 1. ✅ List All Token Packages
 Retrieves all available token packages.
 
 **Endpoint**: `GET /token-packages`
@@ -603,7 +635,7 @@ Retrieves all available token packages.
 }
 ```
 
-### 2. Get Token Package Details
+### 2. ✅ Get Token Package Details
 Retrieves details for a specific token package.
 
 **Endpoint**: `GET /token-packages/:packageId`
@@ -630,7 +662,7 @@ Retrieves details for a specific token package.
 }
 ```
 
-### 3. Create Token Package
+### 3. ✅ Create Token Package
 Creates a new token package.
 
 **Endpoint**: `POST /token-packages`
@@ -671,7 +703,7 @@ Creates a new token package.
 
 ## Payment History
 
-### 1. Get Payment History
+### 1. ✅ Get Payment History
 Retrieves payment history for a user.
 
 **Endpoint**: `GET /payments/user/:userId`
@@ -797,14 +829,54 @@ Retrieves a summary of payments for a user.
 
 The following endpoints are currently in development:
 
-### 1. Check Token Availability (Pre-authorization)
+### 1. Buy Token Package
+Possibility to buy a new package of tokens for a user independently of a subscription.
+
+**Use Case**:
+- Primary use: Load up tokens additionally when the normal subscription tokens are running low.
+
+**Endpoint**: `POST /token-packages/buy`
+
+**Request Body**:
+```json
+{
+  "userId": 30,
+  "packageId": 2,
+  "paymentProvider": "stripe",
+  "externalPaymentId": "pi_3NvZN2Iuyt123456"
+}
+```
+
+### 2. Check Token Availability (Pre-authorization)
 **Endpoint**: `POST /tokens/check`
 
-### 2. Get Monthly Job Count
+### 3. Get Monthly Job Count
 **Endpoint**: `GET /jobs/count/:userId/monthly`
 
-### 3. Check Feature Availability
+### 4. Check Feature Availability
 **Endpoint**: `GET /features/available/:userId/:featureCode`
 
-### 4. Check Usage Limits
+### 5. Check Usage Limits
 **Endpoint**: `GET /limits/check/:userId/:limitType`
+
+### 6. List all Subscription Plans
+**Endpoint**: `GET /plans`
+
+### 7. Change Token Package
+**Endpoint**: `POST /token-packages/change`
+
+### 8. Activate / Deactivate Token Package
+**Endpoint**: `POST /token-packages/activate`
+
+### 9. Change Subscription Plan
+**Endpoint**: `POST /subscriptions/change`
+
+### 10. Activate/Deactivate Subscription
+**Endpoint**: `POST /subscriptions/activate`
+
+
+
+
+
+
+

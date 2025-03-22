@@ -7,6 +7,7 @@ const tokenTransactionDataAccess = require('./data/tokenTransactionsDataAccess')
 const paymentDataAccess = require('./data/paymentsDataAccess');
 const stripeService = require('./utils/stripeService');
 const tokenCalculator = require('./utils/tokenCalculator');
+const TokenBalanceDataAccess = require('./data/tokenBalanceDataAccess');
 
 class SubscriptionServiceInterface {
   constructor() {
@@ -15,7 +16,8 @@ class SubscriptionServiceInterface {
       subscriptions: subscriptionDataAccess,
       tokenPackages: tokenPackageDataAccess,
       tokenTransactions: tokenTransactionDataAccess,
-      payments: paymentDataAccess
+      payments: paymentDataAccess,
+      tokenBalance: null
     };
     this.tokenCalculator = tokenCalculator;
   }
@@ -27,6 +29,9 @@ class SubscriptionServiceInterface {
       // Initialize Stripe service
       await stripeService.initialize();
       this.stripeService = stripeService;
+
+      // Initialize token balance data access
+      this.dataAccess.tokenBalance = new TokenBalanceDataAccess();
 
       logger.info('Subscription Service initialized successfully');
     } catch (error) {
@@ -190,8 +195,8 @@ class SubscriptionServiceInterface {
         const newSubscription = await this.dataAccess.subscriptions.createSubscription(subscriptionData, trx);
         
         // Create payment record if payment data is provided
+        let paymentRecord = null;
         if (subscriptionData.paymentProvider && subscriptionData.externalPaymentId) {
-          let paymentRecord;
           try {
             // Get plan for correct billing period calculation
             const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
@@ -236,40 +241,40 @@ class SubscriptionServiceInterface {
             logger.error('Error creating payment record:', paymentError);
             // Continue with subscription creation even if payment record fails
           }
-          
-          // Allocate tokens based on the plan
-          try {
-            // Get plan details
-            const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
-            if (!plan) {
-              throw new Error(`Plan not found: ${subscriptionData.planId}`);
-            }
-            
-            // Allocate tokens based on monthly allocation
-            const tokenAmount = plan.monthly_token_allocation;
-            if (tokenAmount > 0) {
-              await this.dataAccess.tokenTransactions.allocateSubscriptionTokens(
-                subscriptionData.userId,
-                newSubscription.subscription_id,
-                tokenAmount,
-                `Initial token allocation for ${plan.plan_name} subscription`,
-                paymentRecord ? paymentRecord.payment_id : null,  // Pass payment ID if available
-                trx
-              );
-              
-              logger.info('Tokens allocated for new subscription', {
-                subscriptionId: newSubscription.subscription_id,
-                userId: subscriptionData.userId,
-                tokenAmount,
-                paymentId: paymentRecord ? paymentRecord.payment_id : null
-              });
-            }
-          } catch (tokenError) {
-            logger.error('Error allocating tokens for subscription:', tokenError);
-            // Roll back the transaction if token allocation fails
-            await trx.rollback();
-            throw new Error(`Failed to allocate tokens: ${tokenError.message}`);
+        }
+        
+        // Allocate tokens based on the plan - this happens for all subscriptions including free tier
+        try {
+          // Get plan details
+          const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
+          if (!plan) {
+            throw new Error(`Plan not found: ${subscriptionData.planId}`);
           }
+          
+          // Allocate tokens based on monthly allocation
+          const tokenAmount = plan.monthly_token_allocation;
+          if (tokenAmount > 0) {
+            await this.dataAccess.tokenTransactions.allocateSubscriptionTokens(
+              subscriptionData.userId,
+              newSubscription.subscription_id,
+              tokenAmount,
+              `Initial token allocation for ${plan.plan_name} subscription`,
+              paymentRecord ? paymentRecord.payment_id : null,  // Pass payment ID if available
+              trx
+            );
+            
+            logger.info('Tokens allocated for new subscription', {
+              subscriptionId: newSubscription.subscription_id,
+              userId: subscriptionData.userId,
+              tokenAmount,
+              paymentId: paymentRecord ? paymentRecord.payment_id : null
+            });
+          }
+        } catch (tokenError) {
+          logger.error('Error allocating tokens for subscription:', tokenError);
+          // Roll back the transaction if token allocation fails
+          await trx.rollback();
+          throw new Error(`Failed to allocate tokens: ${tokenError.message}`);
         }
         
         // Commit the transaction
@@ -393,9 +398,15 @@ class SubscriptionServiceInterface {
     }
   }
 
+  /**
+   * Get the token balance for a user
+   * @param {string} userId - The user ID
+   * @returns {Promise<Object>} - Token balance information
+   */
   async getUserTokenBalance(userId) {
     try {
-      return await this.dataAccess.tokenTransactions.getUserTokenBalance(userId);
+      // Use the tokenBalance data access instead of tokenTransactions
+      return await this.dataAccess.tokenBalance.getUserTokenBalance(userId);
     } catch (error) {
       logger.error('Error in getUserTokenBalance:', error);
       throw error;
@@ -417,61 +428,87 @@ class SubscriptionServiceInterface {
   }
 
   /**
+   * Allocate tokens to a user from any source
+   * @param {string} userId - User ID to allocate tokens to
+   * @param {number} tokenAmount - Amount of tokens to allocate
+   * @param {string} relatedEntityType - Source type (subscription, token_package, other)
+   * @param {number|string|null} relatedEntityId - ID of the related entity
+   * @param {string} description - Description of the allocation
+   * @param {number|null} paymentId - Optional payment ID if the allocation is tied to a payment
+   * @returns {Promise<Object>} The created token transaction
+   */
+  async allocateTokens(userId, tokenAmount, relatedEntityType, relatedEntityId, description, paymentId = null) {
+    try {
+      return await this.dataAccess.tokenTransactions.allocateTokens(
+        userId,
+        tokenAmount,
+        relatedEntityType,
+        relatedEntityId,
+        description,
+        paymentId
+      );
+    } catch (error) {
+      logger.error('Error in allocateTokens:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Record token usage for a service
    * @param {string} userId - The user ID
-   * @param {string} jobId - The job ID
+   * @param {string} jobId - The job ID (optional)
    * @param {string} serviceName - The service name
    * @param {number} tokenAmount - The token amount to deduct
    * @param {Object} metadata - Additional metadata about the usage
+   * @param {string} description - Description of the usage
+   * @param {string} relatedEntityType - The type of entity related to the usage
+   * @param {string} relatedEntityId - The ID of the related entity
+   * @param {string} externalServiceName - The name of the external service used
    * @returns {Promise<Object>} - The updated token balance
    */
-  async recordTokenUsage(userId, jobId, serviceName, tokenAmount, metadata = {}) {
+  async recordTokenUsage(userId, jobId, serviceName, tokenAmount, metadata = {}, description = null, relatedEntityType = null, relatedEntityId = null, externalServiceName = null) {
     try {
       // Ensure positive token amount
       const amount = Math.abs(tokenAmount);
       
       logger.info('Recording token usage:', {
-        userId, jobId, serviceName, amount, metadata
+        userId, 
+        jobId, 
+        serviceName, 
+        amount, 
+        metadata,
+        description,
+        relatedEntityType,
+        relatedEntityId,
+        externalServiceName
       });
       
       // Check if user has sufficient tokens
-      const tokenBalance = await this.dataAccess.tokenTransactions.getUserTokenBalance(userId);
+      const tokenBalance = await this.dataAccess.tokenBalance.getUserTokenBalance(userId);
       
       if (tokenBalance.balance < amount) {
         throw new Error(`Insufficient token balance. Required: ${amount}, Available: ${tokenBalance.balance}`);
       }
       
+      // Use provided entity type/id if available, otherwise default to job
+      const entityType = relatedEntityType || 'job';
+      const entityId = relatedEntityId || jobId;
+      const serviceDescription = description || `Used ${amount} tokens for ${serviceName}`;
+      
       // Record the usage transaction using generalized schema
-      const enhancedMetadata = {
-        ...metadata,
-        serviceType: serviceName,
-        jobId: jobId,
-        cost: amount
-      };
-      
-      // Determine content ID if available in metadata
-      let relatedEntityType = 'job';
-      let relatedEntityId = jobId;
-      
-      if (metadata.contentId) {
-        // If content ID is provided, use service name as the entity type
-        relatedEntityType = serviceName;
-        relatedEntityId = metadata.contentId;
-      }
-      
       await this.dataAccess.tokenTransactions.createTransaction({
         userId: userId,
         transactionType: 'deduction',
         tokenAmount: -amount, // Negative amount for deduction
-        description: `Used ${amount} tokens for ${serviceName}`,
-        externalServiceName: metadata.externalServiceName || serviceName,
-        relatedEntityType: relatedEntityType,
-        relatedEntityId: relatedEntityId,
-        metadata: enhancedMetadata
+        description: serviceDescription,
+        externalServiceName: externalServiceName || serviceName,
+        relatedEntityType: entityType,
+        relatedEntityId: entityId,
+        metadata: metadata // Preserve original metadata
       });
       
-      // Get updated token balance
-      return await this.dataAccess.tokenTransactions.getUserTokenBalance(userId);
+      // Get updated token balance - using the new method, not the deprecated one
+      return await this.dataAccess.tokenBalance.getUserTokenBalance(userId);
     } catch (error) {
       logger.error('Error recording token usage:', error);
       throw error;

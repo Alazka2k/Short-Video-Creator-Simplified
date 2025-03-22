@@ -156,8 +156,21 @@ class TokenPackagesDataAccess {
       dbPackageData.created_at = knex.fn.now();
       dbPackageData.updated_at = knex.fn.now();
       
+      // Get the highest existing package_id
+      const maxResult = await knex(this.tableName)
+        .max('package_id as max_id')
+        .first();
+      
+      // Set the next package_id (highest + 1)
+      const nextId = (maxResult.max_id || 0) + 1;
+      this.logger.info(`Using next package_id: ${nextId}`);
+      
+      // Insert with the explicit ID
       const [newPackage] = await knex(this.tableName)
-        .insert(dbPackageData)
+        .insert({
+          ...dbPackageData,
+          package_id: nextId
+        })
         .returning('*');
       
       this.logger.info('Token package created successfully:', { 

@@ -15,11 +15,15 @@ const config = require('../../../shared/utils/config');
 const path = require('path');
 const fs = require('fs').promises;
 
+// Import TokenBalanceDataAccess
+const TokenBalanceDataAccess = require('./tokenBalanceDataAccess');
+
 class TokenTransactionsDataAccess {
   constructor() {
     this.tableName = 'token_transactions';
     this.logger = logger;
     this.knex = knex;
+    this.tokenBalanceDA = new TokenBalanceDataAccess();
   }
 
   /**
@@ -117,6 +121,13 @@ class TokenTransactionsDataAccess {
         tokenAmount: newTransaction.token_amount
       });
       
+      // Update the token balance
+      await this.tokenBalanceDA.updateTokenBalance(
+        transactionData.userId,
+        transactionData.tokenAmount,
+        trx
+      );
+      
       return this.formatTransaction(newTransaction);
     } catch (error) {
       this.logger.error('Error creating token transaction:', error);
@@ -125,19 +136,35 @@ class TokenTransactionsDataAccess {
   }
   
   /**
-   * Allocate tokens to a user from their subscription
+   * Allocate tokens to a user from various sources
    * @param {string} userId - The user ID
-   * @param {number} subscriptionId - The subscription ID
    * @param {number} tokenAmount - The amount of tokens to allocate
+   * @param {string} relatedEntityType - The type of entity related to the allocation (subscription, token_package, other)
+   * @param {number|string|null} relatedEntityId - The ID of the related entity (optional for 'other' type)
    * @param {string} description - Description of the allocation
    * @param {number|null} paymentId - Optional payment ID related to this allocation
    * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object>} - The created token transaction
    */
-  async allocateSubscriptionTokens(userId, subscriptionId, tokenAmount, description = 'Monthly subscription token allocation', paymentId = null, trx) {
+  async allocateTokens(userId, tokenAmount, relatedEntityType, relatedEntityId = null, description = null, paymentId = null, trx) {
     try {
-      this.logger.info('Allocating subscription tokens:', {
-        userId, subscriptionId, tokenAmount, 
+      if (!userId || !tokenAmount || tokenAmount <= 0 || !relatedEntityType) {
+        throw new Error('Required parameters missing for token allocation');
+      }
+      
+      // For subscription and token_package, entityId is required
+      if ((relatedEntityType === 'subscription' || relatedEntityType === 'token_package') && !relatedEntityId) {
+        throw new Error(`${relatedEntityType} ID is required for this allocation type`);
+      }
+      
+      // Generate appropriate description if not provided
+      const allocationDescription = description || this.getDefaultDescription(relatedEntityType, relatedEntityId);
+      
+      this.logger.info('Allocating tokens:', {
+        userId, 
+        tokenAmount,
+        relatedEntityType,
+        relatedEntityId: relatedEntityId || 'none',
         paymentId: paymentId || 'none',
         hasTransaction: !!trx,
       });
@@ -146,9 +173,9 @@ class TokenTransactionsDataAccess {
         userId,
         transactionType: 'allocation',
         tokenAmount,
-        description,
-        relatedEntityType: 'subscription',
-        relatedEntityId: subscriptionId.toString()
+        description: allocationDescription,
+        relatedEntityType,
+        relatedEntityId: relatedEntityId ? String(relatedEntityId) : null
       };
       
       // Add payment ID if provided
@@ -157,6 +184,57 @@ class TokenTransactionsDataAccess {
       }
       
       return this.createTransaction(transactionData, trx);
+    } catch (error) {
+      this.logger.error('Error allocating tokens:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get default description for token allocations based on type
+   * @private
+   * @param {string} entityType - The entity type
+   * @param {number|string|null} entityId - The entity ID
+   * @returns {string} - The description
+   */
+  getDefaultDescription(entityType, entityId) {
+    switch (entityType) {
+      case 'subscription':
+        return `Subscription token allocation`;
+      case 'token_package':
+        return `Token package purchase`;
+      case 'other':
+        return `Administrative token allocation`;
+      default:
+        return `Token allocation`;
+    }
+  }
+  
+  /**
+   * Allocate tokens to a user from their subscription
+   * @param {string} userId - The user ID
+   * @param {number|string} subscriptionId - The subscription ID
+   * @param {number} tokenAmount - The amount of tokens to allocate
+   * @param {string} description - Description of the allocation
+   * @param {number|null} paymentId - Optional payment ID related to this allocation
+   * @param {Object} trx - Optional Knex transaction object
+   * @returns {Promise<Object>} - The created token transaction
+   */
+  async allocateSubscriptionTokens(userId, subscriptionId, tokenAmount, description = 'Monthly subscription token allocation', paymentId = null, trx) {
+    try {
+      if (!subscriptionId) {
+        throw new Error('Subscription ID is required for token allocation');
+      }
+      
+      return this.allocateTokens(
+        userId,
+        tokenAmount,
+        'subscription',
+        subscriptionId,
+        description,
+        paymentId,
+        trx
+      );
     } catch (error) {
       this.logger.error('Error allocating subscription tokens:', error);
       throw error;
@@ -179,7 +257,7 @@ class TokenTransactionsDataAccess {
       
       const transactionData = {
         userId,
-        transactionType: 'purchase',
+        transactionType: 'allocation',
         tokenAmount,
         description: `Token package purchase: ${tokenAmount} tokens`,
         relatedEntityType: 'token_package',
@@ -256,10 +334,12 @@ class TokenTransactionsDataAccess {
       });
       
       const transactionData = {
-        user_id: userId,
-        transaction_type: 'bonus',
-        token_amount: tokenAmount,
-        description: reason
+        userId,
+        transactionType: 'allocation',
+        tokenAmount,
+        description: reason || 'Bonus tokens',
+        relatedEntityType: 'bonus',
+        relatedEntityId: `bonus_${Date.now()}`
       };
       
       return this.createTransaction(transactionData);
@@ -273,36 +353,26 @@ class TokenTransactionsDataAccess {
    * Get user's token balance
    * @param {string} userId - The user ID
    * @returns {Promise<Object>} - Token balance information
+   * @deprecated Use TokenBalanceDataAccess.getUserTokenBalance instead
    */
   async getUserTokenBalance(userId) {
     try {
+      this.logger.warn('Deprecated method: getUserTokenBalance in TokenTransactionsDataAccess');
       this.logger.info('Calculating token balance for user:', { userId });
       
-      // Calculate token credits (additions)
-      const creditsResult = await knex(this.tableName)
+      // Calculate token balance from transactions using valid enum values
+      const result = await knex(this.tableName)
         .where('user_id', userId)
-        .whereIn('transaction_type', ['subscription_allocation', 'purchase', 'bonus', 'refund', 'adjustment'])
         .sum('token_amount as total')
         .first();
       
-      // Calculate token debits (usage)
-      const debitsResult = await knex(this.tableName)
-        .where('user_id', userId)
-        .whereIn('transaction_type', ['usage'])
-        .sum('token_amount as total')
-        .first();
+      const balance = parseInt(result?.total || 0);
       
-      const credits = parseInt(creditsResult.total) || 0;
-      const debits = parseInt(debitsResult.total) || 0;
-      const balance = credits - debits;
-      
-      this.logger.info('Token balance calculated for user:', { userId, credits, debits, balance });
+      this.logger.info('Token balance calculated for user:', { userId, balance });
       
       return {
         userId,
-        totalTokens: credits,
-        usedTokens: debits,
-        availableTokens: balance,
+        balance,
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {
@@ -329,7 +399,7 @@ class TokenTransactionsDataAccess {
       // Get usage by day
       const usageByDay = await knex(this.tableName)
         .where('user_id', userId)
-        .where('transaction_type', 'usage')
+        .where('transaction_type', 'deduction')
         .whereBetween('created_at', [start, end])
         .select(
           knex.raw('DATE(created_at) as date'),
@@ -341,19 +411,19 @@ class TokenTransactionsDataAccess {
       // Get usage by service
       const usageByService = await knex(this.tableName)
         .where('user_id', userId)
-        .where('transaction_type', 'usage')
+        .where('transaction_type', 'deduction')
         .whereBetween('created_at', [start, end])
         .select(
-          'service_name',
+          'external_service_name',
           knex.raw('SUM(token_amount) as total_usage')
         )
-        .groupBy('service_name')
+        .groupBy('external_service_name')
         .orderBy('total_usage', 'desc');
       
       // Get total usage
       const totalUsage = await knex(this.tableName)
         .where('user_id', userId)
-        .where('transaction_type', 'usage')
+        .where('transaction_type', 'deduction')
         .whereBetween('created_at', [start, end])
         .sum('token_amount as total')
         .first();
@@ -370,7 +440,7 @@ class TokenTransactionsDataAccess {
           usage: parseInt(item.total_usage) || 0
         })),
         usageByService: usageByService.map(item => ({
-          serviceName: item.service_name,
+          serviceName: item.external_service_name,
           usage: parseInt(item.total_usage) || 0
         }))
       };
@@ -392,7 +462,7 @@ class TokenTransactionsDataAccess {
       
       const allocations = await knex(this.tableName)
         .where('user_id', userId)
-        .whereIn('transaction_type', ['subscription_allocation', 'purchase', 'bonus'])
+        .where('transaction_type', 'allocation')
         .orderBy('created_at', 'desc')
         .limit(limit);
       

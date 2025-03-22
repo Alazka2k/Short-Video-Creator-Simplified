@@ -154,8 +154,8 @@ erDiagram
         timestamp updated_at
         varchar description
         varchar external_service_name
-        varchar related_entity_type
-        varchar related_entity_id
+        varchar related_entity_type // llm, image, voice, music, animation, video, assembly, subscription, token_package, other
+        varchar related_entity_id // llm_id, image_id, voice_id, music_id, animation_id, video_id, assembly_id, subscription_id
         int payment_id FK
     }
 

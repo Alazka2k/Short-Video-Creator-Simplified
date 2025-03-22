@@ -35,7 +35,7 @@ class PaymentsDataAccess {
       
       const payments = await knex(this.tableName)
         .where('user_id', userId)
-        .orderBy('created_at', 'desc')
+        .orderBy('payment_date', 'desc')
         .limit(limit)
         .offset(offset);
       
@@ -240,7 +240,7 @@ class PaymentsDataAccess {
         .where('payment_type', 'subscription_initial')
         .orWhere('payment_type', 'subscription_renewal')
         .where('subscription_id', subscriptionId)
-        .orderBy('created_at', 'desc');
+        .orderBy('payment_date', 'desc');
       
       return payments.map(payment => this.formatPayment(payment));
     } catch (error) {
@@ -278,7 +278,7 @@ class PaymentsDataAccess {
         .where('user_id', userId)
         .where('status', 'completed')
         .select(
-          knex.raw("DATE_TRUNC('month', created_at) as month"),
+          knex.raw("DATE_TRUNC('month', payment_date) as month"),
           knex.raw('SUM(amount) as total')
         )
         .groupBy('month')
