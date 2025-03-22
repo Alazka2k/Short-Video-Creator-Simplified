@@ -216,12 +216,27 @@ class SubscriptionServiceInterface {
               endDate.setFullYear(endDate.getFullYear() + 1);
             }
             
+            // Determine payment amount from plan if not explicitly provided
+            let paymentAmount = subscriptionData.amount;
+            if (paymentAmount === undefined || paymentAmount === null) {
+              if (plan.billing_frequency === 'yearly') {
+                paymentAmount = plan.annual_price || (plan.monthly_price * 12);
+              } else {
+                paymentAmount = plan.monthly_price;
+              }
+              logger.info('Using plan price for payment amount:', {
+                planId: plan.plan_id,
+                amount: paymentAmount,
+                billingFrequency: plan.billing_frequency
+              });
+            }
+            
             // Create the payment record with correct billing period
             paymentRecord = await this.dataAccess.payments.createSubscriptionPayment(
               subscriptionData.userId,
               newSubscription.subscription_id,
               subscriptionData.planId,
-              subscriptionData.amount || 0,
+              paymentAmount,
               subscriptionData.paymentProvider,
               subscriptionData.externalPaymentId,
               'subscription_initial',
@@ -311,11 +326,32 @@ class SubscriptionServiceInterface {
         subscriptionData.payment_provider && 
         subscriptionData.external_payment_id
       ) {
+        // Get the new plan to determine the correct payment amount
+        const newPlan = await this.dataAccess.plans.getPlanById(subscriptionData.plan_id);
+        if (!newPlan) {
+          throw new Error(`Plan not found: ${subscriptionData.plan_id}`);
+        }
+        
+        // Determine payment amount from plan if not explicitly provided
+        let paymentAmount = subscriptionData.amount;
+        if (paymentAmount === undefined || paymentAmount === null) {
+          if (newPlan.billing_frequency === 'yearly') {
+            paymentAmount = newPlan.annual_price || (newPlan.monthly_price * 12);
+          } else {
+            paymentAmount = newPlan.monthly_price;
+          }
+          logger.info('Using plan price for update payment amount:', {
+            planId: newPlan.plan_id,
+            amount: paymentAmount,
+            billingFrequency: newPlan.billing_frequency
+          });
+        }
+        
         await this.dataAccess.payments.createSubscriptionPayment(
           updatedSubscription.user_id,
           subscriptionId,
           subscriptionData.plan_id,
-          subscriptionData.amount || 0,
+          paymentAmount,
           subscriptionData.payment_provider,
           subscriptionData.external_payment_id,
           'subscription_renewal',
@@ -326,7 +362,6 @@ class SubscriptionServiceInterface {
         );
         
         // Allocate new plan tokens if applicable
-        const newPlan = await this.dataAccess.plans.getPlanById(subscriptionData.plan_id);
         if (newPlan && newPlan.monthly_token_allocation > 0) {
           await this.allocateSubscriptionTokens(
             updatedSubscription.user_id,
@@ -623,6 +658,296 @@ class SubscriptionServiceInterface {
       return await this.dataAccess.payments.getUserPaymentSummary(userId);
     } catch (error) {
       logger.error('Error in getUserPaymentSummary:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a payment record with flexible options for different use cases
+   * @param {Object} paymentData - Payment data object
+   * @param {string} paymentData.userId - User ID
+   * @param {string} paymentData.paymentType - Payment type (subscription_initial, subscription_renewal, token_package)
+   * @param {string} paymentData.status - Payment status (completed, open, failed)
+   * @param {string} paymentData.paymentProvider - Payment provider (stripe, paypal)
+   * @param {string} paymentData.externalPaymentId - External payment ID from provider
+   * @param {number} [paymentData.planId] - Plan ID (required for subscription payments)
+   * @param {number} [paymentData.subscriptionId] - Subscription ID (required for subscription payments)
+   * @param {number} [paymentData.packageId] - Package ID (required for token_package payments)
+   * @param {number} [paymentData.amount] - Optional explicit amount (if not provided, fetched from plan/package)
+   * @param {Object} [paymentData.billingPeriod] - Billing period for subscription payments
+   * @returns {Promise<Object>} - Created payment record
+   */
+  async createPaymentRecord(paymentData) {
+    try {
+      logger.info('Creating payment record:', paymentData);
+      
+      // Validate required fields
+      if (!paymentData.userId) {
+        throw new Error('userId is required');
+      }
+      
+      if (!paymentData.paymentType) {
+        throw new Error('paymentType is required');
+      }
+      
+      if (!paymentData.paymentProvider) {
+        throw new Error('paymentProvider is required');
+      }
+      
+      if (!paymentData.externalPaymentId) {
+        throw new Error('externalPaymentId is required');
+      }
+      
+      // Set default status if not provided
+      if (!paymentData.status) {
+        paymentData.status = 'completed';
+      }
+      
+      let amount = paymentData.amount;
+      
+      // For subscription payments, ensure plan and subscription IDs are present
+      if (paymentData.paymentType === 'subscription_initial' || paymentData.paymentType === 'subscription_renewal') {
+        if (!paymentData.subscriptionId) {
+          throw new Error('subscriptionId is required for subscription payments');
+        }
+        
+        // For renewal payments, we can fetch plan details from the subscription if planId is not provided
+        if (!paymentData.planId && paymentData.paymentType === 'subscription_renewal') {
+          // Fetch subscription details
+          const subscription = await this.dataAccess.subscriptions.getSubscriptionById(paymentData.subscriptionId);
+          
+          if (!subscription) {
+            throw new Error(`Subscription not found: ${paymentData.subscriptionId}`);
+          }
+          
+          // Validate that the subscription is active
+          if (subscription.status !== 'active') {
+            throw new Error(`Cannot create payment for inactive subscription: ${paymentData.subscriptionId}, status: ${subscription.status}`);
+          }
+          
+          // Check if there's already an open payment for this subscription
+          const existingPayments = await this.dataAccess.payments.getSubscriptionPayments(paymentData.subscriptionId);
+          const openPayment = existingPayments.find(payment => payment.status === 'open');
+          
+          if (openPayment) {
+            throw new Error(`An open payment already exists for subscription: ${paymentData.subscriptionId}, payment ID: ${openPayment.payment_id}`);
+          }
+          
+          // Use the plan ID from the subscription
+          paymentData.planId = subscription.plan_id;
+          logger.info(`Using plan ID ${paymentData.planId} from subscription ${paymentData.subscriptionId}`);
+        } else if (!paymentData.planId) {
+          throw new Error('planId is required for subscription payments');
+        }
+        
+        // If amount not provided, get it from the plan
+        if (!amount) {
+          const plan = await this.dataAccess.plans.getPlanById(paymentData.planId);
+          if (!plan) {
+            throw new Error(`Plan not found: ${paymentData.planId}`);
+          }
+          
+          // Use monthly or annual price based on plan frequency
+          if (plan.billing_frequency === 'yearly') {
+            amount = plan.annual_price || plan.monthly_price * 12;
+          } else {
+            amount = plan.monthly_price;
+          }
+        }
+        
+        // If billing period not provided for a renewal, calculate it based on the subscription
+        if (paymentData.paymentType === 'subscription_renewal' && !paymentData.billingPeriod) {
+          const subscription = await this.dataAccess.subscriptions.getSubscriptionById(paymentData.subscriptionId);
+          if (subscription) {
+            const plan = await this.dataAccess.plans.getPlanById(subscription.plan_id);
+            if (plan) {
+              // Calculate next billing period based on current period end date
+              const startDate = subscription.current_period_end || new Date();
+              let endDate;
+              
+              if (plan.billing_frequency === 'monthly') {
+                endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + 1);
+              } else if (plan.billing_frequency === 'yearly') {
+                endDate = new Date(startDate);
+                endDate.setFullYear(endDate.getFullYear() + 1);
+              }
+              
+              paymentData.billingPeriod = {
+                start: startDate,
+                end: endDate
+              };
+              
+              logger.info(`Calculated billing period for renewal:`, {
+                subscriptionId: subscription.subscription_id,
+                start: startDate,
+                end: endDate
+              });
+            }
+          }
+        }
+        
+        // Create subscription payment
+        return await this.dataAccess.payments.createSubscriptionPayment(
+          paymentData.userId,
+          paymentData.subscriptionId,
+          paymentData.planId,
+          amount,
+          paymentData.paymentProvider,
+          paymentData.externalPaymentId,
+          paymentData.paymentType,
+          paymentData.billingPeriod || {},
+          null, // No transaction
+          paymentData.status
+        );
+      } 
+      // For token package payments
+      else if (paymentData.paymentType === 'token_package') {
+        if (!paymentData.packageId) {
+          throw new Error('packageId is required for token package payments');
+        }
+        
+        // If amount not provided, get it from the package
+        if (!amount) {
+          const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(paymentData.packageId);
+          if (!tokenPackage) {
+            throw new Error(`Token package not found: ${paymentData.packageId}`);
+          }
+          amount = tokenPackage.price;
+        }
+        
+        // Create custom payment data
+        const customPaymentData = {
+          user_id: paymentData.userId,
+          amount,
+          payment_provider: paymentData.paymentProvider,
+          payment_method: paymentData.paymentMethod || 'credit_card',
+          currency: paymentData.currency || 'eur',
+          external_payment_id: paymentData.externalPaymentId,
+          payment_type: 'token_package',
+          status: paymentData.status,
+          package_id: paymentData.packageId
+        };
+        
+        // Create payment directly
+        return await this.dataAccess.payments.createPayment(customPaymentData);
+      }
+      
+      // For other payment types
+      throw new Error(`Unsupported payment type: ${paymentData.paymentType}`);
+    } catch (error) {
+      logger.error('Error in createPaymentRecord:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update payment status
+   * @param {number} paymentId - Payment ID to update
+   * @param {string} status - New status (completed, open, failed)
+   * @returns {Promise<Object|null>} - Updated payment or null if not found
+   */
+  async updatePaymentStatus(paymentId, status) {
+    try {
+      logger.info('Updating payment status:', { paymentId, status });
+      
+      // Validate status value
+      const validStatuses = ['completed', 'open', 'failed'];
+      if (!validStatuses.includes(status)) {
+        throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
+      }
+      
+      // Check if payment exists
+      const payment = await this.dataAccess.payments.getPaymentById(paymentId);
+      if (!payment) {
+        logger.warn('Payment not found for status update:', { paymentId });
+        return null;
+      }
+      
+      // Update the payment status
+      const updatedPayment = await this.dataAccess.payments.updatePayment(paymentId, { status });
+      
+      // If status changed to completed and it's a token package payment, allocate tokens
+      if (status === 'completed' && payment.status !== 'completed' && payment.payment_type === 'token_package') {
+        try {
+          // Get token package
+          const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(payment.package_id);
+          if (tokenPackage) {
+            // Allocate tokens
+            await this.dataAccess.tokenTransactions.recordTokenPackagePurchase(
+              payment.user_id,
+              payment.package_id,
+              tokenPackage.token_allocation,
+              payment.payment_id
+            );
+            
+            logger.info('Tokens allocated after payment completed:', {
+              userId: payment.user_id,
+              packageId: payment.package_id,
+              tokenAmount: tokenPackage.token_allocation,
+              paymentId: payment.payment_id
+            });
+          }
+        } catch (tokenError) {
+          logger.error('Error allocating tokens after payment completion:', tokenError);
+          // Continue despite error, to at least update the payment status
+        }
+      }
+      
+      return updatedPayment;
+    } catch (error) {
+      logger.error('Error in updatePaymentStatus:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Purchase a token package with integrated payment creation
+   * @param {string} userId - User ID
+   * @param {number} packageId - Token package ID
+   * @param {string} paymentProvider - Payment provider (e.g., 'stripe')
+   * @param {string} externalPaymentId - External payment ID from provider
+   * @returns {Promise<Object>} - Result containing payment, transaction, and package details
+   */
+  async purchaseTokenPackage(userId, packageId, paymentProvider, externalPaymentId) {
+    try {
+      logger.info('Processing token package purchase:', {
+        userId, packageId, paymentProvider, externalPaymentId
+      });
+      
+      // Get the token package
+      const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(packageId);
+      if (!tokenPackage) {
+        throw new Error(`Token package with ID ${packageId} not found`);
+      }
+      
+      // Create payment record
+      const payment = await this.createPaymentRecord({
+        userId,
+        paymentType: 'token_package',
+        paymentProvider,
+        externalPaymentId,
+        packageId,
+        amount: tokenPackage.price,
+        status: 'completed'
+      });
+      
+      // Allocate tokens
+      const transaction = await this.dataAccess.tokenTransactions.recordTokenPackagePurchase(
+        userId,
+        packageId,
+        tokenPackage.token_allocation,
+        payment.payment_id
+      );
+      
+      // Return complete result
+      return {
+        payment,
+        transaction,
+        tokenPackage
+      };
+    } catch (error) {
+      logger.error('Error in purchaseTokenPackage:', error);
       throw error;
     }
   }

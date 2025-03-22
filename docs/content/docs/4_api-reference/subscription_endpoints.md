@@ -699,7 +699,75 @@ Creates a new token package.
 }
 ```
 
----
+### 4. ✅ Buy Token Package
+Purchase a new package of tokens for a user independently of a subscription.
+
+**Endpoint**: `POST /token-packages/buy`
+
+**Use Case**:
+- Primary use: Purchase additional tokens when the regular subscription allocation is running low
+- One-time purchase that adds tokens to the user's balance immediately
+- Payment is processed immediately and tokens are allocated upon successful payment
+
+**Request Body**:
+```json
+{
+  "userId": 30,
+  "packageId": 2,
+  "paymentProvider": "stripe",
+  "externalPaymentId": "pi_3NvZN2Iuyt123456"
+}
+```
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "payment": {
+      "payment_id": 791,
+      "user_id": 30,
+      "amount": 24.99,
+      "payment_provider": "stripe",
+      "payment_method": "credit_card",
+      "currency": "eur",
+      "external_payment_id": "pi_3NvZN2Iuyt123456",
+      "payment_type": "token_package",
+      "status": "completed",
+      "package_id": 2,
+      "payment_date": "2023-11-20T12:00:00.000Z",
+      "created_at": "2023-11-20T12:00:00.000Z",
+      "updated_at": "2023-11-20T12:00:00.000Z"
+    },
+    "transaction": {
+      "transactionId": 456,
+      "userId": 30,
+      "transactionType": "allocation",
+      "tokenAmount": 2500,
+      "description": "Token package purchase: 2500 tokens",
+      "relatedEntityType": "token_package",
+      "relatedEntityId": "2",
+      "paymentId": 791,
+      "transactionDate": "2023-11-20T12:00:00.000Z"
+    },
+    "tokenPackage": {
+      "package_id": 2,
+      "package_name": "Creator Pack",
+      "token_allocation": 2500,
+      "price": 24.99,
+      "active": true
+    }
+  }
+}
+```
+
+**Notes**:
+- This endpoint must be called after the payment has been successfully processed by the payment provider
+- The `externalPaymentId` should be the ID returned by the payment provider (e.g., Stripe) upon successful payment
+- The endpoint will automatically:
+  1. Create a payment record in the database
+  2. Allocate the tokens from the package to the user's balance
+  3. Create a token transaction record tracking the allocation
 
 ## Payment History
 
@@ -755,20 +823,111 @@ Retrieves payment history for a user.
 }
 ```
 
-### 2. Create Payment Record
-Creates a new payment record.
+### 2. ✅ Create Payment Record
+Creates a new payment record for subscription renewals or token package purchases.
 
 **Endpoint**: `POST /payments`
+
+**Use Cases**:
+- Creation of subscription renewal payments with status "open" for future collection
+- Recording successful token package purchase payments
+
+**Request Body Examples**:  
+
+1. **Subscription Renewal Payment (Open Status)** - For creating a renewal payment that will be collected one day before billing period ends:
+```json
+{
+  "userId": 30,
+  "paymentProvider": "stripe",
+  "externalPaymentId": "pi_3NvZN2Iuyt123456",
+  "paymentType": "subscription_renewal",
+  "subscriptionId": 49,
+  "status": "open",
+  "planId": 2,
+  "billingPeriod": {
+    "start": "2023-12-01T00:00:00.000Z",
+    "end": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+2. **Token Package Purchase (Completed Status)** - For recording a token package purchase payment that was 
+already successfully processed:
+```json
+{
+  "userId": 30,
+  "paymentType": "token_package",
+  "packageId": 2,
+  "paymentProvider": "stripe",
+  "externalPaymentId": "pi_3NvZN2Iuyt123456",
+  "status": "completed"
+}
+```
+
+**Required Fields**:
+- `userId`: User ID (string/number)
+- `paymentProvider`: Payment provider name (string, e.g., "stripe", "paypal")
+- `externalPaymentId`: Payment ID from external provider (string)
+- `paymentType`: Type of payment (string, one of: "subscription_initial", "subscription_renewal", "token_package")
+
+**Conditional Fields**:
+- For subscription payments (`subscription_initial` or `subscription_renewal`):
+  - `subscriptionId`: Subscription ID (number, required)
+  - `planId`: Plan ID (number, required for `subscription_initial`, optional for `subscription_renewal`)
+  - `billingPeriod`: Billing period object (optional for `subscription_renewal`, will be calculated if not provided)
+
+- For token package payments (`token_package`):
+  - `packageId`: Token package ID (number, required)
+
+**Optional Fields**:
+- `status`: Payment status (string, one of: "completed", "open", "failed", defaults to "completed")
+- `amount`: Payment amount (number, if not provided, will be determined from plan or package)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": 125,
+    "user_id": 30,
+    "amount": 24.99,
+    "payment_provider": "stripe",
+    "payment_method": "credit_card",
+    "currency": "eur",
+    "external_payment_id": "pending_collection",
+    "payment_type": "subscription_renewal",
+    "plan_id": 2,
+    "subscription_id": 123,
+    "status": "open",
+    "payment_date": "2023-11-20T12:00:00.000Z",
+    "billing_period_start": "2023-12-01T00:00:00.000Z",
+    "billing_period_end": "2024-01-01T00:00:00.000Z",
+    "created_at": "2023-11-20T12:00:00.000Z",
+    "updated_at": "2023-11-20T12:00:00.000Z"
+  }
+}
+```
+
+**Notes**:
+- For `subscription_renewal` payments, the system can automatically determine the `planId` from the subscription if not provided
+- The subscription must be in `active` status to create a renewal payment
+- Only one `open` payment can exist per subscription at a time
+- For token package payments, the amount will be automatically determined from the package if not explicitly provided
+- For subscription payments, the amount will be determined from the plan pricing if not explicitly provided
+- When status is set to "open", it indicates a pending payment that should be collected in the future
+- This endpoint requires administrative access with the `manage:payments` permission
+
+### 3. ✅ Change Payment Status
+Updates the status of an existing payment.
+
+**Endpoint**: `POST /payments/:paymentId/status`
+
+**URL Parameters**:
+- `paymentId`: The numeric ID of the payment to update (integer)
 
 **Request Body**:
 ```json
 {
-  "userId": 30,
-  "amount": 24.99,
-  "paymentProvider": "stripe",
-  "externalPaymentId": "pi_3NvZN2Iuyt123456",
-  "paymentType": "token_package",
-  "packageId": 2,
   "status": "completed"
 }
 ```
@@ -783,17 +942,29 @@ Creates a new payment record.
     "amount": 24.99,
     "payment_provider": "stripe",
     "external_payment_id": "pi_3NvZN2Iuyt123456",
-    "payment_type": "token_package",
-    "package_id": 2,
+    "payment_type": "subscription_renewal",
+    "plan_id": 2,
+    "subscription_id": 123,
     "status": "completed",
     "payment_date": "2023-11-20T12:00:00.000Z",
-    "created_at": "2023-11-20T12:00:00.000Z",
-    "updated_at": "2023-11-20T12:00:00.000Z"
+    "billing_period_start": "2023-12-01T00:00:00.000Z",
+    "billing_period_end": "2024-01-01T00:00:00.000Z",
+    "created_at": "2023-11-20T12:30:00.000Z",
+    "updated_at": "2023-11-20T12:30:00.000Z"
   }
 }
 ```
 
-### 3. Get Payment Summary
+**Valid Status Values**:
+- `completed`: Payment has been successfully processed
+- `open`: Payment is awaiting collection/processing
+- `failed`: Payment was attempted but failed
+
+**Special Behavior**:
+- When a token package payment is changed from "open" to "completed", the system automatically allocates the corresponding tokens to the user
+- This endpoint is primarily used by automated batch jobs to update the status of payments after processing
+
+### 4. Get Payment Summary
 Retrieves a summary of payments for a user.
 
 **Endpoint**: `GET /payments/summary/:userId`
@@ -801,82 +972,82 @@ Retrieves a summary of payments for a user.
 **URL Parameters**:
 - `userId`: The numeric ID of the user (e.g., "30")
 
+**Use Case**:
+- Get a summary of payments for a user, including total spent, subscription total, token package total, current plan, last payment, and monthly spending breakdown
+
 **Response Example**:
 ```json
 {
-  "success": true,
-  "data": {
-    "totalSpent": 49.98,
-    "subscriptionTotal": 24.99,
-    "tokenPackageTotal": 24.99,
-    "currentPlan": {
-      "plan_id": 2,
-      "plan_name": "Basic Tier",
-      "monthly_price": 24.99,
-      "billing_frequency": "monthly"
-    },
-    "lastPayment": {
-      "payment_id": 789,
-      "amount": 24.99,
-      "payment_date": "2023-11-15T14:25:00.000Z",
-      "payment_type": "token_package"
+  "totalSpent": 579.75,
+  "subscriptionTotal": 514.77,
+  "tokenPackageTotal": 64.98,
+  "currentPlan": {
+    "plan_id": 3,
+    "plan_name": "Basic Tier",
+    "monthly_price": 19.99,
+    "billing_frequency": "yearly"
+  },
+  "lastPayment": {
+    "payment_id": 19,
+    "amount": 239.88,
+    "payment_date": "2025-03-22T12:50:09.614Z",
+    "payment_type": "subscription_initial"
+  },
+  "monthlySpending": [
+    {
+      "period_start": "2025-02-28T23:00:00.000Z",
+      "period_end": "2025-03-30T22:00:00.000Z",
+      "amount": 579.75
     }
+  ],
+  "paymentsByType": {
+    "subscription_initial": 12,
+    "subscription_renewal": 2,
+    "token_package": 2
   }
 }
 ```
+
+**Response Fields**:
+- `totalSpent`: Total amount spent across all payment types
+- `subscriptionTotal`: Total amount spent on subscription payments
+- `tokenPackageTotal`: Total amount spent on token package purchases
+- `currentPlan`: Details of the user's current active subscription plan (null if no active subscription)
+- `lastPayment`: Details of the user's most recent payment
+- `monthlySpending`: Breakdown of spending by month, with period start/end dates
+- `paymentsByType`: Count of payments by payment type
 
 ## Coming Soon Endpoints
 
 The following endpoints are currently in development:
 
-### 1. Buy Token Package
-Possibility to buy a new package of tokens for a user independently of a subscription.
-
-**Use Case**:
-- Primary use: Load up tokens additionally when the normal subscription tokens are running low.
-
-**Endpoint**: `POST /token-packages/buy`
-
-**Request Body**:
-```json
-{
-  "userId": 30,
-  "packageId": 2,
-  "paymentProvider": "stripe",
-  "externalPaymentId": "pi_3NvZN2Iuyt123456"
-}
-```
-
-### 2. Check Token Availability (Pre-authorization)
+### 1. Check Token Availability (Pre-authorization)
 **Endpoint**: `POST /tokens/check`
 
-### 3. Get Monthly Job Count
+**Use Case**:
+- Pre-authorization of token usage before processing a job or other API call that consumes tokens
+- Calculation of theoretical token usage (how many images, voices, etc. can be generated with the remaining tokens)
+
+### 2. Get Monthly Job Count
 **Endpoint**: `GET /jobs/count/:userId/monthly`
 
-### 4. Check Feature Availability
+### 3. Check Feature Availability
 **Endpoint**: `GET /features/available/:userId/:featureCode`
 
-### 5. Check Usage Limits
+### 4. Check Usage Limits
 **Endpoint**: `GET /limits/check/:userId/:limitType`
 
-### 6. List all Subscription Plans
+### 5. List all Subscription Plans
 **Endpoint**: `GET /plans`
 
-### 7. Change Token Package
+### 6. Change Token Package Details (Admin Only)
 **Endpoint**: `POST /token-packages/change`
 
-### 8. Activate / Deactivate Token Package
+### 7. Activate / Deactivate Token Package (Admin Only)
 **Endpoint**: `POST /token-packages/activate`
 
-### 9. Change Subscription Plan
+### 8. Change Subscription Plan Details (Admin Only)
 **Endpoint**: `POST /subscriptions/change`
 
-### 10. Activate/Deactivate Subscription
+### 9. Activate/Deactivate Subscription (Admin Only)
 **Endpoint**: `POST /subscriptions/activate`
-
-
-
-
-
-
-

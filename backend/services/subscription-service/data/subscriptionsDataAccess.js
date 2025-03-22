@@ -151,7 +151,7 @@ class SubscriptionsDataAccess {
           'p.monthly_token_allocation',
           'p.video_quality',
           'p.max_scenes_per_job',
-          'p.max_jobs_per_month',
+          'p.max_jobs_per_month', 
           'p.allowed_content_types',
           'p.recreation_content_types',
           'p.support_level'

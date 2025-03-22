@@ -723,6 +723,142 @@ router.get('/payments/summary/:userId',
 });
 
 /**
+ * @route POST /api/subscription/payments
+ * @description Create a new payment record (for renewal payments, token packages, etc.)
+ * @access Protected - requires manage:payments permission (administrative)
+ */
+router.post('/payments', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/payments:write'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only
+      // Only API users and admin users with specific permission can create payment records
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to create payment records'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/payments', req.body);
+    } catch (error) {
+      logger.error('Error creating payment record:', {
+        error: error.message,
+        stack: error.stack,
+        paymentData: req.body
+      });
+      
+      res.status(500).json({
+        error: 'Failed to create payment record',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route POST /api/subscription/payments/:paymentId/status
+ * @description Update payment status
+ * @access Protected - requires manage:payments permission (administrative)
+ */
+router.post('/payments/:paymentId/status', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/payments:write'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to mark renewal payments as completed after successful collection
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to update payment status'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, `/payments/${req.params.paymentId}/status`, req.body);
+    } catch (error) {
+      logger.error('Error updating payment status:', {
+        error: error.message,
+        stack: error.stack,
+        paymentId: req.params.paymentId,
+        status: req.body.status
+      });
+      
+      res.status(500).json({
+        error: 'Failed to update payment status',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route POST /api/subscription/token-packages/buy
+ * @description Purchase a token package
+ * @access Protected - requires purchase:tokens permission
+ */
+router.post('/token-packages/buy', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/tokens:purchase'), 
+  async (req, res) => {
+    try {
+      const userContext = await extractUserContext(req);
+      
+      // If userId not provided in request body, use the authenticated user's ID
+      const requestBody = { ...req.body };
+      if (!requestBody.userId && userContext.actualUserId) {
+        requestBody.userId = userContext.actualUserId.toString();
+      }
+      
+      // Security check: Ensure users can only make purchases for themselves 
+      // unless they have special permissions
+      const requestedUserId = requestBody.userId;
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+        
+      if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You can only purchase tokens for your own account'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/token-packages/buy', requestBody);
+    } catch (error) {
+      logger.error('Error purchasing token package:', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.body.userId || 'unknown',
+        packageId: req.body.packageId
+      });
+      
+      res.status(500).json({
+        error: 'Failed to purchase token package',
+        details: error.message
+      });
+    }
+});
+
+/**
  * @route POST /api/subscription/webhooks/stripe
  * @description Receive and process Stripe webhook events
  * @access Public - verification happens with Stripe signature

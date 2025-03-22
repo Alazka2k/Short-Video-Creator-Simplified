@@ -90,8 +90,13 @@ class PaymentsDataAccess {
         throw new Error('amount is required to create a payment');
       }
       
-      // Set timestamp
-      paymentData.payment_date = paymentData.payment_date || knex.fn.now();
+      // Only set payment_date for completed payments
+      if (paymentData.status === 'completed') {
+        paymentData.payment_date = paymentData.payment_date || knex.fn.now();
+      } else {
+        // For open or failed payments, set payment_date to null
+        paymentData.payment_date = null;
+      }
       
       // Determine which knex instance to use
       const query = trx ? trx(this.tableName) : knex(this.tableName);
@@ -104,7 +109,8 @@ class PaymentsDataAccess {
       this.logger.info('Payment record created successfully:', { 
         paymentId: newPayment.payment_id,
         userId: newPayment.user_id,
-        amount: newPayment.amount
+        amount: newPayment.amount,
+        status: newPayment.status
       });
       
       return this.formatPayment(newPayment);
@@ -125,12 +131,13 @@ class PaymentsDataAccess {
    * @param {string} paymentType - The payment type ('subscription_initial', 'subscription_renewal')
    * @param {Object} billingPeriod - The billing period { start, end }
    * @param {Object} trx - Optional Knex transaction object
+   * @param {string} status - The payment status ('completed', 'open', 'failed'), defaults to 'completed'
    * @returns {Promise<Object>} - The created payment record
    */
-  async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, externalPaymentId, paymentType = 'subscription_initial', billingPeriod = {}, trx) {
+  async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, externalPaymentId, paymentType = 'subscription_initial', billingPeriod = {}, trx, status = 'completed') {
     try {
       this.logger.info('Creating subscription payment record:', {
-        userId, subscriptionId, planId, amount
+        userId, subscriptionId, planId, amount, status
       });
       
       const paymentData = {
@@ -141,7 +148,7 @@ class PaymentsDataAccess {
         currency: 'eur',
         external_payment_id: externalPaymentId,
         payment_type: paymentType,
-        status: 'completed',
+        status: status,
         plan_id: planId,
         subscription_id: subscriptionId,
         billing_period_start: billingPeriod.start || null,
@@ -163,12 +170,13 @@ class PaymentsDataAccess {
    * @param {number} amount - The payment amount
    * @param {string} paymentProvider - The payment provider (e.g., 'stripe', 'paypal')
    * @param {string} externalPaymentId - The external payment ID from the provider
+   * @param {string} status - The payment status ('completed', 'open', 'failed'), defaults to 'completed'
    * @returns {Promise<Object>} - The created payment record
    */
-  async createTokenPackagePayment(userId, packageId, amount, paymentProvider, externalPaymentId) {
+  async createTokenPackagePayment(userId, packageId, amount, paymentProvider, externalPaymentId, status = 'completed') {
     try {
       this.logger.info('Creating token package payment record:', {
-        userId, packageId, amount
+        userId, packageId, amount, status
       });
       
       const paymentData = {
@@ -179,7 +187,7 @@ class PaymentsDataAccess {
         currency: 'eur',
         external_payment_id: externalPaymentId,
         payment_type: 'token_package',
-        status: 'completed',
+        status: status,
         package_id: packageId
       };
       
@@ -203,6 +211,12 @@ class PaymentsDataAccess {
       // Prevent updating the payment_id
       delete paymentData.payment_id;
       
+      // Handle payment_date update when status changes to completed
+      if (paymentData.status === 'completed') {
+        // Set payment_date to current time when completing a payment
+        paymentData.payment_date = knex.fn.now();
+      }
+      
       // Update the updated_at timestamp
       paymentData.updated_at = knex.fn.now();
       
@@ -218,7 +232,8 @@ class PaymentsDataAccess {
       
       this.logger.info('Payment record updated successfully:', { 
         paymentId,
-        status: updatedPayment.status
+        status: updatedPayment.status,
+        payment_date: updatedPayment.payment_date
       });
       return this.formatPayment(updatedPayment);
     } catch (error) {
@@ -265,6 +280,22 @@ class PaymentsDataAccess {
         .sum('amount as total')
         .first();
       
+      // Get subscription payments total
+      const subscriptionTotal = await knex(this.tableName)
+        .where('user_id', userId)
+        .where('status', 'completed')
+        .whereIn('payment_type', ['subscription_initial', 'subscription_renewal'])
+        .sum('amount as total')
+        .first();
+      
+      // Get token package payments total
+      const tokenPackageTotal = await knex(this.tableName)
+        .where('user_id', userId)
+        .where('status', 'completed')
+        .where('payment_type', 'token_package')
+        .sum('amount as total')
+        .first();
+      
       // Get payment counts by type
       const typesCount = await knex(this.tableName)
         .where('user_id', userId)
@@ -273,30 +304,76 @@ class PaymentsDataAccess {
         .count('payment_id as count')
         .groupBy('payment_type');
       
-      // Get payment counts by month
+      // Get monthly payments with period start and end
       const monthlyPayments = await knex(this.tableName)
         .where('user_id', userId)
         .where('status', 'completed')
         .select(
-          knex.raw("DATE_TRUNC('month', payment_date) as month"),
-          knex.raw('SUM(amount) as total')
+          knex.raw("DATE_TRUNC('month', payment_date) as period_start"),
+          knex.raw("(DATE_TRUNC('month', payment_date) + INTERVAL '1 month' - INTERVAL '1 day') as period_end"),
+          knex.raw('SUM(amount) as amount')
         )
-        .groupBy('month')
-        .orderBy('month', 'desc')
+        .groupBy('period_start', 'period_end')
+        .orderBy('period_start', 'desc')
         .limit(12);
       
-      // Create summary object
+      // Get last payment
+      const lastPayment = await knex(this.tableName)
+        .where('user_id', userId)
+        .where('status', 'completed')
+        .orderBy('payment_date', 'desc')
+        .first();
+      
+      // Get current active subscription
+      const activeSubscription = await knex('user_subscriptions')
+        .where('user_id', userId)
+        .where('status', 'active')
+        .first();
+      
+      // Get current plan details if user has an active subscription
+      let currentPlan = null;
+      if (activeSubscription) {
+        const plan = await knex('plans')
+          .where('plan_id', activeSubscription.plan_id)
+          .first();
+        
+        if (plan) {
+          currentPlan = {
+            plan_id: plan.plan_id,
+            plan_name: plan.plan_name,
+            monthly_price: parseFloat(plan.monthly_price || 0),
+            billing_frequency: plan.billing_frequency
+          };
+        }
+      }
+      
+      // Format the last payment for the response
+      let formattedLastPayment = null;
+      if (lastPayment) {
+        formattedLastPayment = {
+          payment_id: lastPayment.payment_id,
+          amount: parseFloat(lastPayment.amount || 0),
+          payment_date: lastPayment.payment_date ? new Date(lastPayment.payment_date).toISOString() : null,
+          payment_type: lastPayment.payment_type
+        };
+      }
+      
+      // Create summary object in the format from documentation
       const summary = {
-        userId,
-        totalSpent: parseFloat(totalResult.total) || 0,
+        totalSpent: parseFloat(totalResult?.total) || 0,
+        subscriptionTotal: parseFloat(subscriptionTotal?.total) || 0,
+        tokenPackageTotal: parseFloat(tokenPackageTotal?.total) || 0,
+        currentPlan,
+        lastPayment: formattedLastPayment,
+        monthlySpending: monthlyPayments.map(item => ({
+          period_start: item.period_start,
+          period_end: item.period_end,
+          amount: parseFloat(item.amount) || 0
+        })),
         paymentsByType: typesCount.reduce((acc, type) => {
           acc[type.payment_type] = parseInt(type.count);
           return acc;
-        }, {}),
-        monthlySpending: monthlyPayments.map(item => ({
-          month: item.month,
-          amount: parseFloat(item.total) || 0
-        }))
+        }, {})
       };
       
       return summary;

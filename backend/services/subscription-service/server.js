@@ -532,6 +532,71 @@ function createServer(subscriptionService) {
     }
   });
 
+  // Create a new payment record (for renewals or token packages)
+  app.post('/payments', async (req, res) => {
+    try {
+      const paymentData = req.body;
+      const newPayment = await subscriptionService.createPaymentRecord(paymentData);
+      res.status(201).json({
+        success: true,
+        data: newPayment
+      });
+    } catch (error) {
+      logger.error('Error creating payment record:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+  
+  // Update payment status
+  app.post('/payments/:paymentId/status', async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ error: 'Bad request', details: 'Status is required' });
+      }
+      
+      const updatedPayment = await subscriptionService.updatePaymentStatus(paymentId, status);
+      
+      if (!updatedPayment) {
+        return res.status(404).json({ error: 'Not found', details: 'Payment not found' });
+      }
+      
+      res.json({
+        success: true,
+        data: updatedPayment
+      });
+    } catch (error) {
+      logger.error('Error updating payment status:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+  
+  // Purchase token package (with integrated payment creation)
+  app.post('/token-packages/buy', async (req, res) => {
+    try {
+      const { userId, packageId, paymentProvider, externalPaymentId } = req.body;
+      
+      if (!userId || !packageId || !paymentProvider || !externalPaymentId) {
+        return res.status(400).json({ 
+          error: 'Bad request', 
+          details: 'Missing required fields: userId, packageId, paymentProvider, and externalPaymentId are required' 
+        });
+      }
+      
+      const result = await subscriptionService.purchaseTokenPackage(userId, packageId, paymentProvider, externalPaymentId);
+      
+      res.status(201).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      logger.error('Error purchasing token package:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
   // Stripe webhook handler
   app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
     try {
