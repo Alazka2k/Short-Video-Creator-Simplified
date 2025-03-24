@@ -17,6 +17,15 @@ Retrieves all available subscription plans.
 
 **Parameters**:
 - `includeInactive` (optional, query): Set to `true` to include inactive plans. Default is `false`.
+- `sortBy` (optional, query): Field to sort by. Valid values: `plan_id`, `plan_name`, `monthly_price`, `price`, `created_at`, `billing_frequency`. Default is `monthly_price`.
+- `sortOrder` (optional, query): Sort order. Valid values: `asc` or `desc`. Default is `asc`.
+- `billingFrequency` (optional, query): Filter plans by billing frequency. Valid values: `monthly` or `yearly`.
+
+**Example Requests**:
+- `GET /plans` - Returns all active plans sorted by monthly_price ascending (default)
+- `GET /plans?sortBy=plan_id&sortOrder=desc` - Returns all active plans sorted by plan_id descending
+- `GET /plans?billingFrequency=monthly&sortBy=plan_name` - Returns monthly plans sorted by plan name ascending
+
 
 **Response Example**:
 ```json
@@ -113,6 +122,11 @@ Retrieves the active subscription for a user.
 
 **URL Parameters**:
 - `userId`: The numeric ID of the user (e.g., "30")
+- `status`: (optional, query): The status of the subscription to filter by. Valid values: `active`, `cancelled`, `expired`.
+
+**Example Requests**:
+- `GET /subscriptions/user/30` - Returns the active subscription for user 30
+- `GET /subscriptions/user/30?status=active` - Returns the active subscription for user 30
 
 **Response Example**:
 ```json
@@ -125,25 +139,35 @@ Retrieves the active subscription for a user.
     "status": "active",
     "start_date": "2023-11-01T00:00:00.000Z",
     "end_date": "2023-12-01T00:00:00.000Z",
-    "current_period_start": "2023-11-01T00:00:00.000Z",
-    "current_period_end": "2023-12-01T00:00:00.000Z",
-    "canceled_at": null,
-    "ended_at": null,
-    "external_subscription_id": "sub_stripe123",
-    "created_at": "2023-11-01T12:00:00.000Z",
-    "updated_at": "2023-11-01T12:00:00.000Z",
-    "plan_name": "Basic Tier",
-    "billing_frequency": "monthly",
-    "monthly_price": 24.99,
-    "annual_price": 299.88,
-    "monthly_token_allocation": 2500,
-    "video_quality": "540p",
-    "max_scenes_per_job": 13,
-    "max_jobs_per_month": 45,
-    "allowed_content_types": ["image", "voice", "animation", "video", "music"],
-    "recreation_content_types": [],
-    "support_level": "community"
+    "auto_renew": true,
+    "external_subscription_id": "sub_1234567890",
+    "updated_at": "2023-11-01T00:00:00.000Z",
+    "created_at": "2023-11-01T00:00:00.000Z",
+    "plan_details": {
+      "plan_name": "Pro",
+      "billing_frequency": "monthly",
+      "monthly_price": 29.99,
+      "annual_price": 299.99,
+      "monthly_token_allocation": 2000,
+      "video_quality": "hd",
+      "max_scenes_per_job": 10,
+      "max_jobs_per_month": 20,
+      "allowed_content_types": ["image", "voice", "animation", "video", "music"],
+      "recreation_enabled": true,
+      "has_watermark": false,
+      "script_settings_enabled": true,
+      "support_level": "priority_12h"
+    }
   }
+}
+```
+
+If the user has no active subscription, the response will be:
+
+```json
+{
+  "success": true,
+  "data": null
 }
 ```
 
@@ -324,6 +348,81 @@ Cancels an active subscription.
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-20T12:00:00.000Z"
   }
+}
+```
+
+### 5. ✅ Renew Subscription
+Renews a subscription's token allocation period and allocates fresh tokens.
+
+**Endpoint**: `POST /subscriptions/user/:userId/renew`
+
+**URL Parameters**:
+- `userId`: The numeric ID of the user (e.g., 30)
+
+**Request Body**:
+```json
+{
+  "forceRenew": false
+}
+```
+
+**Notes**:
+- By default, renewal is only allowed when the current period has ended (current_period_end date reached)
+- Set `forceRenew` to `true` to force renewal even if the current period hasn't ended yet (admin use)
+- The endpoint updates the subscription's `current_period_start` and `current_period_end` dates
+- It also allocates fresh tokens according to the subscription plan's configuration
+- Token allocation always uses the plan's `monthly_token_allocation` value, even for yearly plans
+- This endpoint is designed for both manual renewal and use by automated batch jobs
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "subscription": {
+      "subscription_id": 123,
+      "user_id": 30,
+      "plan_id": 2,
+      "status": "active",
+      "start_date": "2023-11-01T00:00:00.000Z",
+      "end_date": "2024-11-01T00:00:00.000Z",
+      "current_period_start": "2023-12-01T00:00:00.000Z",
+      "current_period_end": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2023-12-01T00:00:00.000Z"
+    },
+    "tokenAllocation": {
+      "transactionId": 458,
+      "userId": 30,
+      "transactionType": "allocation",
+      "tokenAmount": 2500,
+      "description": "Renewal token allocation for Basic Tier subscription",
+      "transactionDate": "2023-12-01T00:00:00.000Z"
+    },
+    "newPeriod": {
+      "start": "2023-12-01T00:00:00.000Z",
+      "end": "2024-01-01T00:00:00.000Z"
+    }
+  }
+}
+```
+
+**Error Responses**:
+
+1. When trying to renew too early:
+```json
+{
+  "success": false,
+  "error": "Bad Request",
+  "message": "Subscription period has not ended yet. Current period ends on 2023-12-01T00:00:00.000Z (15 days remaining)"
+}
+```
+
+2. When user has no active subscription:
+```json
+{
+  "success": false,
+  "error": "Bad Request",
+  "message": "No active subscription found for user 30"
 }
 ```
 
@@ -964,7 +1063,7 @@ Updates the status of an existing payment.
 - When a token package payment is changed from "open" to "completed", the system automatically allocates the corresponding tokens to the user
 - This endpoint is primarily used by automated batch jobs to update the status of payments after processing
 
-### 4. Get Payment Summary
+### 4. ✅ Get Payment Summary
 Retrieves a summary of payments for a user.
 
 **Endpoint**: `GET /payments/summary/:userId`
@@ -1021,33 +1120,42 @@ Retrieves a summary of payments for a user.
 
 The following endpoints are currently in development:
 
-### 1. Check Token Availability (Pre-authorization)
+### 1. Get Count for token renewal and payment renewal
+**Endpoint**: `GET /subscriptions/count/:userId`
+
+**Use Case**:
+- Get information about how often the customer had token renewal and payment renewal
+- Total calculation of tokens and payment for the entire subscription
+- Need to be checked: We create a new subscription for upgrade or downgrades or cancellations -> How to handle this? Or only for current active subscription?
+
+### 2. Check Token Availability (Pre-authorization)
 **Endpoint**: `POST /tokens/check`
 
 **Use Case**:
 - Pre-authorization of token usage before processing a job or other API call that consumes tokens
 - Calculation of theoretical token usage (how many images, voices, etc. can be generated with the remaining tokens)
 
-### 2. Get Monthly Job Count
-**Endpoint**: `GET /jobs/count/:userId/monthly`
+### 3. Get Monthly Job Count (to check how many jobs user executed in the current period)
+**Endpoint**: `GET /jobs/count/:userId`
 
-### 3. Check Feature Availability
-**Endpoint**: `GET /features/available/:userId/:featureCode`
+**Use Case**: 
+- Get information about current period (of the subscription)
+- Get count of jobs executed by user in the current period
 
-### 4. Check Usage Limits
-**Endpoint**: `GET /limits/check/:userId/:limitType`
+### 4. Check Feature Availability
+**Endpoint**: `GET /features/available/:userId`
 
-### 5. List all Subscription Plans
-**Endpoint**: `GET /plans`
+**Use Case**:
+- To compare the users selected plan with the available features
 
-### 6. Change Token Package Details (Admin Only)
+### 5. Change Token Package Details (Admin Only)
 **Endpoint**: `POST /token-packages/change`
 
-### 7. Activate / Deactivate Token Package (Admin Only)
+### 6. Activate / Deactivate Token Package (Admin Only)
 **Endpoint**: `POST /token-packages/activate`
 
-### 8. Change Subscription Plan Details (Admin Only)
+### 7. Change Subscription Plan Details (Admin Only)
 **Endpoint**: `POST /subscriptions/change`
 
-### 9. Activate/Deactivate Subscription (Admin Only)
+### 8. Activate/Deactivate Subscription (Admin Only)
 **Endpoint**: `POST /subscriptions/activate`

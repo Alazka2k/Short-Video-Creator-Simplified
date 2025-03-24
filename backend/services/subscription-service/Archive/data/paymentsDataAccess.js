@@ -129,7 +129,7 @@ class PaymentsDataAccess {
    * @param {string} paymentProvider - The payment provider (e.g., 'stripe', 'paypal')
    * @param {string} externalPaymentId - The external payment ID from the provider
    * @param {string} paymentType - The payment type ('subscription_initial', 'subscription_renewal')
-   * @param {Object} billingPeriod - The billing period { billing_period_start, billing_period_end } or { start, end }
+   * @param {Object} billingPeriod - The billing period { start, end }
    * @param {Object} trx - Optional Knex transaction object
    * @param {string} status - The payment status ('completed', 'open', 'failed'), defaults to 'completed'
    * @returns {Promise<Object>} - The created payment record
@@ -137,17 +137,7 @@ class PaymentsDataAccess {
   async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, externalPaymentId, paymentType = 'subscription_initial', billingPeriod = {}, trx, status = 'completed') {
     try {
       this.logger.info('Creating subscription payment record:', {
-        userId, subscriptionId, planId, amount, status, billingPeriod
-      });
-      
-      // Map the billing period values, supporting both formats to ensure backward compatibility
-      const billing_period_start = billingPeriod.billing_period_start || billingPeriod.start || null;
-      const billing_period_end = billingPeriod.billing_period_end || billingPeriod.end || null;
-      
-      // Log the actual billing period values being used
-      this.logger.info('Using billing period values:', {
-        billing_period_start,
-        billing_period_end
+        userId, subscriptionId, planId, amount, status
       });
       
       const paymentData = {
@@ -161,8 +151,8 @@ class PaymentsDataAccess {
         status: status,
         plan_id: planId,
         subscription_id: subscriptionId,
-        billing_period_start,
-        billing_period_end
+        billing_period_start: billingPeriod.start || null,
+        billing_period_end: billingPeriod.end || null
       };
       
       // Don't store redundant data in metadata

@@ -53,9 +53,9 @@ router.post('/assemble',
 
           if (userToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
+            const gatewayUrl = config.services.gateway.url;
+            logger.info('Verify Gateway URL:', gatewayUrl);
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
-            
             logger.info('Making profile request with user token:', {
               url: profileUrl,
               gatewayUrl,
@@ -267,9 +267,9 @@ router.get('/status/:assemblyId',
 
           if (userToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
+            const gatewayUrl = config.services.gateway.url;
+            logger.info('Verify Gateway URL:', gatewayUrl);
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
-            
             logger.info('Making profile request with user token:', {
               url: profileUrl,
               gatewayUrl,
@@ -458,7 +458,8 @@ router.get('/templates/:aspectRatio',
 
           if (userToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
+            const gatewayUrl = config.services.gateway.url;
+            logger.info('Verify Gateway URL:', gatewayUrl);
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
             
             logger.info('Making profile request with user token:', {

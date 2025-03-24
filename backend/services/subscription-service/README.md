@@ -1,47 +1,86 @@
 # Subscription Service
 
 ## Overview
-
-The Subscription Service manages billing, payments, subscriptions, and token management for the Short Video Creator application. It provides a comprehensive solution for handling user subscriptions, token allocations, usage tracking, and payment processing.
+The Subscription Service handles all subscription, payment, and token management operations. It provides APIs for managing user subscriptions, token allocations, payments, and other related functionalities.
 
 ## Architecture
 
-The service follows a layered architecture:
+### Updated Service Structure
+```
+subscription-service/
+├── controllers/              # API route controllers
+│   ├── planController.js      # Plan-related endpoints
+│   ├── subscriptionController.js  # Subscription-related endpoints
+│   ├── tokenController.js     # Token and transaction endpoints
+│   ├── paymentController.js   # Payment-related endpoints
+│   └── webhookController.js   # Webhook handlers
+├── services/                 # Business logic layer
+│   ├── subscriptionService.js # Main subscription business logic
+│   ├── tokenService.js        # Token allocation/deduction logic
+│   ├── paymentService.js      # Payment processing logic
+│   └── planService.js         # Plan management logic
+├── data/                     # Data access layer
+│   ├── paymentsDataAccess.js  # Payments table operations
+│   ├── plansDataAccess.js     # Plans table operations
+│   ├── subscriptionsDataAccess.js  # User subscriptions operations
+│   ├── tokenBalanceDataAccess.js   # Token balance operations
+│   ├── tokenPackagesDataAccess.js  # Token packages operations
+│   └── tokenTransactionsDataAccess.js  # Token transactions operations
+├── utils/                    # Utility functions
+│   ├── tokenCalculator.js     # Token calculation utilities
+│   └── stripeService.js       # Stripe payment integration
+├── middleware/               # Express middleware
+│   ├── validation.js          # Request validation middleware
+│   └── errorHandler.js        # Error handling middleware
+├── routes/                   # Express route definitions
+│   ├── planRoutes.js          # Plan routes
+│   ├── subscriptionRoutes.js  # Subscription routes
+│   ├── tokenRoutes.js         # Token routes
+│   ├── tokenPackageRoutes.js  # Token package routes
+│   ├── webhookRoutes.js       # Webhook routes
+│   └── paymentRoutes.js       # Payment routes
+├── index.js                  # Service entry point (much smaller now)
+└── server.js                 # Express server configuration (much smaller now)
+```
 
-1. **Service Interface Layer**: `SubscriptionServiceInterface` class that exposes methods to interact with the service
-2. **Data Access Layer**: Classes for interacting with the database tables
-3. **Utility Layer**: Helper classes for specific functionality like payment processing and token calculations
+## Service Modules
 
-## Components
+### Controllers
+Each controller handles a specific group of API endpoints and is responsible for:
+- Processing request parameters and body
+- Calling appropriate service methods
+- Formatting and returning responses
+- Error handling for its routes
 
-### Data Access Components
+### Services
+The service layer contains the business logic and:
+- Orchestrates operations across multiple data sources
+- Implements business rules and validations
+- Coordinates complex operations
 
-- `PlansDataAccess`: Manages subscription plans data
-- `SubscriptionsDataAccess`: Handles user subscription records
-- `TokenPackagesDataAccess`: Manages token packages available for purchase
-- `TokenTransactionsDataAccess`: Tracks token allocations and usage
-- `PaymentsDataAccess`: Records payment transactions
-
-### Service Integrations
-
-- `StripeService`: Handles payment processing via Stripe, including:
-  - One-time payments for token packages
-  - Subscription management
-  - Webhook handling for payment notifications
+### Data Access
+The data access layer is responsible for:
+- Raw database operations
+- Query construction and execution
+- Data formatting and transformation
 
 ### Utilities
+Utilities provide shared helper functions:
+- Token calculation for different service types
+- Payment provider integration (e.g., Stripe)
 
-- `TokenCalculator`: Calculates token costs for different services based on configuration
+### Middleware
+Common middleware used across routes:
+- Request validation
+- Error handling
+- Authentication/authorization
 
-## Database Schema
-
-The service interacts with the following tables:
-
-- `plans`: Subscription tiers, pricing, and features
-- `user_subscriptions`: User's active and historical subscriptions
-- `token_packages`: Available token packages for purchase
-- `token_transactions`: Record of token allocations and usage
-- `payments`: Payment records for subscriptions and token purchases
+### Routes
+Routes define the API endpoints and their corresponding controller methods:
+- Define the path and HTTP method for each endpoint
+- Handle request parameters and body
+- Call the appropriate controller method
+- Return the response from the controller
 
 ## API Endpoints
 
@@ -81,75 +120,24 @@ The service interacts with the following tables:
 
 - `POST /webhooks/stripe`: Receive payment events from Stripe
 
-## Usage Examples
+## Getting Started
 
-### Creating a New Subscription
+To start the service locally:
 
-```javascript
-// Request
-POST /subscriptions
-{
-  "user_id": "user123",
-  "plan_id": 2,
-  "billing_frequency": "monthly",
-  "payment_provider": "stripe",
-  "external_payment_id": "pi_123456789",
-  "amount": 24.99
-}
-
-// Response
-{
-  "subscription_id": "sub_abc123",
-  "user_id": "user123",
-  "plan_id": 2,
-  "status": "active",
-  "start_date": "2023-11-01T00:00:00.000Z",
-  "end_date": "2023-12-01T00:00:00.000Z",
-  "billing_frequency": "monthly",
-  "created_at": "2023-11-01T00:00:00.000Z",
-  "updated_at": "2023-11-01T00:00:00.000Z"
-}
+```bash
+cd backend/services/subscription-service
+npm install
+npm start
 ```
 
-### Tracking Token Usage
+For development with auto-reload:
 
-```javascript
-// Request
-POST /tokens/deduct
-{
-  "userId": "user123",
-  "jobId": "job456",
-  "serviceName": "image",
-  "tokenAmount": 50,
-  "metadata": {
-    "sceneCount": 5
-  }
-}
-
-// Response
-{
-  "transaction_id": "tr_xyz789",
-  "user_id": "user123",
-  "job_id": "job456",
-  "transaction_type": "deduction",
-  "amount": 50,
-  "service_type": "image",
-  "transaction_date": "2023-11-10T14:25:00.000Z"
-}
+```bash
+npm run dev
 ```
 
-## Configuration
+## Testing
 
-The service uses the following environment variables:
-
-- `SUBSCRIPTION_SERVICE_PORT`: Port to run the service on (default: 3010)
-- `NODE_ENV`: Environment (development, staging, production)
-- `STRIPE_API_KEY`: Stripe API key for payment processing
-- `STRIPE_WEBHOOK_SECRET`: Secret for verifying Stripe webhook events
-
-## Development
-
-To run the Subscription Service locally:
-
-1. Install dependencies: `npm install`
-2. Start the service: `NODE_ENV=development node backend/services/subscription-service/index.js` 
+```bash
+npm test
+``` 

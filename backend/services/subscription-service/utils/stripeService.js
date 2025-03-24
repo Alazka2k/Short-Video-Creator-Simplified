@@ -40,13 +40,13 @@ class StripeService {
       this.initialized = true;
       logger.info('Stripe service initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Stripe service:', error);
       // Initialize with a mock if in development mode
       if (process.env.NODE_ENV === 'development') {
-        logger.info('Setting up mock Stripe service for development');
+        logger.warn('Using mock Stripe service because: ' + error.message);
         this.setupMockStripe();
         this.initialized = true;
       } else {
+        logger.error('Failed to initialize Stripe service:', error);
         throw error;
       }
     }

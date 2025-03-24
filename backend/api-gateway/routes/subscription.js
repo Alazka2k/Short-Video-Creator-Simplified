@@ -53,7 +53,8 @@ async function extractUserContext(req) {
 
       if (userToken) {
         // Try to get user profile using the user token
-        const gatewayUrl = process.env[`${process.env.NODE_ENV?.toUpperCase()}_GATEWAY_SERVICE_PORT`] || 'http://localhost:3000';
+        const gatewayUrl = config.services.gateway.url;
+        logger.info('Verify Gateway URL:', gatewayUrl);
         const profileUrl = `${gatewayUrl}/api/auth/profile`;
         
         logger.info('Making profile request with user token:', {
@@ -317,6 +318,51 @@ router.get('/subscriptions/user/:userId',
       
       res.status(500).json({
         error: 'Failed to process subscription request',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route POST /api/subscription/subscriptions/:userId/renew
+ * @description Renew a subscription's token allocation period
+ * @access Protected - requires update:subscription permission
+ */
+router.post('/subscriptions/:userId/renew', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/subscriptions'), 
+  async (req, res) => {
+    try {
+      const userContext = await extractUserContext(req);
+      const requestedUserId = parseInt(req.params.userId);
+      
+      // Security check: regular users can only renew their own subscriptions
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('create:subscription')) ||
+        tokenScopes.includes('create:subscription') ||
+        isApiUser;
+        
+      if (!hasAdminPermission && userContext.actualUserId !== requestedUserId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You can only renew your own subscription'
+        });
+      }
+      
+      // Forward to the correct endpoint on the subscription service
+      // which expects '/subscriptions/user/:userId/renew'
+      await forwardToSubscriptionService(req, res, `/subscriptions/user/${req.params.userId}/renew`);
+    } catch (error) {
+      logger.error('Error renewing subscription:', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.params.userId
+      });
+      
+      res.status(500).json({
+        error: 'Failed to renew subscription',
         details: error.message
       });
     }

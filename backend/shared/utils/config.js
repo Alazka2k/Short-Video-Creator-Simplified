@@ -80,18 +80,52 @@ function loadEnvConfig() {
       webhookBaseUrl: process.env.STRIPE_WEBHOOK_BASE_URL
     },
     services: {
-      llm: { url: process.env.LLM_SERVICE_URL },
-      image: { url: process.env.IMAGE_SERVICE_URL },
-      voice: { url: process.env.VOICE_SERVICE_URL },
-      animation: { url: process.env.ANIMATION_SERVICE_URL },
-      video: { url: process.env.VIDEO_SERVICE_URL },
-      music: { url: process.env.MUSIC_SERVICE_URL },
-      assembly: { url: process.env.ASSEMBLY_SERVICE_URL },
-      job: { url: process.env.JOB_SERVICE_URL },
-      auth: { url: process.env.AUTH_SERVICE_URL },
-      subscription: { url: process.env.SUBSCRIPTION_SERVICE_URL },
-      docs: { url: process.env.DOCS_SERVICE_URL },
-      frontend: { url: process.env.FRONTEND_URL },
+      llm: { 
+        port: process.env.LLM_SERVICE_PORT,
+        url: process.env.LLM_SERVICE_URL },
+      image: { 
+        port: process.env.IMAGE_SERVICE_PORT,
+        url: process.env.IMAGE_SERVICE_URL 
+      },
+      voice: { 
+        port: process.env.VOICE_SERVICE_PORT,
+        url: process.env.VOICE_SERVICE_URL 
+      },
+      animation: { 
+        port: process.env.ANIMATION_SERVICE_PORT,
+        url: process.env.ANIMATION_SERVICE_URL },
+      video: { 
+        port: process.env.VIDEO_SERVICE_PORT,
+        url: process.env.VIDEO_SERVICE_URL 
+      },
+      music: { 
+        port: process.env.MUSIC_SERVICE_PORT,
+        url: process.env.MUSIC_SERVICE_URL 
+      },
+      assembly: { 
+        port: process.env.ASSEMBLY_SERVICE_PORT,
+        url: process.env.ASSEMBLY_SERVICE_URL 
+      },
+      job: { 
+        port: process.env.JOB_SERVICE_PORT,
+        url: process.env.JOB_SERVICE_URL 
+      },
+      auth: { 
+        port: process.env.AUTH_SERVICE_PORT,
+        url: process.env.AUTH_SERVICE_URL 
+      },
+      subscription: { 
+        port: process.env.SUBSCRIPTION_SERVICE_PORT,
+        url: process.env.SUBSCRIPTION_SERVICE_URL 
+      },
+      frontend: { 
+        port: process.env.FRONTEND_PORT,
+        url: process.env.FRONTEND_URL 
+      },
+      docs: { 
+        port: process.env.DOCS_SERVICE_PORT,
+        url: process.env.DOCS_SERVICE_URL 
+      },
       storage: {
         type: 'aws',
         config: {

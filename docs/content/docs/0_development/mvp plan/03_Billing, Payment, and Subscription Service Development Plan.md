@@ -57,8 +57,13 @@ Subscription Service Development Plan (Renamed from Billing Service)
 ### 2.5 Additional Token Endpoints
 - ⏳ POST /tokens/check - Check token availability without deducting (pre-authorization, also add to the response how many of each content type the user has used and is theoretically left for usage, add renewal date)
 - ⏳ GET /jobs/count/:userId/monthly - Get monthly job count for a user (for this we need to enhance the job service to track the job count per user and the user database to track the job count per user)
-- ⏳ POST /api/subscription/features/check - Check if a feature is available in user's plan
-- ⏳ POST /api/subscription/limits/check - Check if user has exceeded usage limits
+- ⏳ GET /features/available/:userId - Check what features are available in user's plan
+- ⏳ GET /plans - List all Subscription Plans
+### 2.6 Additional Admin Endpoints
+- ⏳ POST /token-packages/change - Change Token Package Details (Admin Only)
+- ⏳ POST /token-packages/activate - Activate / Deactivate Token Package (Admin Only)
+- ⏳ POST /plans/change - Change Subscription Plan Details (Admin Only)
+- ⏳ POST /plans/activate - Activate / Deactivate Subscription (Admin Only)
 
 ## Phase 3: API Gateway Integration
 ### 3.1 API Gateway Routes
@@ -67,80 +72,84 @@ Subscription Service Development Plan (Renamed from Billing Service)
 - ✅ Configure proper forwarding to subscription service
 - ✅ Add security checks for user data access
 
-## Phase 4: Service-Level Token Deduction
-### 4.1 Token Deduction in Individual Services
-- ⏳ Add token cost calculation to each service (LLM, Image, Voice, etc.)
-- ⏳ Implement token pre-authorization checks before operations
-- ⏳ Add token deduction after successful operations
-- ⏳ Ensure proper error handling for insufficient tokens
-### 4.2 Job Service Integration
-- ⏳ Coordinate token checks across multiple services in a job
-- ⏳ Track token usage per job and service
-- ⏳ Add job-level token summary
-### 4.3 API Endpoint Enhancements
-- ⏳ Add detailed metadata for token transactions
-- ⏳ Implement batch token operations for efficiency
-- ⏳ Add transaction rollback capabilities
+## Phase 4: Enhance and implement correct logic for Cancellation and Downgrade of Subscription
+Following the documentation of docs\content\docs\0_development\mvp plan\04_Subscription Management Details.
+### 4.1 Cancellation of Subscription
+- ⏳ Implement correct logic for cancellation of subscription
+### 4.2 Downgrade of Subscription to a lower paid plan
+- ⏳ Implement correct logic for downgrade of subscription to a lower paid plan
+### 3.3 Downgrade of Subscription to a free plan
+- ⏳ Implement correct logic for downgrade of subscription to a free plan
 
-## Phase 5: Testing with Postman
-### 5.1 Postman Collection Creation
-- ⏳ Create comprehensive Postman collection for all endpoints
-- ⏳ Document expected responses for each endpoint
-- ⏳ Set up test scripts to validate responses
-### 5.2 Test User Setup
-- ⏳ Create test users for each subscription tier
-- ⏳ Set up authentication tokens for testing
-- ⏳ Document the test user credentials and limitations
-### 5.3 Automated Testing
-- ⏳ Create test scripts for common workflows
-- ⏳ Test token deduction across services
-- ⏳ Test error handling and edge cases
+## Phase 5: Batch Processing Integration
+Following the documentation of docs\content\docs\0_development\mvp plan\04_Subscription Management Details.
+### 5.1 Batch Processing for Recurring Payments
+- ⏳ Implement batch processing for recurring payments
+### 5.2 Batch Processing for Token Allocation
+- ⏳ Implement batch processing for token allocation and setting new periods for the next month
+### 5.3 Batch Processing for Plan Downgrades
+- ⏳ Implement batch processing for plan downgrades
 
-## Phase 6: Plan Limitation Enforcement (1-2 weeks) [REVISED PRIORITY]
-### 6.1 Feature Restriction Logic
-- ⏳ Implement middleware for checking subscription features
-- ⏳ Add validation for content types based on plan
-- ⏳ Restrict access to premium features
-### 6.2 Usage Limits
-- ⏳ Implement max scenes per job validation
-- ⏳ Track and enforce monthly job count limits
-- ⏳ Add token balance monitoring and alerts
-### 6.3 Plan-Based Configuration
-- ⏳ Create a centralized plan feature configuration
-- ⏳ Implement recreation feature availability based on plan
-- ⏳ Set up visual/voice selection limits
-
-## Phase 7: Stripe Integration (2-3 weeks) [DEPRIORITIZED]
-### 7.1 Stripe Setup
+## Phase 6: Stripe Integration
+### 6.1 Stripe Setup
 - ⏳ Configure Stripe account settings
 - ⏳ Implement comprehensive Stripe service
 - ⏳ Set up webhook handler for payment events
 - ⏳ Configure products and prices in Stripe to match plans
-### 7.2 Payment Processing
+### 6.2 Payment Processing
 - ⏳ Implement credit card payment processing
 - ⏳ Set up PayPal integration through Stripe
 - ⏳ Implement subscription creation in Stripe
 - ⏳ Handle subscription lifecycle events
-### 7.3 Webhook Management
+### 6.3 Webhook Management
 - ⏳ Process webhook events from Stripe
 - ⏳ Handle successful payment events
 - ⏳ Process subscription lifecycle events (created, updated, canceled)
 - ⏳ Handle failed payment scenarios
 
-## Phase 8: Frontend Components (4-5 days)
-### 8.1 Dashboard Integration
+## Phase 7: Service-Level Token Deduction
+### 7.1 Token Deduction in Individual Services
+- ⏳ Add token cost calculation to each service (LLM, Image, Voice, etc.)
+- ⏳ Implement token pre-authorization checks before operations
+- ⏳ Add token deduction after successful operations
+- ⏳ Ensure proper error handling for insufficient tokens
+### 7.2 Job Service Integration
+- ⏳ Coordinate token checks across multiple services in a job
+- ⏳ Track token usage per job and service
+- ⏳ Add job-level token summary
+### 7.3 API Endpoint Enhancements
+- ⏳ Add detailed metadata for token transactions
+- ⏳ Implement batch token operations for efficiency
+- ⏳ Add transaction rollback capabilities
+
+## Phase 8: Plan Limitation Enforcement
+### 8.1 Feature Restriction Logic
+- ⏳ Implement middleware for checking subscription features
+- ⏳ Add validation for content types based on plan
+- ⏳ Restrict access to premium features
+### 8.2 Usage Limits
+- ⏳ Implement max scenes per job validation
+- ⏳ Track and enforce monthly job count limits
+- ⏳ Add token balance monitoring and alerts
+### 8.3 Plan-Based Configuration
+- ⏳ Create a centralized plan feature configuration
+- ⏳ Implement recreation feature availability based on plan
+- ⏳ Set up visual/voice selection limits
+
+## Phase 9: Frontend Components
+### 9.1 Dashboard Integration
 - ⏳ Add token balance display to dashboard
 - ⏳ Create token usage visualization
 - ⏳ Implement low balance warnings
-### 8.2 Plan Management UI
+### 9.2 Plan Management UI
 - ⏳ Create plan selection and comparison page
 - ⏳ Implement subscription management interface
 - ⏳ Add plan upgrade/downgrade flow
-### 8.3 Token Purchase UI
+### 9.3 Token Purchase UI
 - ⏳ Create token package selection interface
 - ⏳ Implement Stripe Elements for payment forms
 - ⏳ Add purchase confirmation and receipt views
-### 8.4 Account History
+### 9.4 Account History
 - ⏳ Create transaction history view
 - ⏳ Implement payment history display
 - ⏳ Add subscription history visualization

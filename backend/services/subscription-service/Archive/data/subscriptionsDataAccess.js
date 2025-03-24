@@ -133,15 +133,14 @@ class SubscriptionsDataAccess {
   /**
    * Get all subscriptions for a user
    * @param {string} userId - The user ID
-   * @param {string} status - Optional filter by status (e.g., 'active', 'cancelled')
    * @returns {Promise<Array>} - List of subscriptions
    */
-  async getUserSubscriptions(userId, status = null) {
+  async getUserSubscriptions(userId) {
     try {
-      this.logger.info('Fetching subscriptions for user:', { userId, status });
+      this.logger.info('Fetching subscriptions for user:', { userId });
       
-      // Build the base query
-      let query = knex(`${this.tableName} as us`)
+      // Join with plans to get full subscription details
+      const subscriptions = await knex(`${this.tableName} as us`)
         .join('plans as p', 'us.plan_id', 'p.plan_id')
         .select(
           'us.*',
@@ -157,15 +156,8 @@ class SubscriptionsDataAccess {
           'p.recreation_content_types',
           'p.support_level'
         )
-        .where('us.user_id', userId);
-      
-      // Apply status filter if provided
-      if (status) {
-        query = query.where('us.status', status);
-      }
-      
-      // Get the results
-      const subscriptions = await query.orderBy('us.created_at', 'desc');
+        .where('us.user_id', userId)
+        .orderBy('us.created_at', 'desc');
       
       // Format each subscription
       const formattedSubscriptions = [];
@@ -237,11 +229,9 @@ class SubscriptionsDataAccess {
         plan_id: subscriptionData.planId,
         status: subscriptionData.status || 'active',
         start_date: subscriptionData.startDate || new Date(),
-        // Only set end_date if explicitly provided in subscriptionData
+        // Only set end_date if explicitly provided
         end_date: subscriptionData.endDate || null,
-        // Initialize current_period_start to start_date if not provided
-        current_period_start: subscriptionData.currentPeriodStart || subscriptionData.startDate || new Date(),
-        // Initialize current_period_end as null, we'll calculate it below if not provided
+        current_period_start: subscriptionData.currentPeriodStart || new Date(),
         current_period_end: subscriptionData.currentPeriodEnd || null,
         canceled_at: subscriptionData.canceledAt || null,
         ended_at: subscriptionData.endedAt || null,
@@ -266,7 +256,7 @@ class SubscriptionsDataAccess {
         try {
           const plan = await this.dataAccess.plans.getPlanById(dbSubscriptionData.plan_id);
           if (plan) {
-            const startDate = new Date(dbSubscriptionData.current_period_start);
+            const startDate = new Date(dbSubscriptionData.start_date);
             let periodEnd;
             
             if (plan.billing_frequency === 'monthly') {
@@ -279,37 +269,13 @@ class SubscriptionsDataAccess {
             
             if (periodEnd) {
               dbSubscriptionData.current_period_end = periodEnd;
-              // IMPORTANT: We do NOT set end_date here - only current_period_end
+              // Note: We don't set end_date here - only current_period_end
             }
           }
         } catch (error) {
           this.logger.warn('Error calculating period end based on plan:', error);
         }
       }
-      
-      // Create a clean version of the data for logging (without complex objects)
-      const logData = { ...dbSubscriptionData };
-      
-      // Safely convert dates to strings for logging
-      const formatDateForLog = (date) => {
-        if (!date) return null;
-        if (date instanceof Date) return date.toISOString();
-        if (date === knex.fn.now()) return 'CURRENT_TIMESTAMP';
-        if (typeof date === 'string') return date;
-        return String(date); // Fallback for any other type
-      };
-      
-      // Apply the safe formatting to all date fields
-      if (logData.created_at) logData.created_at = formatDateForLog(logData.created_at);
-      if (logData.updated_at) logData.updated_at = formatDateForLog(logData.updated_at);
-      if (logData.start_date) logData.start_date = formatDateForLog(logData.start_date);
-      if (logData.end_date) logData.end_date = formatDateForLog(logData.end_date);
-      if (logData.current_period_start) logData.current_period_start = formatDateForLog(logData.current_period_start);
-      if (logData.current_period_end) logData.current_period_end = formatDateForLog(logData.current_period_end);
-      if (logData.canceled_at) logData.canceled_at = formatDateForLog(logData.canceled_at);
-      if (logData.ended_at) logData.ended_at = formatDateForLog(logData.ended_at);
-      
-      this.logger.info('Creating subscription with data:', { dbSubscriptionData: logData });
       
       // Determine which knex instance to use
       const query = trx ? trx(this.tableName) : knex(this.tableName);
@@ -366,156 +332,111 @@ class SubscriptionsDataAccess {
       // Convert camelCase to snake_case for database
       const dbSubscriptionData = {};
       
-      // Map camelCase AND snake_case props to snake_case columns, validating date fields
-      
-      // Handle user_id (both formats)
+      // Map camelCase props to snake_case columns, validating date fields
+      // Only update user_id if it was explicitly provided and differs from the current value
       if (subscriptionData.userId !== undefined) {
         dbSubscriptionData.user_id = subscriptionData.userId;
-      } else if (subscriptionData.user_id !== undefined) {
-        dbSubscriptionData.user_id = subscriptionData.user_id;
       }
       
-      // Handle plan_id (both formats)
       if (subscriptionData.planId !== undefined) {
         dbSubscriptionData.plan_id = subscriptionData.planId;
-      } else if (subscriptionData.plan_id !== undefined) {
-        dbSubscriptionData.plan_id = subscriptionData.plan_id;
       }
       
-      // Handle status (both formats)
       if (subscriptionData.status !== undefined) {
         dbSubscriptionData.status = subscriptionData.status;
       }
       
-      // Handle external_subscription_id (both formats)
-      if (subscriptionData.externalSubscriptionId !== undefined) {
-        dbSubscriptionData.external_subscription_id = subscriptionData.externalSubscriptionId;
-      } else if (subscriptionData.external_subscription_id !== undefined) {
-        dbSubscriptionData.external_subscription_id = subscriptionData.external_subscription_id;
-      }
-      
-      // Handle billing_frequency (both formats)
-      if (subscriptionData.billingFrequency !== undefined) {
-        dbSubscriptionData.billing_frequency = subscriptionData.billingFrequency;
-      } else if (subscriptionData.billing_frequency !== undefined) {
-        dbSubscriptionData.billing_frequency = subscriptionData.billing_frequency;
-      }
-      
-      // Handle auto_renew (both formats)
-      if (subscriptionData.autoRenew !== undefined) {
-        dbSubscriptionData.auto_renew = subscriptionData.autoRenew;
-      } else if (subscriptionData.auto_renew !== undefined) {
-        dbSubscriptionData.auto_renew = subscriptionData.auto_renew;
-      }
-      
-      // Handle cancellation_reason (both formats)
-      if (subscriptionData.cancellationReason !== undefined) {
-        dbSubscriptionData.cancellation_reason = subscriptionData.cancellationReason;
-      } else if (subscriptionData.cancellation_reason !== undefined) {
-        dbSubscriptionData.cancellation_reason = subscriptionData.cancellation_reason;
-      }
-      
-      // Validate date fields before adding them to the update data - handle both camelCase and snake_case
-      
-      // Handle start_date (both formats)
-      const startDate = subscriptionData.startDate || subscriptionData.start_date;
-      if (startDate !== undefined) {
+      // Validate date fields before adding them to the update data
+      if (subscriptionData.startDate !== undefined) {
         try {
           // Validate date format
-          const dateObj = new Date(startDate);
-          if (isNaN(dateObj.getTime())) {
-            throw new Error(`Invalid start date format: ${startDate}`);
+          const startDate = new Date(subscriptionData.startDate);
+          if (isNaN(startDate.getTime())) {
+            throw new Error(`Invalid startDate format: ${subscriptionData.startDate}`);
           }
-          dbSubscriptionData.start_date = dateObj;
+          dbSubscriptionData.start_date = startDate;
         } catch (error) {
-          throw new Error(`Invalid start date: ${error.message}`);
+          throw new Error(`Invalid startDate: ${error.message}`);
         }
       }
       
-      // Handle end_date (both formats) - Only set if explicitly provided
-      const endDate = subscriptionData.endDate || subscriptionData.end_date;
-      if (endDate !== undefined) {
+      if (subscriptionData.endDate !== undefined) {
         // Allow null for endDate
-        if (endDate === null) {
+        if (subscriptionData.endDate === null) {
           dbSubscriptionData.end_date = null;
         } else {
           try {
-            const dateObj = new Date(endDate);
-            if (isNaN(dateObj.getTime())) {
-              throw new Error(`Invalid end date format: ${endDate}`);
+            const endDate = new Date(subscriptionData.endDate);
+            if (isNaN(endDate.getTime())) {
+              throw new Error(`Invalid endDate format: ${subscriptionData.endDate}`);
             }
-            dbSubscriptionData.end_date = dateObj;
+            dbSubscriptionData.end_date = endDate;
           } catch (error) {
-            throw new Error(`Invalid end date: ${error.message}`);
+            throw new Error(`Invalid endDate: ${error.message}`);
           }
         }
       }
-      // Important: Don't touch end_date if not explicitly provided
       
-      // Handle current_period_start (both formats)
-      const currentPeriodStart = subscriptionData.currentPeriodStart || subscriptionData.current_period_start;
-      if (currentPeriodStart !== undefined) {
+      if (subscriptionData.currentPeriodStart !== undefined) {
         try {
-          const dateObj = new Date(currentPeriodStart);
-          if (isNaN(dateObj.getTime())) {
-            throw new Error(`Invalid current period start format: ${currentPeriodStart}`);
+          const currentPeriodStart = new Date(subscriptionData.currentPeriodStart);
+          if (isNaN(currentPeriodStart.getTime())) {
+            throw new Error(`Invalid currentPeriodStart format: ${subscriptionData.currentPeriodStart}`);
           }
-          dbSubscriptionData.current_period_start = dateObj;
+          dbSubscriptionData.current_period_start = currentPeriodStart;
         } catch (error) {
-          throw new Error(`Invalid current period start: ${error.message}`);
+          throw new Error(`Invalid currentPeriodStart: ${error.message}`);
         }
       }
       
-      // Handle current_period_end (both formats)
-      const currentPeriodEnd = subscriptionData.currentPeriodEnd || subscriptionData.current_period_end;
-      if (currentPeriodEnd !== undefined) {
+      if (subscriptionData.currentPeriodEnd !== undefined) {
         try {
-          const dateObj = new Date(currentPeriodEnd);
-          if (isNaN(dateObj.getTime())) {
-            throw new Error(`Invalid current period end format: ${currentPeriodEnd}`);
+          const currentPeriodEnd = new Date(subscriptionData.currentPeriodEnd);
+          if (isNaN(currentPeriodEnd.getTime())) {
+            throw new Error(`Invalid currentPeriodEnd format: ${subscriptionData.currentPeriodEnd}`);
           }
-          dbSubscriptionData.current_period_end = dateObj;
+          dbSubscriptionData.current_period_end = currentPeriodEnd;
         } catch (error) {
-          throw new Error(`Invalid current period end: ${error.message}`);
+          throw new Error(`Invalid currentPeriodEnd: ${error.message}`);
         }
       }
       
-      // Handle canceled_at (both formats)
-      const canceledAt = subscriptionData.canceledAt || subscriptionData.canceled_at;
-      if (canceledAt !== undefined) {
+      if (subscriptionData.canceledAt !== undefined) {
         // Allow null for canceledAt
-        if (canceledAt === null) {
+        if (subscriptionData.canceledAt === null) {
           dbSubscriptionData.canceled_at = null;
         } else {
           try {
-            const dateObj = new Date(canceledAt);
-            if (isNaN(dateObj.getTime())) {
-              throw new Error(`Invalid canceled at format: ${canceledAt}`);
+            const canceledAt = new Date(subscriptionData.canceledAt);
+            if (isNaN(canceledAt.getTime())) {
+              throw new Error(`Invalid canceledAt format: ${subscriptionData.canceledAt}`);
             }
-            dbSubscriptionData.canceled_at = dateObj;
+            dbSubscriptionData.canceled_at = canceledAt;
           } catch (error) {
-            throw new Error(`Invalid canceled at: ${error.message}`);
+            throw new Error(`Invalid canceledAt: ${error.message}`);
           }
         }
       }
       
-      // Handle ended_at (both formats)
-      const endedAt = subscriptionData.endedAt || subscriptionData.ended_at;
-      if (endedAt !== undefined) {
+      if (subscriptionData.endedAt !== undefined) {
         // Allow null for endedAt
-        if (endedAt === null) {
+        if (subscriptionData.endedAt === null) {
           dbSubscriptionData.ended_at = null;
         } else {
           try {
-            const dateObj = new Date(endedAt);
-            if (isNaN(dateObj.getTime())) {
-              throw new Error(`Invalid ended at format: ${endedAt}`);
+            const endedAt = new Date(subscriptionData.endedAt);
+            if (isNaN(endedAt.getTime())) {
+              throw new Error(`Invalid endedAt format: ${subscriptionData.endedAt}`);
             }
-            dbSubscriptionData.ended_at = dateObj;
+            dbSubscriptionData.ended_at = endedAt;
           } catch (error) {
-            throw new Error(`Invalid ended at: ${error.message}`);
+            throw new Error(`Invalid endedAt: ${error.message}`);
           }
         }
+      }
+      
+      if (subscriptionData.externalSubscriptionId !== undefined) {
+        dbSubscriptionData.external_subscription_id = subscriptionData.externalSubscriptionId;
       }
       
       // Only update if there's data to update
@@ -526,33 +447,6 @@ class SubscriptionsDataAccess {
       
       // Update the updated_at timestamp
       dbSubscriptionData.updated_at = knex.fn.now();
-      
-      // Create a clean version of the data for logging (without the knex function objects)
-      const logData = { ...dbSubscriptionData };
-      
-      // Safely convert dates to strings for logging
-      const formatDateForLog = (date) => {
-        if (!date) return null;
-        if (date instanceof Date) return date.toISOString();
-        if (date === knex.fn.now()) return 'CURRENT_TIMESTAMP';
-        if (typeof date === 'string') return date;
-        return String(date); // Fallback for any other type
-      };
-      
-      // Format all date fields for logging
-      if (logData.start_date) logData.start_date = formatDateForLog(logData.start_date);
-      if (logData.end_date) logData.end_date = formatDateForLog(logData.end_date);
-      if (logData.current_period_start) logData.current_period_start = formatDateForLog(logData.current_period_start);
-      if (logData.current_period_end) logData.current_period_end = formatDateForLog(logData.current_period_end);
-      if (logData.canceled_at) logData.canceled_at = formatDateForLog(logData.canceled_at);
-      if (logData.ended_at) logData.ended_at = formatDateForLog(logData.ended_at);
-      if (logData.updated_at) logData.updated_at = formatDateForLog(logData.updated_at);
-      
-      // Log the actual data being sent to the database
-      this.logger.info('Performing subscription update with data:', { 
-        subscriptionId, 
-        dbSubscriptionData: logData 
-      });
       
       // Update the subscription
       const [updatedSubscription] = await knex(this.tableName)
@@ -576,7 +470,7 @@ class SubscriptionsDataAccess {
   
   /**
    * Cancel a subscription
-   * @param {string} subscriptionId - The subscription ID
+   * @param {number} subscriptionId - The subscription ID
    * @param {string} cancellationReason - Optional reason for cancellation (stored in logs only)
    * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object|null>} - The cancelled subscription or null if not found
@@ -595,130 +489,28 @@ class SubscriptionsDataAccess {
       }
       
       // Determine which knex instance to use
-      const query = trx || knex;
+      const query = trx ? trx(this.tableName) : knex(this.tableName);
       
-      // First, get the current subscription to check its details
-      const subscription = await query(this.tableName)
+      // Update the subscription status - using 'cancelled' with two 'l's consistently
+      const [cancelledSubscription] = await query
         .where('subscription_id', subscriptionId)
-        .first();
-      
-      if (!subscription) {
-        this.logger.warn('Subscription not found for cancellation:', { subscriptionId });
-        return null;
-      }
-      
-      // Determine the appropriate end_date based on context
-      // Special case for plan upgrades/downgrades or certain cancellation reasons
-      const isPlanChange = cancellationReason && (
-        cancellationReason.includes('Upgraded to') || 
-        cancellationReason.includes('Downgraded to') || 
-        cancellationReason.includes('Switched to')
-      );
-      
-      let endDate = null;
-      
-      // For plan changes, we keep the existing end_date as is, or set it to current period end as fallback
-      if (isPlanChange) {
-        this.logger.info('Plan change detected, using current period end as fallback:', {
-          subscriptionId,
-          cancellationReason
-        });
-        
-        // For plan changes, we'll use the current period end as the default end date
-        endDate = subscription.current_period_end;
-      } else {
-        // For regular cancellations, try to get the billing period end from payments table
-        // but set end date to now if no payment is found (immediate cancellation)
-        const paymentTableName = 'payments';
-        
-        try {
-          // Try to get the latest payment with billing period information
-          const latestPayment = await query(paymentTableName)
-            .where('subscription_id', subscriptionId)
-            .orderBy('created_at', 'desc')
-            .first();
-            
-          if (latestPayment && latestPayment.billing_period_end) {
-            this.logger.info('Using latest payment billing period end as subscription end date:', {
-              subscriptionId,
-              paymentId: latestPayment.payment_id,
-              billingPeriodEnd: latestPayment.billing_period_end
-            });
-            
-            endDate = latestPayment.billing_period_end;
-          } else {
-            // No payment found or no billing period end - for paid plans, end immediately
-            const now = new Date();
-            this.logger.info('No payment found for paid plan, cancelling immediately:', {
-              subscriptionId,
-              endDate: now.toISOString()
-            });
-            endDate = now;
-          }
-        } catch (error) {
-          // Any error with payments table access, cancel immediately
-          const now = new Date();
-          this.logger.warn('Error accessing payment records, cancelling immediately:', { 
-            subscriptionId, 
-            error: error.message,
-            endDate: now.toISOString()
-          });
-          
-          // Set end date to now for immediate cancellation
-          endDate = now;
-        }
-      }
-      
-      // Prepare update data - always include cancellation_reason even if null
-      const updateData = {
-        status: 'cancelled', // Using 'cancelled' with two 'l's consistently
-        canceled_at: new Date(),
-        updated_at: knex.fn.now(),
-        cancellation_reason: cancellationReason // Ensure reason is stored in database
-      };
-      
-      // Only set end_date if we have a valid value
-      if (endDate) {
-        updateData.end_date = endDate;
-      }
-      
-      // Create a clean copy for logging
-      const logData = {...updateData};
-      
-      // Safely convert dates to strings for logging
-      const formatDateForLog = (date) => {
-        if (!date) return null;
-        if (date instanceof Date) return date.toISOString();
-        if (date === knex.fn.now()) return 'CURRENT_TIMESTAMP';
-        if (typeof date === 'string') return date;
-        return String(date); // Fallback for any other type
-      };
-      
-      // Format date fields for logging
-      if (logData.updated_at) logData.updated_at = formatDateForLog(logData.updated_at);
-      if (logData.canceled_at) logData.canceled_at = formatDateForLog(logData.canceled_at);
-      if (logData.end_date) logData.end_date = formatDateForLog(logData.end_date);
-      
-      // Log what we're updating
-      this.logger.info('Updating subscription with:', logData);
-      
-      // Update the subscription status
-      const [cancelledSubscription] = await query(this.tableName)
-        .where('subscription_id', subscriptionId)
-        .update(updateData)
+        .update({
+          status: 'cancelled', // Using 'cancelled' with two 'l's consistently
+          canceled_at: new Date(),
+          updated_at: new Date(),
+          cancellation_reason: cancellationReason
+        })
         .returning('*');
       
       if (!cancelledSubscription) {
-        this.logger.warn('Subscription update failed during cancellation:', { subscriptionId });
+        this.logger.warn('Subscription not found for cancellation:', { subscriptionId });
         return null;
       }
       
       this.logger.info('Subscription cancelled successfully:', { 
         subscriptionId,
         userId: cancelledSubscription.user_id,
-        status: cancelledSubscription.status,
-        endDate: cancelledSubscription.end_date,
-        cancellationReason: cancelledSubscription.cancellation_reason
+        status: cancelledSubscription.status
       });
       
       // Get plan details

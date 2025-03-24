@@ -23,21 +23,11 @@ class PlansDataAccess {
   /**
    * Get all active subscription plans
    * @param {boolean} includeInactive - Whether to include inactive plans
-   * @param {string} sortBy - Field to sort by (default: 'monthly_price')
-   * @param {string} sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
    * @returns {Promise<Array>} - List of subscription plans
    */
-  async getAllPlans(includeInactive = false, sortBy = 'monthly_price', sortOrder = 'asc') {
+  async getAllPlans(includeInactive = false) {
     try {
-      this.logger.info('Fetching all plans:', { includeInactive, sortBy, sortOrder });
-      
-      // Validate sort parameters to prevent SQL injection
-      const validSortFields = ['plan_id', 'plan_name', 'monthly_price', 'price', 'created_at', 'billing_frequency'];
-      const validSortOrders = ['asc', 'desc'];
-      
-      // Use default if invalid parameters are provided
-      const actualSortField = validSortFields.includes(sortBy) ? sortBy : 'monthly_price';
-      const actualSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'asc';
+      this.logger.info('Fetching all plans:', { includeInactive });
       
       let query = knex(this.tableName);
       
@@ -45,7 +35,7 @@ class PlansDataAccess {
         query = query.where('active', true);
       }
       
-      const plans = await query.orderBy(actualSortField, actualSortOrder);
+      const plans = await query.orderBy('monthly_price', 'asc');
       
       return plans.map(plan => this.formatPlanData(plan));
     } catch (error) {
@@ -58,21 +48,11 @@ class PlansDataAccess {
    * Get plans by billing frequency
    * @param {string} billingFrequency - 'monthly' or 'yearly'
    * @param {boolean} includeInactive - Whether to include inactive plans
-   * @param {string} sortBy - Field to sort by (default: 'monthly_price')
-   * @param {string} sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
    * @returns {Promise<Array>} - List of subscription plans with specified billing frequency
    */
-  async getPlansByFrequency(billingFrequency, includeInactive = false, sortBy = 'monthly_price', sortOrder = 'asc') {
+  async getPlansByFrequency(billingFrequency, includeInactive = false) {
     try {
-      this.logger.info('Fetching plans by frequency:', { billingFrequency, includeInactive, sortBy, sortOrder });
-      
-      // Validate sort parameters to prevent SQL injection
-      const validSortFields = ['plan_id', 'plan_name', 'monthly_price', 'price', 'created_at', 'billing_frequency'];
-      const validSortOrders = ['asc', 'desc'];
-      
-      // Use default if invalid parameters are provided
-      const actualSortField = validSortFields.includes(sortBy) ? sortBy : 'monthly_price';
-      const actualSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'asc';
+      this.logger.info('Fetching plans by frequency:', { billingFrequency, includeInactive });
       
       let query = knex(this.tableName)
         .where('billing_frequency', billingFrequency);
@@ -81,7 +61,7 @@ class PlansDataAccess {
         query = query.where('active', true);
       }
       
-      const plans = await query.orderBy(actualSortField, actualSortOrder);
+      const plans = await query.orderBy('price', 'asc');
       
       return plans.map(plan => this.formatPlanData(plan));
     } catch (error) {
