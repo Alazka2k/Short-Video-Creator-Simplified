@@ -114,12 +114,20 @@ class SubscriptionService {
         // If it's a different plan, try to cancel the existing subscription first, but don't fail if it doesn't work
         logger.info('Cancelling existing subscription before creating new one:', {
           existingSubscriptionId: existingSubscription.subscription_id,
+          existingPlanId: existingSubscription.plan_id,
           newPlanId: subscriptionData.planId
         });
         
+        // Use proper cancellation reason based on existing plan
+        const isUpgradeFromFreeTier = existingSubscription.plan_id === 1;
+        const cancellationReason = isUpgradeFromFreeTier ? 'CANCEL_FOR_UPGRADE' : 'Upgraded to a new plan';
+        
         try {
-          await this.cancelSubscription(existingSubscription.subscription_id, 'Upgraded to a new plan');
-          logger.info('Successfully cancelled previous subscription during upgrade');
+          await this.cancelSubscription(existingSubscription.subscription_id, cancellationReason);
+          logger.info('Successfully cancelled previous subscription during upgrade', {
+            wasFreeTier: isUpgradeFromFreeTier,
+            reason: cancellationReason
+          });
         } catch (cancellationError) {
           // If cancellation failed, we'll log but continue with creating the new subscription
           logger.warn('Error cancelling previous subscription during upgrade, continuing with new subscription:', { 
@@ -134,7 +142,7 @@ class SubscriptionService {
               { 
                 status: 'cancelled',
                 canceledAt: new Date(),
-                cancellationReason: 'Upgraded to a new plan (forced update)'
+                cancellationReason: cancellationReason
               }
             );
             logger.info('Forced cancellation of previous subscription');
@@ -451,7 +459,7 @@ class SubscriptionService {
    * Cancel a subscription
    * @param {string} subscriptionId - The subscription ID
    * @param {string} reason - The reason for cancellation
-   * @returns {Promise<Object>} - The cancelled subscription
+   * @returns {Promise<Object>} - The cancelled/pending cancellation subscription
    */
   async cancelSubscription(subscriptionId, reason) {
     try {
@@ -479,28 +487,38 @@ class SubscriptionService {
         return subscription;
       }
       
-      // Cancel the subscription - explicitly pass the reason
-      // Convert undefined/null to empty string to avoid DB issues
-      const cancellationReason = reason || '';
+      // Standardize the cancellation reason
+      let cancellationReason = reason || 'CANCEL_PAID_PLAN';
+      
+      // If it's not one of our standard reasons, convert it
+      if (!['CANCEL_PAID_PLAN', 'CANCEL_FOR_UPGRADE', 'CANCEL_FOR_DOWNGRADE'].includes(cancellationReason)) {
+        cancellationReason = 'CANCEL_PAID_PLAN';
+      }
       
       logger.info(`Proceeding with cancellation using reason: "${cancellationReason}"`);
       
-      const cancelledSubscription = await this.dataAccess.subscriptions.cancelSubscription(
+      // For paid plan cancellations, we'll schedule a switch to free tier (plan_id=1)
+      // For upgrades and downgrades, no upcoming plan ID is needed as those are immediate
+      const upcomingPlanId = cancellationReason === 'CANCEL_PAID_PLAN' ? 1 : null;
+      
+      const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
         subscriptionId, 
-        cancellationReason
+        cancellationReason,
+        upcomingPlanId
       );
       
-      // Verify the cancellation was successful and reason was saved
-      if (cancelledSubscription) {
-        logger.info('Cancellation completed successfully:', {
+      // Verify the cancellation was successful
+      if (updatedSubscription) {
+        logger.info('Subscription update completed successfully:', {
           subscriptionId,
-          status: cancelledSubscription.status,
-          savedReason: cancelledSubscription.cancellation_reason,
-          endDate: cancelledSubscription.end_date
+          status: updatedSubscription.status,
+          savedReason: updatedSubscription.cancellation_reason,
+          endDate: updatedSubscription.end_date,
+          upcomingPlanId: updatedSubscription.upcoming_plan_id
         });
       }
       
-      return cancelledSubscription;
+      return updatedSubscription;
     } catch (error) {
       logger.error('Error in cancelSubscription:', error);
       throw error;
@@ -635,6 +653,271 @@ class SubscriptionService {
       return result;
     } catch (error) {
       logger.error('Error in renewSubscription:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upgrade a subscription to a higher tier plan
+   * @param {string} subscriptionId - The current subscription ID
+   * @param {number} newPlanId - The new (higher tier) plan ID
+   * @param {Object} options - Additional upgrade options
+   * @returns {Promise<Object>} - The new subscription
+   */
+  async upgradeSubscription(subscriptionId, newPlanId, options = {}) {
+    try {
+      logger.info('Processing subscription upgrade:', {
+        subscriptionId,
+        newPlanId,
+        options
+      });
+      
+      // Get current subscription
+      const currentSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
+      if (!currentSubscription) {
+        throw new Error(`Subscription not found: ${subscriptionId}`);
+      }
+      
+      // Get the plans to compare
+      const currentPlan = await this.dataAccess.plans.getPlanById(currentSubscription.plan_id);
+      const newPlan = await this.dataAccess.plans.getPlanById(newPlanId);
+      
+      if (!currentPlan || !newPlan) {
+        throw new Error("Could not retrieve plan information");
+      }
+      
+      // Basic validation - ensure this is actually an upgrade
+      // In production, you might compare monthly_price or other attributes to verify it's a true upgrade
+      logger.info('Validating upgrade plan pricing:', {
+        currentPlanId: currentPlan.plan_id,
+        currentPlanPrice: currentPlan.monthly_price,
+        newPlanId: newPlan.plan_id,
+        newPlanPrice: newPlan.monthly_price
+      });
+      
+      // Cancel the current subscription with CANCEL_FOR_UPGRADE reason
+      // This will set the status to 'cancelled' immediately
+      await this.dataAccess.subscriptions.cancelSubscription(
+        subscriptionId,
+        'CANCEL_FOR_UPGRADE',
+        null // No upcoming plan ID needed as we're creating a new subscription immediately
+      );
+      
+      // Create the new subscription with the higher tier plan
+      const subscriptionData = {
+        userId: currentSubscription.user_id,
+        planId: newPlanId,
+        status: 'active',
+        startDate: new Date(), // Start immediately
+        externalSubscriptionId: options.externalSubscriptionId || currentSubscription.external_subscription_id
+      };
+      
+      // If payment details provided, include them
+      if (options.paymentProvider && options.externalPaymentId) {
+        subscriptionData.paymentProvider = options.paymentProvider;
+        subscriptionData.externalPaymentId = options.externalPaymentId;
+      }
+      
+      const newSubscription = await this.createSubscription(subscriptionData);
+      
+      logger.info('Subscription upgraded successfully:', {
+        oldSubscriptionId: subscriptionId,
+        newSubscriptionId: newSubscription.subscription_id,
+        userId: newSubscription.user_id,
+        newPlanId: newSubscription.plan_id
+      });
+      
+      return newSubscription;
+    } catch (error) {
+      logger.error('Error upgrading subscription:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Downgrade a subscription to a lower tier plan
+   * @param {string} subscriptionId - The current subscription ID
+   * @param {number} newPlanId - The new (lower tier) plan ID
+   * @param {Object} options - Additional downgrade options
+   * @returns {Promise<Object>} - The updated subscription with pending cancellation
+   */
+  async downgradeSubscription(subscriptionId, newPlanId, options = {}) {
+    try {
+      logger.info('Processing subscription downgrade:', {
+        subscriptionId,
+        newPlanId,
+        options
+      });
+      
+      // Get current subscription
+      const currentSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
+      if (!currentSubscription) {
+        throw new Error(`Subscription not found: ${subscriptionId}`);
+      }
+      
+      // Get the plans to compare
+      const currentPlan = await this.dataAccess.plans.getPlanById(currentSubscription.plan_id);
+      const newPlan = await this.dataAccess.plans.getPlanById(newPlanId);
+      
+      if (!currentPlan || !newPlan) {
+        throw new Error("Could not retrieve plan information");
+      }
+      
+      // Basic validation - ensure this is actually a downgrade
+      // In production, you might compare monthly_price or other attributes
+      logger.info('Validating downgrade plan pricing:', {
+        currentPlanId: currentPlan.plan_id,
+        currentPlanPrice: currentPlan.monthly_price,
+        newPlanId: newPlan.plan_id,
+        newPlanPrice: newPlan.monthly_price
+      });
+      
+      // Mark the current subscription for downgrade at the end of the billing period
+      const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
+        subscriptionId,
+        'CANCEL_FOR_DOWNGRADE',
+        newPlanId // Specify the upcoming plan ID
+      );
+      
+      logger.info('Subscription marked for downgrade at period end:', {
+        subscriptionId: updatedSubscription.subscription_id,
+        currentPlanId: updatedSubscription.plan_id,
+        downgradeToId: updatedSubscription.upcoming_plan_id,
+        effectiveDate: updatedSubscription.end_date
+      });
+      
+      return updatedSubscription;
+    } catch (error) {
+      logger.error('Error downgrading subscription:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Cancel a paid plan subscription and schedule downgrade to free tier
+   * @param {string} subscriptionId - The subscription ID
+   * @param {string} reason - Optional additional cancellation reason
+   * @returns {Promise<Object>} - The updated subscription with pending cancellation
+   */
+  async cancelPaidPlan(subscriptionId, reason = '') {
+    try {
+      logger.info('Processing paid plan cancellation:', {
+        subscriptionId,
+        reason
+      });
+      
+      // Get current subscription
+      const currentSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
+      if (!currentSubscription) {
+        throw new Error(`Subscription not found: ${subscriptionId}`);
+      }
+      
+      // Verify this is a paid plan (not free tier)
+      if (currentSubscription.plan_id === 1) {
+        throw new Error('Cannot cancel a free tier subscription');
+      }
+      
+      // Create a standardized reason with any additional context
+      const cancellationReason = `CANCEL_PAID_PLAN${reason ? ': ' + reason : ''}`;
+      
+      // Mark the subscription for cancellation at the end of the billing period
+      // and schedule downgrade to free tier (plan_id=1)
+      const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
+        subscriptionId,
+        cancellationReason,
+        1 // Free tier plan ID
+      );
+      
+      logger.info('Subscription marked for cancellation at period end:', {
+        subscriptionId: updatedSubscription.subscription_id,
+        currentPlanId: updatedSubscription.plan_id,
+        downgradeToFreeAt: updatedSubscription.end_date
+      });
+      
+      return updatedSubscription;
+    } catch (error) {
+      logger.error('Error canceling paid plan:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Process pending cancellations and create new subscriptions if needed
+   * This method would be called by a scheduled batch job
+   * @returns {Promise<Object>} - Summary of processed cancellations
+   */
+  async processPendingCancellations() {
+    try {
+      logger.info('Processing pending subscription cancellations');
+      
+      const now = new Date();
+      
+      // Find all pending cancellations with end dates in the past
+      const pendingCancellations = await knex('user_subscriptions')
+        .where('status', 'pending_cancellation')
+        .whereNotNull('end_date')
+        .where('end_date', '<=', now)
+        .select('*');
+      
+      logger.info(`Found ${pendingCancellations.length} pending cancellations ready to process`);
+      
+      const results = {
+        processed: 0,
+        newSubscriptions: 0,
+        errors: 0
+      };
+      
+      // Process each pending cancellation
+      for (const subscription of pendingCancellations) {
+        try {
+          logger.info('Processing pending cancellation:', {
+            subscriptionId: subscription.subscription_id,
+            userId: subscription.user_id,
+            endDate: subscription.end_date,
+            upcomingPlanId: subscription.upcoming_plan_id
+          });
+          
+          // First, finalize the cancellation by updating status to 'cancelled'
+          await knex('user_subscriptions')
+            .where('subscription_id', subscription.subscription_id)
+            .update({
+              status: 'cancelled',
+              updated_at: knex.fn.now()
+            });
+          
+          results.processed++;
+          
+          // If there's an upcoming plan ID, create a new subscription
+          if (subscription.upcoming_plan_id) {
+            logger.info('Creating new subscription with upcoming plan:', {
+              userId: subscription.user_id,
+              planId: subscription.upcoming_plan_id
+            });
+            
+            // Create a new subscription with the upcoming plan
+            await this.createSubscription({
+              userId: subscription.user_id,
+              planId: subscription.upcoming_plan_id,
+              status: 'active',
+              startDate: new Date(),
+              externalSubscriptionId: subscription.external_subscription_id
+            });
+            
+            results.newSubscriptions++;
+          }
+        } catch (error) {
+          logger.error('Error processing pending cancellation:', {
+            subscriptionId: subscription.subscription_id,
+            error: error.message
+          });
+          results.errors++;
+        }
+      }
+      
+      logger.info('Finished processing pending cancellations:', results);
+      return results;
+    } catch (error) {
+      logger.error('Error in processPendingCancellations:', error);
       throw error;
     }
   }

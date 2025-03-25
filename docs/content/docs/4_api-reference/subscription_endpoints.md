@@ -176,12 +176,13 @@ Creates a new subscription for a user.
 
 **Use Case**:
 - Primary use: Create a brand new subscription for a user who doesn't have one
-- Secondary use: Replace an existing subscription with a new one
+- Secondary use: Replace an existing subscription with a new one (upgrade / downgrade)
 - When a user already has an active subscription, calling this endpoint will:
   1. Cancel the existing subscription
   2. Create a completely new subscription record
-  3. Allocate tokens based on the new plan
-- This is like a "replacement" operation rather than a modification
+  3. Create a new payment record
+  4. Allocate tokens based on the new plan
+  5. Update the user's token balance
 
 **Free Tier Subscriptions**:
 - For free tier subscriptions (plan ID 1), payment-related fields (`paymentProvider`, `externalPaymentId`, `amount`) should be omitted
@@ -226,7 +227,7 @@ Creates a new subscription for a user.
     "plan_id": 2,
     "status": "active",
     "start_date": "2023-11-01T00:00:00.000Z",
-    "end_date": "2023-12-01T00:00:00.000Z",
+    "end_date": null,
     "current_period_start": "2023-11-01T00:00:00.000Z",
     "current_period_end": "2023-12-01T00:00:00.000Z",
     "canceled_at": null,
@@ -324,15 +325,27 @@ Cancels an active subscription.
 **Request Body**:
 ```json
 {
-  "cancellationReason": "Switching to free tier plan"
+  "reason": "CANCEL_PAID_PLAN"
 }
 ```
 
-**Response Example**:
+**Standardized Cancellation Reasons**:
+- `CANCEL_PAID_PLAN`: Standard cancellation of a paid plan, will be set to pending_cancellation until billing period ends
+- `CANCEL_FOR_UPGRADE`: Immediate cancellation for upgrading to a higher tier plan
+- `CANCEL_FOR_DOWNGRADE`: Scheduled cancellation for downgrading to a lower tier plan
+
+**Notes**:
+- When cancelling a paid plan with `CANCEL_PAID_PLAN`, the subscription will enter a `pending_cancellation` status
+- The user will retain access until the end of their current billing period
+- At the end of the billing period, the subscription will automatically be set to `cancelled`
+- For immediate cancellations (like `CANCEL_FOR_UPGRADE`), the status will directly change to `cancelled`
+- Free tier plans (plan_id=1) cannot be cancelled
+
+**Response Example for Immediate Cancellation**:
 ```json
 {
-  "success": true,
-  "data": {
+  "message": "Subscription cancelled successfully",
+  "subscription": {
     "subscription_id": 123,
     "user_id": 30,
     "plan_id": 3,
@@ -343,7 +356,31 @@ Cancels an active subscription.
     "current_period_end": "2024-11-01T00:00:00.000Z",
     "canceled_at": "2023-11-20T12:00:00.000Z",
     "ended_at": null,
-    "cancellation_reason": "Switching to different plan",
+    "cancellation_reason": "CANCEL_FOR_UPGRADE",
+    "external_subscription_id": "sub_stripe456",
+    "created_at": "2023-11-01T12:00:00.000Z",
+    "updated_at": "2023-11-20T12:00:00.000Z"
+  }
+}
+```
+
+**Response Example for Pending Cancellation**:
+```json
+{
+  "message": "Subscription scheduled for cancellation at the end of billing period",
+  "subscription": {
+    "subscription_id": 123,
+    "user_id": 30,
+    "plan_id": 3,
+    "status": "pending_cancellation",
+    "start_date": "2023-11-01T00:00:00.000Z",
+    "end_date": "2024-11-01T00:00:00.000Z",
+    "current_period_start": "2023-11-01T00:00:00.000Z",
+    "current_period_end": "2024-11-01T00:00:00.000Z",
+    "canceled_at": "2023-11-20T12:00:00.000Z",
+    "ended_at": null,
+    "cancellation_reason": "CANCEL_PAID_PLAN",
+    "upcoming_plan_id": 1,
     "external_subscription_id": "sub_stripe456",
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-20T12:00:00.000Z"

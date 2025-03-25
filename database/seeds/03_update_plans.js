@@ -45,7 +45,9 @@ exports.seed = async function(knex) {
           'Basic voice options',
           'Community support'
         ]
-      })
+      }),
+      // Tier ID - Free Tier is tier 1
+      tier_id: 1
     });
   
   // Define all plans we want to ensure exist
@@ -84,7 +86,9 @@ exports.seed = async function(knex) {
           'Script customization',
           'Community support'
         ]
-      })
+      }),
+      // Tier ID - Basic Tier is tier 2
+      tier_id: 2
     },
     // Basic Tier - Yearly
     {
@@ -121,7 +125,9 @@ exports.seed = async function(knex) {
           'Community support',
           'Save 20% with annual billing'
         ]
-      })
+      }),
+      // Tier ID - Basic Tier is tier 2
+      tier_id: 2
     },
     // Creator Tier - Monthly
     {
@@ -159,7 +165,9 @@ exports.seed = async function(knex) {
           'Recreation of images, voice & music',
           'Email support (24h)'
         ]
-      })
+      }),
+      // Tier ID - Creator Tier is tier 3
+      tier_id: 3
     },
     // Creator Tier - Yearly
     {
@@ -198,7 +206,9 @@ exports.seed = async function(knex) {
           'Email support (24h)',
           'Save 20% with annual billing'
         ]
-      })
+      }),
+      // Tier ID - Creator Tier is tier 3
+      tier_id: 3
     },
     // Professional Tier - Monthly
     {
@@ -234,7 +244,9 @@ exports.seed = async function(knex) {
           'Recreation of all content',
           'Email support (24h)'
         ]
-      })
+      }),
+      // Tier ID - Professional Tier is tier 4
+      tier_id: 4
     },
     // Professional Tier - Yearly
     {
@@ -271,7 +283,9 @@ exports.seed = async function(knex) {
           'Email support (24h)',
           'Save 20% with annual billing'
         ]
-      })
+      }),
+      // Tier ID - Professional Tier is tier 4
+      tier_id: 4
     }
   ];
 

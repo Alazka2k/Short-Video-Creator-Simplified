@@ -436,24 +436,50 @@ router.put('/subscriptions/:subscriptionId',
  * @description Cancel a subscription
  * @access Protected - requires update:subscription permission
  */
-router.post('/subscriptions/:subscriptionId/cancel', 
-  verifyAuth0Token,
-  checkPermission('/api/subscription/subscriptions'), 
-  async (req, res) => {
-    try {
-      await forwardToSubscriptionService(req, res, `/subscriptions/${req.params.subscriptionId}/cancel`);
-    } catch (error) {
-      logger.error('Error cancelling subscription:', {
-        error: error.message,
-        stack: error.stack,
-        subscriptionId: req.params.subscriptionId
-      });
-      
-      res.status(500).json({
-        error: 'Failed to cancel subscription',
-        details: error.message
+router.post('/subscriptions/:subscriptionId/cancel', [verifyAuth0Token, checkPermission('/api/subscription/subscriptions')], async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    const userContext = await extractUserContext(req);
+    const userId = userContext.actualUserId;
+    
+    // Check if this is an API user or if token has admin permissions
+    const isApiUser = userContext.isApiUser;
+    const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+    const hasAdminPermission = 
+      (req.user.permissions && req.user.permissions.includes('create:subscriptions')) ||
+      tokenScopes.includes('create:subscriptions') ||
+      isApiUser;
+    
+    // Get subscription details to validate plan ID and ownership
+    const subscription = await axios.get(`${SUBSCRIPTION_SERVICE_URL}/subscriptions/${subscriptionId}`, {
+      headers: { Authorization: req.headers.authorization }
+    });
+    
+    // Validate: Free tier (plan_id=1) subscriptions cannot be cancelled
+    if (subscription.data.plan_id === 1) {
+      return res.status(400).json({ 
+        error: 'Invalid Operation', 
+        message: 'Free tier subscriptions cannot be cancelled'
       });
     }
+    
+    // Security check: Regular users can only cancel their own subscriptions
+    // Admin users (API users or users with create:subscriptions permission) can cancel any subscription
+    if (!hasAdminPermission && subscription.data.user_id !== userId) {
+      return res.status(403).json({ message: 'Not authorized to cancel this subscription' });
+    }
+    
+    // Forward the request to subscription service using the helper function
+    await forwardToSubscriptionService(req, res, `/subscriptions/${subscriptionId}/cancel`, req.body);
+  } catch (error) {
+    logger.error('Error cancelling subscription', { error: error.message, stack: error.stack });
+    
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    
+    return res.status(500).json({ message: 'Failed to cancel subscription', error: error.message });
+  }
 });
 
 /**
@@ -944,6 +970,26 @@ router.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async
         details: error.message
       });
     }
+  }
+});
+
+// Process pending cancellations (admin only)
+router.post('/pending-cancellations/process', [verifyAuth0Token, checkPermission(['admin'])], async (req, res) => {
+  try {
+    // Only admins can process pending cancellations
+    const response = await axios.post(`${SUBSCRIPTION_SERVICE_URL}/pending-cancellations/process`, {}, {
+      headers: { Authorization: req.headers.authorization }
+    });
+    
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    logger.error('Error processing pending cancellations', { error: error.message, stack: error.stack });
+    
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+    
+    return res.status(500).json({ message: 'Failed to process pending cancellations', error: error.message });
   }
 });
 

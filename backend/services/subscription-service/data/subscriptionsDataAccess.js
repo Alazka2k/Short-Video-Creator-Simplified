@@ -577,16 +577,17 @@ class SubscriptionsDataAccess {
   /**
    * Cancel a subscription
    * @param {string} subscriptionId - The subscription ID
-   * @param {string} cancellationReason - Optional reason for cancellation (stored in logs only)
+   * @param {string} cancellationReason - Reason for cancellation (should use standardized values like CANCEL_PAID_PLAN)
+   * @param {number|null} upcomingPlanId - The plan ID to switch to after cancellation (for downgrades)
    * @param {Object} trx - Optional Knex transaction object
-   * @returns {Promise<Object|null>} - The cancelled subscription or null if not found
+   * @returns {Promise<Object|null>} - The cancelled/pending cancellation subscription or null if not found
    */
-  async cancelSubscription(subscriptionId, cancellationReason = null, trx) {
+  async cancelSubscription(subscriptionId, cancellationReason = null, upcomingPlanId = null, trx) {
     try {
-      this.logger.info('Cancelling subscription:', { 
+      this.logger.info('Processing subscription cancellation:', { 
         subscriptionId, 
         cancellationReason,
-        statusValue: 'cancelled' // Log the status value we're using
+        upcomingPlanId
       });
       
       // Log the cancellation reason
@@ -607,12 +608,27 @@ class SubscriptionsDataAccess {
         return null;
       }
       
+      // Determine whether to use immediate cancellation or pending cancellation
+      // based on the cancellation reason
+      const isImmediateCancellation = 
+        cancellationReason === 'CANCEL_FOR_UPGRADE' || 
+        cancellationReason === 'CANCEL_FOR_DOWNGRADE' ||
+        subscription.plan_id === 1; // Free tier subscriptions should always be immediately cancelled
+      
+      const targetStatus = isImmediateCancellation ? 'cancelled' : 'pending_cancellation';
+      
+      this.logger.info(`Setting subscription status to ${targetStatus}:`, {
+        subscriptionId,
+        reason: cancellationReason,
+        planId: subscription.plan_id,
+        immediate: isImmediateCancellation
+      });
+      
       // Determine the appropriate end_date based on context
       // Special case for plan upgrades/downgrades or certain cancellation reasons
       const isPlanChange = cancellationReason && (
-        cancellationReason.includes('Upgraded to') || 
-        cancellationReason.includes('Downgraded to') || 
-        cancellationReason.includes('Switched to')
+        cancellationReason === 'CANCEL_FOR_UPGRADE' || 
+        cancellationReason === 'CANCEL_FOR_DOWNGRADE'
       );
       
       let endDate = null;
@@ -624,7 +640,7 @@ class SubscriptionsDataAccess {
           cancellationReason
         });
         
-        // For plan changes, we'll use the current period end as the default end date
+        // Use the current period end as the default end date
         endDate = subscription.current_period_end;
       } else {
         // For regular cancellations, try to get the billing period end from payments table
@@ -671,10 +687,11 @@ class SubscriptionsDataAccess {
       
       // Prepare update data - always include cancellation_reason even if null
       const updateData = {
-        status: 'cancelled', // Using 'cancelled' with two 'l's consistently
+        status: targetStatus, // 'cancelled' or 'pending_cancellation'
         canceled_at: new Date(),
         updated_at: knex.fn.now(),
-        cancellation_reason: cancellationReason // Ensure reason is stored in database
+        cancellation_reason: cancellationReason, // Use standardized reason values
+        upcoming_plan_id: upcomingPlanId // Store the upcoming plan ID for pending cancellations
       };
       
       // Only set end_date if we have a valid value
@@ -703,39 +720,40 @@ class SubscriptionsDataAccess {
       this.logger.info('Updating subscription with:', logData);
       
       // Update the subscription status
-      const [cancelledSubscription] = await query(this.tableName)
+      const [updatedSubscription] = await query(this.tableName)
         .where('subscription_id', subscriptionId)
         .update(updateData)
         .returning('*');
       
-      if (!cancelledSubscription) {
+      if (!updatedSubscription) {
         this.logger.warn('Subscription update failed during cancellation:', { subscriptionId });
         return null;
       }
       
-      this.logger.info('Subscription cancelled successfully:', { 
+      this.logger.info('Subscription status updated successfully:', { 
         subscriptionId,
-        userId: cancelledSubscription.user_id,
-        status: cancelledSubscription.status,
-        endDate: cancelledSubscription.end_date,
-        cancellationReason: cancelledSubscription.cancellation_reason
+        userId: updatedSubscription.user_id,
+        status: updatedSubscription.status,
+        endDate: updatedSubscription.end_date,
+        cancellationReason: updatedSubscription.cancellation_reason,
+        upcomingPlanId: updatedSubscription.upcoming_plan_id
       });
       
       // Get plan details
       let plan = null;
       if (trx) {
         try {
-          plan = await this.dataAccess.plans.getPlanById(cancelledSubscription.plan_id);
+          plan = await this.dataAccess.plans.getPlanById(updatedSubscription.plan_id);
         } catch (planError) {
-          this.logger.warn('Error fetching plan for cancelled subscription:', planError);
+          this.logger.warn('Error fetching plan for updated subscription:', planError);
         }
         
-        return await this.formatSubscription(cancelledSubscription, plan);
+        return await this.formatSubscription(updatedSubscription, plan);
       }
       
       return await this.getSubscriptionById(subscriptionId);
     } catch (error) {
-      this.logger.error('Error cancelling subscription:', error);
+      this.logger.error('Error updating subscription status:', error);
       throw error;
     }
   }

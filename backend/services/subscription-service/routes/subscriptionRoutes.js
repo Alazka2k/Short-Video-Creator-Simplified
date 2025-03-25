@@ -17,24 +17,10 @@ const router = express.Router();
 module.exports = (subscriptionController) => {
   /**
    * @route GET /api/subscription/subscriptions/user/:userId
-   * @description Get all subscriptions for a user
+   * @description Get user's subscriptions
    * @access Private
    */
   router.get('/user/:userId', subscriptionController.getUserSubscriptions.bind(subscriptionController));
-
-  /**
-   * @route GET /api/subscription/subscriptions/user/:userId/active
-   * @description Get active subscription for a user
-   * @access Private
-   */
-  router.get('/user/:userId/active', subscriptionController.getUserActiveSubscription.bind(subscriptionController));
-
-  /**
-   * @route POST /api/subscription/subscriptions/user/:userId/renew
-   * @description Renew a subscription period and allocate tokens
-   * @access Private
-   */
-  router.post('/user/:userId/renew', subscriptionController.renewSubscription.bind(subscriptionController));
 
   /**
    * @route GET /api/subscription/subscriptions/:subscriptionId
@@ -59,10 +45,17 @@ module.exports = (subscriptionController) => {
 
   /**
    * @route POST /api/subscription/subscriptions/:subscriptionId/cancel
-   * @description Cancel a subscription
+   * @description Cancel a subscription, supports pending_cancellation status when appropriate
    * @access Private
    */
   router.post('/:subscriptionId/cancel', subscriptionController.cancelSubscription.bind(subscriptionController));
+
+  /**
+   * @route POST /api/subscription/subscriptions/user/:userId/renew
+   * @description Renew a user's subscription token allocation
+   * @access Private
+   */
+  router.post('/user/:userId/renew', subscriptionController.renewSubscription.bind(subscriptionController));
 
   return router;
 }; 

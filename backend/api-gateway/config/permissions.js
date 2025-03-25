@@ -47,6 +47,7 @@ const SERVICE_PERMISSIONS = {
   subscription: {
     create: 'create:subscription',
     read: 'read:subscription',
+    edit: 'edit:subscription',
     manage: 'manage:subscription'
   },
   user: {
