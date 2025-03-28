@@ -5,10 +5,10 @@ const path = require('path');
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const OUTPUT_FILE = path.join(PROJECT_ROOT, 'full_source_code.txt');
 
-const INCLUDE_EXTENSIONS = ['.js', '.json', '.txt', '.csv', '.md', '.sql'];
-const EXCLUDE_EXTENSIONS = ['.log', '.lock'];
-const EXCLUDE_DIRS = ['node_modules', '.git', 'logs', 'data', 'tests/test_output', 'frontend/build', 'backend/tmp'];
-const EXCLUDE_FILES = ['package-lock.json', '.DS_Store', 'Thumbs.db', 'full_source_code.txt'];
+const INCLUDE_EXTENSIONS = ['.js', '.tsx', '.json', '.txt', '.csv', '.sql'];
+const EXCLUDE_EXTENSIONS = ['.log', '.lock','.md', ];
+const EXCLUDE_DIRS = ['node_modules', '.git', 'logs', 'data', 'tests/test_output', 'frontend/build', 'frontend/.next', 'frontend/node_modules', 'backend/tmp'];
+const EXCLUDE_FILES = ['package-lock.json', '.DS_Store', 'Thumbs.db', 'full_source_code.txt', '.env.development', '.env.staging', '.env.production'];
 
 async function writeToFile(filePath, content) {
   await fs.appendFile(filePath, content, 'utf8');

@@ -98,7 +98,7 @@ async function startServer() {
       PORT = 3010;
       logger.warn(`Could not parse port from config, using default port ${PORT}`);
     }
-    
+
     app.listen(PORT, () => {
       logger.info(`Subscription Service running on port ${PORT}`);
     });

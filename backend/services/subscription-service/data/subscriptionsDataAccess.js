@@ -578,7 +578,7 @@ class SubscriptionsDataAccess {
    * Cancel a subscription
    * @param {string} subscriptionId - The subscription ID
    * @param {string} cancellationReason - Reason for cancellation (should use standardized values like CANCEL_PAID_PLAN)
-   * @param {number|null} upcomingPlanId - The plan ID to switch to after cancellation (for downgrades)
+   * @param {number|null} upcomingPlanId - The plan ID to switch to after cancellation (for downgrades or frequency changes)
    * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object|null>} - The cancelled/pending cancellation subscription or null if not found
    */
@@ -607,12 +607,30 @@ class SubscriptionsDataAccess {
         this.logger.warn('Subscription not found for cancellation:', { subscriptionId });
         return null;
       }
+
+      // Add validation to prevent cancellation of free tier (even though service layer should catch this)
+      // The only exception is CANCEL_FOR_UPGRADE, which is allowed to cancel free tier
+      if (subscription.plan_id === 1 && cancellationReason !== 'CANCEL_FOR_UPGRADE') {
+        this.logger.warn('Attempt to cancel free tier subscription rejected:', { 
+          subscriptionId,
+          planId: subscription.plan_id,
+          reason: cancellationReason
+        });
+        throw new Error('Free tier subscriptions cannot be cancelled except for upgrades');
+      }
       
       // Determine whether to use immediate cancellation or pending cancellation
       // based on the cancellation reason
+
+      // Cancellation scenarios:
+      // 1. CANCEL_FOR_UPGRADE: Immediate cancellation for upgrading to a higher tier plan
+      // 2. CANCEL_FOR_DOWNGRADE: Immediate cancellation only for free tier, otherwise pending
+      // 3. CANCEL_PAID_PLAN: Always pending cancellation, will downgrade to free tier
+      // 4. CANCEL_FOR_FREQUENCY_CHANGE: Always pending cancellation, same tier but different billing frequency
+      
       const isImmediateCancellation = 
         cancellationReason === 'CANCEL_FOR_UPGRADE' || 
-        cancellationReason === 'CANCEL_FOR_DOWNGRADE' ||
+        (cancellationReason === 'CANCEL_FOR_DOWNGRADE' && subscription.plan_id === 1) ||
         subscription.plan_id === 1; // Free tier subscriptions should always be immediately cancelled
       
       const targetStatus = isImmediateCancellation ? 'cancelled' : 'pending_cancellation';
@@ -625,10 +643,11 @@ class SubscriptionsDataAccess {
       });
       
       // Determine the appropriate end_date based on context
-      // Special case for plan upgrades/downgrades or certain cancellation reasons
+      // Special case for plan upgrades/downgrades/frequency changes or certain cancellation reasons
       const isPlanChange = cancellationReason && (
         cancellationReason === 'CANCEL_FOR_UPGRADE' || 
-        cancellationReason === 'CANCEL_FOR_DOWNGRADE'
+        cancellationReason === 'CANCEL_FOR_DOWNGRADE' ||
+        cancellationReason === 'CANCEL_FOR_FREQUENCY_CHANGE'
       );
       
       let endDate = null;
@@ -694,6 +713,16 @@ class SubscriptionsDataAccess {
         upcoming_plan_id: upcomingPlanId // Store the upcoming plan ID for pending cancellations
       };
       
+      // Set ended_at date ONLY when the status is being changed to 'cancelled'
+      // (not for pending_cancellation status)
+      if (targetStatus === 'cancelled') {
+        updateData.ended_at = new Date();
+        this.logger.info('Setting ended_at date for cancelled subscription:', {
+          subscriptionId,
+          endedAt: updateData.ended_at.toISOString()
+        });
+      }
+      
       // Only set end_date if we have a valid value
       if (endDate) {
         updateData.end_date = endDate;
@@ -715,6 +744,7 @@ class SubscriptionsDataAccess {
       if (logData.updated_at) logData.updated_at = formatDateForLog(logData.updated_at);
       if (logData.canceled_at) logData.canceled_at = formatDateForLog(logData.canceled_at);
       if (logData.end_date) logData.end_date = formatDateForLog(logData.end_date);
+      if (logData.ended_at) logData.ended_at = formatDateForLog(logData.ended_at);
       
       // Log what we're updating
       this.logger.info('Updating subscription with:', logData);

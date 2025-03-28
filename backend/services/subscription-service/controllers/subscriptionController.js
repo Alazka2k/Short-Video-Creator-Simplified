@@ -89,14 +89,58 @@ class SubscriptionController {
   async createSubscription(req, res) {
     try {
       const subscriptionData = req.body;
+      
+      // Validate required fields
+      if (!subscriptionData.userId) {
+        return res.status(400).json({ error: 'Bad Request', message: 'userId is required' });
+      }
+      
+      if (!subscriptionData.planId) {
+        return res.status(400).json({ error: 'Bad Request', message: 'planId is required' });
+      }
+
+      // Log the request with more context
+      logger.info('Subscription creation/change request received:', {
+        userId: subscriptionData.userId,
+        planId: subscriptionData.planId,
+        hasPaymentDetails: !!(subscriptionData.paymentProvider && subscriptionData.externalPaymentId)
+      });
+      
       const newSubscription = await this.subscriptionService.createSubscription(subscriptionData);
       
+      // Check if this was a plan change indicated by a message in the response
+      if (newSubscription.message && newSubscription.message.includes('scheduled')) {
+        // This was a plan change that was scheduled for the end of the billing period
+        return res.status(200).json({
+          success: true,
+          message: newSubscription.message,
+          data: newSubscription
+        });
+      }
+      
+      // Standard new subscription creation response
       res.status(201).json({
         success: true,
         data: newSubscription
       });
     } catch (error) {
-      this.logger.error('Error creating subscription:', error);
+      this.logger.error('Error creating/changing subscription:', error);
+      
+      // Special error handling for specific cases
+      if (error.message.includes('Free tier') && error.message.includes('downgraded')) {
+        return res.status(400).json({ 
+          error: 'Invalid Operation', 
+          message: error.message 
+        });
+      }
+      
+      if (error.message.includes('already has an active subscription with this plan')) {
+        return res.status(409).json({ 
+          error: 'Conflict', 
+          message: error.message 
+        });
+      }
+      
       res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   }
@@ -144,11 +188,23 @@ class SubscriptionController {
         reason 
       });
 
-      const subscription = await this.subscriptionService.cancelSubscription(subscriptionId, reason);
+      // Get the subscription first to check if it's a free tier subscription
+      const existingSubscription = await this.subscriptionService.getSubscriptionById(subscriptionId);
       
-      if (!subscription) {
+      if (!existingSubscription) {
         return res.status(404).json({ message: 'Subscription not found' });
       }
+      
+      // Check if this is a free tier subscription (plan_id = 1)
+      if (existingSubscription.plan_id === 1) {
+        logger.warn(`Attempt to cancel free tier subscription rejected: ${subscriptionId}`);
+        return res.status(400).json({ 
+          error: 'Invalid Operation', 
+          message: 'Free tier subscriptions cannot be cancelled' 
+        });
+      }
+
+      const subscription = await this.subscriptionService.cancelSubscription(subscriptionId, reason);
 
       return res.status(200).json({
         message: subscription.status === 'pending_cancellation' 
@@ -158,6 +214,15 @@ class SubscriptionController {
       });
     } catch (error) {
       logger.error('Error cancelling subscription:', error);
+      
+      // Special error handling for free tier cancellation attempts that somehow bypassed our check
+      if (error.message && error.message.includes('Free tier')) {
+        return res.status(400).json({ 
+          error: 'Invalid Operation', 
+          message: error.message
+        });
+      }
+      
       return res.status(500).json({ message: 'Failed to cancel subscription', error: error.message });
     }
   }
@@ -199,111 +264,6 @@ class SubscriptionController {
         error: 'Internal Server Error', 
         message: error.message 
       });
-    }
-  }
-
-  /**
-   * Upgrade a subscription to a higher-tier plan
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async upgradeSubscription(req, res) {
-    try {
-      const { subscriptionId } = req.params;
-      const { newPlanId, paymentProvider, externalPaymentId, externalSubscriptionId } = req.body;
-
-      if (!newPlanId) {
-        return res.status(400).json({ message: 'New plan ID is required' });
-      }
-
-      logger.info(`Subscription upgrade request received`, {
-        subscriptionId,
-        newPlanId,
-        paymentProvider,
-        hasExternalPaymentId: !!externalPaymentId,
-        hasExternalSubscriptionId: !!externalSubscriptionId
-      });
-
-      const options = {
-        paymentProvider,
-        externalPaymentId,
-        externalSubscriptionId
-      };
-
-      const newSubscription = await this.subscriptionService.upgradeSubscription(
-        subscriptionId,
-        newPlanId, 
-        options
-      );
-
-      return res.status(200).json({
-        message: 'Subscription upgraded successfully',
-        subscription: newSubscription
-      });
-    } catch (error) {
-      logger.error('Error upgrading subscription:', error);
-      return res.status(500).json({ message: 'Failed to upgrade subscription', error: error.message });
-    }
-  }
-
-  /**
-   * Downgrade a subscription to a lower-tier plan
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async downgradeSubscription(req, res) {
-    try {
-      const { subscriptionId } = req.params;
-      const { newPlanId } = req.body;
-
-      if (!newPlanId) {
-        return res.status(400).json({ message: 'New plan ID is required' });
-      }
-
-      logger.info(`Subscription downgrade request received`, {
-        subscriptionId,
-        newPlanId
-      });
-
-      const updatedSubscription = await this.subscriptionService.downgradeSubscription(
-        subscriptionId,
-        newPlanId
-      );
-
-      return res.status(200).json({
-        message: 'Subscription scheduled for downgrade at the end of billing period',
-        subscription: updatedSubscription
-      });
-    } catch (error) {
-      logger.error('Error downgrading subscription:', error);
-      return res.status(500).json({ message: 'Failed to downgrade subscription', error: error.message });
-    }
-  }
-
-  /**
-   * Cancel a paid plan and downgrade to free tier
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async cancelPaidPlan(req, res) {
-    try {
-      const { subscriptionId } = req.params;
-      const { reason } = req.body || {};
-
-      logger.info(`Cancel paid plan request received`, {
-        subscriptionId,
-        reason
-      });
-
-      const updatedSubscription = await this.subscriptionService.cancelPaidPlan(subscriptionId, reason);
-
-      return res.status(200).json({
-        message: 'Paid plan scheduled for cancellation at the end of billing period',
-        subscription: updatedSubscription
-      });
-    } catch (error) {
-      logger.error('Error cancelling paid plan:', error);
-      return res.status(500).json({ message: 'Failed to cancel paid plan', error: error.message });
     }
   }
 

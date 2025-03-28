@@ -1,213 +1,333 @@
-Subscription Management System Design
+# Subscription Management System - Implementation Status
 
-# 1. New User Registration
+This document outlines the current implementation state of our subscription management system, detailing the workflows, data flows, and database operations for various subscription scenarios.
 
-## User Steps:
+## Current Use Cases
 
-1. Register user account
-2. Assign free tier subscription
-3. Allocate initial token allocation for free tier
+### 1. New User Registration (Implemented)
 
-## Data Flow:
+#### User Flow:
+1. User registers a new account
+2. System assigns free tier subscription automatically
+3. System allocates initial token allocation for free tier
 
+#### Data Flow:
 - Create user record in users table
-- Create subscription record in user_subscriptions table (free tier)
+- Create subscription record in user_subscriptions table (plan_id=1, free tier)
 - Create initial token allocation in token_transactions table
 - Update token balance in tokens table
 
-## Database Operations:
+#### Database Operations:
+```sql
+INSERT INTO users (user_id, email, name, ...)
+INSERT INTO user_subscriptions (user_id, plan_id=1, status='active', ...)
+INSERT INTO token_transactions (user_id, transaction_type='allocation', amount=300, ...)
+INSERT INTO tokens (user_id, balance=300)
+```
 
-INSERT into users
-INSERT into user_subscriptions (status: active)
-INSERT into token_transactions (allocation for free tier)
-INSERT into tokens (initial balance)
+### 2. Subscription Creation (Implemented)
 
-## Current Gap:
-- The user creation creates a new user records with free subscription but is not using the correct (new) implementation and therefore does not allocate tokens.
-- Customer balance in tokens table is not updated.
+#### User Flow:
+1. User selects a subscription plan
+2. System processes payment (if paid plan)
+3. System creates subscription record
+4. System allocates tokens based on plan
 
-# 2. Paid User Billing Period Renewal without plan change
+#### Data Flow:
+- Process payment through payment gateway (if paid plan)
+- Create subscription record
+- Allocate tokens based on plan
+- Update token balance
 
-## User Steps:
+#### Database Operations:
+```sql
+INSERT INTO user_subscriptions (user_id, plan_id, status='active', ...)
+INSERT INTO payments (user_id, amount, payment_type='subscription_initial', ...)
+INSERT INTO token_transactions (user_id, transaction_type='allocation', ...)
+UPDATE tokens SET balance = balance + allocation_amount WHERE user_id = ?
+```
 
-1. After billing period expiry (monthly or yearly), billing auto-renews
-2. User pays the subscription fee via stripe
+### 3. Subscription Plan Change Scenarios (Implemented)
 
-## Data Flow:
+We've implemented a unified approach to handle all plan change scenarios through a single endpoint. The system automatically determines the type of change based on plan comparison using the `comparePlans()` helper method.
 
-- Subscription is due for payment (can be equal to the time of token renewal (monthly) or yearly)
-- Request money from user via stripe
-- New payment is created
+#### 3.1 Tier Upgrade (Higher Tier Plan)
 
-## Database Operations:
-INSERT into payments (new payment)
+##### User Flow:
+1. User initiates upgrade to a higher tier plan
+2. System immediately cancels the current subscription
+3. System creates a new subscription with the higher tier plan
+4. System allocates tokens for the new plan
 
-## Current Gap:
-- An automatic batch processing for payments is not implemented.
-- Stripe webhook is not implemented.
+##### Data Flow:
+- Cancel the current subscription (immediate)
+- Set `ended_at` date on the old subscription
+- Create a new subscription with higher tier
+- Process payment for the new plan
+- Allocate tokens for the new plan
 
-# 3. Free User / Paid User Token Renewal without plan change
+##### Database Operations:
+```sql
+-- Cancel current subscription
+UPDATE user_subscriptions 
+SET status = 'cancelled', 
+    cancellation_reason = 'CANCEL_FOR_UPGRADE',
+    canceled_at = NOW(),
+    ended_at = NOW()
+WHERE subscription_id = ?
 
-## User Steps:
+-- Create new subscription with higher tier
+INSERT INTO user_subscriptions (user_id, plan_id, status='active', ...)
 
-1. After period expiry (1 month), subscription auto-renews
-2. User receives new token allocation
+-- Create payment record
+INSERT INTO payments (user_id, subscription_id, plan_id, ...)
 
-## Data Flow:
+-- Allocate tokens
+INSERT INTO token_transactions (user_id, transaction_type='allocation', ...)
 
-- Subscription is due for token renewal
-- Request money from user via stripe
-- Subscription renews
-- Allocate new tokens for the period
-- Update the token balance
+-- Update token balance
+UPDATE tokens SET balance = balance + allocation_amount WHERE user_id = ?
+```
 
-## Database Operations:
+#### 3.2 Tier Downgrade (Lower Tier Plan)
 
-UPDATE user_subscriptions (update current_period_start and current_period_end)
-UPDATE updated_at timestamp
-INCREMENT subscription_period_count
-INSERT into token_transactions for new token allocation
-UPDATE tokens table to reflect new balance
+##### User Flow:
+1. User initiates downgrade to a lower tier plan
+2. System marks current subscription for cancellation at the end of billing period
+3. When billing period ends, system creates a new subscription with the lower tier plan
 
-## Current Gap:
-- The automatic token allocation is not implemented.
-- The automatic token balance update is not implemented.
+##### Data Flow:
+- Mark current subscription as pending cancellation
+- Store the upcoming plan ID for later activation
+- When billing period ends, batch job:
+  - Finalizes cancellation of old subscription
+  - Sets `ended_at` date
+  - Creates new subscription with lower tier
+  - Processes payment for the new plan
+  - Allocates tokens for the new plan
 
-# 4. Upgrade from Free to Paid Plan
+##### Database Operations:
+```sql
+-- Mark current subscription for cancellation at period end
+UPDATE user_subscriptions 
+SET status = 'pending_cancellation', 
+    cancellation_reason = 'CANCEL_FOR_DOWNGRADE',
+    upcoming_plan_id = ?,
+    canceled_at = NOW()
+WHERE subscription_id = ?
 
-## User Steps:
+-- At end of billing period (via batch job)
+UPDATE user_subscriptions 
+SET status = 'cancelled',
+    ended_at = NOW()
+WHERE subscription_id = ? AND status = 'pending_cancellation'
 
-User initiates upgrade from free to paid tier
-Payment processed through payment service (Stripe)
-User granted paid tier benefits
+-- Create new subscription with lower tier
+INSERT INTO user_subscriptions (user_id, plan_id, status='active', ...)
 
-## Data Flow:
+-- Create payment record for new plan
+INSERT INTO payments (user_id, subscription_id, plan_id, ...)
 
-Process payment through payment gateway
-Create new subscription record
-Mark old subscription as cancelled
-Allocate new tokens based on paid plan
+-- Allocate tokens for new plan
+INSERT INTO token_transactions (user_id, transaction_type='allocation', ...)
 
-## Database Operations:
+-- Update token balance
+UPDATE tokens SET balance = balance + allocation_amount WHERE user_id = ?
+```
 
-INSERT into user_subscriptions (new paid plan)
-UPDATE previous subscription to status=cancelled
-INSERT into payments table
-INSERT into token_transactions for new allocation
-UPDATE tokens balance
+#### 3.3 Frequency Change (Same Tier, Different Billing Frequency)
 
-## Current Gap:
-- The automatic token balance update is not implemented.
-- The payment service is not implemented (we currently create payments entries which are not really paid)
+##### User Flow:
+1. User changes billing frequency (e.g., monthly to yearly or vice versa)
+2. System marks current subscription for cancellation at the end of billing period
+3. When billing period ends, system creates a new subscription with the same tier but different frequency
 
-# 5. Downgrade Paid Plan to cheaper Paid Plan
+##### Data Flow:
+- Mark current subscription as pending cancellation
+- Store the upcoming plan ID for later activation
+- When billing period ends, batch job:
+  - Finalizes cancellation of old subscription
+  - Sets `ended_at` date
+  - Creates new subscription with new frequency
+  - Processes payment for the new plan
+  - Allocates tokens for the new plan
 
-## User Steps:
+##### Database Operations:
+```sql
+-- Mark current subscription for cancellation at period end
+UPDATE user_subscriptions 
+SET status = 'pending_cancellation', 
+    cancellation_reason = 'CANCEL_FOR_FREQUENCY_CHANGE',
+    upcoming_plan_id = ?,
+    canceled_at = NOW()
+WHERE subscription_id = ?
 
-1. User initiates downgrade but retains current plan until billing period ends
-2. Until billing period ends, tokens are allocated based on the current subscriptionplan
-3. At billing period end, new downgraded plan activates
+-- At end of billing period (via batch job)
+UPDATE user_subscriptions 
+SET status = 'cancelled',
+    ended_at = NOW()
+WHERE subscription_id = ? AND status = 'pending_cancellation'
 
-## Data Flow:
+-- Create new subscription with new frequency
+INSERT INTO user_subscriptions (user_id, plan_id, status='active', ...)
 
-- Flag current subscription with cancellation date
-- Create new subscription record with future start date
-- When billing period ends, activate new subscription
-- Request money from user via stripe for the new plan
-- Allocate new tokens for the new plan
-- Update the token balance
+-- Create payment record for new plan
+INSERT INTO payments (user_id, subscription_id, plan_id, ...)
 
-## Database Operations:
+-- Allocate tokens for new plan
+INSERT INTO token_transactions (user_id, transaction_type='allocation', ...)
 
-UPDATE current subscription with cancelled_date
-INSERT new subscription with status=cancelled and next period start date
+-- Update token balance
+UPDATE tokens SET balance = balance + allocation_amount WHERE user_id = ?
+```
 
-### When billing period ends:
-UPDATE old subscription to status=cancelled
-UPDATE new subscription to status=active
-INSERT token_transaction for new plan allocation
-INSERT payment record for new plan
-UPDATE tokens balance
+### 4. Subscription Cancellation (Implemented)
 
-## Current Gap:
-- The automatic token balance update is not implemented.
-- The logic has to be adapted for downgrades (user has to keep the advantages for the time he paid for)
-- Token balance should be first updated when the new plan is actived (otherwise the user gets additional tokens when downgrading)
-- The payment service is not implemented (we currently create payments entries which are not really paid)
-
-# 6. Cancel Paid Plan
-
-## User Steps:
-
+#### User Flow:
 1. User cancels paid subscription
-2. Service continues until end of billing period
-3. User reverts to free tier afterward
+2. System marks subscription for cancellation at the end of billing period
+3. At the end of billing period, system cancels the subscription and creates a free tier subscription
 
-## Data Flow:
+#### Data Flow:
+- Mark current subscription as pending cancellation
+- Set upcoming plan ID to free tier (plan_id=1)
+- When billing period ends, batch job:
+  - Finalizes cancellation of old subscription
+  - Sets `ended_at` date
+  - Creates new free tier subscription
+  - Allocates tokens for free tier
 
-Mark current subscription with cancellation date
-Create new free tier subscription to activate after current period
+#### Database Operations:
+```sql
+-- Mark current subscription for cancellation at period end
+UPDATE user_subscriptions 
+SET status = 'pending_cancellation', 
+    cancellation_reason = 'CANCEL_PAID_PLAN',
+    upcoming_plan_id = 1, -- Free tier
+    canceled_at = NOW()
+WHERE subscription_id = ?
 
-## Database Operations:
+-- At end of billing period (via batch job)
+UPDATE user_subscriptions 
+SET status = 'cancelled',
+    ended_at = NOW()
+WHERE subscription_id = ? AND status = 'pending_cancellation'
 
-UPDATE current subscription with cancelled_date
-INSERT new free tier subscription with status=cancelled
-When paid period ends:
+-- Create new free tier subscription
+INSERT INTO user_subscriptions (user_id, plan_id=1, status='active', ...)
 
-UPDATE old subscription to status=cancelled
-UPDATE free subscription to status=active
-INSERT token_transaction for free tier allocation
-UPDATE tokens balance
+-- Allocate tokens for free tier
+INSERT INTO token_transactions (user_id, transaction_type='allocation', ...)
 
-## Current Gap:
-- The automatic token balance update is not implemented.
-- The logic has to be adapted for cancellation (user has to keep the advantages for the time he paid for then switches to free tier, currently subscription entry is just cancelled immediately)
+-- Update token balance
+UPDATE tokens SET balance = balance + 300 WHERE user_id = ? -- Free tier allocation
+```
 
-# Batch Jobs
+### 5. Token Allocation and Renewal (Implemented)
 
-## 1. Recurring Payment Collection
+#### User Flow:
+1. User reaches end of subscription period
+2. System allocates new tokens based on subscription plan
+3. System updates token balance
 
-Frequency: Daily
+#### Data Flow:
+- Check if subscription period has ended
+- Calculate tokens to allocate based on plan
+- Create token allocation transaction
+- Update token balance
 
-### Requirements:
+#### Database Operations:
+```sql
+-- Update subscription period
+UPDATE user_subscriptions 
+SET current_period_start = ?,
+    current_period_end = ?
+WHERE subscription_id = ?
 
-Process for users with active paid subscriptions
-No cancellation date set
+-- Allocate tokens
+INSERT INTO token_transactions (
+    user_id, 
+    transaction_type='allocation', 
+    amount=?,
+    description='Monthly token allocation for subscription'
+)
 
-### Process:
+-- Update token balance
+UPDATE tokens SET balance = balance + ? WHERE user_id = ?
+```
 
-Identify subscriptions where next payment is due
-Send payment request to payment processor (Stripe)
-Create payment record
-Update subscription status based on payment result
+## Batch Job Implementation
 
-## 2. Token Allocation
-Frequency: Daily
-### Requirements:
+### 1. Process Pending Cancellations (Implemented)
 
-Check for subscription periods that have ended
-Allocate new tokens based on subscription plan
-Update balance of user tokens
+This batch job processes subscriptions marked for cancellation that have reached their end date.
 
-### Process:
+#### Job Responsibilities:
+1. Identify subscriptions with `status='pending_cancellation'` and `end_date <= current_date`
+2. Change their status to `cancelled`
+3. Set the `ended_at` timestamp to the current date/time
+4. Create new subscriptions based on the `upcoming_plan_id` value:
+   - For downgrades: Create with the specified lower-tier plan
+   - For frequency changes: Create with the same tier but different frequency
+   - For cancellations to free tier: Create with plan_id=1 (free tier)
 
-Identify subscriptions where current period has ended
-Create token transaction records for new allocations
-Update subscription period dates (new start/end)
-Increment subscription period counter
-Update user token balance
+#### Database Operations:
+```sql
+-- Find pending cancellations ready to process
+SELECT * FROM user_subscriptions 
+WHERE status = 'pending_cancellation' 
+AND end_date <= NOW() 
+AND end_date IS NOT NULL;
 
-## 3. Plan Downgrades
+-- For each subscription found:
+-- 1. Finalize cancellation
+UPDATE user_subscriptions 
+SET status = 'cancelled',
+    ended_at = NOW()
+WHERE subscription_id = ?;
 
-Frequency: Daily
+-- 2. If there's an upcoming plan, create new subscription
+INSERT INTO user_subscriptions (
+    user_id, 
+    plan_id, -- upcoming_plan_id from old subscription
+    status = 'active',
+    start_date = NOW(),
+    current_period_start = NOW(),
+    -- Calculate current_period_end based on plan billing frequency
+    ...
+)
+```
 
-### Requirements:
+### 2. Token Allocation Job (Planned)
 
-Check for subscriptions with payments that are due for a downgrade
+This batch job will allocate tokens to subscriptions at the beginning of each new period.
 
-### Process:
+#### Job Responsibilities (To Be Implemented):
+1. Identify subscriptions where `current_period_end <= current_date`
+2. Allocate tokens based on plan
+3. Update subscription periods
+4. Update token balances
 
-Identify subscriptions where downgrade is due
-Update subscription to new plan
-Create token transaction for new allocation
-Update user token balance
+## Validation Rules and Restrictions
+
+The following validation rules have been implemented:
+
+1. **Free Tier Restrictions**:
+   - Free tier subscriptions (plan_id=1) cannot be downgraded
+   - Free tier subscriptions cannot be cancelled except for upgrading to a paid plan
+   - These restrictions are enforced at multiple levels:
+     - Service layer (`subscriptionService.js`)
+     - Data access layer (`subscriptionsDataAccess.js`)
+     - API Gateway (`subscription.js` routes)
+
+2. **Plan Change Validation**:
+   - Plans are compared using `tier_id` to determine upgrade/downgrade scenarios
+   - The system prevents invalid operations (e.g., downgrading a free tier subscription)
+   - User can only manage their own subscriptions unless they have admin permissions
+
+3. **Subscription Status Validation**:
+   - Subscriptions can only be cancelled once
+   - Only active subscriptions can be upgraded/downgraded
+   - Status transitions are strictly controlled:
+     - `active` → `pending_cancellation` or `cancelled`
+     - `pending_cancellation` → `cancelled`

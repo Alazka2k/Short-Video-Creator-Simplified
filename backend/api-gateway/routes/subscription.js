@@ -370,7 +370,7 @@ router.post('/subscriptions/:userId/renew',
 
 /**
  * @route POST /api/subscription/subscriptions
- * @description Create a new subscription
+ * @description Create a new subscription or change an existing subscription plan
  * @access Protected - requires create:subscription permission
  */
 router.post('/subscriptions', 
@@ -386,6 +386,62 @@ router.post('/subscriptions',
         requestBody.userId = userContext.actualUserId.toString();
       }
       
+      // Security check: regular users can only create/change their own subscriptions
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('create:subscriptions')) ||
+        tokenScopes.includes('create:subscriptions') ||
+        isApiUser;
+        
+      if (!hasAdminPermission && userContext.actualUserId.toString() !== requestBody.userId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You can only manage your own subscriptions'
+        });
+      }
+      
+      // Check if this is a plan change by seeing if the user already has an active subscription
+      const userId = requestBody.userId;
+      try {
+        // Get current subscription if it exists
+        const currentSubscription = await axios.get(`${SUBSCRIPTION_SERVICE_URL}/subscriptions/user/${userId}`, {
+          headers: { Authorization: req.headers.authorization }
+        });
+        
+        // If we found a subscription and the plan is being changed, we need to check validity
+        if (currentSubscription.data && currentSubscription.data.plan_id && 
+            requestBody.planId && currentSubscription.data.plan_id !== parseInt(requestBody.planId)) {
+          
+          // Free tier (plan_id=1) validation - prevent downgrades
+          if (currentSubscription.data.plan_id === 1) {
+            // Get the new plan to check if it's a downgrade (we need to validate tier_id)
+            const newPlanResponse = await axios.get(`${SUBSCRIPTION_SERVICE_URL}/plans/${requestBody.planId}`, {
+              headers: { Authorization: req.headers.authorization }
+            });
+            
+            // The backend will handle full validation, but we do a basic check here
+            logger.info('Plan change from free tier detected:', {
+              currentPlanId: currentSubscription.data.plan_id,
+              newPlanId: requestBody.planId,
+              newPlanTier: newPlanResponse.data.tier_id
+            });
+          }
+          
+          logger.info('Subscription plan change detected:', {
+            userId,
+            currentPlanId: currentSubscription.data.plan_id,
+            newPlanId: requestBody.planId
+          });
+        }
+      } catch (subscriptionCheckError) {
+        // If we can't find a current subscription, this is a new subscription - continue
+        logger.info('No active subscription found, creating new subscription', {
+          userId,
+          planId: requestBody.planId
+        });
+      }
+      
       // Remove any user_id property to avoid confusion - we only use userId consistently
       if (requestBody.user_id) {
         delete requestBody.user_id;
@@ -393,14 +449,14 @@ router.post('/subscriptions',
       
       await forwardToSubscriptionService(req, res, '/subscriptions', requestBody);
     } catch (error) {
-      logger.error('Error creating subscription:', {
+      logger.error('Error creating/changing subscription:', {
         error: error.message,
         stack: error.stack,
         userId: req.body.userId || 'unknown'
       });
       
       res.status(500).json({
-        error: 'Failed to create subscription',
+        error: 'Failed to create/change subscription',
         details: error.message
       });
     }

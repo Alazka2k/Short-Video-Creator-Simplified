@@ -10,6 +10,14 @@
 
 const logger = require('../../../shared/utils/logger');
 
+// Standardized cancellation reasons
+const CANCELLATION_REASONS = {
+  CANCEL_PAID_PLAN: 'CANCEL_PAID_PLAN',
+  CANCEL_FOR_UPGRADE: 'CANCEL_FOR_UPGRADE',
+  CANCEL_FOR_DOWNGRADE: 'CANCEL_FOR_DOWNGRADE',
+  CANCEL_FOR_FREQUENCY_CHANGE: 'CANCEL_FOR_FREQUENCY_CHANGE'
+};
+
 class SubscriptionService {
   constructor(dataAccess) {
     this.dataAccess = dataAccess;
@@ -91,6 +99,12 @@ class SubscriptionService {
         throw new Error('planId is required');
       }
       
+      // Get the new plan details to determine the tier
+      const newPlan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
+      if (!newPlan) {
+        throw new Error(`Plan not found: ${subscriptionData.planId}`);
+      }
+      
       // Check if user already has an active subscription
       let existingSubscription = null;
       try {
@@ -111,49 +125,101 @@ class SubscriptionService {
           throw new Error(`User already has an active subscription with this plan (ID: ${existingSubscription.subscription_id})`);
         }
         
-        // If it's a different plan, try to cancel the existing subscription first, but don't fail if it doesn't work
-        logger.info('Cancelling existing subscription before creating new one:', {
-          existingSubscriptionId: existingSubscription.subscription_id,
-          existingPlanId: existingSubscription.plan_id,
-          newPlanId: subscriptionData.planId
-        });
+        // Get existing plan to compare tiers
+        const existingPlan = await this.dataAccess.plans.getPlanById(existingSubscription.plan_id);
+        if (!existingPlan) {
+          logger.warn(`Could not find plan information for existing subscription plan: ${existingSubscription.plan_id}`);
+          // Continue anyway as we'll default to upgrade behavior
+        }
         
-        // Use proper cancellation reason based on existing plan
-        const isUpgradeFromFreeTier = existingSubscription.plan_id === 1;
-        const cancellationReason = isUpgradeFromFreeTier ? 'CANCEL_FOR_UPGRADE' : 'Upgraded to a new plan';
+        let comparison = null;
+        if (existingPlan) {
+          // Compare plans to determine what kind of change this is
+          comparison = this.comparePlans(existingPlan, newPlan);
+          logger.info('Plan comparison for subscription change:', comparison);
+        }
+        
+        // Prevent downgrading from free tier (plan_id=1)
+        if (existingSubscription.plan_id === 1 && comparison && comparison.isDowngrade) {
+          throw new Error('Free tier subscriptions cannot be downgraded');
+        }
+        
+        // Handle different plan change scenarios
+        // 1. Tier Upgrade: Cancel immediately and create new subscription
+        // 2. Tier Downgrade: Set to pending_cancellation until billing period ends
+        // 3. Frequency Change (Same Tier): Set to pending_cancellation with upcoming plan ID
+        
+        let cancellationReason;
+        let upcomingPlanId = null;
+        let shouldCreateNewNow = false;
+        
+        if (comparison && comparison.isUpgrade) {
+          // Case 1: Tier Upgrade
+          cancellationReason = CANCELLATION_REASONS.CANCEL_FOR_UPGRADE;
+          shouldCreateNewNow = true;
+          logger.info('Processing tier upgrade from existing subscription');
+        } else if (comparison && comparison.isDowngrade) {
+          // Case 2: Tier Downgrade
+          cancellationReason = CANCELLATION_REASONS.CANCEL_FOR_DOWNGRADE;
+          upcomingPlanId = parseInt(subscriptionData.planId);
+          shouldCreateNewNow = false;
+          logger.info('Processing tier downgrade from existing subscription');
+        } else if (comparison && comparison.isFrequencyChange) {
+          // Case 3: Frequency Change (Same Tier)
+          cancellationReason = CANCELLATION_REASONS.CANCEL_FOR_FREQUENCY_CHANGE;
+          upcomingPlanId = parseInt(subscriptionData.planId);
+          shouldCreateNewNow = false;
+          logger.info('Processing frequency change from existing subscription');
+        } else {
+          // Default case (fallback) - treat as upgrade
+          cancellationReason = 'Subscription plan change';
+          shouldCreateNewNow = true;
+          logger.info('Processing subscription change (default to upgrade behavior)');
+        }
         
         try {
-          await this.cancelSubscription(existingSubscription.subscription_id, cancellationReason);
-          logger.info('Successfully cancelled previous subscription during upgrade', {
-            wasFreeTier: isUpgradeFromFreeTier,
-            reason: cancellationReason
+          // Cancel or mark for pending cancellation the existing subscription
+          await this.dataAccess.subscriptions.cancelSubscription(
+            existingSubscription.subscription_id, 
+            cancellationReason,
+            upcomingPlanId,
+          );
+          
+          logger.info('Processed existing subscription for plan change:', {
+            subscriptionId: existingSubscription.subscription_id,
+            cancellationReason,
+            upcomingPlanId,
+            shouldCreateNewNow
           });
+          
+          // If it's a downgrade or frequency change, we need to return the updated subscription
+          // without creating a new one yet (it will be created when the period ends)
+          if (!shouldCreateNewNow) {
+            const updatedSubscription = await this.dataAccess.subscriptions.getSubscriptionById(
+              existingSubscription.subscription_id
+            );
+            
+            return {
+              ...updatedSubscription,
+              message: "Subscription change scheduled for end of billing period"
+            };
+          }
+          
+          // For upgrades, continue with creating new subscription below
+          
         } catch (cancellationError) {
           // If cancellation failed, we'll log but continue with creating the new subscription
-          logger.warn('Error cancelling previous subscription during upgrade, continuing with new subscription:', { 
+          logger.warn('Error processing existing subscription, continuing with new subscription:', { 
             error: cancellationError.message, 
             subscriptionId: existingSubscription.subscription_id 
           });
           
-          // Try a direct database update to mark it as cancelled if the normal cancellation failed
-          try {
-            await this.dataAccess.subscriptions.updateSubscription(
-              existingSubscription.subscription_id, 
-              { 
-                status: 'cancelled',
-                canceledAt: new Date(),
-                cancellationReason: cancellationReason
-              }
-            );
-            logger.info('Forced cancellation of previous subscription');
-          } catch (forceUpdateError) {
-            logger.warn('Forced cancellation also failed, continuing with new subscription anyway:', {
-              error: forceUpdateError.message
-            });
-            // Continue with creation even if this fails
-          }
+          // For critical errors that should prevent continuing, they'll be thrown from cancelSubscription
+          // and propagated up, so if we got here, we'll just continue with creation
         }
       }
+      
+      // Only continue with creating a new subscription for new subscriptions or upgrades
       
       // Format the subscription data for creation
       const formattedSubscriptionData = {
@@ -456,6 +522,49 @@ class SubscriptionService {
   }
 
   /**
+   * Helper method to compare subscription plans based on tier_id and plan_id
+   * @param {Object} currentPlan - The current plan
+   * @param {Object} newPlan - The new plan
+   * @returns {Object} - Object containing comparison results
+   */
+  comparePlans(currentPlan, newPlan) {
+    if (!currentPlan || !newPlan) {
+      throw new Error('Both current plan and new plan must be provided for comparison');
+    }
+
+    // Get tier information
+    const currentTierId = currentPlan.tier_id;
+    const newTierId = newPlan.tier_id;
+
+    // Comparing plans
+    const isSameTier = currentTierId === newTierId;
+    const isUpgrade = newTierId > currentTierId;
+    const isDowngrade = newTierId < currentTierId;
+    const isSamePlan = currentPlan.plan_id === newPlan.plan_id;
+    const isFrequencyChange = isSameTier && !isSamePlan;
+
+    logger.info('Plan comparison results:', {
+      currentPlanId: currentPlan.plan_id,
+      currentTierId,
+      newPlanId: newPlan.plan_id,
+      newTierId,
+      isSameTier,
+      isUpgrade,
+      isDowngrade,
+      isSamePlan,
+      isFrequencyChange
+    });
+
+    return {
+      isSameTier,
+      isUpgrade,
+      isDowngrade,
+      isSamePlan,
+      isFrequencyChange
+    };
+  }
+
+  /**
    * Cancel a subscription
    * @param {string} subscriptionId - The subscription ID
    * @param {string} reason - The reason for cancellation
@@ -482,24 +591,31 @@ class SubscriptionService {
         throw new Error(`Subscription not found: ${subscriptionId}`);
       }
       
+      // Prevent cancellation of free tier subscriptions
+      if (subscription.plan_id === 1) {
+        logger.warn(`Cannot cancel a free tier subscription: ${subscriptionId}`);
+        throw new Error('Free tier subscriptions cannot be cancelled');
+      }
+      
       if (subscription.status === 'cancelled') {
         logger.warn(`Subscription already cancelled: ${subscriptionId}`);
         return subscription;
       }
       
       // Standardize the cancellation reason
-      let cancellationReason = reason || 'CANCEL_PAID_PLAN';
+      let cancellationReason = reason || CANCELLATION_REASONS.CANCEL_PAID_PLAN;
       
       // If it's not one of our standard reasons, convert it
-      if (!['CANCEL_PAID_PLAN', 'CANCEL_FOR_UPGRADE', 'CANCEL_FOR_DOWNGRADE'].includes(cancellationReason)) {
-        cancellationReason = 'CANCEL_PAID_PLAN';
+      if (!Object.values(CANCELLATION_REASONS).includes(cancellationReason)) {
+        cancellationReason = CANCELLATION_REASONS.CANCEL_PAID_PLAN;
       }
       
       logger.info(`Proceeding with cancellation using reason: "${cancellationReason}"`);
       
       // For paid plan cancellations, we'll schedule a switch to free tier (plan_id=1)
-      // For upgrades and downgrades, no upcoming plan ID is needed as those are immediate
-      const upcomingPlanId = cancellationReason === 'CANCEL_PAID_PLAN' ? 1 : null;
+      // For frequency changes, we'll use the specified upcoming plan 
+      // For upgrades and downgrades, no upcoming plan ID is needed here (handled in specific methods)
+      const upcomingPlanId = cancellationReason === CANCELLATION_REASONS.CANCEL_PAID_PLAN ? 1 : null;
       
       const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
         subscriptionId, 
@@ -685,49 +801,70 @@ class SubscriptionService {
       if (!currentPlan || !newPlan) {
         throw new Error("Could not retrieve plan information");
       }
+
+      // Compare plans to determine the appropriate action
+      const comparison = this.comparePlans(currentPlan, newPlan);
       
-      // Basic validation - ensure this is actually an upgrade
-      // In production, you might compare monthly_price or other attributes to verify it's a true upgrade
-      logger.info('Validating upgrade plan pricing:', {
-        currentPlanId: currentPlan.plan_id,
-        currentPlanPrice: currentPlan.monthly_price,
-        newPlanId: newPlan.plan_id,
-        newPlanPrice: newPlan.monthly_price
-      });
+      // Validate this is actually an upgrade or frequency change
+      if (!comparison.isUpgrade && !comparison.isFrequencyChange) {
+        throw new Error(`Invalid upgrade: New plan (ID: ${newPlanId}, Tier: ${newPlan.tier_id}) is not an upgrade from current plan (ID: ${currentPlan.plan_id}, Tier: ${currentPlan.tier_id})`);
+      }
+
+      // Determine the cancellation reason
+      const cancellationReason = comparison.isFrequencyChange 
+        ? CANCELLATION_REASONS.CANCEL_FOR_FREQUENCY_CHANGE 
+        : CANCELLATION_REASONS.CANCEL_FOR_UPGRADE;
       
-      // Cancel the current subscription with CANCEL_FOR_UPGRADE reason
-      // This will set the status to 'cancelled' immediately
+      // For upgrades and frequency changes, we use different handling
+      const upcomingPlanId = comparison.isFrequencyChange ? newPlanId : null;
+      
+      // Cancel the current subscription with appropriate reason
       await this.dataAccess.subscriptions.cancelSubscription(
         subscriptionId,
-        'CANCEL_FOR_UPGRADE',
-        null // No upcoming plan ID needed as we're creating a new subscription immediately
+        cancellationReason,
+        upcomingPlanId // Only set for frequency changes
       );
-      
-      // Create the new subscription with the higher tier plan
-      const subscriptionData = {
-        userId: currentSubscription.user_id,
-        planId: newPlanId,
-        status: 'active',
-        startDate: new Date(), // Start immediately
-        externalSubscriptionId: options.externalSubscriptionId || currentSubscription.external_subscription_id
-      };
-      
-      // If payment details provided, include them
-      if (options.paymentProvider && options.externalPaymentId) {
-        subscriptionData.paymentProvider = options.paymentProvider;
-        subscriptionData.externalPaymentId = options.externalPaymentId;
+
+      // For tier upgrades, create a new subscription immediately
+      // For frequency changes, we don't create a new subscription here
+      if (comparison.isUpgrade) {
+        // Create the new subscription with the higher tier plan
+        const subscriptionData = {
+          userId: currentSubscription.user_id,
+          planId: newPlanId,
+          status: 'active',
+          startDate: new Date(), // Start immediately
+          externalSubscriptionId: options.externalSubscriptionId || currentSubscription.external_subscription_id
+        };
+        
+        // If payment details provided, include them
+        if (options.paymentProvider && options.externalPaymentId) {
+          subscriptionData.paymentProvider = options.paymentProvider;
+          subscriptionData.externalPaymentId = options.externalPaymentId;
+        }
+        
+        const newSubscription = await this.createSubscription(subscriptionData);
+        
+        logger.info('Subscription upgraded successfully:', {
+          oldSubscriptionId: subscriptionId,
+          newSubscriptionId: newSubscription.subscription_id,
+          userId: newSubscription.user_id,
+          newPlanId: newSubscription.plan_id
+        });
+        
+        return newSubscription;
+      } else {
+        // For frequency changes, return the updated subscription with pending status
+        const updatedSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
+        
+        logger.info('Subscription frequency change scheduled:', {
+          subscriptionId: updatedSubscription.subscription_id,
+          currentPlanId: updatedSubscription.plan_id,
+          upcomingPlanId: updatedSubscription.upcoming_plan_id
+        });
+        
+        return updatedSubscription;
       }
-      
-      const newSubscription = await this.createSubscription(subscriptionData);
-      
-      logger.info('Subscription upgraded successfully:', {
-        oldSubscriptionId: subscriptionId,
-        newSubscriptionId: newSubscription.subscription_id,
-        userId: newSubscription.user_id,
-        newPlanId: newSubscription.plan_id
-      });
-      
-      return newSubscription;
     } catch (error) {
       logger.error('Error upgrading subscription:', error);
       throw error;
@@ -763,23 +900,27 @@ class SubscriptionService {
         throw new Error("Could not retrieve plan information");
       }
       
-      // Basic validation - ensure this is actually a downgrade
-      // In production, you might compare monthly_price or other attributes
-      logger.info('Validating downgrade plan pricing:', {
-        currentPlanId: currentPlan.plan_id,
-        currentPlanPrice: currentPlan.monthly_price,
-        newPlanId: newPlan.plan_id,
-        newPlanPrice: newPlan.monthly_price
-      });
+      // Compare plans to determine the appropriate action
+      const comparison = this.comparePlans(currentPlan, newPlan);
+
+      // Validate this is actually a downgrade or frequency change
+      if (!comparison.isDowngrade && !comparison.isFrequencyChange) {
+        throw new Error(`Invalid downgrade: New plan (ID: ${newPlanId}, Tier: ${newPlan.tier_id}) is not a downgrade from current plan (ID: ${currentPlan.plan_id}, Tier: ${currentPlan.tier_id})`);
+      }
+
+      // Determine the cancellation reason
+      const cancellationReason = comparison.isFrequencyChange 
+        ? CANCELLATION_REASONS.CANCEL_FOR_FREQUENCY_CHANGE 
+        : CANCELLATION_REASONS.CANCEL_FOR_DOWNGRADE;
       
       // Mark the current subscription for downgrade at the end of the billing period
       const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
         subscriptionId,
-        'CANCEL_FOR_DOWNGRADE',
+        cancellationReason,
         newPlanId // Specify the upcoming plan ID
       );
       
-      logger.info('Subscription marked for downgrade at period end:', {
+      logger.info(`Subscription marked for ${comparison.isFrequencyChange ? 'frequency change' : 'downgrade'} at period end:`, {
         subscriptionId: updatedSubscription.subscription_id,
         currentPlanId: updatedSubscription.plan_id,
         downgradeToId: updatedSubscription.upcoming_plan_id,
@@ -818,7 +959,7 @@ class SubscriptionService {
       }
       
       // Create a standardized reason with any additional context
-      const cancellationReason = `CANCEL_PAID_PLAN${reason ? ': ' + reason : ''}`;
+      const cancellationReason = `${CANCELLATION_REASONS.CANCEL_PAID_PLAN}${reason ? ': ' + reason : ''}`;
       
       // Mark the subscription for cancellation at the end of the billing period
       // and schedule downgrade to free tier (plan_id=1)
@@ -882,8 +1023,16 @@ class SubscriptionService {
             .where('subscription_id', subscription.subscription_id)
             .update({
               status: 'cancelled',
-              updated_at: knex.fn.now()
+              updated_at: knex.fn.now(),
+              ended_at: knex.fn.now() // Set ended_at date when finalizing cancellation
             });
+          
+          logger.info('Subscription cancellation finalized:', {
+            subscriptionId: subscription.subscription_id,
+            userId: subscription.user_id,
+            endDate: subscription.end_date,
+            endedAt: new Date().toISOString()
+          });
           
           results.processed++;
           
