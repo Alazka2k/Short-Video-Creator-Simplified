@@ -16,6 +16,7 @@ const tokenRoutes = require('./routes/tokenRoutes');
 const tokenPackageRoutes = require('./routes/tokenPackageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 /**
  * Create and configure an Express server with all routes
@@ -50,6 +51,7 @@ function createServer(controllers) {
   app.use('/token-packages', tokenPackageRoutes(controllers.tokenPackageController));
   app.use('/payments', paymentRoutes(controllers.paymentController));
   app.use('/webhooks', webhookRoutes(controllers.webhookController));
+  app.use('/transactions', transactionRoutes(controllers.transactionController));
   
   // Error handler middleware - must be defined last
   app.use(errorHandler);

@@ -22,6 +22,7 @@ const SubscriptionService = require('./services/subscriptionService');
 const TokenService = require('./services/tokenService');
 const TokenPackageService = require('./services/tokenPackageService');
 const PaymentService = require('./services/paymentService');
+const TransactionService = require('./services/transactionService');
 
 // Import controllers
 const PlanController = require('./controllers/planController');
@@ -30,6 +31,7 @@ const TokenController = require('./controllers/tokenController');
 const TokenPackageController = require('./controllers/tokenPackageController');
 const PaymentController = require('./controllers/paymentController');
 const WebhookController = require('./controllers/webhookController');
+const TransactionController = require('./controllers/transactionController');
 
 // Import utilities
 const TokenCalculator = require('./utils/tokenCalculator');
@@ -41,7 +43,7 @@ const dataAccess = {
   subscriptions: SubscriptionsDataAccess,
   tokenTransactions: TokenTransactionsDataAccess,
   tokenPackages: TokenPackagesDataAccess,
-  tokenBalance: TokenBalanceDataAccess,
+  tokenBalance: new TokenBalanceDataAccess(),
   payments: PaymentsDataAccess
 };
 
@@ -58,11 +60,12 @@ async function startServer() {
     await stripeService.initialize();
     
     // Initialize services
-    const planService = new PlanService(dataAccess);
     const subscriptionService = new SubscriptionService(dataAccess);
+    const planService = new PlanService(dataAccess);
     const tokenService = new TokenService(dataAccess, tokenCalculator);
     const tokenPackageService = new TokenPackageService(dataAccess);
     const paymentService = new PaymentService(dataAccess, stripeService);
+    const transactionService = new TransactionService(dataAccess, tokenCalculator);
     
     // Initialize controllers
     const planController = new PlanController(planService);
@@ -71,6 +74,7 @@ async function startServer() {
     const tokenPackageController = new TokenPackageController(tokenPackageService);
     const paymentController = new PaymentController(paymentService);
     const webhookController = new WebhookController(paymentService);
+    const transactionController = new TransactionController(transactionService);
     
     // Create and start the server
     const app = server.createServer({
@@ -79,7 +83,8 @@ async function startServer() {
       tokenController,
       tokenPackageController,
       paymentController,
-      webhookController
+      webhookController,
+      transactionController
     });
     
     // Get port from config, or use 3010 as a fallback

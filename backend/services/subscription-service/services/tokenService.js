@@ -38,28 +38,6 @@ class TokenService {
   }
 
   /**
-   * Get a user's token transactions
-   * @param {string} userId - The user ID
-   * @param {number} limit - The maximum number of transactions to return
-   * @param {number} offset - The offset for pagination
-   * @returns {Promise<Array>} - List of token transactions
-   */
-  async getUserTokenTransactions(userId, limit = 100, offset = 0) {
-    try {
-      logger.info('Getting token transactions for user:', { userId, limit, offset });
-      
-      if (!userId) {
-        throw new Error('User ID is required');
-      }
-      
-      return await this.dataAccess.tokenTransactions.getUserTokenTransactions(userId, limit, offset);
-    } catch (error) {
-      logger.error('Error in getUserTokenTransactions:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Allocate subscription tokens to a user
    * @param {string} userId - The user ID
    * @param {string} subscriptionId - The subscription ID
@@ -244,43 +222,29 @@ class TokenService {
   }
 
   /**
-   * Calculate the token cost of a job
-   * @param {Object} jobData - The job data
-   * @returns {Object} - The token cost breakdown
+   * Check if a user has an active subscription
+   * @param {string} userId - The user ID
+   * @returns {Promise<boolean>} - Whether the user has an active subscription
    */
-  calculateJobTokenCost(jobData) {
+  async checkUserHasActiveSubscription(userId) {
     try {
-      logger.info('Calculating job token cost:', jobData);
-      return this.tokenCalculator.calculateJobCost(jobData);
+      logger.info('Checking if user has active subscription:', { userId });
+      
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
+      // Use the subscription data access to check for active subscription
+      const hasActive = await this.dataAccess.subscriptions.hasActiveSubscription(userId);
+      
+      logger.info('Active subscription check result:', { 
+        userId, 
+        hasActiveSubscription: hasActive 
+      });
+      
+      return hasActive;
     } catch (error) {
-      logger.error('Error in calculateJobTokenCost:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get the token cost for a specific service
-   * @param {string} service - The service name
-   * @returns {number} - The token cost
-   */
-  getServiceTokenCost(service) {
-    try {
-      return this.tokenCalculator.getServiceCost(service);
-    } catch (error) {
-      logger.error('Error in getServiceTokenCost:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get all token costs
-   * @returns {Object} - Object containing all token costs
-   */
-  getAllTokenCosts() {
-    try {
-      return this.tokenCalculator.getAllCosts();
-    } catch (error) {
-      logger.error('Error in getAllTokenCosts:', error);
+      logger.error('Error checking user active subscription:', error);
       throw error;
     }
   }

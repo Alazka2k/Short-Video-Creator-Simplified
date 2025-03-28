@@ -3,10 +3,8 @@
  * 
  * This controller handles HTTP requests for token-related endpoints:
  * - GET /tokens/balance/:userId - Get user's token balance
- * - GET /tokens/transactions/:userId - Get user's token transactions
- * - POST /tokens/allocate - Allocate tokens to a user
- * - POST /tokens/usage - Record token usage
- * - GET /tokens/costs - Get token costs
+ * - POST /tokens/allocate - Allocate tokens to a user (admin only)
+ * - POST /tokens/usage - Record token usage (deduct tokens)
  */
 
 const logger = require('../../../shared/utils/logger');
@@ -25,121 +23,49 @@ class TokenController {
   async getUserTokenBalance(req, res) {
     try {
       const { userId } = req.params;
-      const tokenBalance = await this.tokenService.getUserTokenBalance(userId);
-      
-      res.json(tokenBalance);
+      const balance = await this.tokenService.getUserTokenBalance(userId);
+      res.json(balance);
     } catch (error) {
-      logger.error('Error fetching user token balance:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      logger.error('Error in getUserTokenBalance:', error);
+      res.status(500).json({ error: 'Failed to get token balance', details: error.message });
     }
   }
 
   /**
-   * Get user's token transactions
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async getUserTokenTransactions(req, res) {
-    try {
-      const { userId } = req.params;
-      const { limit = 100, offset = 0 } = req.query;
-      
-      const transactions = await this.tokenService.getUserTokenTransactions(
-        userId, 
-        parseInt(limit), 
-        parseInt(offset)
-      );
-      
-      res.json(transactions);
-    } catch (error) {
-      logger.error('Error fetching user token transactions:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-  }
-
-  /**
-   * Allocate tokens to a user
+   * Allocate tokens to a user (admin only)
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    */
   async allocateTokens(req, res) {
     try {
-      const { 
-        userId, 
-        tokenAmount, 
-        relatedEntityType, 
-        relatedEntityId, 
-        description, 
-        paymentId 
-      } = req.body;
+      const { userId, tokenAmount, description, relatedEntityType, relatedEntityId, paymentId } = req.body;
       
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+      if (!userId || !tokenAmount) {
+        return res.status(400).json({ error: 'User ID and token amount are required' });
       }
       
-      if (!tokenAmount || tokenAmount <= 0) {
-        return res.status(400).json({ error: 'tokenAmount must be a positive number' });
+      if (tokenAmount <= 0) {
+        return res.status(400).json({ error: 'Token amount must be a positive number' });
       }
       
       const transaction = await this.tokenService.allocateTokens(
         userId,
         tokenAmount,
-        relatedEntityType,
+        relatedEntityType || 'other',
         relatedEntityId,
         description,
         paymentId
       );
       
-      res.status(201).json({
-        success: true,
-        data: transaction
-      });
+      res.json(transaction);
     } catch (error) {
-      logger.error('Error allocating tokens:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      logger.error('Error in allocateTokens:', error);
+      res.status(500).json({ error: 'Failed to allocate tokens', details: error.message });
     }
   }
 
   /**
-   * Allocate subscription tokens to a user
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async allocateSubscriptionTokens(req, res) {
-    try {
-      const { userId, subscriptionId, tokenAmount, description } = req.body;
-      
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-      }
-      
-      if (!subscriptionId) {
-        return res.status(400).json({ error: 'subscriptionId is required' });
-      }
-      
-      if (!tokenAmount || tokenAmount <= 0) {
-        return res.status(400).json({ error: 'tokenAmount must be a positive number' });
-      }
-      
-      const transaction = await this.tokenService.allocateSubscriptionTokens(
-        userId,
-        subscriptionId,
-        tokenAmount,
-        description
-      );
-      
-      res.status(201).json({
-        success: true,
-        data: transaction
-      });
-    } catch (error) {
-      logger.error('Error allocating subscription tokens:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-  }
-
-  /**
-   * Record token usage
+   * Record token usage (deduct tokens)
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    */
@@ -147,95 +73,58 @@ class TokenController {
     try {
       const { 
         userId, 
+        tokenAmount, 
         jobId, 
         serviceName, 
-        tokenAmount, 
-        metadata, 
-        description,
+        description, 
+        metadata,
         relatedEntityType,
         relatedEntityId,
         externalServiceName
       } = req.body;
       
-      if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+      if (!userId || !tokenAmount) {
+        return res.status(400).json({ error: 'User ID and token amount are required' });
       }
       
-      if (!jobId) {
-        return res.status(400).json({ error: 'jobId is required' });
+      if (tokenAmount <= 0) {
+        return res.status(400).json({ error: 'Token amount must be a positive number' });
       }
       
-      if (!serviceName) {
-        return res.status(400).json({ error: 'serviceName is required' });
-      }
-      
-      if (!tokenAmount || tokenAmount <= 0) {
-        return res.status(400).json({ error: 'tokenAmount must be a positive number' });
+      // Check if user has active subscription before allowing token deduction
+      const hasActiveSubscription = await this.tokenService.checkUserHasActiveSubscription(userId);
+      if (!hasActiveSubscription) {
+        return res.status(403).json({ 
+          error: 'Forbidden', 
+          message: 'User does not have an active subscription. Token deduction not allowed.'
+        });
       }
       
       const transaction = await this.tokenService.recordTokenUsage(
         userId,
-        jobId,
+        jobId || (metadata && metadata.jobId),
         serviceName,
         tokenAmount,
-        metadata,
+        metadata || {},
         description,
         relatedEntityType,
         relatedEntityId,
         externalServiceName
       );
       
-      res.status(201).json({
-        success: true,
-        data: transaction
-      });
+      res.json(transaction);
     } catch (error) {
-      logger.error('Error recording token usage:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-  }
-
-  /**
-   * Get token costs
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async getTokenCosts(req, res) {
-    try {
-      const { service } = req.query;
+      logger.error('Error in recordTokenUsage:', error);
       
-      if (service) {
-        const cost = this.tokenService.getServiceTokenCost(service);
-        return res.json({ service, cost });
+      // Check for specific error types
+      if (error.message && error.message.includes('Insufficient tokens')) {
+        return res.status(402).json({ 
+          error: 'Payment Required', 
+          message: error.message
+        });
       }
       
-      const costs = this.tokenService.getAllTokenCosts();
-      res.json(costs);
-    } catch (error) {
-      logger.error('Error getting token costs:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-  }
-
-  /**
-   * Calculate job token cost
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async calculateJobTokenCost(req, res) {
-    try {
-      const jobData = req.body;
-      
-      if (!jobData) {
-        return res.status(400).json({ error: 'Job data is required' });
-      }
-      
-      const costBreakdown = this.tokenService.calculateJobTokenCost(jobData);
-      
-      res.json(costBreakdown);
-    } catch (error) {
-      logger.error('Error calculating job token cost:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      res.status(500).json({ error: 'Failed to record token usage', details: error.message });
     }
   }
 }

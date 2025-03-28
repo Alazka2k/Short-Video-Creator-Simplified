@@ -652,12 +652,12 @@ router.post('/tokens/allocate', serviceAuthMiddleware, async (req, res) => {
 });
 
 /**
- * @route POST /api/subscription/tokens/deduct
- * @description Deduct tokens for service usage
+ * @route POST /api/subscription/tokens/usage
+ * @description Record token usage for service usage
  * @access Protected - requires service auth (internal use)
  */
-router.post('/tokens/deduct', serviceAuthMiddleware, async (req, res) => {
-  await forwardToSubscriptionService(req, res, '/tokens/deduct');
+router.post('/tokens/usage', serviceAuthMiddleware, async (req, res) => {
+  await forwardToSubscriptionService(req, res, '/tokens/usage');
 });
 
 /**
@@ -741,12 +741,12 @@ router.get('/transactions/user/:userId',
 });
 
 /**
- * @route GET /api/subscription/token-costs
+ * @route GET /api/subscription/transactions/token-costs
  * @description Get token costs for different services
  * @access Public - requires service auth
  */
-router.get('/token-costs', serviceAuthMiddleware, async (req, res) => {
-  await forwardToSubscriptionService(req, res, '/token-costs');
+router.get('/transactions/token-costs', serviceAuthMiddleware, async (req, res) => {
+  await forwardToSubscriptionService(req, res, '/transactions/token-costs');
 });
 
 /**
@@ -754,8 +754,8 @@ router.get('/token-costs', serviceAuthMiddleware, async (req, res) => {
  * @description Calculate token cost for a job
  * @access Protected - requires service auth (internal use)
  */
-router.post('/calculate-job-cost', serviceAuthMiddleware, async (req, res) => {
-  await forwardToSubscriptionService(req, res, '/calculate-job-cost');
+router.post('/transactions/calculate-job-cost', serviceAuthMiddleware, async (req, res) => {
+  await forwardToSubscriptionService(req, res, '/transactions/calculate-job-cost');
 });
 
 /**
