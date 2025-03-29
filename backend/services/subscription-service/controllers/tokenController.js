@@ -83,6 +83,18 @@ class TokenController {
         externalServiceName
       } = req.body;
       
+      // Log complete request for debugging
+      logger.info('Token usage request received:', {
+        userId,
+        tokenAmount,
+        jobId,
+        serviceName,
+        relatedEntityType,
+        relatedEntityId,
+        metadata: metadata ? JSON.stringify(metadata).substring(0, 100) + '...' : null,
+        hasUserToken: !!(req.headers['x-user-token'] || req.headers['x-forwarded-user-token'])
+      });
+      
       if (!userId || !tokenAmount) {
         return res.status(400).json({ error: 'User ID and token amount are required' });
       }
@@ -94,9 +106,22 @@ class TokenController {
       // Check if user has active subscription before allowing token deduction
       const hasActiveSubscription = await this.tokenService.checkUserHasActiveSubscription(userId);
       if (!hasActiveSubscription) {
+        logger.warn('Token usage rejected - no active subscription', { userId });
         return res.status(403).json({ 
           error: 'Forbidden', 
           message: 'User does not have an active subscription. Token deduction not allowed.'
+        });
+      }
+      
+      // If we have metadaata with a userId, verify it matches our userId parameter
+      if (metadata && metadata.userId && metadata.userId.toString() !== userId.toString()) {
+        logger.error('User ID mismatch in token usage request', {
+          requestUserId: userId,
+          metadataUserId: metadata.userId
+        });
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'User ID in metadata does not match user ID parameter'
         });
       }
       
@@ -111,6 +136,12 @@ class TokenController {
         relatedEntityId,
         externalServiceName
       );
+      
+      logger.info('Token usage recorded successfully:', {
+        userId,
+        transactionId: transaction.transactionId,
+        tokenAmount
+      });
       
       res.json(transaction);
     } catch (error) {

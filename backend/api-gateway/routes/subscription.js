@@ -53,7 +53,16 @@ async function extractUserContext(req) {
 
       if (userToken) {
         // Try to get user profile using the user token
-        const gatewayUrl = config.services.gateway.url;
+        const gatewayUrl = config.services?.gateway?.url;
+        
+        // Check if gateway URL is configured
+        if (!gatewayUrl) {
+          logger.error('Gateway URL not configured correctly', {
+            config: JSON.stringify(config.services || {})
+          });
+          throw new Error('Gateway URL configuration missing');
+        }
+        
         logger.info('Verify Gateway URL:', gatewayUrl);
         const profileUrl = `${gatewayUrl}/api/auth/profile`;
         
@@ -172,8 +181,11 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
       ...additionalData
     };
     
-    // Security check for user ID handling
-    if (userContext.isApiUser) {
+    // Check if we have a user token header which indicates a real user request
+    const hasUserToken = !!(req.headers['x-user-token'] || req.headers['x-forwarded-user-token']);
+    
+    // Critical security check for user ID handling
+    if (userContext.isApiUser && !hasUserToken) {
       // For API users (admin), allow them to specify any user ID
       // This permits admin users to work with any user's data for testing
       logger.info('API user detected - using provided userId value for admin operations');
@@ -183,8 +195,21 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
         requestData.userId = userContext.actualUserId.toString();
       }
     } else {
-      // For regular users, enforce that they can only use their own user ID
+      // Either we have a regular user OR we have a user token header:
+      // In both cases, enforce that they can only use their own user ID
       // This prevents users from accessing or modifying other users' data
+      
+      if (hasUserToken && !userContext.actualUserId) {
+        // If we have a user token but couldn't extract the user context correctly,
+        // we must reject the request rather than falling back to API user
+        logger.error('Security issue: User token present but no user ID extracted', {
+          hasUserToken,
+          userContext
+        });
+        
+        throw new Error('Security error: Unable to validate user identity from token');
+      }
+      
       if (userContext.actualUserId) {
         // Force the user ID to be the authenticated user's ID for security
         requestData.userId = userContext.actualUserId.toString();
@@ -196,6 +221,9 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
             authenticatedUserId: userContext.actualUserId
           });
         }
+      } else if (hasUserToken) {
+        // If user token is present but we couldn't extract a user ID, this is an error
+        throw new Error('Invalid user token or user not found');
       }
     }
     
@@ -215,47 +243,27 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
     });
     
     res.status(response.status).json(response.data);
-  } catch (error) {
-    logger.error('Error forwarding to subscription service:', {
+  }
+  catch (error) {
+    logger.error('Error in subscription service request:', {
+      endpoint,
       error: error.message,
       stack: error.stack,
-      endpoint,
-      requestBody: req.body,
-      response: {
-        status: error.response?.status,
-        data: error.response?.data
-      }
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data
+      } : null
     });
     
-    // Forward the error response
-    if (error.response) {
-      // Extract the error details from the subscription service response
-      const status = error.response.status || 500;
-      let errorData = error.response.data;
-      
-      // Format the error for consistent client-side handling
-      if (typeof errorData === 'string') {
-        errorData = { error: 'Subscription Service Error', details: errorData };
-      }
-      
-      // Check for specific error types based on message content
-      if (errorData.details && errorData.details.includes('already has an active subscription with this plan')) {
-        // Send a 409 Conflict for duplicate subscription attempts
-        return res.status(409).json({
-          error: 'Duplicate Subscription',
-          details: 'User already has an active subscription with this plan',
-          code: 'DUPLICATE_SUBSCRIPTION'
-        });
-      }
-      
-      // For other errors, forward the original error response
-      res.status(status).json(errorData);
-    } else {
-      res.status(500).json({ 
-        error: 'Error communicating with subscription service',
-        details: error.message
-      });
-    }
+    // Send appropriate error response
+    const status = error.response?.status || 500;
+    const errorResponse = {
+      error: error.response?.data?.error || 'Subscription service error',
+      message: error.response?.data?.message || error.message,
+      details: error.response?.data?.details || null
+    };
+    
+    res.status(status).json(errorResponse);
   }
 }
 

@@ -32,25 +32,34 @@ router.post('/generate',
       
       logger.info('Token and user context:', tokenInfo);
 
+      // Check if a user token is provided
+      const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
+      const hasUserToken = !!userToken;
+      
       // If this is an M2M token, try to get the actual user profile
       let actualUserId = req.user.databaseUser?.userId;
       let isApiUser = req.user.databaseUser?.isApiUser || false;
 
       if (tokenInfo.type === 'M2M') {
         try {
-          // Get the Authorization header from the original request
-          const authHeader = req.headers.authorization;
-          const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
-
           logger.info('Checking for user token:', {
-            hasUserToken: !!userToken,
-            tokenStart: userToken ? `${userToken}` : null,
+            hasUserToken,
+            tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null,
             profileEndpoint: '/api/auth/profile'
           });
 
-          if (userToken) {
+          if (hasUserToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = config.services.gateway.url;
+            const gatewayUrl = config.services?.gateway?.url;
+            
+            // Check if gateway URL is configured
+            if (!gatewayUrl) {
+              logger.error('Gateway URL not configured correctly', {
+                config: JSON.stringify(config.services || {})
+              });
+              throw new Error('Gateway URL configuration missing');
+            }
+            
             logger.info('Verify Gateway URL:', gatewayUrl);
             
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
@@ -89,8 +98,7 @@ router.post('/generate',
                 
                 logger.info('Looking up user in database:', { 
                   auth0Id,
-                  email: profileResponse.data.user.email,
-                  tokenPayload: decodedToken // Log the full payload for debugging
+                  email: profileResponse.data.user.email
                 });
                 
                 if (!auth0Id) {
@@ -110,23 +118,38 @@ router.post('/generate',
                       email: dbUser.email 
                     });
                   } else {
-                    logger.warn('User not found in database:', { 
+                    logger.error('User not found in database:', { 
                       auth0Id,
                       email: profileResponse.data.user.email 
                     });
+                    
+                    // If we have a user token but can't find the user, we should not proceed
+                    // This prevents falling back to API user
+                    if (hasUserToken) {
+                      throw new Error('User token provided but user not found in database');
+                    }
                   }
                 } catch (dbError) {
                   logger.error('Database error looking up user:', {
                     error: dbError.message,
                     stack: dbError.stack,
-                    auth0Id,
-                    email: profileResponse.data.user.email
+                    auth0Id
                   });
+                  
+                  // If we have a user token but encounter a database error, we should not proceed
+                  // This prevents falling back to API user
+                  if (hasUserToken) {
+                    throw new Error('Database error while validating user token');
+                  }
                 }
               } else {
-                logger.warn('No user data in profile response:', {
-                  responseData: profileResponse.data
-                });
+                logger.warn('No user data in profile response');
+                
+                // If we have a user token but profile doesn't return user data, we should not proceed
+                // This prevents falling back to API user
+                if (hasUserToken) {
+                  throw new Error('User token provided but no user data returned from profile');
+                }
               }
             } catch (profileError) {
               logger.error('Error getting user profile:', {
@@ -150,22 +173,39 @@ router.post('/generate',
                   fullConfig: JSON.stringify(config.services.auth)
                 }
               });
-              logger.warn('Falling back to API user due to profile error');
+              
+              // If we have a user token but encounter an error, we should not proceed
+              // This prevents falling back to API user
+              if (hasUserToken) {
+                throw new Error('Error validating user token');
+              }
+              
+              logger.warn('Falling back to API user due to profile error (only for requests without user token)');
             }
           } else {
-            logger.warn('No valid user token found');
+            logger.info('No user token found, using API user context');
           }
-        } catch (profileError) {
-          logger.error('Error getting user profile:', {
-            error: profileError.message,
-            stack: profileError.stack,
-            config: profileError.config,
+        } catch (error) {
+          logger.error('Error processing user token:', {
+            error: error.message,
+            stack: error.stack,
             response: {
-              status: profileError.response?.status,
-              data: profileError.response?.data
+              status: error.response?.status,
+              data: error.response?.data
             }
           });
-          logger.warn('Falling back to API user due to profile error');
+          
+          // Critical security check: if a user token was provided but failed validation,
+          // we must reject the request rather than falling back to API user
+          if (hasUserToken) {
+            return res.status(401).json({
+              error: 'Invalid User Token',
+              message: 'The provided user token could not be validated',
+              details: error.message
+            });
+          }
+          
+          logger.warn('Falling back to API user (only for requests without user token)');
         }
       }
 
@@ -185,62 +225,56 @@ router.post('/generate',
         jobServiceUrl: config.services.job.url
       });
 
-      if (!config.services.job.url) {
-        throw new Error('Job service URL is not configured');
-      }
-
-      const jobServiceUrl = `${config.services.job.url}/generate`;
-      const requestBody = {
+      // Create job request payload
+      const jobPayload = {
         prompt,
-        parameters,
-        visualizationType,
-        userId: actualUserId.toString()
+        parameters: parameters || {},
+        userId: actualUserId,
+        visualizationType: visualizationType || 'video',
+        // Include flag for API user so other services know if this is a real user or API user
+        isApiUser,
+        // Also include security metadata so services know if a real user was securely identified
+        securityContext: {
+          hasUserToken,
+          identitySource: hasUserToken ? 'user_token' : (isApiUser ? 'api_token' : 'user_session')
+        }
       };
 
-      try {
-        const response = await axios.post(jobServiceUrl, requestBody, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 1800000  // 30 minutes timeout
-        });
-
-        logger.info('Received response from Job service:', {
-          status: response.status,
-          hasData: !!response.data,
-          userId: actualUserId,
-          isApiUser
-        });
-
-        res.json(response.data);
-      } catch (error) {
-        logger.error('Job service request failed:', {
-          error: error.message,
-          stack: error.stack,
-          config: {
-            url: jobServiceUrl,
-            method: 'POST',
-            timeout: 1800000
-          },
-          response: {
-            status: error.response?.status,
-            data: error.response?.data
-          },
-          userId: actualUserId,
-          isApiUser
-        });
-
-        throw error;
-      }
-    } catch (error) {
-      logger.error('Job generation error:', {
-        error: error.message,
-        stack: error.stack,
-        status: error.response?.status,
-        userId: req.user?.databaseUser?.userId
+      // Send job to job-service
+      const response = await axios.post(`${config.services.job.url}/generate`, jobPayload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 120000  // 120 seconds timeout - give more time for the job service to acknowledge
       });
 
-      res.status(error.response?.status || 500).json({
+      logger.info('Job response received:', { 
+        status: response.status, 
+        jobId: response.data.jobId || response.data.result?.jobId,
+        hasResult: !!response.data
+      });
+
+      // Return the job results - the job service will continue processing in the background
+      res.json({
+        message: 'Job submitted successfully and is now processing',
+        jobId: response.data.jobId || response.data.result?.jobId,
+        status: 'in_progress',
+        ...response.data
+      });
+
+    } catch (error) {
+      logger.error('Job error:', { 
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+
+      // Send appropriate error response
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.message || error.message;
+      
+      res.status(status).json({
         error: 'Job generation failed',
-        details: error.response?.data?.details || error.message
+        message,
+        details: error.response?.data || error.message
       });
     }
   }

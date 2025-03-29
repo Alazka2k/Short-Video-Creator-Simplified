@@ -22,11 +22,6 @@ function createServer(jobService) {
 
   // Generate content endpoint
   app.post('/generate', async (req, res) => {
-    const requestTimeout = setTimeout(() => {
-      logger.error('Job Service: Request timed out');
-      res.status(504).json({ error: 'Request timed out' });
-    }, 1800000); // 30 minutes timeout
-
     try {
       const { prompt, parameters, visualizationType, userId } = req.body;
       
@@ -35,24 +30,27 @@ function createServer(jobService) {
       }
 
       logger.info(`Job Service: Starting content generation for prompt: ${prompt}`, { userId });
-      const result = await jobService.process(prompt, parameters, visualizationType, userId);
       
-      clearTimeout(requestTimeout);
-
-      // Check if job completed successfully or with service failures
-      if (result.status === 'failed') {
-        return res.status(207).json({  // 207 Multi-Status
-          message: 'Content generation completed with some service failures',
-          result
-        });
-      }
-
+      // First create a job ID that we can return immediately
+      const jobId = jobService.createJobId();
+      
+      // Create the initial job record
+      await jobService.createInitialJob(jobId, prompt, parameters, visualizationType, userId);
+      
+      // Send the response with the job ID immediately
       res.json({
-        message: 'Content generation completed successfully',
-        result
+        message: 'Job created successfully and is now processing',
+        jobId: jobId,
+        status: 'in_progress'
       });
+      
+      // Continue with processing the job in the background
+      jobService.processJobInBackground(jobId, prompt, parameters, visualizationType, userId)
+        .catch(error => {
+          logger.error(`Background job processing error for job ${jobId}:`, error);
+        });
+        
     } catch (error) {
-      clearTimeout(requestTimeout);
       logger.error('Job Service: Error generating content:', error);
       res.status(500).json({ 
         error: 'Internal server error', 

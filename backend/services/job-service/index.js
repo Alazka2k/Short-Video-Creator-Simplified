@@ -49,9 +49,113 @@ class JobServiceInterface {
     }
   }
 
+  // Create a unique job ID
+  createJobId() {
+    const { v4: uuidv4 } = require('uuid');
+    return uuidv4();
+  }
+
+  // Create the initial job record
+  async createInitialJob(jobId, prompt, parameters = {}, visualizationType = 'video', userId = null) {
+    try {
+      // Get and validate service configuration
+      const serviceConfig = {
+        skipVoice: parameters.serviceConfig?.skipVoice ?? false,
+        skipMusic: parameters.serviceConfig?.skipMusic ?? false,
+        skipImage: parameters.serviceConfig?.skipImage ?? false,
+        skipVisualization: parameters.serviceConfig?.skipVisualization ?? false
+      };
+
+      // Create a service sequence based on configuration
+      const serviceSequence = [];
+      serviceSequence.push('llm');
+      if (!serviceConfig.skipImage) serviceSequence.push('image');
+      if (!serviceConfig.skipVoice) serviceSequence.push('voice');
+      if (!serviceConfig.skipMusic) serviceSequence.push('music');
+      if (!serviceConfig.skipVisualization) {
+        if (visualizationType === 'animation') {
+          serviceSequence.push('animation');
+        } else {
+          serviceSequence.push('video');
+        }
+      }
+
+      // Create initial job record with userId
+      await this.jobPipeline.jobDataAccess.createJob({
+        jobId,
+        prompt,
+        status: 'in_progress',
+        parameters,
+        visualizationType: visualizationType || 'video',
+        serviceConfig,
+        userId,
+        serviceSequence
+      });
+
+      logger.info(`Created job record for jobId: ${jobId}`, {
+        userId,
+        serviceConfig,
+        visualizationType: visualizationType || 'video',
+        serviceSequence
+      });
+
+      return jobId;
+    } catch (error) {
+      logger.error('Error creating initial job record:', error);
+      throw error;
+    }
+  }
+
+  // Process job in the background
+  async processJobInBackground(jobId, prompt, parameters = {}, visualizationType = 'video', userId = null) {
+    try {
+      // Start actual processing
+      const result = await this.jobPipeline.generateContent(
+        prompt, 
+        parameters, 
+        visualizationType, 
+        userId,
+        jobId // Pass the job ID directly
+      );
+      
+      // Log appropriate message based on status
+      if (result.status === 'failed') {
+        logger.warn(`Job ${jobId} completed with service failures`);
+      } else {
+        logger.info(`Job ${jobId} completed successfully`);
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error(`Background job processing error for job ${jobId}:`, error);
+      
+      // Update job status to failed in case of error
+      try {
+        await this.jobPipeline.jobDataAccess.updateJobStatus(jobId, 'failed', { error: error.message });
+      } catch (updateError) {
+        logger.error(`Error updating job status for failed job ${jobId}:`, updateError);
+      }
+      
+      throw error;
+    }
+  }
+
   async process(prompt, parameters = {}, visualizationType = 'animation', userId = null) {
     try {
-      const result = await this.jobPipeline.generateContent(prompt, parameters, visualizationType, userId);
+      // Create a unique job ID
+      const jobId = this.createJobId();
+      
+      // Create the initial job record
+      await this.createInitialJob(jobId, prompt, parameters, visualizationType, userId);
+      
+      // Process the job
+      const result = await this.jobPipeline.generateContent(
+        prompt, 
+        parameters, 
+        visualizationType, 
+        userId,
+        jobId
+      );
       
       // Log appropriate message based on status
       if (result.status === 'failed') {

@@ -110,6 +110,10 @@ function loadEnvConfig() {
         port: process.env.JOB_SERVICE_PORT,
         url: process.env.JOB_SERVICE_URL 
       },
+      gateway: {
+        port: process.env.API_GATEWAY_PORT,
+        url: process.env.API_GATEWAY_URL
+      },
       auth: { 
         port: process.env.AUTH_SERVICE_PORT,
         url: process.env.AUTH_SERVICE_URL 
@@ -186,10 +190,23 @@ function validateConfig(config) {
     ['animationGen.provider', 'animationGen.clientId', 'animationGen.clientSecret'],
     ['videoGen.provider', 'videoGen.model', 'videoGen.resolution', 'videoGen.apiKey'],
     ['assembly.provider', 'assembly.apiKey', 'assembly.webhookBaseUrl'],
+    ['subscription.apiKey', 'subscription.webhookBaseUrl'],
     ['auth.auth0.domain', 'auth.auth0.clientId', 'auth.auth0.clientSecret', 'auth.auth0.audience'],
     ['auth.jwt.secret'],
     ['services.storage.config.region', 'services.storage.config.bucket', 'services.storage.config.cdnUrl'],
-    ['subscription.apiKey', 'subscription.webhookBaseUrl']
+    ['services.llm.port', 'services.llm.url'],
+    ['services.image.port', 'services.image.url'],
+    ['services.voice.port', 'services.voice.url'],
+    ['services.animation.port', 'services.animation.url'],
+    ['services.video.port', 'services.video.url'],
+    ['services.music.port', 'services.music.url'],
+    ['services.assembly.port', 'services.assembly.url'],
+    ['services.job.port', 'services.job.url'],
+    ['services.gateway.port', 'services.gateway.url'],
+    ['services.auth.port', 'services.auth.url'],
+    ['services.subscription.port', 'services.subscription.url'],
+    ['services.frontend.port', 'services.frontend.url'],
+    ['services.docs.port', 'services.docs.url']
   ];
 
   for (const configGroup of requiredConfigs) {

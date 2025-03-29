@@ -52,8 +52,12 @@ class JobPipelineService {
     }
   }
 
-  async generateContent(prompt, parameters = {}, visualizationType = 'animation', userId = null) {
-    const jobId = uuidv4();
+  async generateContent(prompt, parameters = {}, visualizationType = 'animation', userId = null, jobId) {
+    // Require jobId parameter - it should no longer be optional
+    if (!jobId) {
+      throw new Error('Job ID is required for content generation');
+    }
+    
     const jobOutputDir = this.getJobOutputPath(jobId);
     
     try {
@@ -81,16 +85,7 @@ class JobPipelineService {
         logger.info(`Using visualization type: ${visualizationType}`);
       }
 
-      // Create initial job record with userId
-      await this.jobDataAccess.createJob({
-        jobId,
-        prompt,
-        status: 'in_progress',
-        parameters,
-        visualizationType,
-        serviceConfig,
-        userId
-      });
+      // Note: The job record is now created before this method is called via createInitialJob()
 
       // Step 1: Generate LLM content (blocking)
       logger.info('Starting LLM content generation...');

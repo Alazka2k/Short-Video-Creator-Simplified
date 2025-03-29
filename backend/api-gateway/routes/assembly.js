@@ -35,30 +35,37 @@ router.post('/assemble',
       
       logger.info('Token and user context:', tokenInfo);
 
+      // Check if a user token is provided
+      const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
+      const hasUserToken = !!userToken;
+      
       // If this is an M2M token, try to get the actual user profile
       let actualUserId = req.user.databaseUser?.userId;
       let isApiUser = req.user.databaseUser?.isApiUser || false;
 
       if (tokenInfo.type === 'M2M') {
         try {
-          // Get the Authorization header from the original request
-          const authHeader = req.headers.authorization;
-          const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
-
           logger.info('Checking for user token:', {
-            hasUserToken: !!userToken,
-            tokenStart: userToken ? `${userToken}` : null,
-            profileEndpoint: '/api/auth/profile'
+            hasUserToken,
+            tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null
           });
 
-          if (userToken) {
+          if (hasUserToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = config.services.gateway.url;
-            logger.info('Verify Gateway URL:', gatewayUrl);
+            const gatewayUrl = config.services?.gateway?.url;
+            
+            // Check if gateway URL is configured
+            if (!gatewayUrl) {
+              logger.error('Gateway URL not configured correctly', {
+                config: JSON.stringify(config.services || {})
+              });
+              throw new Error('Gateway URL configuration missing');
+            }
+            
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
+            
             logger.info('Making profile request with user token:', {
               url: profileUrl,
-              gatewayUrl,
               headers: {
                 'Authorization': `Bearer ${userToken.substring(0, 20)}...`, // Log partial token for security
                 'Content-Type': 'application/json'
@@ -79,8 +86,7 @@ router.post('/assemble',
                 userData: profileResponse.data?.user ? {
                   auth0Id: profileResponse.data.user.auth0_id,
                   email: profileResponse.data.user.email
-                } : null,
-                fullResponse: profileResponse.data // Log full response for debugging
+                } : null
               });
 
               if (profileResponse.data?.user) {
@@ -90,8 +96,7 @@ router.post('/assemble',
                 
                 logger.info('Looking up user in database:', { 
                   auth0Id,
-                  email: profileResponse.data.user.email,
-                  tokenPayload: decodedToken // Log the full payload for debugging
+                  email: profileResponse.data.user.email
                 });
                 
                 if (!auth0Id) {
@@ -111,23 +116,35 @@ router.post('/assemble',
                       email: dbUser.email 
                     });
                   } else {
-                    logger.warn('User not found in database:', { 
+                    logger.error('User not found in database:', { 
                       auth0Id,
                       email: profileResponse.data.user.email 
                     });
+                    
+                    // If we have a user token but can't find the user, we should not proceed
+                    if (hasUserToken) {
+                      throw new Error('User token provided but user not found in database');
+                    }
                   }
                 } catch (dbError) {
                   logger.error('Database error looking up user:', {
                     error: dbError.message,
                     stack: dbError.stack,
-                    auth0Id,
-                    email: profileResponse.data.user.email
+                    auth0Id
                   });
+                  
+                  // If we have a user token but encounter a database error, we should not proceed
+                  if (hasUserToken) {
+                    throw new Error('Database error while validating user token');
+                  }
                 }
               } else {
-                logger.warn('No user data in profile response:', {
-                  responseData: profileResponse.data
-                });
+                logger.warn('No user data in profile response');
+                
+                // If we have a user token but profile doesn't return user data, we should not proceed
+                if (hasUserToken) {
+                  throw new Error('User token provided but no user data returned from profile');
+                }
               }
             } catch (profileError) {
               logger.error('Error getting user profile:', {
@@ -136,27 +153,36 @@ router.post('/assemble',
                 response: {
                   status: profileError.response?.status,
                   data: profileError.response?.data
-                },
-                requestConfig: {
-                  url: profileUrl,
-                  method: 'GET',
-                  baseURL: config.services.auth.url,
-                  headers: {
-                    'Authorization': 'Bearer [REDACTED]',
-                    'Content-Type': 'application/json'
-                  }
-                },
-                configDump: {
-                  authUrl: config.services.auth.url,
-                  fullConfig: JSON.stringify(config.services.auth)
                 }
               });
-              logger.warn('Falling back to API user due to profile error');
+              
+              // If we have a user token but encounter an error, we should not proceed
+              if (hasUserToken) {
+                throw new Error('Error validating user token');
+              }
+              
+              logger.warn('Falling back to API user due to profile error (only for requests without user token)');
             }
+          } else {
+            logger.info('No user token found, using API user context');
           }
         } catch (error) {
-          logger.error('Error processing user token:', error);
-          logger.warn('Falling back to API user');
+          logger.error('Error processing user token:', {
+            error: error.message,
+            stack: error.stack
+          });
+          
+          // Critical security check: if a user token was provided but failed validation,
+          // we must reject the request rather than falling back to API user
+          if (hasUserToken) {
+            return res.status(401).json({
+              error: 'Invalid User Token',
+              message: 'The provided user token could not be validated',
+              details: error.message
+            });
+          }
+          
+          logger.warn('Falling back to API user (only for requests without user token)');
         }
       }
 
@@ -185,7 +211,8 @@ router.post('/assemble',
         templateId,
         userId: req.user?.sub,
         actualUserId,
-        isApiUser
+        isApiUser,
+        hasUserToken
       });
 
       logger.info('Forwarding request to Assembly service:', { 
@@ -267,9 +294,18 @@ router.get('/status/:assemblyId',
 
           if (userToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = config.services.gateway.url;
-            logger.info('Verify Gateway URL:', gatewayUrl);
+            const gatewayUrl = config.services?.gateway?.url;
+            
+            // Check if gateway URL is configured
+            if (!gatewayUrl) {
+              logger.error('Gateway URL not configured correctly', {
+                config: JSON.stringify(config.services || {})
+              });
+              throw new Error('Gateway URL configuration missing');
+            }
+            
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
+            
             logger.info('Making profile request with user token:', {
               url: profileUrl,
               gatewayUrl,
@@ -458,8 +494,16 @@ router.get('/templates/:aspectRatio',
 
           if (userToken) {
             // Try to get user profile using the user token
-            const gatewayUrl = config.services.gateway.url;
-            logger.info('Verify Gateway URL:', gatewayUrl);
+            const gatewayUrl = config.services?.gateway?.url;
+            
+            // Check if gateway URL is configured
+            if (!gatewayUrl) {
+              logger.error('Gateway URL not configured correctly', {
+                config: JSON.stringify(config.services || {})
+              });
+              throw new Error('Gateway URL configuration missing');
+            }
+            
             const profileUrl = `${gatewayUrl}/api/auth/profile`;
             
             logger.info('Making profile request with user token:', {
