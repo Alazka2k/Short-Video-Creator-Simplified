@@ -35,15 +35,16 @@ function loadEnvConfig() {
     llm: {
       provider: process.env.LLM_PROVIDER,
       model: process.env.LLM_MODEL,
-      apiKey: process.env.LLM_API_KEY,
-      basePath: path.join(rootDir, 'data', 'input')
+      apiKey: process.env.LLM_API_KEY, 
+      basePath: path.join(rootDir, 'data', 'input'), //TODO change base path to input directory
+      inputDirectory: path.join(rootDir, 'data', 'input')
     },
     voiceGen: {
       provider: process.env.VOICE_PROVIDER,
       apiKey: process.env.VOICE_API_KEY,
       modelId: process.env.VOICE_MODEL_ID,
       voiceId: process.env.VOICE_ID,
-      outputDirectory: path.join(rootDir, 'data', 'output', 'voice')
+      outputDirectory: path.join(rootDir, 'data', 'output', 'voice') // TODO move the path definition to env file
     },
     imageGen: {
       provider: process.env.IMAGE_PROVIDER,
@@ -56,13 +57,17 @@ function loadEnvConfig() {
     musicGen: {
       provider: process.env.MUSIC_PROVIDER,
       modelId: process.env.MUSIC_MODEL_ID,
-      apiKey: process.env.MUSIC_API_KEY
+      apiKey: process.env.MUSIC_API_KEY,
+      maxRetries: 5,
     },
     animationGen: {
       provider: process.env.ANIMATION_PROVIDER,
+      baseUrl: process.env.ANIMATION_BASE_URL,
+      authUrl: process.env.ANIMATION_AUTH_URL,
       clientId: process.env.ANIMATION_CLIENT_ID,
       clientSecret: process.env.ANIMATION_CLIENT_SECRET,
-      outputDirectory: path.join(rootDir, 'data', 'output', 'animation')
+      animationLength: process.env.ANIMATION_LENGTH,
+      outputDirectory: path.join(rootDir, 'data', 'output', 'animation') // TODO move the path definition to env file
     },
     videoGen: {
       provider: process.env.VIDEO_PROVIDER,
@@ -154,17 +159,21 @@ function loadEnvConfig() {
         refreshExpirationDays: 30
       }
     },
-    input: {
-      csvPath: process.env.INPUT_CSV_PATH
-    },
     parameters: {
       jsonPath: process.env.PARAMETERS_JSON_PATH
     },
     initialPrompt: {
       txtPath: process.env.INITIAL_PROMPT_PATH
     },
+    input: {
+      csvPath: process.env.INPUT_CSV_PATH,
+      llmDirectory: process.env.LLM_INPUT_DIRECTORY
+    },
     output: {
-      directory: process.env.OUTPUT_DIRECTORY
+      directory: process.env.OUTPUT_DIRECTORY,
+      llmDirectory: process.env.LLM_OUTPUT_DIRECTORY,
+      integrationDirectory: process.env.INTEGRATION_OUTPUT_DIRECTORY,
+      animationDirectory: process.env.ANIMATION_OUTPUT_DIRECTORY // use this for animation output directory
     },
     test: {
       outputDirectory: path.join(rootDir, 'tests', 'test_output')
@@ -187,7 +196,7 @@ function validateConfig(config) {
     ['voiceGen.provider', 'voiceGen.apiKey', 'voiceGen.outputDirectory'],
     ['imageGen.provider', 'imageGen.serverId', 'imageGen.channelId', 'imageGen.salaiToken'],
     ['musicGen.provider', 'musicGen.apiKey', 'musicGen.modelId'],
-    ['animationGen.provider', 'animationGen.clientId', 'animationGen.clientSecret'],
+    ['animationGen.provider', 'animationGen.baseUrl', 'animationGen.authUrl', 'animationGen.clientId', 'animationGen.clientSecret'],
     ['videoGen.provider', 'videoGen.model', 'videoGen.resolution', 'videoGen.apiKey'],
     ['assembly.provider', 'assembly.apiKey', 'assembly.webhookBaseUrl'],
     ['subscription.apiKey', 'subscription.webhookBaseUrl'],

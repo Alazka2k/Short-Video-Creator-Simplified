@@ -146,6 +146,38 @@ class JobDataAccess {
         });
       }
   
+      // Update progress tracker
+      const progressTracker = require('../utils/progress-tracker');
+      
+      // Calculate progress percentage based on status
+      let progressPercentage = 0;
+      if (status === 'started') progressPercentage = 10;
+      else if (status === 'in_progress') progressPercentage = 50;
+      else if (status === 'completed') progressPercentage = 100;
+      else if (status === 'failed') progressPercentage = 100;
+      
+      // Determine if this is a scene-specific service
+      if (details.sceneId) {
+        // Update progress for this scene and service
+        progressTracker.updateSceneProgress(
+          jobId, 
+          details.sceneId, 
+          service, 
+          progressPercentage, 
+          status,
+          details
+        );
+      } else {
+        // Update progress for the global service
+        progressTracker.updateServiceProgress(
+          jobId,
+          service,
+          progressPercentage,
+          status,
+          details
+        );
+      }
+  
       await this.updateJob(jobId, {
         metadata: JSON.stringify(metadata),
         service_sequence: JSON.stringify(serviceSequence)

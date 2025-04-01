@@ -7,7 +7,11 @@ class MusicProcessor {
   }
 
   async generateMusic(jobId, llmResult, parameters, serviceConfig) {
-    if (serviceConfig.skipMusic) return null;
+    // If music is skipped, return a skipped status object
+    if (serviceConfig.skipMusic) {
+      logger.info(`Music generation skipped for job ${jobId}`);
+      return { status: 'skipped' };
+    }
 
     try {
       const musicResult = await this.musicService.process(
@@ -28,15 +32,28 @@ class MusicProcessor {
           publicUrl: musicResult.publicUrl,
           metadata: musicResult.metadata
         });
+        
+        // Validate that result has a status property
+        if (!musicResult.status) {
+          logger.error(`Music service returned result without status for job ${jobId}`);
+          throw new Error('Music service result is missing status field');
+        }
+        
+        return musicResult;
       }
 
-      return musicResult;
+      // If musicResult is falsy but no error was thrown, consider it a failure
+      logger.error('Music service returned empty result without throwing an error');
+      await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
+        error: 'Music service returned empty result'
+      });
+      return { status: 'failed', error: 'Music service returned empty result' };
     } catch (error) {
       logger.error('Error in music generation:', error);
       await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
         error: error.message
       });
-      return null;
+      return { status: 'failed', error: error.message };
     }
   }
 }

@@ -31,8 +31,7 @@ Subscription Service Development Plan (Renamed from Billing Service)
 - ✅ Implement paymentDataAccess.js (payments table operations)
 ### 2.3 Utility Components
 - ✅ Create tokenCalculator.js for usage calculations
-- ⏳ Implement service restriction logic based on plan limits
-- ⏳ Develop helper functions for token allocation and deduction
+
 
 ## Phase 2: API Endpoints
 ### 2.1 Plan Management
@@ -47,13 +46,19 @@ Subscription Service Development Plan (Renamed from Billing Service)
 - ✅ GET /tokens/balance/:userId - Get current token balance
 - ✅ POST /tokens/allocate - Allocate tokens to a user
 - ✅ POST /tokens/deduct - Deduct tokens for service usage
-- ✅ POST /tokens/purchase - Purchase token package
+### 2.4 Transation Management
 - ✅ GET /transactions/user/:userId - Get token transaction history
-- ✅ GET /token-costs - Get token costs for different services
-- ✅ POST /calculate-job-cost - Calculate token cost for a job
+- ✅ GET /transactions/token-costs - Get token costs for different services
+- ✅ POST /transactions/calculate-job-cost - Calculate token cost for a job
+### 2.5 Token Packages
+- ✅ POST /token-packages/buy - Purchase token package
+- ✅ GET /token-packages - List all token packages
+- ✅ GET /token-packages/:packageId - Get token package details
+- ✅ POST /token-packages - Create a new token package
 ### 2.4 Payment History
 - ✅ GET /payments/user/:userId - Get payment history
 - ✅ GET /payments/summary/:userId - Get payment summary
+
 ### 2.5 Additional Token Endpoints
 - ⏳ POST /tokens/check - Check token availability without deducting (pre-authorization, also add to the response how many of each content type the user has used and is theoretically left for usage, add renewal date)
 - ⏳ GET /jobs/count/:userId/monthly - Get monthly job count for a user (for this we need to enhance the job service to track the job count per user and the user database to track the job count per user)
@@ -75,11 +80,11 @@ Subscription Service Development Plan (Renamed from Billing Service)
 ## Phase 4: Enhance and implement correct logic for Cancellation and Downgrade of Subscription
 Following the documentation of docs\content\docs\0_development\mvp plan\04_Subscription Management Details.
 ### 4.1 Cancellation of Subscription
-- ⏳ Implement correct logic for cancellation of subscription
+- ✅ Implement correct logic for cancellation of subscription
 ### 4.2 Downgrade of Subscription to a lower paid plan
-- ⏳ Implement correct logic for downgrade of subscription to a lower paid plan
+- ✅ Implement correct logic for downgrade of subscription to a lower paid plan
 ### 3.3 Downgrade of Subscription to a free plan
-- ⏳ Implement correct logic for downgrade of subscription to a free plan
+- ✅ Implement correct logic for downgrade of subscription to a free plan
 
 ## Phase 5: Batch Processing Integration
 Following the documentation of docs\content\docs\0_development\mvp plan\04_Subscription Management Details.
@@ -108,6 +113,8 @@ Following the documentation of docs\content\docs\0_development\mvp plan\04_Subsc
 - ⏳ Handle failed payment scenarios
 
 ## Phase 7: Service-Level Token Deduction
+- ⏳ Implement service restriction logic based on plan limits
+- ⏳ Develop helper functions for token allocation and deduction
 ### 7.1 Token Deduction in Individual Services
 - ⏳ Add token cost calculation to each service (LLM, Image, Voice, etc.)
 - ⏳ Implement token pre-authorization checks before operations
@@ -123,18 +130,34 @@ Following the documentation of docs\content\docs\0_development\mvp plan\04_Subsc
 - ⏳ Add transaction rollback capabilities
 
 ## Phase 8: Plan Limitation Enforcement
-### 8.1 Feature Restriction Logic
+### 8.1 Feature Restriction Logic / Usage Limits / Plan-Based Configuration
 - ⏳ Implement middleware for checking subscription features
 - ⏳ Add validation for content types based on plan
 - ⏳ Restrict access to premium features
-### 8.2 Usage Limits
 - ⏳ Implement max scenes per job validation
 - ⏳ Track and enforce monthly job count limits
 - ⏳ Add token balance monitoring and alerts
-### 8.3 Plan-Based Configuration
 - ⏳ Create a centralized plan feature configuration
 - ⏳ Implement recreation feature availability based on plan
 - ⏳ Set up visual/voice selection limits
+### 8.2 Plan Limitation Enforcement
+- ⏳ Create middleware for checking subscription features
+- ⏳ Implement validation for limitations based on plan
+- ⏳ Add restriction logic for premium features
+- ⏳ Create validation for max scenes per job logic
+- ⏳ Implement monthly job count tracking and limits (counter for every job)
+#### 8.2.1. Plan Limitation APIs
+- ⏳ POST /api/subscription/transactions/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
+- ⏳ POST /api/subscription/limitations/usage - 
+-> Check if a feature is available in user's plan (content type is allowed, max scenes) 
+  --> If not backend validation and frontend different render behaviour (e.g. disable button, show a message, etc.). Max scenes, content type limitation 
+-> Check if a job counter has reached the limit defined in the plan
+#### 8.2.2 Frontend Limitation Check
+- ⏳ Check configuration of the options in the json files for each option (planId) -> Render different feedback and disable options if the user has not the permission to use them
+-> Duration / max scenes
+-> Visual Selection
+-> Voice Selection
+-> Assembly Templates Selection
 
 ## Phase 9: Frontend Components
 ### 9.1 Dashboard Integration

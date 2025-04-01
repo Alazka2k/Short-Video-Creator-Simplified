@@ -498,4 +498,74 @@ router.get('/jobs',
   }
 );
 
+/**
+ * @route GET /api/job/jobs/:jobId/progress
+ * @description Get progress of a specific job
+ * @access Protected - requires read:job permission
+ */
+router.get('/jobs/:jobId/progress',
+  verifyAuth0Token,
+  checkPermission('/api/job/jobs'),
+  serviceAuthMiddleware,
+  extractUserFromToken,
+  async (req, res) => {
+    try {
+      const userId = req.user.databaseUser.userId;
+      const isApiUser = req.user.databaseUser.isApiUser;
+      const { jobId } = req.params;
+      
+      logger.info(`Fetching progress for job ${jobId}`, { userId, isApiUser });
+      
+      // First get job details to verify ownership
+      const jobResponse = await axios.get(`${config.services?.job?.url}/jobs/${jobId}`, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000  // 10 seconds timeout
+      });
+      
+      // If not API user, verify job belongs to user
+      if (!isApiUser && jobResponse.data.user_id?.toString() !== userId?.toString()) {
+        logger.warn('Access denied to job progress:', {
+          jobId: jobId,
+          jobUserId: jobResponse.data.user_id,
+          requestUserId: userId,
+          isApiUser
+        });
+        return res.status(403).json({
+          error: 'Access denied',
+          message: 'You do not have permission to access this job'
+        });
+      }
+      
+      // Get the actual progress
+      const response = await axios.get(`${config.services?.job?.url}/jobs/${jobId}/progress`);
+      
+      logger.info('Job progress retrieved:', {
+        jobId: jobId,
+        status: response.status,
+        hasData: !!response.data,
+        progress: response.data?.overallProgress,
+        jobStatus: response.data?.status
+      });
+      
+      res.json(response.data);
+    } catch (error) {
+      logger.error('Job progress error:', {
+        jobId: req.params.jobId,
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
+      if (error.response?.status === 404) {
+        return res.status(404).json({ error: 'Job progress not found' });
+      }
+      
+      res.status(error.response?.status || 500).json({
+        error: 'Failed to get job progress',
+        details: error.response?.data?.details || error.message
+      });
+    }
+  }
+);
+
 module.exports = router; 

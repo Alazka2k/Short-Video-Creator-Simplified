@@ -8,16 +8,26 @@
 | **Annual Price** | €0 | €19.99/month (€239.88) | €34.99/month (€419.88) | €49.99/month (€599.88) |
 | **Tokens per Month** | 300 | 2,500 | 6,500 | 10,000 |
 | **Max Scenes per Job** | 5 (Consistent Content Material) | 13 (For YouTube Shorts and Tiktok) | Up to 20 (Long Image Story) | Unlimited (All Video duration options) |
+// TODO: Backend validation and property "planId" added to the json files for each option. Frontend shall only render options with the correct plan id.
 | **Max Jobs per Month** | 10 | 45 | Unlimited | Unlimited |
-| **Video Quality** | - | 540p | 540p | 720p |
 | **Content Types** | Image, Text, Voice | Image, Voice, Animation, Video, Music | All | All |
-| **Recreation Option (not yet implemented)** | Disabled | Disabled | Enabled (Only Images, Voice and Music) | Enabled (All Content Types) |
-| **Script Settings** | Disabled | Enabled | Enabled | Enabled |
-| **Visual Selection** | 2 (One Realistic, One Abstract) | 9 Visuals | Unlimited | Unlimited |
+| **Visual Selection** | 2 (One Realistic, One Abstract) | 9 Visuals | Unlimited | Unlimited | 
+// TODO: Add property "planId" to the json files for each option. Frontend shall only render options with the correct plan id.
 | **Voice Selection** | 3 Standard | 9 Voices | Unlimited | Unlimited |
+// TODO: Add property "planId" to the json files for each option. Frontend shall only render options with the correct plan id.
 | **Assembly Templates Selection** | 3 Standard | 10 Templates | Unlimited | Unlimited |
+// TODO: Add property "planId" to the json files for each option. Frontend shall only render options with the correct plan id.
 | **Watermark for Assembly** | Yes | No | No | No |
+// TODO: Needs to be defined for each assembly template manually.
 | **Support** | Community | Community | Email (24h) | Email (24h) |
+
+After MVP:
+| **Video Quality** | - | 540p | 540p | 720p | 
+// TODO: Automatic differentation based on current users plan in the backend
+| **Recreation Option (not yet implemented)** | Disabled | Disabled | Enabled (Only Images, Voice and Music) | Enabled (All Content Types) |
+// TODO: Recreation not implemented yet. After implementation we can add it to the limitations checks.
+| **Script Settings** | Disabled | Enabled | Enabled | Enabled |
+// TODO: Enhance limitation check. Not important for the mvp
 
 - Settings (which is allowed / which not) for each option (script, visual, voice, assembly) are directly set in the configuration json files for each option (e.g. template-select-option.json with property planId). Higher plans always include the lower plans ids.
 

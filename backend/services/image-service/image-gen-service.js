@@ -104,6 +104,7 @@ class ImageGenService {
       imageUrl,
       storageKey: storageResult.storageKey,
       publicUrl: storageResult.url,
+      status: 'completed',
       metadata: typeof imageRecord.metadata === 'string' 
         ? JSON.parse(imageRecord.metadata) 
         : imageRecord.metadata

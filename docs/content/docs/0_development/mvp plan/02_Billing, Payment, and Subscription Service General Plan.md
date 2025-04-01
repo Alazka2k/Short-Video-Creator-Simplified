@@ -103,7 +103,25 @@ A unified approach for subscription management has been implemented:
    - `ended_at`: Timestamp when status changed to `cancelled`
    - `current_period_start`/`current_period_end`: Current billing period
 
-## Batch Job Infrastructure (Completed)
+## API Gateway Integration (Completed) // TODO: Check if all route endpoints are documented
+
+1. **Subscription Routes:**
+   - Implemented `/api/subscription/plans` for plan listing
+   - Implemented `/api/subscription/subscriptions` for subscription management
+   - Implemented `/api/subscription/subscriptions/:subscriptionId/cancel` for cancellation
+   - Added proper authentication and authorization checks
+   - Implemented validation for free tier operations
+
+2. **Token Routes:**
+   - Implemented `/api/subscription/tokens/balance/:userId` for balance checking
+   - Implemented `/api/subscription/tokens/transactions/:userId` for transaction history
+   - Implemented token allocation and usage endpoints
+
+3. **Payment Routes:**
+   - Implemented payment history and management endpoints
+   - Added webhook handler for payment processing
+
+## Batch Job Infrastructure (Started but needs refactoring)
 
 Implemented batch job infrastructure with:
 
@@ -127,24 +145,6 @@ Implemented batch job infrastructure with:
      - Tier downgrades (end of period)
      - Frequency changes (end of period)
      - Cancellations to free tier (end of period)
-
-## API Gateway Integration (Completed)
-
-1. **Subscription Routes:**
-   - Implemented `/api/subscription/plans` for plan listing
-   - Implemented `/api/subscription/subscriptions` for subscription management
-   - Implemented `/api/subscription/subscriptions/:subscriptionId/cancel` for cancellation
-   - Added proper authentication and authorization checks
-   - Implemented validation for free tier operations
-
-2. **Token Routes:**
-   - Implemented `/api/subscription/tokens/balance/:userId` for balance checking
-   - Implemented `/api/subscription/tokens/transactions/:userId` for transaction history
-   - Implemented token allocation and usage endpoints
-
-3. **Payment Routes:**
-   - Implemented payment history and management endpoints
-   - Added webhook handler for payment processing
 
 ## Current Status and Next Steps
 

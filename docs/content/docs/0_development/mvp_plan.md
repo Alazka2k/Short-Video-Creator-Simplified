@@ -212,9 +212,11 @@
 - ✅ GET /api/subscription/tokens/balance/:userId - Get user's current token balance
 - ✅ POST /api/subscription/tokens/allocate - Allocate new tokens to a user (different use cases e.g. initial allocation for plan, allocation for token package purchase, allocation for renewal of billing period)
 - ✅ POST /api/subscription/tokens/deduct - Deduct tokens for service usage
-- ✅ GET /api/subscription/transactions/user/:userId - Get complete token transaction history
+
+#### 2.2.2. Transaction Endpoints
+- ✅ POST /api/subscription/transactions/calculate-job-cost - Calculate token cost for a job (based on scene amount and selected options)
 - ✅ GET /api/subscription/token-costs - Get token costs for various service usage (LLM, Image, Voice, Animation, Video, Assembly)
-- ✅ POST /api/subscription/calculate-job-cost - Calculate token cost for a job (based on scene amount and selected options)
+- ✅ GET /api/subscription/transactions/user/:userId - Get complete token transaction history
 
 #### 2.2.3. Token Package Endpoints
 - ✅ GET /api/subscription/token-packages - Get all token packages
@@ -222,18 +224,12 @@
 - ✅ POST /api/subscription/token-packages - Create a new token package
 - ✅ POST /api/subscription/token-packages/buy - Buy a token package (creates a new payment entry in status paid and loads up the tokens to the user's balance)
 
-#### 2.2.3. Payment Management Endpoints
+#### 2.2.4. Payment Management Endpoints
 - ✅ GET /api/subscription/payments/user/:userId - Get user's payment history
 - ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
 - ✅ POST /api/subscription/subscriptions/payments - Create a new payment for a new billing period (before the collection of the payment in status open) or a payment for a token package purchase (in status completed after the feedback from stripe)
 - ✅ POST /api/subscription/payments/:userId/status - Process a payment for renewal of billing period / status change of the payment
 - ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
-
-#### 2.2.4. Plan Limitation APIs
-- ⏳ POST /api/subscription/tokens/check - Check if user has sufficient tokens without deducting
-- ⏳ GET /api/subscription/jobs/count/:userId/monthly - Get user's monthly job count
-- ⏳ POST /api/subscription/features/check - Check if a feature is available in user's plan
-- ⏳ POST /api/subscription/limits/check - Check if user has exceeded usage limits
 
 ### 2.3. Batch Processing Integration
 - ⏳ Implement batch processing for recurring payments
@@ -256,10 +252,24 @@
 
 ### 2.6. Plan Limitation Enforcement
 - ⏳ Create middleware for checking subscription features
-- ⏳ Implement validation for content types based on plan
+- ⏳ Implement validation for limitations based on plan
 - ⏳ Add restriction logic for premium features
-- ⏳ Create validation for max scenes per job
-- ⏳ Implement monthly job count tracking and limits
+- ⏳ Create validation for max scenes per job logic
+- ⏳ Implement monthly job count tracking and limits (counter for every job)
+
+#### 2.6.1. Plan Limitation APIs
+- ⏳ POST /api/subscription/transactions/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
+- ⏳ POST /api/subscription/limitations/usage - 
+-> Check if a feature is available in user's plan (content type is allowed, max scenes) 
+  --> If not backend validation and frontend different render behaviour (e.g. disable button, show a message, etc.). Max scenes, content type limitation 
+-> Check if a job counter has reached the limit defined in the plan
+
+#### 2.6.2 Frontend Limitation Check
+- ⏳ Check configuration of the options in the json files for each option (planId) -> Render different feedback and disable options if the user has not the permission to use them
+-> Duration / max scenes
+-> Visual Selection
+-> Voice Selection
+-> Assembly Templates Selection
 
 ### 2.7. Frontend Dashboard Pages for Subscription and Tokens
 

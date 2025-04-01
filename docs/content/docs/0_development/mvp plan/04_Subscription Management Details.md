@@ -258,7 +258,7 @@ UPDATE tokens SET balance = balance + ? WHERE user_id = ?
 
 ## Batch Job Implementation
 
-### 1. Process Pending Cancellations (Implemented)
+### 1. Process Pending Cancellations (Started but needs refactoring)
 
 This batch job processes subscriptions marked for cancellation that have reached their end date.
 
@@ -307,6 +307,15 @@ This batch job will allocate tokens to subscriptions at the beginning of each ne
 2. Allocate tokens based on plan
 3. Update subscription periods
 4. Update token balances
+
+### 3. Payment Renewal and Follow up processing (Planned)
+
+This batch job will process payments and follow up on any failed payments.
+
+#### Job Responsibilities (To Be Implemented):
+1. Identify payments that are due for renewal
+2. Process payments
+3. Follow up on any failed payments (mark them for retry, retry failed payments, switch to free tier if too many retries)
 
 ## Validation Rules and Restrictions
 

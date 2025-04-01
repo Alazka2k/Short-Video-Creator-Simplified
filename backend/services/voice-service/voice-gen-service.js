@@ -23,69 +23,91 @@ class VoiceGenService {
   }
 
   async generateVoice(text, sceneIndex, jobId, elevenlabsVoiceId = null, isTest = false) {
-    try {
-      logger.info(`Generating voice for text: "${text.substring(0, 50)}..."`);
-      logger.debug('Voice generation parameters:', { sceneIndex, jobId, elevenlabsVoiceId, isTest });
-      
-      if (!elevenlabsVoiceId) {
-        throw new Error('ElevenLabs Voice ID is required but was not provided');
-      }
-
+    const maxRetries = 3;
+    let attempt = 0;
+    let lastError = null;
+    
+    while (attempt < maxRetries) {
+      attempt++;
       try {
-        const voicesResponse = await this.client.voices.getAll();
-        const voicesList = Array.isArray(voicesResponse) ? voicesResponse : voicesResponse.voices;
+        logger.info(`Generating voice for text: "${text.substring(0, 50)}..." (Attempt ${attempt}/${maxRetries})`);
+        logger.debug('Voice generation parameters:', { sceneIndex, jobId, elevenlabsVoiceId, isTest });
         
-        if (!voicesList || !Array.isArray(voicesList)) {
-          logger.error('Unexpected voice list format:', voicesResponse);
-          throw new Error('Failed to get valid voice list from ElevenLabs');
+        if (!elevenlabsVoiceId) {
+          throw new Error('ElevenLabs Voice ID is required but was not provided');
         }
 
-        const voiceExists = voicesList.some(voice => voice.voice_id === elevenlabsVoiceId);
-        
-        if (!voiceExists) {
-          throw new Error(`Voice ID ${elevenlabsVoiceId} does not exist in ElevenLabs`);
+        try {
+          const voicesResponse = await this.client.voices.getAll();
+          const voicesList = Array.isArray(voicesResponse) ? voicesResponse : voicesResponse.voices;
+          
+          if (!voicesList || !Array.isArray(voicesList)) {
+            logger.error('Unexpected voice list format:', voicesResponse);
+            throw new Error('Failed to get valid voice list from ElevenLabs');
+          }
+
+          const voiceExists = voicesList.some(voice => voice.voice_id === elevenlabsVoiceId);
+          
+          if (!voiceExists) {
+            throw new Error(`Voice ID ${elevenlabsVoiceId} does not exist in ElevenLabs`);
+          }
+        } catch (error) {
+          logger.error('Error validating ElevenLabs voice:', error);
+          throw new Error(`Failed to validate ElevenLabs voice ID: ${error.message}`);
         }
-      } catch (error) {
-        logger.error('Error validating ElevenLabs voice:', error);
-        throw new Error(`Failed to validate ElevenLabs voice ID: ${error.message}`);
-      }
 
-      logger.info(`Using ElevenLabs voice ID: ${elevenlabsVoiceId}`);
+        logger.info(`Using ElevenLabs voice ID: ${elevenlabsVoiceId}`);
 
-      // Generate voice stream
-      const audioStream = await this.client.generate({
-        voice: elevenlabsVoiceId,
-        text: text,
-        model_id: this.modelId,
-        stream: true
-      });
+        // Generate voice stream
+        const audioStream = await this.client.generate({
+          voice: elevenlabsVoiceId,
+          text: text,
+          model_id: this.modelId,
+          stream: true
+        });
 
-      // Setup paths
-      const { voiceFilePath, metadataPath } = this.getOutputPaths(sceneIndex, jobId, isTest);
-      await fsPromises.mkdir(path.dirname(voiceFilePath), { recursive: true });
+        // Setup paths
+        const { voiceFilePath, metadataPath } = this.getOutputPaths(sceneIndex, jobId, isTest);
+        await fsPromises.mkdir(path.dirname(voiceFilePath), { recursive: true });
 
-      // Write voice file
-      const writeResult = await this.writeVoiceFile(audioStream, voiceFilePath);
-      
-      // Save metadata
-      await this.saveVoiceMetadata(metadataPath, sceneIndex, {
-        text,
-        modelId: this.modelId,
-        generatedAt: new Date().toISOString()
-      });
+        // Write voice file
+        const writeResult = await this.writeVoiceFile(audioStream, voiceFilePath);
+        
+        // Save metadata
+        await this.saveVoiceMetadata(metadataPath, sceneIndex, {
+          text,
+          modelId: this.modelId,
+          generatedAt: new Date().toISOString()
+        });
 
-      // Upload to S3
-      const storageResult = await storageService.uploadFile(
-        voiceFilePath, 
-        'voice'
-      );
+        // Upload to S3
+        const storageResult = await storageService.uploadFile(
+          voiceFilePath, 
+          'voice'
+        );
 
-      // If this is a test, return test response
-      if (isTest) {
-        return {
-          filePath: voiceFilePath,
-          fileName: path.basename(voiceFilePath),
+        // If this is a test, return test response
+        if (isTest) {
+          return {
+            filePath: voiceFilePath,
+            fileName: path.basename(voiceFilePath),
+            elevenlabsVoiceId: elevenlabsVoiceId,
+            storageKey: storageResult.storageKey,
+            publicUrl: storageResult.url,
+            status: 'completed',
+            metadata: {
+              text,
+              modelId: this.modelId,
+              generatedAt: new Date().toISOString()
+            }
+          };
+        }
+
+        // Prepare data for database
+        const voiceData = {
+          tempFilePath: voiceFilePath,
           elevenlabsVoiceId: elevenlabsVoiceId,
+          duration: writeResult.duration,
           storageKey: storageResult.storageKey,
           publicUrl: storageResult.url,
           metadata: {
@@ -94,45 +116,49 @@ class VoiceGenService {
             generatedAt: new Date().toISOString()
           }
         };
+
+        // Create database record
+        const voiceRecord = await this.voiceDataAccess.createVoiceOutput(
+          jobId, 
+          sceneIndex, 
+          voiceData
+        );
+
+        return {
+          filePath: voiceFilePath,
+          fileName: path.basename(voiceFilePath),
+          elevenlabsVoiceId: elevenlabsVoiceId,
+          storageKey: storageResult.storageKey,
+          publicUrl: storageResult.url,
+          status: 'completed',
+          metadata: {
+            text,
+            modelId: this.modelId,
+            generatedAt: new Date().toISOString()
+          }
+        };
+
+      } catch (error) {
+        lastError = error;
+        
+        // Check if this is a rate limit error (HTTP 429)
+        const isRateLimitError = 
+          error.message?.includes('Status code: 429') || 
+          error.statusCode === 429 ||
+          error.status === 429;
+          
+        if (isRateLimitError && attempt < maxRetries) {
+          // For rate limit errors, implement exponential backoff
+          const delayMs = Math.pow(1, attempt) * 1000; // 2s, 4s, 8s...
+          logger.warn(`ElevenLabs rate limit exceeded. Retrying in ${delayMs}ms (Attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue; // Try again
+        }
+        
+        // If this is the last attempt or not a rate limit error, log and rethrow
+        logger.error(`Error generating voice (Attempt ${attempt}/${maxRetries}):`, error);
+        throw error;
       }
-
-      // Prepare data for database
-      const voiceData = {
-        tempFilePath: voiceFilePath,
-        elevenlabsVoiceId: elevenlabsVoiceId,
-        duration: writeResult.duration,
-        storageKey: storageResult.storageKey,
-        publicUrl: storageResult.url,
-        metadata: {
-          text,
-          modelId: this.modelId,
-          generatedAt: new Date().toISOString()
-        }
-      };
-
-      // Create database record
-      const voiceRecord = await this.voiceDataAccess.createVoiceOutput(
-        jobId, 
-        sceneIndex, 
-        voiceData
-      );
-
-      return {
-        filePath: voiceFilePath,
-        fileName: path.basename(voiceFilePath),
-        elevenlabsVoiceId: elevenlabsVoiceId,
-        storageKey: storageResult.storageKey,
-        publicUrl: storageResult.url,
-        metadata: {
-          text,
-          modelId: this.modelId,
-          generatedAt: new Date().toISOString()
-        }
-      };
-
-    } catch (error) {
-      logger.error('Error generating voice:', error);
-      throw error;
     }
   }
 

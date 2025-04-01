@@ -14,8 +14,8 @@ const os = require('os');
 
 class AnimationGenService {
   constructor() {
-    this.baseUrl = 'https://api.immersity.ai';
-    this.authUrl = 'https://auth.immersity.ai/auth/realms/immersity/protocol/openid-connect/token';
+    this.baseUrl = config.animationGen.baseUrl;
+    this.authUrl = config.animationGen.authUrl;
     this.clientId = config.animationGen.clientId;
     this.clientSecret = config.animationGen.clientSecret;
     this.animationLength = config.animationGen.animationLength;
@@ -335,6 +335,7 @@ class AnimationGenService {
             fileName: path.basename(animationFilePath),
             storageKey: animationRecord.storageKey,
             publicUrl: animationRecord.publicUrl,
+            status: 'completed',
             metadata: {
               ...animationRecord.metadata,
               generatedAt: new Date().toISOString()
@@ -345,6 +346,7 @@ class AnimationGenService {
         return {
           filePath: animationFilePath,
           fileName: path.basename(animationFilePath),
+          status: 'completed',
           metadata: {
             prompt: videoPrompt,
             duration: animationLength,
@@ -368,7 +370,11 @@ class AnimationGenService {
           } : undefined
         };
         logger.error(`Error generating animation:`, safeError);
-        throw error;
+        
+        return {
+          status: 'failed',
+          error: error.message
+        };
       }
     } finally {
       // Clean up all temp files

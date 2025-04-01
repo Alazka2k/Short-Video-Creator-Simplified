@@ -311,6 +311,7 @@ class VideoGenService {
               fileName: path.basename(videoFilePath),
               storageKey: storageResult.storageKey,
               publicUrl: storageResult.url,
+              status: 'completed',
               metadata: videoData.metadata
             };
           }
@@ -334,7 +335,12 @@ class VideoGenService {
         } : undefined
       };
       logger.error('Error in video generation:', safeError);
-      throw error;
+      
+      // Return error result with failed status
+      return {
+        status: 'failed',
+        error: error.message
+      };
     } finally {
       // Clean up all temp files
       for (const file of tempFiles) {

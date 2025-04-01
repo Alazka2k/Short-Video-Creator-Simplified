@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { ContentState, ScriptParams, VisualizationType, RequestParams } from '@/components/video-creation/types'
 import { durationOptions } from '@/components/video-creation/steps/BasicInformationStep'
 import voiceData from '@/data/video-creation/voice/voice-select-option.json'
@@ -19,6 +19,15 @@ const M2M_TOKEN_KEY = 'video_creation_m2m_token'
 interface TokenResponse {
   access_token: string;
   expires_at: number;
+}
+
+// Define the job progress state interface
+interface JobProgressState {
+  jobId: string | null;
+  status: 'idle' | 'polling' | 'completed' | 'failed';
+  progress: number;
+  details: any | null;
+  errorMessage?: string | null;
 }
 
 interface VideoCreationState {
@@ -45,7 +54,112 @@ export function useVideoCreationState(defaultValues?: any) {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [m2mToken, setM2MToken] = useState<string | null>(null)
+  const [m2mToken, setM2MToken] = useState<string | null>(null);
+  
+  // Add job progress state
+  const [jobProgress, setJobProgress] = useState<JobProgressState>({
+    jobId: null,
+    status: 'idle',
+    progress: 0,
+    details: null
+  });
+  
+  // Reference to store polling interval
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to fetch job progress
+  const fetchJobProgress = useCallback(async (jobId: string) => {
+    try {
+      // Get tokens for authentication
+      const userToken = localStorage.getItem("access_token");
+      const m2mToken = await auth.getM2MToken();
+      
+      // Set up headers with both tokens
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${m2mToken}`,
+      };
+      if (userToken) {
+        headers['x-user-token'] = userToken;
+      }
+      
+      const response = await apiClient.get<{
+        status: string;
+        overallProgress: number;
+        jobId: string;
+        services: string[];
+        serviceProgress: Record<string, any>;
+        sceneProgress: Record<string, any>;
+        errorMessage?: string | null;
+      }>(
+        `/api/job/jobs/${jobId}/progress`, 
+        { headers }
+      );
+      
+      // Update job progress state
+      setJobProgress(prev => ({
+        ...prev,
+        status: response.status === 'in_progress' ? 'polling' : response.status as any,
+        progress: response.overallProgress || 0,
+        details: response,
+        errorMessage: response.errorMessage || null
+      }));
+      
+      // If job is complete or failed, stop polling
+      if (response.status === 'completed' || response.status === 'failed') {
+        stopPolling();
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error fetching job progress:', error);
+      // If there's an error after multiple attempts, stop polling
+      if (jobProgress.status === 'polling') {
+        setJobProgress(prev => ({
+          ...prev,
+          status: 'failed',
+        }));
+        stopPolling();
+      }
+      return null;
+    }
+  }, [auth, jobProgress.status]);
+  
+  // Function to start polling for job progress
+  const startPolling = useCallback((jobId: string) => {
+    // Stop any existing polling
+    stopPolling();
+    
+    // Update job progress state
+    setJobProgress({
+      jobId,
+      status: 'polling',
+      progress: 0,
+      details: null
+    });
+    
+    // Initial fetch
+    fetchJobProgress(jobId);
+    
+    // Start polling every 2 seconds
+    pollingIntervalRef.current = setInterval(() => {
+      fetchJobProgress(jobId);
+    }, 2000);
+  }, [fetchJobProgress]);
+  
+  // Function to stop polling
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, [stopPolling]);
 
   // Initialize state from localStorage or default values
   const [state, setState] = useState<VideoCreationState>(() => {
@@ -157,6 +271,16 @@ export function useVideoCreationState(defaultValues?: any) {
     const shotStylePrompt = findPromptDefinition(shotStyleData, state.visualSettings.shotStyle);
     // Find voice ID
     const voiceId = findVoiceId(state.selectedVoice);
+    
+    // Determine if we need to skip images and visualization
+    const skipImage = !state.selectedContent.visuals;
+    const skipVisualization = skipImage || state.selectedVisualization === 'image';
+    
+    // If images are skipped, visualization must also be skipped
+    // In that case, we default to 'image' as the visualizationType
+    const visualizationType = skipImage 
+      ? 'image' 
+      : (state.selectedVisualization === 'image' ? 'image' : state.selectedVisualization);
 
     return {
       prompt: state.prompt,
@@ -192,10 +316,10 @@ export function useVideoCreationState(defaultValues?: any) {
         serviceConfig: {
           skipVoice: !state.selectedContent.voice,
           skipMusic: !state.selectedContent.music,
-          skipImage: !state.selectedContent.visuals,
-          skipVisualization: state.selectedVisualization === 'image'
+          skipImage: skipImage,
+          skipVisualization: skipVisualization
         },
-        visualizationType: state.selectedVisualization === 'image' ? 'image' : state.selectedVisualization
+        visualizationType: visualizationType
       }
     }
   }, [
@@ -226,20 +350,23 @@ export function useVideoCreationState(defaultValues?: any) {
         headers['x-user-token'] = userToken;
       }
       
-      const response = await apiClient.post<{ result: { jobId: string } }>(
+      const response = await apiClient.post<{ jobId: string }>(
         '/api/job/generate', 
         requestBody,
         { headers }
       );
 
-      // Just return the jobId without navigating
-      return response.result.jobId;
+      // Start polling for job progress
+      startPolling(response.jobId);
+      
+      // Return the jobId from the updated API response format
+      return response.jobId;
     } catch (error) {
       console.error('Error creating project:', error);
       setError(error instanceof Error ? error.message : 'An error occurred while creating the project');
       throw error;
     }
-  }, [constructRequestBody, auth.getM2MToken]);
+  }, [constructRequestBody, auth.getM2MToken, startPolling]);
 
   const handleGenerateVideo = useCallback(async () => {
     setIsGenerating(true);
@@ -259,22 +386,27 @@ export function useVideoCreationState(defaultValues?: any) {
         headers['x-user-token'] = userToken;
       }
       
-      const response = await apiClient.post<{ result: { jobId: string } }>(
+      const response = await apiClient.post<{ jobId: string, status: string }>(
         '/api/job/generate', 
         requestBody,
         { headers }
       );
 
-      // Just return the jobId without navigating
-      return response.result.jobId;
+      // Start polling for job progress
+      startPolling(response.jobId);
+      
+      // Return the jobId from the updated API response format
+      return response.jobId;
     } catch (error) {
       console.error('Error generating video:', error);
       setError(error instanceof Error ? error.message : 'An error occurred while generating the video');
       throw error;
     } finally {
-      setIsGenerating(false);
+      // Note: We don't set isGenerating to false here
+      // because we want to show the loading state until the job is complete
+      // The VideoCreationFlow component will handle showing progress
     }
-  }, [constructRequestBody, auth.getM2MToken]);
+  }, [constructRequestBody, auth.getM2MToken, startPolling]);
 
   return {
     state,
@@ -286,7 +418,10 @@ export function useVideoCreationState(defaultValues?: any) {
     isGenerating,
     error,
     handleGenerateVideo,
-    handleCreateProject
+    handleCreateProject,
+    jobProgress,
+    startPolling,
+    stopPolling
   }
 }
 

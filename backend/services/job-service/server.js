@@ -8,10 +8,36 @@ function createServer(jobService) {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+  // Request logging middleware with rate limiting
+  const lastLogged = new Map(); // Keep track of when paths were last logged
+  
   app.use((req, res, next) => {
-    logger.info(`Job Service: Received ${req.method} request for ${req.url}`);
-    logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-    logger.info(`Request body: ${JSON.stringify(req.body)}`);
+    const path = req.path;
+    const now = Date.now();
+    const pollingEndpoints = ['/jobs/:jobId/progress', '/jobs/:jobId'];
+    
+    // For polling endpoints like progress and status, only log once per 10 seconds
+    if (pollingEndpoints.some(pattern => {
+      return new RegExp(`^${pattern.replace(/:[^/]+/g, '[^/]+')}$`).test(path);
+    })) {
+      const lastTime = lastLogged.get(path) || 0;
+      if (now - lastTime < 10000) { // 10 seconds
+        return next(); // Skip logging
+      }
+      lastLogged.set(path, now);
+    }
+    
+    // Log the request with minimal info
+    logger.info(`Job Service: Received ${req.method} request for ${req.path}`);
+    next();
+  });
+  
+  // Additional middleware to log request body and headers only for non-GET requests
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') {
+      logger.info('Request headers:', req.headers);
+      logger.info('Request body:', req.body);
+    }
     next();
   });
 
@@ -31,11 +57,8 @@ function createServer(jobService) {
 
       logger.info(`Job Service: Starting content generation for prompt: ${prompt}`, { userId });
       
-      // First create a job ID that we can return immediately
-      const jobId = jobService.createJobId();
-      
-      // Create the initial job record
-      await jobService.createInitialJob(jobId, prompt, parameters, visualizationType, userId);
+      // First create a job and get the job ID that we can return immediately
+      const { jobId } = await jobService.createInitialJob(prompt, parameters, visualizationType, userId);
       
       // Send the response with the job ID immediately
       res.json({
@@ -73,6 +96,33 @@ function createServer(jobService) {
       res.json(job);
     } catch (error) {
       logger.error('Error fetching job status:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Get job progress endpoint
+  app.get('/jobs/:jobId/progress', (req, res) => {
+    try {
+      const { jobId } = req.params;
+      
+      // Check if we have this progress info cached to reduce logging
+      const progress = jobService.getJobProgress(jobId);
+      
+      if (!progress) {
+        logger.info(`Job progress not found for ${jobId}`);
+        return res.status(404).json({ error: 'Job progress not found' });
+      }
+      
+      // Only log if significant change in progress or status change
+      if (req.headers['x-log-progress'] === 'true' || 
+          progress.overallProgress % 10 === 0 || // Log at 0%, 10%, 20%, etc.
+          progress.status !== 'in_progress') {  // Always log on status change
+        logger.info(`Job progress for ${jobId}: ${progress.overallProgress}% (${progress.status})`);
+      }
+      
+      res.json(progress);
+    } catch (error) {
+      logger.error('Error fetching job progress:', error);
       res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });

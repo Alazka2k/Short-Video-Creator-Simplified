@@ -92,7 +92,14 @@ export function VideoCreationFlow({
   isDemo = false 
 }: VideoCreationFlowProps) {
   const router = useRouter()
-  const { state, updateState, handleGenerateVideo, handleCreateProject, isGenerating } = useVideoCreationState(defaultValues)
+  const { 
+    state, 
+    updateState, 
+    handleGenerateVideo, 
+    handleCreateProject, 
+    isGenerating, 
+    jobProgress 
+  } = useVideoCreationState(defaultValues)
   const { toast } = useToast()
 
   // Destructure state for easier access
@@ -370,10 +377,12 @@ export function VideoCreationFlow({
             onClick={onGenerateVideo}
             disabled={!prompt.trim() || isGenerating}
           >
-            {isGenerating ? (
+            {isGenerating || jobProgress.status === 'polling' ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating Video...
+                {jobProgress.status === 'polling' 
+                  ? `Creating Video... ${jobProgress.progress}%` 
+                  : 'Preparing Job...'}
               </>
             ) : (
               <>
@@ -409,10 +418,14 @@ export function VideoCreationFlow({
             size="lg"
           >
             <div className="relative flex items-center justify-center gap-3">
-              {isGenerating ? (
+              {isGenerating || jobProgress.status === 'polling' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  <span className="text-lg font-medium text-primary">Creating Content...</span>
+                  <span className="text-lg font-medium text-primary">
+                    {jobProgress.status === 'polling' 
+                      ? `Creating Content... ${jobProgress.progress}%` 
+                      : 'Preparing Content...'}
+                  </span>
                 </>
               ) : (
                 <>
