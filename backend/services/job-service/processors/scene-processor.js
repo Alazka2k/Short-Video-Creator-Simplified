@@ -111,12 +111,12 @@ class SceneProcessor {
       // Only include image result if image was not skipped and is available
       if (!serviceConfig.skipImage && imageResult) {
         sceneResult.image = {
-          //filePath: imageResult.filePath,
-          //fileName: imageResult.fileName,
-          //storageKey: imageResult.storageKey,
-          //publicUrl: imageResult.publicUrl, 
-          //status: imageResult.status,
-          //metadata: imageResult.metadata
+          filePath: imageResult.filePath,
+          fileName: imageResult.fileName,
+          storageKey: imageResult.storageKey,
+          publicUrl: imageResult.publicUrl, 
+          status: imageResult.status,
+          metadata: imageResult.metadata
         };
       }
 

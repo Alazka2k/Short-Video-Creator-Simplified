@@ -2,18 +2,35 @@
 
 This directory contains batch jobs that run on a scheduled basis to perform maintenance and operational tasks for the application.
 
-## Available Batch Jobs
+## Batch Jobs Overview
 
-### `process-pending-cancellations.js`
+### Subscription related batch jobs
+
+#### Pending Cancellations: `process-pending-cancellations.js`
 
 This batch job processes subscriptions that are marked for cancellation (`status='pending_cancellation'`) and have reached their end date. It performs the following tasks:
 
-1. Identifies all pending cancellations where `end_date <= current_date`
+1. Identifies all pending cancellations where `end_date <= current_date` and status is `pending_cancellation`
 2. Changes their status from `pending_cancellation` to `cancelled`
 3. Sets the `ended_at` date to the current timestamp
-4. Creates new subscriptions based on the `upcoming_plan_id` if applicable:
+4. Creates new subscriptions based on the `upcoming_plan_id` and the endpoint `create-subscription` POST /api/subscription/subscriptions
+
+Example request body:
+
+```json
+{
+  "userId": :userId,
+  "planId": :upcomingPlanId,
+  "status": "active",
+  "externalSubscriptionId": :externalSubscriptionId,
+  "paymentProvider":"stripe",
+  "externalPaymentId":"id_123"
+}
+```
+
+Depending on the use case, the following actions are performed:
    - For downgrades: Creates a new subscription with the specified lower-tier plan
-   - For frequency changes: Creates a new subscription with the same tier but different billing frequency
+   - For frequency changes (Yearly <-> Monthly): Creates a new subscription with the same tier but different billing frequency
    - For cancellations to free tier: Creates a new free tier subscription (plan_id=1)
    - Sets new start date to the end date of the current billing period
    - No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
@@ -22,87 +39,132 @@ This batch job processes subscriptions that are marked for cancellation (`status
    - Creates a token transaction for the new subscription
    - Updated the token balance of the user
 
-#### Use Cases
+To switch the status from pending_cancellation to cancelled, the following endpoint can be used:
 
-##### Downgrade (different tier and different / lower plan)
+`Update existing subscription` PUT /api/subscription/subscriptions/:userId
 
-###### Scenario 1: User wants to change to a lower plan (and different tier)
+Example request body:
 
-####### Description:
-- User wants to change to a higher plan (and different tier) (e.g. Creator to Professional)
-- User should first pay for the new plan when the current billing period (for the old plan) ends
-- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+```json
+{
+  "userId": :userId,
+  "status": "cancelled"
+}
+```
 
-####### Requirements for the Batch Job:
-- The new subscription should be created with the new plan (set in the old subscription in column upcoming_plan_id)
-- A new payment should be created for the new plan
-- The old subscription should be switched to status cancelled
-- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
-- The start date (of the new subscription) should be the end date of the current billing period
-- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+#### Create Payments: `create-payments-renewals.js`
 
-##### Frequency Change (same tier and different / lower / higher plan)
+This batch job creates payments for subscription renewals which are due. Due means that the `billing_period_end` is today or in the past with status `completed`. But only for subscriptions (subscription ids) which are in `active` status (need to exclude not in `pending_cancellation` or `cancelled` status). Lookup in the subscription table necessary.
+Runs everday after 11:00 AM EST.
+Creates then a new payment entry by calling the `create-payment` endpoint of the subscription service.
 
-###### Scenario 1: User wants to change to a higher plan (and same tier)
+The endpoint is:
 
-####### Description:
-- User wants to change from monthly to annual in the same tier (e.g. Creator with monthly to Creator with annual payment)
-- User should first pay for the new plan (annual) when the current billing period (for the old plan) ends
-- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+`Create new payment` POST /api/subscription/payments
 
-####### Requirements for the Batch Job:
-- The the new subscription should be created with the annual plan (set in the old subscription in column upcoming_plan_id)
-- A new payment should be created for the annual plan
-- The old subscription should be switched to status cancelled
-- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
-- The start date (of the new subscription) should be the end date of the current billing period
-- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+Example request body:
 
-###### Scenario 2: User wants to change to a lower plan (and same tier)
+```json
+{
+  "userId": :userId,
+  "paymentType": "subscription_renewal",
+  "subscriptionId": :subscriptionId, //Subscription id of the last payment of this user with payment type subscription_renewal or subscription_initial 
+  "status": "open"
+}
+```
 
-####### Description:
-- User wants to change from annual to monthly in the same tier (e.g. Creator with annual to Creator with monthly payment)
-- User should first pay for the new plan (monthly) when the current billing period (for the old plan) ends
-- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+- User is the user id of the user who is renewing the subscription
+- paymentType is the type of payment (subscription_renewal)
+- subscriptionId is the id of the subscription that is being renewed
+- status is the status of the payment (open)
 
-####### Requirements for the Batch Job:
-- The the new subscription should be created with the monthly plan (set in the old subscription in column upcoming_plan_id)
-- A new payment should be created for the monthly plan
-- The old subscription should be switched to status cancelled
-- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
-- The start date (of the new subscription) should be the end date of the current billing period
-- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+#### Collect Payments: `collect-payments.js`
 
+This batch job collects payments for subscriptions that are in the status `open` and have a billing period start date today or in the past. 
+Runs every day at 3:00 PM EST.
 
-##### Cancellation to Free Tier (independent of tier and plan apart if the user is on the free tier)
+1. Identifies all payments that are in the status `open`
+2. Collects the payments with Stripe
+3. Updates the payment status to `completed` if the payment was successful
+3. Sets the payment information in the payment entry:
+  "paymentProvider": :paymentProvider,
+  "externalPaymentId": :externalPaymentId,
+4. Updates the payment status to `failed` if the payment was not successful
 
-###### Scenario 1: User wants to cancel their subscription and switch to the free tier
+The endpoint is:
 
-####### Description:
-- User wants to cancel their subscription and switch to the free tier
-- User should first pay for the new plan (monthly) when the current billing period (for the old plan) ends
-- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+`Update existing payment` PUT /api/subscription/payments/:paymentId //TODO: Add endpoint in the subscription service?
 
-####### Requirements for the Batch Job:
-- The the new subscription should be created with the monthly plan (set in the old subscription in column upcoming_plan_id)
-- A new payment should be created for the monthly plan
-- The old subscription should be switched to status cancelled
-- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
-- The start date (of the new subscription) should be the end date of the current billing period
-- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+Example request body:
 
-## Implementation Guidelines
+```json
+{
+  "paymentProvider": :paymentProvider,
+  "externalPaymentId": :externalPaymentId,
+  "status": "completed"
+}
+```
 
-All batch jobs should:
+#### Retry Failed Payments: `retry-failed-payments.js`
 
-1. Include proper logging to track execution
-2. Implement error handling with graceful failures
-3. Return a summary of actions performed
-4. Be idempotent (safe to run multiple times)
+This batch job retries failed payments for subscriptions that are in the status `failed`. Retry should be done twice. If the payment is still not successful, the payment status is set to `failed` and the counter is incremented.
+Runs every day at 4:00 PM EST.
 
-## Running Batch Jobs
+1. Identifies all payments that are in the status `failed`
+2. Retries the payments with Stripe
+3. Updates the payment status to `completed` if the payment was successful
+4. Updates the payment status to `failed` if the payment was not successful, adds a counter to the payment entry 
+//TODO: New column in the payments table
+6. If the payment is successful, the payment status is set to `completed` and the counter is reset to 0.
+5. If the payment is still not successful after 2 retries, the payment status is set to `cancelled` and the counter is incremented.
+7. The current subscription of the user is then cancelled (switched to the free tier)
+8. The token addition is reverted (for the not paid tokens). //Complicated to identify the not paid tokens. After the mvp go live.
 
-Batch jobs can be run in several ways:
+The endpoint for updating the payment is:
+
+`Update existing payment` PUT /api/subscription/payments/:paymentId //TODO: Add endpoint in the subscription service
+
+Example request body (for successful payment):
+
+```json
+{
+  "paymentProvider": :paymentProvider,
+  "externalPaymentId": :externalPaymentId,
+  "status": "completed"
+}
+```
+
+Example request body (for failed payment):
+
+```json
+{
+  "status": "failed"
+}
+```
+
+#### Subscription Renewals: `subscription-renewals.js`
+
+This batch job updateds the current `current_period_start` and `current_period_end` for the users subscriptions and allocates tokens for the users subscriptions.
+Runs every day at 5:00 PM EST.
+
+1. Identifies all subscriptions that are in the status `active`
+2. Checks if the `current_period_end` is today or in the past
+3. If yes, the `current_period_start` and `current_period_end` are updated to the next monthly period.
+4. Allocates tokens for the users subscriptions based on the `plan_id`
+
+Endpoint for renewal of the subscription (which automatically triggers the allocation of tokens):
+
+`Renew subscription` PUT /api/subscription/subscriptions/:userId/renew
+
+Example request body:
+
+```json
+{
+  "forceRenew": false (optional, can be empty)
+}
+```
+
+## Batch jobs Testing:
 
 1. Manually via command line:
    ```

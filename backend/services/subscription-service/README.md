@@ -125,19 +125,94 @@ Routes define the API endpoints and their corresponding controller methods:
 To start the service locally:
 
 ```bash
-cd backend/services/subscription-service
-npm install
-npm start
-```
-
-For development with auto-reload:
-
-```bash
-npm run dev
+npm run dev:subscription
 ```
 
 ## Testing
 
-```bash
-npm test
-``` 
+#### Use Cases for the Direct Tier Change
+
+##### Upgrade (higher tier and higher plan)
+
+Endpoint:
+- `POST /subscriptions/`: Change subscription
+
+#### Use Cases for the Delayed Tier Change (excluding Batch Job)
+
+##### Downgrade (lower tier and lower plan)
+
+Endpoint:
+- `POST /subscriptions/`: Change subscription (with lower plan and lower plan)
+
+###### Scenario 1: User wants to change to a lower plan (and different tier)
+
+####### Description:
+- User wants to change to a higher plan (and different tier) (e.g. Creator to Professional)
+- User should first pay for the new plan when the current billing period (for the old plan) ends
+- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+
+####### Requirements for the Batch Job:
+- The new subscription should be created with the new plan (set in the old subscription in column upcoming_plan_id)
+- A new payment should be created for the new plan
+- The old subscription should be switched to status cancelled
+- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
+- The start date (of the new subscription) should be the end date of the current billing period
+- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+
+##### Frequency Change (same tier and different / lower / higher plan)
+
+Endpoint:
+- `POST /subscriptions/`: Change subscription (with different / lower / higher plan and same tier)
+
+###### Scenario 1: User wants to change to a higher plan (and same tier)
+
+####### Description:
+- User wants to change from monthly to annual in the same tier (e.g. Creator with monthly to Creator with annual payment)
+- User should first pay for the new plan (annual) when the current billing period (for the old plan) ends
+- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+
+####### Requirements for the Batch Job:
+- The the new subscription should be created with the annual plan (set in the old subscription in column upcoming_plan_id)
+- A new payment should be created for the annual plan
+- The old subscription should be switched to status cancelled
+- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
+- The start date (of the new subscription) should be the end date of the current billing period
+- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+
+###### Scenario 2: User wants to change to a lower plan (and same tier)
+
+####### Description:
+- User wants to change from annual to monthly in the same tier (e.g. Creator with annual to Creator with monthly payment)
+- User should first pay for the new plan (monthly) when the current billing period (for the old plan) ends
+- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+
+####### Requirements for the Batch Job:
+- The the new subscription should be created with the monthly plan (set in the old subscription in column upcoming_plan_id)
+- A new payment should be created for the monthly plan
+- The old subscription should be switched to status cancelled
+- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
+- The start date (of the new subscription) should be the end date of the current billing period
+- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+
+
+##### Cancellation [to Free Tier] (independent of tier and plan apart if the user is on the free tier)
+
+Endpoint:
+- `POST /subscriptions/:subscriptionId/cancel`: Cancel a subscription
+
+###### Scenario 1: User wants to cancel their subscription and switch to the free tier
+
+####### Description:
+- User wants to cancel their subscription and switch to the free tier
+- User should first pay for the new plan (monthly) when the current billing period (for the old plan) ends
+- Subscription should be marked in status pending cancellation with end date as the end of the current billing period
+
+####### Requirements for the Batch Job:
+- The the new subscription should be created with the monthly plan (set in the old subscription in column upcoming_plan_id)
+- A new payment should be created for the monthly plan
+- The old subscription should be switched to status cancelled
+- The ended_at date (of the old subscription) should be set to the timestamp when the status is switched from pending_cancellation to cancelled
+- The start date (of the new subscription) should be the end date of the current billing period
+- No new end date should be set (the new subscription will be active until the user cancels or changes the plan again)
+
+## Batch Jobs

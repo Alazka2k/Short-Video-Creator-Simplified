@@ -227,14 +227,15 @@
 #### 2.2.4. Payment Management Endpoints
 - ✅ GET /api/subscription/payments/user/:userId - Get user's payment history
 - ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
-- ✅ POST /api/subscription/subscriptions/payments - Create a new payment for a new billing period (before the collection of the payment in status open) or a payment for a token package purchase (in status completed after the feedback from stripe)
 - ✅ POST /api/subscription/payments/:userId/status - Process a payment for renewal of billing period / status change of the payment
 - ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
+- ⏳ POST /api/subscription/payments - Create a new payment for a new billing period (before the collection of the payment in status open) or a payment for a token package purchase (in status open for subscription renewal or completed after a package purchase and positive feedback from the payment provider, payment provider (optional), external payment id (optional))
+- ⏳ PUT /api/subscription/payments/:paymentId - Update a payment (status, payment provider (optional), external payment id (optional))
 
 ### 2.3. Batch Processing Integration
 - ⏳ Implement batch processing for recurring payments
-- ⏳ Implement batch processing for token deductions
-- ⏳ Implement batch processing for plan downgrades
+- ⏳ Implement batch processing for plan downgrades / pending cancellations
+- ⏳ Implement batch processing for subscription renewals (token addition)
 
 ### 2.4. Stripe Integration
 - ⏳ Configure Stripe products and prices to match plans
@@ -258,7 +259,7 @@
 - ⏳ Implement monthly job count tracking and limits (counter for every job)
 
 #### 2.6.1. Plan Limitation APIs
-- ⏳ POST /api/subscription/transactions/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
+- ⏳ POST /api/subscription/limitations/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
 - ⏳ POST /api/subscription/limitations/usage - 
 -> Check if a feature is available in user's plan (content type is allowed, max scenes) 
   --> If not backend validation and frontend different render behaviour (e.g. disable button, show a message, etc.). Max scenes, content type limitation 
