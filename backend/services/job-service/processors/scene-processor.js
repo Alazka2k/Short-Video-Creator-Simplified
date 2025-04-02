@@ -269,13 +269,19 @@ class SceneProcessor {
     // Use the visual_prompt property consistently
     const imagePrompt = scene.visual_prompt;
     
+    // First update progress to started (0%)
+    this.jobDataAccess.updateJobProgress(jobId, 'image', 'started', { 
+      sceneId: sceneIndex,
+      progress: 0
+    });
+    
     // Log the scene properties for debugging
-    logger.info(`Scene properties for image generation:`, {
+    /*logger.info(`Scene properties for image generation:`, {
       sceneIndex,
       hasVisualPrompt: !!scene.visual_prompt,
       hasVisualPromptProperty: scene.hasOwnProperty('visual_prompt'),
       propertyNames: Object.keys(scene)
-    });
+    });*/
     
     if (!imagePrompt) {
       // Fallback to description only if needed
@@ -287,6 +293,12 @@ class SceneProcessor {
           try {
             logger.info(`Generating image with fallback prompt for scene ${sceneIndex}, attempt ${attempt}/${maxRetries}`);
             
+            // Update progress to in_progress (50%)
+            this.jobDataAccess.updateJobProgress(jobId, 'image', 'in_progress', { 
+              sceneId: sceneIndex,
+              progress: 50
+            });
+            
             if (!await this.services.image.service.isHealthy()) {
               await this.services.image.initialize();
             }
@@ -296,6 +308,16 @@ class SceneProcessor {
               sceneIndex,
               jobId
             );
+
+            // Update progress to completed (100%)
+            this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', { 
+              sceneId: sceneIndex,
+              progress: 100,
+              filePath: result.filePath,
+              publicUrl: result.publicUrl,
+              storageKey: result.storageKey
+            });
+
             return result;
           } catch (error) {
             lastError = error;
@@ -308,6 +330,11 @@ class SceneProcessor {
               const delay = attempt * 5000;
               await new Promise(resolve => setTimeout(resolve, delay));
             } else {
+              // Update progress to failed with error
+              this.jobDataAccess.updateJobProgress(jobId, 'image', 'failed', { 
+                sceneId: sceneIndex,
+                error: error.message
+              });
               break;
             }
           }
@@ -326,6 +353,12 @@ class SceneProcessor {
       try {
         logger.info(`Generating image for scene ${sceneIndex}, attempt ${attempt}/${maxRetries}`);
         
+        // Update progress to in_progress (50%)
+        this.jobDataAccess.updateJobProgress(jobId, 'image', 'in_progress', { 
+          sceneId: sceneIndex,
+          progress: 50
+        });
+        
         // Check if service needs initialization
         if (!await this.services.image.service.isHealthy()) {
           logger.info('Image service unhealthy, attempting to reinitialize...');
@@ -343,6 +376,15 @@ class SceneProcessor {
         if (result && !result.status) {
           result.status = 'completed';
         }
+
+        // Update progress to completed (100%)
+        this.jobDataAccess.updateJobProgress(jobId, 'image', 'completed', { 
+          sceneId: sceneIndex,
+          progress: 100,
+          filePath: result.filePath,
+          publicUrl: result.publicUrl,
+          storageKey: result.storageKey
+        });
         
         return result;
       } catch (error) {
@@ -367,6 +409,11 @@ class SceneProcessor {
             await new Promise(resolve => setTimeout(resolve, delay));
           }
         } else {
+          // Update progress to failed with error
+          this.jobDataAccess.updateJobProgress(jobId, 'image', 'failed', { 
+            sceneId: sceneIndex,
+            error: error.message
+          });
           // If it's not a connection error, don't retry
           break;
         }

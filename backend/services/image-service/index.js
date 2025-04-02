@@ -24,11 +24,11 @@ class ImageServiceInterface {
   }
 
   async generateContent(prompt, sceneIndex = null, jobId = null, isTest = false) {
-    logger.info(`Generating image content: ${prompt}`, {
+    /*logger.info(`Generating image content: ${prompt}`, {
       sceneIndex,
       jobId,
       isTest
-    });
+    });*/
     if (!this.service) {
       throw new Error('Image Service not initialized');
     }

@@ -25,11 +25,11 @@ class ImageGenService {
 
   async generateImage(prompt, sceneIndex = null, jobId = null, userId = null) {
     try {
-      logger.info(`Generating image for prompt: "${prompt}"`, {
+      /*logger.info(`Generating image for prompt: "${prompt}"`, {
         sceneIndex,
         jobId,
         userId
-      });
+      });*/
       
       // Validate required parameters
       if (!prompt) {

@@ -79,7 +79,7 @@ export function useVideoCreationState(defaultValues?: any) {
     }
     // Reset error count and polling interval when stopping
     consecutiveErrorsRef.current = 0;
-    basePollingIntervalRef.current = 2000;
+    basePollingIntervalRef.current = 5000; // 2 seconds
   }, []);
 
   // Function to fetch job progress

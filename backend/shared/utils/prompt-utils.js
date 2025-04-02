@@ -71,7 +71,7 @@ class PromptUtils {
             new RegExp(placeholder, 'g'), 
             String(value)
           );
-          logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+          //logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
         }
       } else {
         // Handle required parameters normally
@@ -80,7 +80,7 @@ class PromptUtils {
             new RegExp(placeholder, 'g'), 
             String(value)
           );
-          logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
+          //logger.info(`Replaced placeholder ${placeholder} with value: ${value}`);
         } else {
           logger.debug(`Placeholder ${placeholder} not found in the prompt.`);
         }
@@ -96,7 +96,7 @@ class PromptUtils {
           placeholder, 
           mapping
         );
-        logger.info(`Cleaned up unused parameter ${key} from prompt`);
+        //logger.info(`Cleaned up unused parameter ${key} from prompt`);
       }
     }
 

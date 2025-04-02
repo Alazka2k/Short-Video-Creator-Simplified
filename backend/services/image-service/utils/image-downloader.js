@@ -34,7 +34,7 @@ class ImageDownloader {
       const viewSource = await page.goto(url);
       const buffer = await viewSource.buffer();
       await fs.writeFile(outputPath, buffer);
-      logger.info(`Image downloaded successfully to ${outputPath}`);
+      //logger.info(`Image downloaded successfully to ${outputPath}`);
     } catch (error) {
       logger.error('Error downloading image:', error);
       throw error;

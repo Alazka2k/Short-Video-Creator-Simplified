@@ -45,10 +45,10 @@ class ImageDataAccess {
         })
         .returning('*');
 
-      logger.info('Created image output record:', {
+      /*logger.info('Created image output record:', {
         imageId: imageRecord.image_id,
         storageKey: imageData.storageKey
-      });
+      });*/
 
       return imageRecord;
 

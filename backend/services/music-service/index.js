@@ -21,7 +21,6 @@ class MusicServiceInterface {
     logger.info('Generating music content', { jobId, musicData, isTest });
     const result = await this.service.generateMusic(jobId, {
       ...musicData,
-      title: musicData.prompt,  // Map prompt to title
       style: typeof musicData.style === 'string' 
         ? musicData.style.substring(0, 120)  // Ensure style is not longer than 120 chars
         : '',

@@ -391,7 +391,37 @@ class JobPipelineService {
         return this.getBasicJobProgress(jobId);
       }
       
-      return progress;
+      // Enhance progress data with additional information
+      const enhancedProgress = {
+        ...progress,
+        timestamp: new Date().toISOString(),
+        serviceStatuses: {
+          llm: progress.serviceProgress?.llm?.status || 'unknown',
+          music: progress.serviceProgress?.music?.status || 'unknown',
+          voice: this._getServiceStatusForAllScenes(progress, 'voice'),
+          image: this._getServiceStatusForAllScenes(progress, 'image'),
+          video: this._getServiceStatusForAllScenes(progress, 'video'),
+          animation: this._getServiceStatusForAllScenes(progress, 'animation')
+        },
+        sceneProgress: this._getSceneProgressSummary(progress),
+        duration: progress.endTime ? 
+          new Date(progress.endTime) - new Date(progress.startTime) : 
+          Date.now() - new Date(progress.startTime)
+      };
+      
+      // Log significant progress changes
+      if (enhancedProgress.overallProgress % 25 === 0 || // Log at 0%, 25%, 50%, 75%, 100%
+          enhancedProgress.status !== 'in_progress') {
+        logger.info(`Job ${jobId} progress update:`, {
+          status: enhancedProgress.status,
+          progress: enhancedProgress.overallProgress,
+          duration: enhancedProgress.duration,
+          serviceStatuses: enhancedProgress.serviceStatuses,
+          sceneProgress: enhancedProgress.sceneProgress
+        });
+      }
+      
+      return enhancedProgress;
     } catch (error) {
       logger.error(`Error getting job progress for ${jobId}:`, error);
       throw error;
@@ -455,23 +485,28 @@ class JobPipelineService {
 
   async finalizeJob(jobId, jobOutputDir, llmResult, sceneResults, musicResult, parameters, customStatusInfo = null) {
     // Extract service config from parameters
-    const serviceConfig = parameters.serviceConfig || {
-      skipVoice: false,
-      skipMusic: false,
-      skipImage: false,
-      skipVisualization: false
-    };
+    const config = parameters?.serviceConfig || {};
     
-    // Analyze results or use custom status info if provided
-    const statusInfo = customStatusInfo || jobResultManager.analyzeResults(sceneResults, serviceConfig, musicResult);
+    // Get status info from custom info or analyze results
+    const jobStatusInfo = customStatusInfo || jobResultManager.analyzeResults(sceneResults, config, musicResult);
     
-    // Prepare metadata
-    const metadata = jobResultManager.prepareMetadata(
-      jobId, llmResult, sceneResults, musicResult, parameters, statusInfo
+    // Ensure status is properly set
+    if (jobStatusInfo.status !== 'completed' && jobStatusInfo.status !== 'failed') {
+      jobStatusInfo.status = 'completed';
+    }
+    
+    // Prepare metadata with the correct structure
+    const jobMetadata = jobResultManager.prepareMetadata(
+      jobId,
+      llmResult,
+      sceneResults,
+      musicResult,
+      parameters,
+      jobStatusInfo
     );
 
     // Save metadata
-    await outputManager.saveJobMetadata(jobOutputDir, metadata);
+    await outputManager.saveJobMetadata(jobOutputDir, jobMetadata);
     
     // Get progress tracker
     const progressTracker = require('./utils/progress-tracker');
@@ -480,100 +515,120 @@ class JobPipelineService {
     progressTracker.finalizingJobs.add(jobId);
     
     try {
-      // Get the current progress tracker state
-      const currentProgressData = progressTracker.getProgressData(jobId);
-      
-      // Force a full refresh of progress data by clearing it first (to prevent interference)
-      progressTracker.clearProgressData(jobId);
-      
-      // Re-initialize the progress tracking with the same parameters
-      progressTracker.initJobProgress(
-        jobId, 
-        serviceConfig, 
-        sceneResults.sceneResults.length
-      );
-      
-      // Force a final progress update for each service and scene
-      for (const sceneResult of sceneResults.sceneResults) {
-        const sceneId = sceneResult.sceneId;
-        
-        // Update voice progress if it exists
-        if (sceneResult.voice && !serviceConfig.skipVoice) {
-          progressTracker.updateSceneProgress(
-            jobId, sceneId, 'voice', 100, sceneResult.voice.status || 'completed'
-          );
-        }
-        
-        // Update image progress if it exists
-        if (sceneResult.image && !serviceConfig.skipImage) {
-          progressTracker.updateSceneProgress(
-            jobId, sceneId, 'image', 100, sceneResult.image.status || 'completed'
-          );
-        }
-        
-        // Update video/animation progress if they exist
-        if (sceneResult.video && !serviceConfig.skipVisualization) {
-          progressTracker.updateSceneProgress(
-            jobId, sceneId, 'video', 100, sceneResult.video.status || 'completed'
-          );
-        }
-        
-        if (sceneResult.animation && !serviceConfig.skipVisualization) {
-          progressTracker.updateSceneProgress(
-            jobId, sceneId, 'animation', 100, sceneResult.animation.status || 'completed'
-          );
-        }
-      }
-      
-      // Update music progress if it exists
-      if (musicResult && !serviceConfig.skipMusic) {
-        progressTracker.updateServiceProgress(
-          jobId, 'music', 100, musicResult.status || 'completed'
-        );
-      }
-      
-      // Make sure LLM progress is set to completed
-      progressTracker.updateServiceProgress(jobId, 'llm', 100, 'completed');
-      
-      // Set final job status in progress tracker
-      progressTracker.setJobStatus(jobId, statusInfo.status);
-      
-      // Get current progress after all updates
-      const currentProgress = progressTracker.getJobProgress(jobId);
-      
-      // Only update job record with metadata and error info
-      await this.jobDataAccess.updateJob(jobId, {
-        status: statusInfo.status, // Set the database status to match
-        metadata: JSON.stringify(metadata),
-        error: statusInfo.errorMessage
+      // Update job status in database
+      await jobDataAccess.updateJob(jobId, {
+        status: jobStatusInfo.status,
+        metadata: JSON.stringify(jobMetadata),
+        completed_at: new Date().toISOString()
       });
       
-      // Log final status and progress
-      logger.info(`Job ${jobId} finalized with status: ${statusInfo.status}, progress: ${currentProgress?.overallProgress || 0}%`);
-    } finally {
-      // Always remove the finalizing flag
+      // Remove from finalizing set
       progressTracker.finalizingJobs.delete(jobId);
+      
+      // Log completion
+      logger.info(`Job ${jobId} finalized with status: ${jobStatusInfo.status}`);
+      
+      return jobMetadata;
+    } catch (error) {
+      // Remove from finalizing set even if there's an error
+      progressTracker.finalizingJobs.delete(jobId);
+      throw error;
     }
   }
 
   async handleError(jobId, error) {
     logger.error(`Error in job ${jobId}:`, error);
     try {
-      // Prepare error metadata
-      const errorMetadata = jobResultManager.prepareErrorMetadata(jobId, error);
+      // Prepare error metadata with enhanced details
+      const errorMetadata = {
+        ...jobResultManager.prepareErrorMetadata(jobId, error),
+        errorDetails: {
+          name: error.name,
+          code: error.code,
+          stack: error.stack,
+          timestamp: new Date().toISOString(),
+          type: this._categorizeError(error),
+          context: {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            errorCode: error.response?.data?.error?.code,
+            errorMessage: error.response?.data?.error?.message
+          }
+        }
+      };
       
-      // Update job record
+      // Update job record with enhanced error information
       await this.jobDataAccess.updateJob(jobId, {
         status: 'failed',
         error: error.message,
+        error_type: this._categorizeError(error),
+        error_code: error.code || error.response?.data?.error?.code,
         metadata: JSON.stringify(errorMetadata)
       });
       
       // Update progress tracker with failed status
       progressTracker.setJobStatus(jobId, 'failed');
+      
+      // Log the categorized error
+      logger.error(`Job ${jobId} failed with error type: ${this._categorizeError(error)}`, {
+        errorMessage: error.message,
+        errorCode: error.code || error.response?.data?.error?.code,
+        timestamp: new Date().toISOString()
+      });
     } catch (updateError) {
       logger.error('Error updating job status:', updateError);
     }
+  }
+
+  /**
+   * Categorize the error type for better error handling and reporting
+   * @private
+   * @param {Error} error - The error object
+   * @returns {string} - The categorized error type
+   */
+  _categorizeError(error) {
+    if (error.response) {
+      // API/HTTP errors
+      switch (error.response.status) {
+        case 400:
+          return 'BAD_REQUEST';
+        case 401:
+          return 'UNAUTHORIZED';
+        case 403:
+          return 'FORBIDDEN';
+        case 404:
+          return 'NOT_FOUND';
+        case 429:
+          return 'RATE_LIMIT';
+        case 500:
+          return 'SERVER_ERROR';
+        default:
+          return 'API_ERROR';
+      }
+    } else if (error.code) {
+      // System errors
+      switch (error.code) {
+        case 'ENOENT':
+          return 'FILE_NOT_FOUND';
+        case 'EACCES':
+          return 'PERMISSION_DENIED';
+        case 'ECONNREFUSED':
+          return 'CONNECTION_REFUSED';
+        case 'ETIMEDOUT':
+          return 'TIMEOUT';
+        default:
+          return 'SYSTEM_ERROR';
+      }
+    } else if (error.message) {
+      // Business logic errors
+      if (error.message.includes('validation')) return 'VALIDATION_ERROR';
+      if (error.message.includes('timeout')) return 'TIMEOUT_ERROR';
+      if (error.message.includes('rate limit')) return 'RATE_LIMIT';
+      return 'BUSINESS_ERROR';
+    }
+    
+    return 'UNKNOWN_ERROR';
   }
 
   prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResult, statusInfo = null, parameters = null) {
@@ -619,6 +674,60 @@ class JobPipelineService {
     return jobResultManager.prepareResponse(
       jobId, jobOutputDir, llmResult, sceneResults, musicResult, statusInfo || statusInfoFromResults, serviceConfig
     );
+  }
+
+  /**
+   * Get the status of a service across all scenes
+   * @private
+   * @param {Object} progress - The progress data
+   * @param {string} service - The service name
+   * @returns {Object} - Service status summary
+   */
+  _getServiceStatusForAllScenes(progress, service) {
+    const sceneProgress = progress.sceneProgress || {};
+    const statuses = Object.values(sceneProgress)
+      .map(scene => scene[service]?.status)
+      .filter(status => status !== undefined);
+    
+    if (statuses.length === 0) return 'unknown';
+    
+    const completed = statuses.filter(s => s === 'completed').length;
+    const failed = statuses.filter(s => s === 'failed').length;
+    const inProgress = statuses.filter(s => s === 'in_progress').length;
+    
+    return {
+      total: statuses.length,
+      completed,
+      failed,
+      inProgress,
+      status: failed > 0 ? 'failed' : 
+              inProgress > 0 ? 'in_progress' : 
+              completed === statuses.length ? 'completed' : 'unknown'
+    };
+  }
+
+  /**
+   * Get a summary of scene progress
+   * @private
+   * @param {Object} progress - The progress data
+   * @returns {Object} - Scene progress summary
+   */
+  _getSceneProgressSummary(progress) {
+    const sceneProgress = progress.sceneProgress || {};
+    const scenes = Object.values(sceneProgress);
+    
+    return {
+      total: scenes.length,
+      completed: scenes.filter(scene => 
+        Object.values(scene).every(service => service?.status === 'completed')
+      ).length,
+      failed: scenes.filter(scene => 
+        Object.values(scene).some(service => service?.status === 'failed')
+      ).length,
+      inProgress: scenes.filter(scene => 
+        Object.values(scene).some(service => service?.status === 'in_progress')
+      ).length
+    };
   }
 }
 

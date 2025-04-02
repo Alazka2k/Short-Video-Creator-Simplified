@@ -23,7 +23,7 @@ class VoiceGenService {
   }
 
   async generateVoice(text, sceneIndex, jobId, elevenlabsVoiceId = null, isTest = false) {
-    const maxRetries = 3;
+    const maxRetries = 5;
     let attempt = 0;
     let lastError = null;
     
@@ -149,7 +149,7 @@ class VoiceGenService {
           
         if (isRateLimitError && attempt < maxRetries) {
           // For rate limit errors, implement exponential backoff
-          const delayMs = Math.pow(1, attempt) * 1000; // 2s, 4s, 8s...
+          const delayMs = Math.pow(1, attempt) * 1000; // 1s, 2s, 4s, 8s...
           logger.warn(`ElevenLabs rate limit exceeded. Retrying in ${delayMs}ms (Attempt ${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, delayMs));
           continue; // Try again

@@ -92,8 +92,16 @@ class MusicGenService {
           return {
             filePath: outputPath,
             fileName: path.basename(outputPath),
+            title: musicData.title,
+            style: musicData.style,
+            instrumental: musicData.instrumental,
             audioUrl: selectedVariation.audio_url,
-            status: 'completed'
+            status: 'completed',
+            metadata: {
+              generationId: selectedVariation.id,
+              created_at: selectedVariation.created_at,
+              generatedAt: new Date().toISOString()
+            }
           };
         } else {
           // Create temp directory for downloaded file
@@ -118,8 +126,19 @@ class MusicGenService {
               metadata: {
                 generationId: selectedVariation.id,
                 created_at: selectedVariation.created_at,
-                generatedAt: new Date().toISOString()
+                generatedAt: new Date().toISOString(),
+                prompt: musicData.prompt,
+                model: this.musicGenOptions.modelId
               }
+            });
+
+            // Log successful music generation
+            logger.info('Music generation completed successfully', {
+              jobId,
+              title: musicRecord.title,
+              style: musicRecord.style,
+              instrumental: musicRecord.instrumental,
+              storageKey: musicRecord.storage_key
             });
 
             return {
@@ -127,6 +146,7 @@ class MusicGenService {
               fileName: path.basename(musicRecord.file_path),
               title: musicRecord.title,
               style: musicRecord.style,
+              instrumental: musicRecord.instrumental,
               storageKey: musicRecord.storage_key,
               publicUrl: musicRecord.public_url,
               status: 'completed',
@@ -153,7 +173,10 @@ class MusicGenService {
           message: error.message,
           status: error.response?.status,
           errorCode: error.response?.data?.error?.code,
-          errorMessage: error.response?.data?.error?.message
+          errorMessage: error.response?.data?.error?.message,
+          jobId,
+          title: musicData.title,
+          prompt: musicData.prompt
         };
         
         // Check if this error is retryable
@@ -177,7 +200,10 @@ class MusicGenService {
           statusText: error.response?.statusText,
           errorCode: error.response?.data?.error?.code,
           errorMessage: error.response?.data?.error?.message,
-          retryAttempts: retryCount
+          retryAttempts: retryCount,
+          jobId,
+          title: musicData.title,
+          prompt: musicData.prompt
         };
 
         if (error.response?.data) {
@@ -210,7 +236,16 @@ class MusicGenService {
           status: 'failed',
           error: error.response?.data?.error?.message || error.message,
           errorCode: error.response?.data?.error?.code,
-          retryAttempts: retryCount
+          retryAttempts: retryCount,
+          jobId,
+          title: musicData.title,
+          prompt: musicData.prompt,
+          metadata: {
+            error: error.response?.data?.error?.message || error.message,
+            errorCode: error.response?.data?.error?.code,
+            retryAttempts: retryCount,
+            timestamp: new Date().toISOString()
+          }
         };
       }
     }

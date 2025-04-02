@@ -220,28 +220,102 @@ function prepareMetadata(jobId, llmResult, sceneResults, musicResult, parameters
   const isLlmOnlyJob = sceneResults.sceneResults.length > 0 && 
                       sceneResults.sceneResults.every(scene => scene.status === 'skipped');
   
+  // Get service config from parameters
+  const serviceConfig = parameters?.serviceConfig || {};
+  
   const metadata = {
     jobId,
     status: statusInfo.status,
     llmResult: llmResult.content,
+    endTime: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
     scenes: sceneResults.sceneResults.map(scene => {
       if (scene.status === 'skipped') {
-        return { sceneId: scene.sceneId, status: 'skipped' };
+        return { 
+          sceneId: scene.sceneId, 
+          status: 'skipped',
+          completedAt: new Date().toISOString()
+        };
       }
       
-      return {
+      const sceneData = {
         sceneId: scene.sceneId,
-        voice: scene.voice,
-        image: scene.image,
-        video: scene.video,
-        animation: scene.animation,
-        ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
+        status: scene.status,
+        completedAt: new Date().toISOString()
       };
+
+      // Add voice data if not skipped
+      if (!serviceConfig.skipVoice && scene.voice) {
+        sceneData.voice = {
+          status: scene.voice.status,
+          fileName: scene.voice.fileName,
+          filePath: scene.voice.filePath,
+          metadata: scene.voice.metadata,
+          publicUrl: scene.voice.publicUrl,
+          storageKey: scene.voice.storageKey,
+          elevenlabsVoiceId: scene.voice.elevenlabsVoiceId,
+          completedAt: scene.voice.completedAt || new Date().toISOString()
+        };
+      }
+
+      // Add image data if not skipped
+      if (!serviceConfig.skipImage && scene.image) {
+        sceneData.image = {
+          status: scene.image.status,
+          fileName: scene.image.fileName,
+          filePath: scene.image.filePath,
+          metadata: scene.image.metadata,
+          publicUrl: scene.image.publicUrl,
+          storageKey: scene.image.storageKey,
+          completedAt: scene.image.completedAt || new Date().toISOString()
+        };
+      }
+
+      // Add video/animation data if not skipped
+      if (!serviceConfig.skipVisualization) {
+        const visualService = scene.video || scene.animation;
+        if (visualService) {
+          sceneData[serviceConfig.visualizationType] = {
+            status: visualService.status,
+            fileName: visualService.fileName,
+            filePath: visualService.filePath,
+            metadata: visualService.metadata,
+            publicUrl: visualService.publicUrl,
+            storageKey: visualService.storageKey,
+            completedAt: visualService.completedAt || new Date().toISOString()
+          };
+        }
+      }
+
+      if (scene.status === 'failed') {
+        sceneData.error = scene.error;
+      }
+
+      return sceneData;
     }),
-    music: musicResult,
+    music: serviceConfig.skipMusic ? null : (musicResult ? {
+      status: musicResult.status,
+      fileName: musicResult.fileName,
+      filePath: musicResult.filePath,
+      metadata: musicResult.metadata,
+      publicUrl: musicResult.publicUrl,
+      storageKey: musicResult.storageKey,
+      completedAt: musicResult.completedAt || new Date().toISOString()
+    } : null),
     parameters,
     failedComponents: statusInfo.failedComponents.length > 0 ? statusInfo.failedComponents : undefined,
-    endTime: new Date().toISOString()
+    serviceConfig: {
+      skipVoice: serviceConfig.skipVoice,
+      skipMusic: serviceConfig.skipMusic,
+      skipImage: serviceConfig.skipImage,
+      skipVisualization: serviceConfig.skipVisualization,
+      visualizationType: serviceConfig.visualizationType
+    },
+    serviceTimings: {
+      startTime: llmResult.startTime || new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      duration: Date.now() - (new Date(llmResult.startTime || Date.now())).getTime()
+    }
   };
   
   // Add LLM-only flag for LLM-only jobs
@@ -296,31 +370,92 @@ function prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResu
     outputDir: jobOutputDir,
     isLlmOnly: isLlmOnlyJob,
     content: {
-      llm: llmResult.content,
+      llm: {
+        content: llmResult.content,
+        completedAt: new Date().toISOString()
+      },
       scenes: sceneResults.sceneResults.map(scene => {
         // For skipped scenes (in LLM-only jobs), include minimal info
         if (scene.status === 'skipped') {
-          return { sceneId: scene.sceneId, status: 'skipped' };
+          return { 
+            sceneId: scene.sceneId, 
+            status: 'skipped',
+            completedAt: new Date().toISOString()
+          };
         }
         
         // Create scene object with null for skipped services
         const sceneObj = {
           sceneId: scene.sceneId,
-          voice: config.skipVoice ? null : scene.voice,
-          image: config.skipImage ? null : scene.image,
-          ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
+          status: scene.status,
+          completedAt: new Date().toISOString()
         };
         
+        // Add voice data if not skipped
+        if (!config.skipVoice && scene.voice) {
+          sceneObj.voice = {
+            status: scene.voice.status,
+            fileName: scene.voice.fileName,
+            filePath: scene.voice.filePath,
+            metadata: scene.voice.metadata,
+            publicUrl: scene.voice.publicUrl,
+            storageKey: scene.voice.storageKey,
+            elevenlabsVoiceId: scene.voice.elevenlabsVoiceId,
+            completedAt: scene.voice.completedAt || new Date().toISOString()
+          };
+        }
+        
+        // Add image data if not skipped
+        if (!config.skipImage && scene.image) {
+          sceneObj.image = {
+            status: scene.image.status,
+            fileName: scene.image.fileName,
+            filePath: scene.image.filePath,
+            metadata: scene.image.metadata,
+            publicUrl: scene.image.publicUrl,
+            storageKey: scene.image.storageKey,
+            completedAt: scene.image.completedAt || new Date().toISOString()
+          };
+        }
+        
         // Add video or animation component with null for skipped services
-        if (config.visualizationType === 'video') {
-          sceneObj.video = (config.skipVisualization || config.skipImage) ? null : scene.video;
-        } else if (config.visualizationType === 'animation') {
-          sceneObj.animation = (config.skipVisualization || config.skipImage) ? null : scene.animation;
+        if (!config.skipVisualization) {
+          const visualService = scene.video || scene.animation;
+          if (visualService) {
+            sceneObj[config.visualizationType] = {
+              status: visualService.status,
+              fileName: visualService.fileName,
+              filePath: visualService.filePath,
+              metadata: visualService.metadata,
+              publicUrl: visualService.publicUrl,
+              storageKey: visualService.storageKey,
+              completedAt: visualService.completedAt || new Date().toISOString()
+            };
+          }
+        }
+        
+        if (scene.status === 'failed') {
+          sceneObj.error = scene.error;
         }
         
         return sceneObj;
       }),
-      music: config.skipMusic ? null : musicResult
+      music: config.skipMusic ? null : (musicResult ? {
+        status: musicResult.status,
+        fileName: musicResult.fileName,
+        filePath: musicResult.filePath,
+        metadata: musicResult.metadata,
+        publicUrl: musicResult.publicUrl,
+        storageKey: musicResult.storageKey,
+        completedAt: musicResult.completedAt || new Date().toISOString()
+      } : null)
+    },
+    serviceConfig: {
+      skipVoice: config.skipVoice,
+      skipMusic: config.skipMusic,
+      skipImage: config.skipImage,
+      skipVisualization: config.skipVisualization,
+      visualizationType: config.visualizationType
     }
   };
 }
