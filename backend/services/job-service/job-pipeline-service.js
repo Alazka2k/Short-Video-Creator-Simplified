@@ -48,14 +48,14 @@ class JobPipelineService {
       
       // Log each scene result to verify data integrity
       results.forEach(scene => {
-        logger.info(`Scene result in processScenes for scene ${scene.sceneId}:`, {
+        /*logger.info(`Scene result in processScenes for scene ${scene.sceneId}:`, {
           status: scene.status,
           hasImage: !!scene.image,
           hasVoice: !!scene.voice,
           imageStatus: scene.image?.status,
           imageHasFilePath: !!scene.image?.filePath,
           imageHasPublicUrl: !!scene.image?.publicUrl
-        });
+        });*/
       });
       
       // Try to recover missing image data if needed
@@ -473,12 +473,87 @@ class JobPipelineService {
     // Save metadata
     await outputManager.saveJobMetadata(jobOutputDir, metadata);
     
-    // Update job record with status and metadata
-    await this.jobDataAccess.updateJob(jobId, {
-      status: statusInfo.status,
-      metadata: JSON.stringify(metadata),
-      error: statusInfo.errorMessage
-    });
+    // Get progress tracker
+    const progressTracker = require('./utils/progress-tracker');
+    
+    // Mark job as finalizing to prevent race conditions
+    progressTracker.finalizingJobs.add(jobId);
+    
+    try {
+      // Get the current progress tracker state
+      const currentProgressData = progressTracker.getProgressData(jobId);
+      
+      // Force a full refresh of progress data by clearing it first (to prevent interference)
+      progressTracker.clearProgressData(jobId);
+      
+      // Re-initialize the progress tracking with the same parameters
+      progressTracker.initJobProgress(
+        jobId, 
+        serviceConfig, 
+        sceneResults.sceneResults.length
+      );
+      
+      // Force a final progress update for each service and scene
+      for (const sceneResult of sceneResults.sceneResults) {
+        const sceneId = sceneResult.sceneId;
+        
+        // Update voice progress if it exists
+        if (sceneResult.voice && !serviceConfig.skipVoice) {
+          progressTracker.updateSceneProgress(
+            jobId, sceneId, 'voice', 100, sceneResult.voice.status || 'completed'
+          );
+        }
+        
+        // Update image progress if it exists
+        if (sceneResult.image && !serviceConfig.skipImage) {
+          progressTracker.updateSceneProgress(
+            jobId, sceneId, 'image', 100, sceneResult.image.status || 'completed'
+          );
+        }
+        
+        // Update video/animation progress if they exist
+        if (sceneResult.video && !serviceConfig.skipVisualization) {
+          progressTracker.updateSceneProgress(
+            jobId, sceneId, 'video', 100, sceneResult.video.status || 'completed'
+          );
+        }
+        
+        if (sceneResult.animation && !serviceConfig.skipVisualization) {
+          progressTracker.updateSceneProgress(
+            jobId, sceneId, 'animation', 100, sceneResult.animation.status || 'completed'
+          );
+        }
+      }
+      
+      // Update music progress if it exists
+      if (musicResult && !serviceConfig.skipMusic) {
+        progressTracker.updateServiceProgress(
+          jobId, 'music', 100, musicResult.status || 'completed'
+        );
+      }
+      
+      // Make sure LLM progress is set to completed
+      progressTracker.updateServiceProgress(jobId, 'llm', 100, 'completed');
+      
+      // Set final job status in progress tracker
+      progressTracker.setJobStatus(jobId, statusInfo.status);
+      
+      // Get current progress after all updates
+      const currentProgress = progressTracker.getJobProgress(jobId);
+      
+      // Only update job record with metadata and error info
+      await this.jobDataAccess.updateJob(jobId, {
+        status: statusInfo.status, // Set the database status to match
+        metadata: JSON.stringify(metadata),
+        error: statusInfo.errorMessage
+      });
+      
+      // Log final status and progress
+      logger.info(`Job ${jobId} finalized with status: ${statusInfo.status}, progress: ${currentProgress?.overallProgress || 0}%`);
+    } finally {
+      // Always remove the finalizing flag
+      progressTracker.finalizingJobs.delete(jobId);
+    }
   }
 
   async handleError(jobId, error) {

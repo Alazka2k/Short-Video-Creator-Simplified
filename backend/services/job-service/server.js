@@ -107,9 +107,15 @@ function createServer(jobService) {
       const { jobId } = req.params;
       const now = Date.now();
       
-      // Rate limit progress checks to once every 2 seconds per job
+      // Rate limit progress checks to once every 1 second per job (was 2 seconds)
       const lastCheck = progressCheckTimes.get(jobId) || 0;
-      if (now - lastCheck < 2000) {
+      if (now - lastCheck < 1000) {
+        // Return last progress result instead of 429 error
+        const lastProgressResult = jobService.getJobProgress(jobId);
+        if (lastProgressResult) {
+          return res.json(lastProgressResult);
+        }
+        
         return res.status(429).json({ 
           error: 'Too many requests', 
           message: 'Please wait before checking progress again' 

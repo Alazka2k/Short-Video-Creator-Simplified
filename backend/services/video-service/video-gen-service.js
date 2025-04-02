@@ -398,7 +398,7 @@ class VideoGenService {
 
     await fs.mkdir(path.dirname(metadataPath), { recursive: true });
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-    logger.info(`Metadata saved to ${metadataPath}`);
+    //logger.info(`Metadata saved to ${metadataPath}`);
   }
 
   // Database access methods (only used in production mode)

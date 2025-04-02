@@ -220,7 +220,7 @@ class VoiceGenService {
         [`scene_${sceneIndex}`]: metadata
       };
       await fsPromises.writeFile(metadataPath, JSON.stringify(metadataContent, null, 2));
-      logger.info(`Metadata saved to ${metadataPath}`);
+      //logger.info(`Metadata saved to ${metadataPath}`);
     } catch (error) {
       logger.error('Error saving metadata:', error);
       throw error;

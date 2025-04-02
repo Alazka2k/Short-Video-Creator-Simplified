@@ -11,6 +11,8 @@ class ProgressTracker {
   constructor() {
     // Store progress data for active jobs
     this.progressData = new Map();
+    // Track jobs that are in final processing to prevent race conditions
+    this.finalizingJobs = new Set();
   }
 
   /**
@@ -34,12 +36,17 @@ class ProgressTracker {
     const weights = {
       llm: 10,             // LLM is always 10%
       music: 10,           // Music is 10% if used
-      scene: 80 / scenesCount  // Remaining 80% divided among scenes
+      scene: 80            // Remaining 80% divided among scenes
     };
     
     // Create list of services that will be used in this job
     const services = ['llm']; // LLM is always included
     if (!serviceConfig.skipMusic) services.push('music');
+    if (!serviceConfig.skipVoice) services.push('voice');
+    if (!serviceConfig.skipImage) services.push('image');
+    if (!serviceConfig.skipVisualization) {
+      services.push(serviceConfig.visualizationType || 'animation');
+    }
     
     // Initialize progress data for this job
     this.progressData.set(jobId, {
@@ -73,6 +80,12 @@ class ProgressTracker {
    * @param {Object} metadata - Additional metadata about the progress
    */
   updateServiceProgress(jobId, service, progress, status, metadata = {}) {
+    // Skip updates for jobs that are being finalized
+    if (this.finalizingJobs.has(jobId)) {
+      logger.info(`Skipping progress update for ${jobId} (${service}) as job is being finalized`);
+      return this.getJobProgress(jobId);
+    }
+    
     const jobProgress = this.progressData.get(jobId);
     
     if (!jobProgress) {
@@ -88,7 +101,38 @@ class ProgressTracker {
       lastUpdated: new Date()
     };
 
-    // Recalculate overall progress
+    // Special handling for LLM service completion - don't set overall job to completed
+    // when only the LLM service is done, unless it's an LLM-only job
+    if (service === 'llm' && status === 'completed') {
+      // Determine if this is an LLM-only job
+      const isLlmOnlyJob = jobProgress.services.length === 1 || 
+                        (jobProgress.services.length === 2 && jobProgress.services.includes('music'));
+      
+      // For non-LLM-only jobs, prevent setting job status to completed here
+      // Let the full job completion logic handle it later
+      if (!isLlmOnlyJob) {
+        // Check what services are included
+        const includesVoice = jobProgress.services.includes('voice');
+        const includesImage = jobProgress.services.includes('image');
+        const includesAnimation = jobProgress.services.includes('animation');
+        const includesVideo = jobProgress.services.includes('video');
+        
+        // Calculate the approximate progress percentage based on what's left to do
+        const remainingServices = jobProgress.services.length - 1; // -1 for LLM which is complete
+        const progressPercentage = Math.floor(jobProgress.weights.llm);
+        
+        // Directly set the overall progress without full recalculation
+        jobProgress.overallProgress = progressPercentage;
+        jobProgress.status = 'in_progress';
+        jobProgress.lastUpdated = new Date();
+        
+        logger.info(`Progress updated for job after LLM completion: ${progressPercentage}% (in_progress)`);
+        
+        return this.getJobProgress(jobId);
+      }
+    }
+
+    // Normal recalculation for other services or LLM-only jobs
     this._recalculateProgress(jobProgress);
     
     return this.getJobProgress(jobId);
@@ -195,11 +239,32 @@ class ProgressTracker {
   }
 
   /**
+   * Get the raw progress data for a job
+   * @param {string} jobId - The job ID
+   * @returns {Object|null} - The raw progress data or null if not found
+   */
+  getProgressData(jobId) {
+    return this.progressData.get(jobId);
+  }
+
+  /**
+   * Clear progress data for a job
+   * @param {string} jobId - The job ID
+   */
+  clearProgressData(jobId) {
+    if (this.progressData.has(jobId)) {
+      this.progressData.delete(jobId);
+      logger.info(`Cleared progress data for job ${jobId}`);
+    }
+  }
+
+  /**
    * Recalculate overall progress based on service and scene progress
    * @private
    * @param {Object} jobProgress - The job progress object
+   * @param {boolean} [updateStatus=true] - Whether to update the job status or just the progress
    */
-  _recalculateProgress(jobProgress) {
+  _recalculateProgress(jobProgress, updateStatus = true) {
     if (!jobProgress) return;
     
     // Ensure all required objects exist
@@ -290,20 +355,67 @@ class ProgressTracker {
         
         // Calculate scene's contribution to total progress
         const sceneProgress = sceneWeightSum > 0 ? sceneProgressSum / sceneWeightSum : 0;
-        progressSum += (sceneProgress * weights.scene) / 100;
-        weightSum += weights.scene;
+        const sceneContribution = (sceneProgress * weights.scene) / scenesCount;
+        progressSum += sceneContribution;
+        weightSum += (weights.scene / scenesCount);
       }
     }
     
     // Update overall progress
-    jobProgress.overallProgress = weightSum > 0 ? Math.round(progressSum / weightSum) : 0;
+    jobProgress.overallProgress = weightSum > 0 ? Math.round((progressSum / weightSum) * 100) : 0;
     
-    // Cap at 99% unless job is completed
-    if (jobProgress.overallProgress > 90 && jobProgress.status === 'in_progress') {
-      jobProgress.overallProgress = 90;
+    // Don't cap progress at 90% anymore, instead ensure it's correctly calculated
+    
+    // Update job status only if allowed
+    if (updateStatus) {
+      // Check if all services are completed
+      const allServicesCompleted = services.every(service => {
+        if (service === 'llm') {
+          return jobProgress.serviceProgress.llm?.status === 'completed';
+        }
+        if (service === 'music') {
+          if (!services.includes('music')) return true; // Skip if not included
+          return jobProgress.serviceProgress.music?.status === 'completed';
+        }
+        
+        // For scene services, check all scenes
+        return Array.from({ length: scenesCount }, (_, i) => i + 1).every(sceneId => {
+          const scene = jobProgress.sceneProgress[sceneId];
+          if (!scene) return false;
+          
+          if (service === 'voice') {
+            if (scene.voice?.status === 'skipped') return true;
+            return scene.voice?.status === 'completed';
+          }
+          if (service === 'image') {
+            if (scene.image?.status === 'skipped') return true;
+            return scene.image?.status === 'completed';
+          }
+          if (service === 'video') {
+            if (scene.video?.status === 'skipped') return true;
+            return scene.video?.status === 'completed';
+          }
+          if (service === 'animation') {
+            if (scene.animation?.status === 'skipped') return true;
+            return scene.animation?.status === 'completed';
+          }
+          
+          return true;
+        });
+      });
+      
+      // If all services are completed, set status to completed and progress to 100%
+      if (allServicesCompleted) {
+        jobProgress.status = 'completed';
+        jobProgress.overallProgress = 100;
+        jobProgress.endTime = new Date();
+      }
     }
     
     jobProgress.lastUpdated = new Date();
+    
+    // Log when progress changes significantly
+    logger.info(`Progress recalculated for job: ${jobProgress.overallProgress}% (${jobProgress.status})`);
   }
 
   /**

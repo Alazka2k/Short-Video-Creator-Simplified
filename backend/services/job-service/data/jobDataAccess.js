@@ -120,11 +120,11 @@ class JobDataAccess {
             // Add lastUrlRefresh timestamp
             updatedJob.metadata.lastUrlRefresh = now.toISOString();
             
-            logger.info('Refreshing URLs for completed job:', { 
+            /*logger.info('Refreshing URLs for completed job:', { 
               jobId,
               lastRefresh: lastUrlRefresh?.toISOString(),
               timeSinceLastRefresh: lastUrlRefresh ? `${Math.round((now - lastUrlRefresh) / 1000)}s` : 'never'
-            });
+            });*/
             
             await this.updateJob(jobId, {
               metadata: JSON.stringify(updatedJob.metadata)
@@ -359,11 +359,11 @@ class JobDataAccess {
               // Add lastUrlRefresh timestamp
               updatedJob.metadata.lastUrlRefresh = now.toISOString();
               
-              logger.info('Refreshing URLs for completed job in list:', { 
+              /*logger.info('Refreshing URLs for completed job in list:', { 
                 jobId: job.job_id,
                 lastRefresh: lastUrlRefresh?.toISOString(),
                 timeSinceLastRefresh: lastUrlRefresh ? `${Math.round((now - lastUrlRefresh) / 1000)}s` : 'never'
-              });
+              });*/
               
               await this.updateJob(job.job_id, {
                 metadata: JSON.stringify(updatedJob.metadata)

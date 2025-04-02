@@ -10,8 +10,8 @@ function createServer(videoServiceInterface) {
   
     app.use((req, res, next) => {
         logger.info(`Video Service: Received ${req.method} request for ${req.url}`);
-        logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-        logger.info(`Request body: ${JSON.stringify(req.body)}`);
+        //logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+        //logger.info(`Request body: ${JSON.stringify(req.body)}`);
         next();
     });
   

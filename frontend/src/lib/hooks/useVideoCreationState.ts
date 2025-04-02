@@ -66,6 +66,10 @@ export function useVideoCreationState(defaultValues?: any) {
   
   // Reference to store polling interval
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Track consecutive errors for backoff
+  const consecutiveErrorsRef = useRef<number>(0);
+  const basePollingIntervalRef = useRef<number>(2000); // Start with 2 seconds
 
   // Function to stop polling
   const stopPolling = useCallback(() => {
@@ -73,6 +77,9 @@ export function useVideoCreationState(defaultValues?: any) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
+    // Reset error count and polling interval when stopping
+    consecutiveErrorsRef.current = 0;
+    basePollingIntervalRef.current = 2000;
   }, []);
 
   // Function to fetch job progress
@@ -103,6 +110,9 @@ export function useVideoCreationState(defaultValues?: any) {
         { headers }
       );
       
+      // Reset consecutive errors on success
+      consecutiveErrorsRef.current = 0;
+      
       // Update job progress state
       setJobProgress(prev => ({
         ...prev,
@@ -121,8 +131,12 @@ export function useVideoCreationState(defaultValues?: any) {
       return response;
     } catch (error) {
       console.error('Error fetching job progress:', error);
+      
+      // Increment consecutive errors for backoff calculation
+      consecutiveErrorsRef.current += 1;
+      
       // If there's an error after multiple attempts, stop polling
-      if (jobProgress.status === 'polling') {
+      if (consecutiveErrorsRef.current >= 5) {
         setJobProgress(prev => ({
           ...prev,
           status: 'failed',
@@ -150,11 +164,31 @@ export function useVideoCreationState(defaultValues?: any) {
     // Initial fetch
     fetchJobProgress(jobId);
     
-    // Start polling every 2 seconds
-    pollingIntervalRef.current = setInterval(() => {
-      fetchJobProgress(jobId);
-    }, 2000);
-  }, [fetchJobProgress]);
+    // Calculate polling interval with exponential backoff based on consecutive errors
+    const getPollingInterval = () => {
+      if (consecutiveErrorsRef.current === 0) return basePollingIntervalRef.current;
+      // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
+      return Math.min(basePollingIntervalRef.current * Math.pow(2, consecutiveErrorsRef.current), 30000);
+    };
+    
+    // Use dynamic polling interval with exponential backoff
+    const setupNextPoll = () => {
+      const interval = getPollingInterval();
+      pollingIntervalRef.current = setTimeout(async () => {
+        const result = await fetchJobProgress(jobId);
+        // Reset the interval for the next poll only if the job is still in progress
+        if (result && result.status !== 'completed' && result.status !== 'failed') {
+          setupNextPoll();
+        } else {
+          // Stop polling explicitly when job is complete or failed
+          stopPolling();
+        }
+      }, interval);
+    };
+    
+    // Start first polling cycle
+    setupNextPoll();
+  }, [fetchJobProgress, stopPolling]);
   
   // Clean up on unmount
   useEffect(() => {

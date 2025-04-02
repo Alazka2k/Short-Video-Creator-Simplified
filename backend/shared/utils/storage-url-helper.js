@@ -152,11 +152,11 @@ class StorageUrlHelper {
     const results = new Map();
     const chunks = this.chunkArray(storageKeys, this.BATCH_SIZE);
 
-    logger.info('Starting batch URL refresh:', { 
+    /*logger.info('Starting batch URL refresh:', { 
       totalKeys: storageKeys.length,
       chunks: chunks.length,
       batchSize: this.BATCH_SIZE
-    });
+    });*/
 
     for (const [index, chunk] of chunks.entries()) {
       const refreshPromises = chunk.map(async key => {
@@ -179,10 +179,10 @@ class StorageUrlHelper {
       }
     }
 
-    logger.info('Completed batch URL refresh:', { 
+    /*logger.info('Completed batch URL refresh:', { 
       totalProcessed: results.size,
       successRate: `${(results.size / storageKeys.length * 100).toFixed(1)}%`
-    });
+    });*/
 
     return results;
   }
@@ -221,10 +221,10 @@ class StorageUrlHelper {
       return job;
     }
 
-    logger.info('Updating job URLs:', { 
+    /*logger.info('Updating job URLs:', { 
       jobId: job.job_id, 
       storageKeysCount: storageKeys.length 
-    });
+    });*/
 
     const refreshedUrls = await this.refreshUrlBatch(storageKeys);
     const updatedMetadata = { ...job.metadata };

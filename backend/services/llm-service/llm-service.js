@@ -45,6 +45,10 @@ class LLMService {
         logger.info(`Created job record with ID: ${jobId}`);
       }
 
+      // Update progress to indicate LLM service has started
+      const progressTracker = require('../job-service/utils/progress-tracker');
+      progressTracker.updateServiceProgress(jobId, 'llm', 0, 'started');
+
       // Create output file first to ensure directory exists
       await llmFileHandler.saveOutputFile(jobId, {
         prompt: inputPrompt,
@@ -134,8 +138,22 @@ class LLMService {
             logger.info(`Created scene record ${i + 1}: ${sceneId}`);
           }
 
-          await this.dataAccess.updateJobStatus(jobId, 'completed');
-          logger.info(`Updated job status to completed: ${jobId}`);
+          // Update progress to indicate LLM service is completed
+          progressTracker.updateServiceProgress(jobId, 'llm', 100, 'completed');
+
+          // Only set status to completed if this is an LLM-only job
+          const isLlmOnlyJob = llmGenParams?.serviceConfig?.skipVoice && 
+                             llmGenParams?.serviceConfig?.skipImage && 
+                             llmGenParams?.serviceConfig?.skipMusic && 
+                             llmGenParams?.serviceConfig?.skipVisualization;
+
+          if (isLlmOnlyJob) {
+            await this.dataAccess.updateJobStatus(jobId, 'completed');
+            logger.info(`Updated job status to completed for LLM-only job: ${jobId}`);
+          } else {
+            await this.dataAccess.updateJobStatus(jobId, 'in_progress');
+            logger.info(`Updated job status to in_progress for full job: ${jobId}`);
+          }
         } catch (dbError) {
           logger.error('Database error during content generation:', dbError);
           await this.dataAccess.updateJobStatus(jobId, 'failed');
@@ -143,9 +161,9 @@ class LLMService {
         }
       }
 
-      logger.info('Content generation completed successfully');
+      logger.info('LLM content base generation completed successfully');
       return {
-        message: "Content generated successfully",
+        message: "Base content generated successfully",
         jobId: jobId,
         content: {
           prompt: inputPrompt,

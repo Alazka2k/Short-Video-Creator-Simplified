@@ -84,7 +84,7 @@ class VideoDataAccess {
         JSON.stringify(metadataObj, null, 2)
       );
       
-      logger.info(`Metadata saved to: ${metadataPath}`);
+      //logger.info(`Metadata saved to: ${metadataPath}`);
       return true;
     } catch (error) {
       logger.error('Error saving metadata:', error);

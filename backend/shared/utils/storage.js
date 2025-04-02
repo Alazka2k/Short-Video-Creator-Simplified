@@ -55,7 +55,7 @@ class StorageService {
         ContentType: this.getContentType(localPath)
       }).promise();
 
-      logger.info('File uploaded to storage:', { localPath, key });
+      //logger.info('File uploaded to storage:', { localPath, key });
 
       return {
         storageKey: key,

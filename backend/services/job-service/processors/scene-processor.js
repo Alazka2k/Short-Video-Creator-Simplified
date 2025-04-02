@@ -31,16 +31,11 @@ class SceneProcessor {
         // Get elevenlabsVoiceId from parameters
         const elevenlabsVoiceId = parameters.voiceGenParams?.elevenlabsVoiceId;
         
-        logger.info(`Using elevenlabsVoiceId for scene ${sceneId}:`, { 
+        /*logger.info(`Using elevenlabsVoiceId for scene ${sceneId}:`, { 
           elevenlabsVoiceId
-        });
+        });*/
         
-        voiceResult = await this.generateVoice(
-          scene, 
-          sceneId, 
-          jobId, 
-          elevenlabsVoiceId
-        );
+        voiceResult = await this.processVoice(scene, sceneId, jobId, serviceConfig, parameters);
         logger.info(`Voice generation for scene ${sceneId} completed with status: ${voiceResult?.status}`);
       } else {
         voiceResult = { status: 'skipped' };
@@ -382,66 +377,65 @@ class SceneProcessor {
     throw new Error(`Failed to generate image after ${maxRetries} attempts: ${lastError?.message}`);
   }
 
-  async generateVoice(scene, sceneId, jobId, elevenlabsVoiceId) {
-    logger.info('Executing voice service...', { 
-      sceneId, 
-      jobId,
-      elevenlabsVoiceId 
-    });
-    
+  async processVoice(scene, sceneId, jobId, serviceConfig, parameters) {
+    // Skip if voice is disabled
+    if (serviceConfig.skipVoice) {
+      logger.info(`Voice generation skipped for scene ${sceneId}`);
+      return {
+        status: 'skipped'
+      };
+    }
+
     try {
-      const result = await this.services.voice.process(
+      // First update progress to started (0%)
+      this.jobDataAccess.updateJobProgress(jobId, 'voice', 'started', { 
+        sceneId,
+        progress: 0
+      });
+      
+      logger.info('Executing voice service...', {
+        sceneId,
+        jobId,
+        elevenlabsVoiceId: parameters.voiceGenParams?.elevenlabsVoiceId
+      });
+
+      // Update progress to in_progress (50%)
+      this.jobDataAccess.updateJobProgress(jobId, 'voice', 'in_progress', { 
+        sceneId,
+        progress: 50
+      });
+
+      // Generate voice
+      const voiceResult = await this.services.voice.process(
         scene.description,
         sceneId,
         jobId,
-        elevenlabsVoiceId
+        parameters.voiceGenParams?.elevenlabsVoiceId
       );
+
+      // Update progress to completed (100%)
+      this.jobDataAccess.updateJobProgress(jobId, 'voice', voiceResult.status, { 
+        sceneId,
+        progress: 100,
+        filePath: voiceResult.filePath,
+        publicUrl: voiceResult.publicUrl,
+        storageKey: voiceResult.storageKey
+      });
       
-      // Verify result has required properties
-      if (result && result.publicUrl && result.filePath) {
-        await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'completed', {
-          sceneId,
-          filePath: result.filePath,
-          storageKey: result.storageKey,
-          publicUrl: result.publicUrl
-        });
-        
-        // Validate that result has a status property
-        if (!result.status) {
-          logger.error(`Voice service returned result without status for scene ${sceneId}`, { jobId });
-          throw new Error('Voice service result is missing status field');
-        }
-        
-        return result;
-      } else {
-        throw new Error('Voice service returned an incomplete result');
-      }
+      logger.info(`Voice generation for scene ${sceneId} completed with status: ${voiceResult.status}`);
+      return voiceResult;
     } catch (error) {
-      // Check for rate limit errors specifically
-      const isRateLimitError = 
-        error.message?.includes('Status code: 429') || 
-        error.statusCode === 429 ||
-        error.status === 429;
-        
-      if (isRateLimitError) {
-        logger.error(`Rate limit exceeded in voice generation for scene ${sceneId}:`, error);
-        await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'failed', {
-          sceneId,
-          error: 'ElevenLabs API rate limit exceeded. Try again later.'
-        });
-        return { 
-          status: 'failed', 
-          error: 'ElevenLabs API rate limit exceeded. Try again later.'
-        };
-      } else {
-        // Handle other errors
-        logger.error(`Error in voice generation for scene ${sceneId}:`, error);
-        await this.jobDataAccess.updateJobProgress(jobId, 'voice', 'failed', {
-          sceneId,
-          error: error.message
-        });
-        return { status: 'failed', error: error.message };
-      }
+      // Update progress to failed with error
+      this.jobDataAccess.updateJobProgress(jobId, 'voice', 'failed', { 
+        sceneId,
+        error: error.message
+      });
+      
+      logger.error(`Error generating voice for scene ${sceneId}:`, error);
+      return {
+        status: 'failed',
+        error: error.message
+      };
     }
   }
 }

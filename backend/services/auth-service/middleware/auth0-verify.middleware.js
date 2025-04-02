@@ -212,10 +212,10 @@ function checkPermission(endpoint) {
 
       const scopes = (req.user.scope || '').split(' ');
       
-      logger.info('Token scopes:', {
+      /*logger.info('Token scopes:', {
         requiredPermission: permission,
         scopes
-      });
+      });*/
 
       // Convert permission format if needed (e.g., create_job to create:job)
       const convertedPermission = permission.replace('_', ':');
