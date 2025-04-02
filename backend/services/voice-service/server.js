@@ -9,8 +9,8 @@ function createServer(voiceServiceInterface) {
     
     app.use((req, res, next) => {
         logger.info(`Voice Service: Received ${req.method} request for ${req.url}`);
-        logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-        logger.info(`Request body: ${JSON.stringify(req.body)}`);
+        //logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+        //logger.info(`Request body: ${JSON.stringify(req.body)}`);
         next();
     });
     
@@ -29,7 +29,7 @@ function createServer(voiceServiceInterface) {
 
       try {
         const { text, sceneIndex, jobId, elevenlabsVoiceId } = req.body;
-        logger.info(`Voice Service: Request body: ${JSON.stringify(req.body)}`);
+        //logger.info(`Voice Service: Request body: ${JSON.stringify(req.body)}`);
         
         if (!text) {
           throw new Error('text is missing or undefined');

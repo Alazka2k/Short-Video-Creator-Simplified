@@ -157,13 +157,13 @@ class LLMDataAccess {
                 visual_metadata: metadata
             });
 
-            logger.info('LLM scene created:', {
+            /*logger.info('LLM scene created:', {
                 table: 'llm_scenes',
                 jobId,
                 llmOutputId,
                 sceneId,
                 visualMetadata: metadata
-            });
+            });*/
 
             return scene.llm_scene_id;
         } catch (error) {

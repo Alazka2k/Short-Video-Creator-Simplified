@@ -17,7 +17,7 @@ function createServer(assemblyServiceInterface, storageService) {
   app.use((req, res, next) => {
     logger.info(`Assembly Service: Received ${req.method} request for ${req.url}`);
     logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-    logger.info(`Request body: ${JSON.stringify(req.body)}`);
+    //logger.info(`Request body: ${JSON.stringify(req.body)}`);
     next();
   });
 
@@ -30,7 +30,7 @@ function createServer(assemblyServiceInterface, storageService) {
   app.post('/assemble', async (req, res) => {
     try {
       logger.info('Assembly Service: Handling /assemble request');
-      logger.info('Assembly Service: Request body:', req.body);
+      //logger.info('Assembly Service: Request body:', req.body);
 
       const { jobId, templateId } = req.body;
 

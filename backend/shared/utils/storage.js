@@ -113,7 +113,7 @@ class StorageService {
       };
       
       const signedUrl = await this.s3.getSignedUrlPromise('getObject', params);
-      logger.info('Generated signed URL:', { key, expiresIn });
+      //logger.info('Generated signed URL:', { key, expiresIn });
       
       return signedUrl;
     } catch (error) {

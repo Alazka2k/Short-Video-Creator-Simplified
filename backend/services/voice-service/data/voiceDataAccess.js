@@ -62,10 +62,10 @@ class VoiceDataAccess {
         })
         .returning('*');
 
-      logger.info('Created voice output record:', {
+      /*logger.info('Created voice output record:', {
         voiceId: voiceRecord.voice_id,
         storageKey: voiceData.storageKey
-      });
+      });*/
 
       return voiceRecord;
     } catch (error) {

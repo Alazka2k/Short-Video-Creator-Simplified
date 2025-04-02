@@ -125,7 +125,7 @@ class StorageUrlHelper {
         expiresAt: Date.now() + 3600 * 1000 // 1 hour
       };
       this.cache.set(storageKey, urlInfo);
-      logger.info('Refreshed URL:', { storageKey, expiresAt: urlInfo.expiresAt });
+      //logger.info('Refreshed URL:', { storageKey, expiresAt: urlInfo.expiresAt });
       return urlInfo;
     } catch (error) {
       if (error.code === 'ThrottlingException' && retryCount < this.MAX_RETRIES) {
@@ -217,7 +217,7 @@ class StorageUrlHelper {
     const storageKeys = await this.extractStorageKeysFromJob(job);
     
     if (storageKeys.length === 0) {
-      logger.info('No storage keys found in job:', { jobId: job.job_id });
+      //logger.info('No storage keys found in job:', { jobId: job.job_id });
       return job;
     }
 

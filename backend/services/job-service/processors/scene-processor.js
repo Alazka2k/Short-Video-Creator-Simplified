@@ -126,7 +126,7 @@ class SceneProcessor {
       }
 
       // Log the final scene result before returning
-      logger.info(`Final scene ${sceneId} result:`, {
+      /*logger.info(`Final scene ${sceneId} result:`, {
         sceneId: sceneResult.sceneId,
         status: sceneResult.status,
         hasVoice: !!sceneResult.voice,
@@ -135,7 +135,7 @@ class SceneProcessor {
         imageStatus: sceneResult.image?.status,
         visualizationType: serviceConfig.visualizationType,
         visualizationStatus: sceneResult[serviceConfig.visualizationType]?.status
-      });
+      }); */
 
       return sceneResult;
     } catch (error) {

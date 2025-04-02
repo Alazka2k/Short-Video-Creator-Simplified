@@ -18,11 +18,11 @@ class MusicGenService {
     // Only retry for these specific status codes that make sense to retry
     this.retryStatusCodes = [429, 500];
     
-    logger.info('Initialized MusicGenService with options:', {
+    /*logger.info('Initialized MusicGenService with options:', {
       musicGenOptions: this.musicGenOptions,
       maxRetries: this.maxRetries,
       retryStatusCodes: this.retryStatusCodes
-    });
+    });*/
   }
 
   async generateMusic(jobId, musicData, isTest = false) {

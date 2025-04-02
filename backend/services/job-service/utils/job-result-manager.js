@@ -20,11 +20,11 @@ const logger = require('../../../shared/utils/logger');
  */
 function analyzeResults(sceneResults, serviceConfig, musicResult = null) {
   // Log service configuration for debugging
-  logger.info('Analyzing job results based on service configuration:', {
+  /*logger.info('Analyzing job results based on service configuration:', {
     serviceConfig,
     hasMusicResult: !!musicResult,
     musicStatus: musicResult?.status
-  });
+  });*/
 
   // Check if all scenes have a 'skipped' status (indicating an LLM-only job)
   const allScenesSkipped = sceneResults.sceneResults.length > 0 && 
@@ -40,7 +40,7 @@ function analyzeResults(sceneResults, serviceConfig, musicResult = null) {
   }
   
   // More detailed logging of scene results for debugging
-  logger.info('Scene results for validation:', {
+  /*logger.info('Scene results for validation:', {
     sceneCount: sceneResults.sceneResults.length,
     scenes: sceneResults.sceneResults.map(scene => ({
       sceneId: scene.sceneId,
@@ -54,7 +54,7 @@ function analyzeResults(sceneResults, serviceConfig, musicResult = null) {
       videoStatus: scene.video?.status,
       animationStatus: scene.animation?.status
     }))
-  });
+  }); */
   
   // Collect details about failed components for better debugging
   const failedComponents = collectFailedComponents(sceneResults.sceneResults, serviceConfig, musicResult);
@@ -88,22 +88,15 @@ function analyzeResults(sceneResults, serviceConfig, musicResult = null) {
  * @returns {Array} - Array of failed component descriptions
  */
 function collectFailedComponents(sceneResults, serviceConfig, musicResult = null) {
-  logger.info('Checking scenes for failed components...', {
+  /*logger.info('Checking scenes for failed components...', {
     scenesCount: sceneResults.length,
-    serviceConfig,
-    hasMusicResult: !!musicResult,
-    musicStatus: musicResult?.status
-  });
-
-  logger.info('Detailed scene results for validation:', {
-    scenes: sceneResults.map(s => ({
-      sceneId: s.sceneId,
-      status: s.status,
-      voice: s.voice,
-      image: s.image,
-      [serviceConfig.visualizationType]: s[serviceConfig.visualizationType]
-    }))
-  });
+    serviceConfig: {
+      skipVoice: serviceConfig.skipVoice,
+      skipMusic: serviceConfig.skipMusic,
+      skipImage: serviceConfig.skipImage,
+      skipVisualization: serviceConfig.skipVisualization
+    }
+  });*/
 
   const failedComponents = [];
 
@@ -113,7 +106,7 @@ function collectFailedComponents(sceneResults, serviceConfig, musicResult = null
       logger.error('No music result found and music is not skipped');
       failedComponents.push('Music generation failed - Missing result');
     } else if (musicResult.status === 'failed') {
-      logger.error('Music generation failed', { error: musicResult.error });
+      logger.error('Music generation failed');
       failedComponents.push(`Music generation failed${musicResult.error ? ': ' + musicResult.error : ''}`);
     } else if (musicResult.status !== 'completed' && musicResult.status !== 'skipped') {
       logger.error('Unexpected music status', { status: musicResult.status });
@@ -134,7 +127,7 @@ function collectFailedComponents(sceneResults, serviceConfig, musicResult = null
     // Voice validation - only validate if not skipped
     if (!serviceConfig.skipVoice) {
       if (!scene.voice) {
-        logger.warn(`No voice data found for scene ${scene.sceneId} and voice is not skipped`, { jobId: scene.jobId });
+        logger.warn(`No voice data found for scene ${scene.sceneId} and voice is not skipped`);
         statuses.voiceStatus = 'missing';
       } else {
         statuses.voiceStatus = scene.voice.status;
@@ -144,7 +137,7 @@ function collectFailedComponents(sceneResults, serviceConfig, musicResult = null
     // Image validation - only validate if not skipped
     if (!serviceConfig.skipImage) {
       if (!scene.image) {
-        logger.warn(`No image data found for scene ${scene.sceneId} and image is not skipped`, { jobId: scene.jobId, image: scene.image });
+        logger.warn(`No image data found for scene ${scene.sceneId} and image is not skipped`);
         statuses.imageStatus = 'missing';
       } else {
         statuses.imageStatus = scene.image.status;
@@ -156,14 +149,14 @@ function collectFailedComponents(sceneResults, serviceConfig, musicResult = null
       const visualizationType = serviceConfig.visualizationType;
       if (visualizationType === 'video') {
         if (!scene.video) {
-          logger.warn(`No video data found for scene ${scene.sceneId} and video is not skipped`, { jobId: scene.jobId });
+          logger.warn(`No video data found for scene ${scene.sceneId} and video is not skipped`);
           statuses.videoStatus = 'missing';
         } else {
           statuses.videoStatus = scene.video.status;
         }
       } else if (visualizationType === 'animation') {
         if (!scene.animation) {
-          logger.warn(`No animation data found for scene ${scene.sceneId} and animation is not skipped`, { jobId: scene.jobId });
+          logger.warn(`No animation data found for scene ${scene.sceneId} and animation is not skipped`);
           statuses.animationStatus = 'missing';
         } else {
           statuses.animationStatus = scene.animation.status;
@@ -171,7 +164,12 @@ function collectFailedComponents(sceneResults, serviceConfig, musicResult = null
       }
     }
 
-    logger.info(`Validating scene ${scene.sceneId}:`, statuses);
+    // Only log if there's a failure
+    if (statuses.voiceStatus === 'failed' || statuses.imageStatus === 'failed' || 
+        statuses.videoStatus === 'failed' || statuses.animationStatus === 'failed' || 
+        statuses.sceneStatus === 'failed') {
+      logger.info(`Validating scene ${scene.sceneId}`);
+    }
 
     // Check for any failures
     if (!serviceConfig.skipVoice && (statuses.voiceStatus === 'failed' || statuses.voiceStatus === 'missing')) {
@@ -293,10 +291,10 @@ function prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResu
   return {
     jobId,
     status: statusInfo.status,
-    errorMessage: statusInfo.errorMessage, // Include error message in response
+    errorMessage: statusInfo.errorMessage,
     failedComponents: statusInfo.failedComponents.length > 0 ? statusInfo.failedComponents : undefined,
     outputDir: jobOutputDir,
-    isLlmOnly: isLlmOnlyJob, // Flag to indicate LLM-only job
+    isLlmOnly: isLlmOnlyJob,
     content: {
       llm: llmResult.content,
       scenes: sceneResults.sceneResults.map(scene => {
@@ -305,26 +303,24 @@ function prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResu
           return { sceneId: scene.sceneId, status: 'skipped' };
         }
         
-        // Determine correct status for visualization components
-        let enhancedScene = {
+        // Create scene object with null for skipped services
+        const sceneObj = {
           sceneId: scene.sceneId,
-          voice: scene.voice || (config.skipVoice ? { status: 'skipped' } : undefined),
-          image: scene.image || (config.skipImage ? { status: 'skipped' } : undefined),
+          voice: config.skipVoice ? null : scene.voice,
+          image: config.skipImage ? null : scene.image,
           ...(scene.status === 'failed' ? { error: scene.error, status: 'failed' } : {})
         };
         
-        // Add video or animation component with correct status
+        // Add video or animation component with null for skipped services
         if (config.visualizationType === 'video') {
-          enhancedScene.video = scene.video || 
-            ((config.skipVisualization || config.skipImage) ? { status: 'skipped' } : undefined);
+          sceneObj.video = (config.skipVisualization || config.skipImage) ? null : scene.video;
         } else if (config.visualizationType === 'animation') {
-          enhancedScene.animation = scene.animation || 
-            ((config.skipVisualization || config.skipImage) ? { status: 'skipped' } : undefined);
+          sceneObj.animation = (config.skipVisualization || config.skipImage) ? null : scene.animation;
         }
         
-        return enhancedScene;
+        return sceneObj;
       }),
-      music: musicResult || (config.skipMusic ? { status: 'skipped' } : undefined)
+      music: config.skipMusic ? null : musicResult
     }
   };
 }

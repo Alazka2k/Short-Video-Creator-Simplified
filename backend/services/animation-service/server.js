@@ -11,7 +11,7 @@ function createServer(animationServiceInterface) {
     app.use((req, res, next) => {
         logger.info(`Animation Service: Received ${req.method} request for ${req.url}`);
         logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-        logger.info(`Request body: ${JSON.stringify(req.body)}`);
+        //logger.info(`Request body: ${JSON.stringify(req.body)}`);
         next();
     });
   
@@ -33,7 +33,7 @@ function createServer(animationServiceInterface) {
       
         try {
           const { imageUrl, videoPrompt, sceneIndex, jobId, parameters = {} } = req.body;
-          logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
+          //logger.info(`Animation Service: Request body: ${JSON.stringify(req.body)}`);
           
           if (!imageUrl) {
             throw new Error('Missing required parameter: imageUrl');

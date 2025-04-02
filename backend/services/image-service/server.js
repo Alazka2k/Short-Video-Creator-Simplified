@@ -10,7 +10,7 @@ function createServer(imageServiceInterface) {
   app.use((req, res, next) => {
     logger.info(`Image Service: Received ${req.method} request for ${req.url}`);
     logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-    logger.info(`Request body: ${JSON.stringify(req.body)}`);
+    //logger.info(`Request body: ${JSON.stringify(req.body)}`);
     next();
   });
 
@@ -46,7 +46,7 @@ function createServer(imageServiceInterface) {
 
     try {
       const { prompt, sceneIndex, jobId } = req.body;
-      logger.info(`Image Service: Request body: ${JSON.stringify(req.body)}`);
+      //logger.info(`Image Service: Request body: ${JSON.stringify(req.body)}`);
 
       if (!prompt) {
         throw new Error('prompt is missing or undefined');

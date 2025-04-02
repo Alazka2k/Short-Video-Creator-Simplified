@@ -46,12 +46,12 @@ class JobDataAccess {
         visualizationType: parameters.visualizationType || visualizationType || null
       };
 
-      logger.info(`Creating job record for jobId: ${jobId}`, { 
+      /*logger.info(`Creating job record for jobId: ${jobId}`, { 
         userId,
         serviceConfig: serviceConfigFromParams,
         visualizationType: metadata.visualizationType,
         serviceSequence
-      });
+      });*/
 
       // Create job record
       const [jobRecord] = await knex('jobs')
@@ -98,24 +98,85 @@ class JobDataAccess {
         }
       };
 
-      // Refresh URLs in the job metadata
-      const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
+      // Only refresh URLs if the job is completed and URLs haven't been refreshed recently
+      const metadata = processedJob.metadata;
+      const lastUrlRefresh = metadata.lastUrlRefresh ? new Date(metadata.lastUrlRefresh) : null;
+      const now = new Date();
       
-      // If URLs were refreshed, update the database
-      if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
-        logger.info('Updating job with refreshed URLs:', { jobId });
-        await this.updateJob(jobId, {
-          metadata: JSON.stringify(updatedJob.metadata)
-        });
+      // Check if we need to refresh URLs
+      const shouldRefresh = job.status === 'completed' && 
+                           (!lastUrlRefresh || (now - lastUrlRefresh) > 1800000); // Refresh if more than 30mins has passed
+
+      if (shouldRefresh) {
+        // Check if URLs are actually expired
+        const hasExpiredUrls = this._checkForExpiredUrls(processedJob);
+        
+        if (hasExpiredUrls) {
+          // Refresh URLs in the job metadata
+          const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
+          
+          // Only update if URLs actually changed
+          if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
+            // Add lastUrlRefresh timestamp
+            updatedJob.metadata.lastUrlRefresh = now.toISOString();
+            
+            logger.info('Refreshing URLs for completed job:', { 
+              jobId,
+              lastRefresh: lastUrlRefresh?.toISOString(),
+              timeSinceLastRefresh: lastUrlRefresh ? `${Math.round((now - lastUrlRefresh) / 1000)}s` : 'never'
+            });
+            
+            await this.updateJob(jobId, {
+              metadata: JSON.stringify(updatedJob.metadata)
+            });
+            
+            return updatedJob;
+          }
+        }
       }
 
-      return updatedJob;
+      return processedJob;
     } catch (error) {
       logger.error('Error getting job:', error);
       throw error;
     }
   }
-  
+
+  // Helper method to check if any URLs in the job are expired
+  _checkForExpiredUrls(job) {
+    const metadata = job.metadata;
+    if (!metadata) return false;
+
+    // Check scene URLs
+    if (metadata.scenes) {
+      for (const scene of metadata.scenes) {
+        if (scene.image?.publicUrl && this._isUrlExpired(scene.image.publicUrl)) return true;
+        if (scene.voice?.publicUrl && this._isUrlExpired(scene.voice.publicUrl)) return true;
+        if (scene.video?.publicUrl && this._isUrlExpired(scene.video.publicUrl)) return true;
+        if (scene.animation?.publicUrl && this._isUrlExpired(scene.animation.publicUrl)) return true;
+      }
+    }
+
+    // Check music URL
+    if (metadata.music?.publicUrl && this._isUrlExpired(metadata.music.publicUrl)) return true;
+
+    return false;
+  }
+
+  // Helper method to check if a URL is expired
+  _isUrlExpired(url) {
+    try {
+      const urlObj = new URL(url);
+      const expiresAt = urlObj.searchParams.get('Expires');
+      if (!expiresAt) return true;
+      
+      const expiresTimestamp = parseInt(expiresAt) * 1000; // Convert to milliseconds
+      return Date.now() >= expiresTimestamp;
+    } catch (error) {
+      return true; // If URL is invalid, consider it expired
+    }
+  }
+
   async updateJobProgress(jobId, service, status, details = {}) {
     try {
       const job = await this.getJob(jobId);
@@ -274,7 +335,7 @@ class JobDataAccess {
       // Execute query
       const jobs = await query;
 
-      // Process results and refresh URLs
+      // Process results and refresh URLs only for completed jobs
       const processedJobs = await Promise.all(jobs.map(async job => {
         const processedJob = {
           ...job,
@@ -282,18 +343,38 @@ class JobDataAccess {
           metadata: this.safeJsonParse(job.metadata) || {}
         };
 
-        // Refresh URLs for each job
-        const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
-        
-        // If URLs were refreshed, update the database
-        if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
-          logger.info('Updating job with refreshed URLs:', { jobId: job.job_id });
-          await this.updateJob(job.job_id, {
-            metadata: JSON.stringify(updatedJob.metadata)
-          });
+        // Only refresh URLs for completed jobs
+        if (job.status === 'completed') {
+          const metadata = processedJob.metadata;
+          const lastUrlRefresh = metadata.lastUrlRefresh ? new Date(metadata.lastUrlRefresh) : null;
+          const now = new Date();
+          const shouldRefresh = !lastUrlRefresh || (now - lastUrlRefresh) > 3600000; // Refresh if more than 1 hour has passed
+
+          if (shouldRefresh) {
+            // Refresh URLs for each job
+            const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
+            
+            // Only update if URLs actually changed
+            if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
+              // Add lastUrlRefresh timestamp
+              updatedJob.metadata.lastUrlRefresh = now.toISOString();
+              
+              logger.info('Refreshing URLs for completed job in list:', { 
+                jobId: job.job_id,
+                lastRefresh: lastUrlRefresh?.toISOString(),
+                timeSinceLastRefresh: lastUrlRefresh ? `${Math.round((now - lastUrlRefresh) / 1000)}s` : 'never'
+              });
+              
+              await this.updateJob(job.job_id, {
+                metadata: JSON.stringify(updatedJob.metadata)
+              });
+              
+              return updatedJob;
+            }
+          }
         }
 
-        return updatedJob;
+        return processedJob;
       }));
 
       // Return paginated response

@@ -67,6 +67,14 @@ export function useVideoCreationState(defaultValues?: any) {
   // Reference to store polling interval
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Function to stop polling
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+
   // Function to fetch job progress
   const fetchJobProgress = useCallback(async (jobId: string) => {
     try {
@@ -104,8 +112,9 @@ export function useVideoCreationState(defaultValues?: any) {
         errorMessage: response.errorMessage || null
       }));
       
-      // If job is complete or failed, stop polling
+      // If job is complete or failed, stop polling and reset generating state
       if (response.status === 'completed' || response.status === 'failed') {
+        setIsGenerating(false);
         stopPolling();
       }
       
@@ -118,11 +127,12 @@ export function useVideoCreationState(defaultValues?: any) {
           ...prev,
           status: 'failed',
         }));
+        setIsGenerating(false);
         stopPolling();
       }
       return null;
     }
-  }, [auth, jobProgress.status]);
+  }, [auth, jobProgress.status, stopPolling]);
   
   // Function to start polling for job progress
   const startPolling = useCallback((jobId: string) => {
@@ -145,14 +155,6 @@ export function useVideoCreationState(defaultValues?: any) {
       fetchJobProgress(jobId);
     }, 2000);
   }, [fetchJobProgress]);
-  
-  // Function to stop polling
-  const stopPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-  }, []);
   
   // Clean up on unmount
   useEffect(() => {
@@ -400,13 +402,25 @@ export function useVideoCreationState(defaultValues?: any) {
     } catch (error) {
       console.error('Error generating video:', error);
       setError(error instanceof Error ? error.message : 'An error occurred while generating the video');
+      setIsGenerating(false);
+      stopPolling();
       throw error;
-    } finally {
-      // Note: We don't set isGenerating to false here
-      // because we want to show the loading state until the job is complete
-      // The VideoCreationFlow component will handle showing progress
     }
-  }, [constructRequestBody, auth.getM2MToken, startPolling]);
+  }, [constructRequestBody, auth.getM2MToken, startPolling, stopPolling]);
+
+  // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      stopPolling();
+      setIsGenerating(false);
+      setJobProgress({
+        jobId: null,
+        status: 'idle',
+        progress: 0,
+        details: null
+      });
+    };
+  }, [stopPolling]);
 
   return {
     state,

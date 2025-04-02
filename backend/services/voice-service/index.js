@@ -17,13 +17,13 @@ class VoiceServiceInterface {
   }
 
   async process(text, sceneIndex, jobId, elevenlabsVoiceId = null, isTest = false) {
-    logger.info('Processing voice generation request', {
+    /*logger.info('Processing voice generation request', {
       textLength: text.length,
       sceneIndex,
       jobId,
       elevenlabsVoiceId,
       isTest
-    });
+    });*/
     
     return await this.service.generateVoice(
       text,

@@ -83,8 +83,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Request logging middleware
 app.use((req, res, next) => {
   logger.info(`API Gateway: Received ${req.method} request for ${req.url}`);
-  logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
-  logger.info(`Request body: ${JSON.stringify(req.body)}`);
+  //logger.info(`Request headers: ${JSON.stringify(req.headers)}`);
+  //logger.info(`Request body: ${JSON.stringify(req.body)}`);
   next();
 });
 

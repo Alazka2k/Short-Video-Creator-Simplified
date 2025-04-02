@@ -194,7 +194,7 @@ class VoiceGenService {
 
       writeStream.on('finish', () => {
         clearTimeout(timeout);
-        logger.info(`Voice generated and saved to ${outputPath}`);
+        //logger.info(`Voice generated and saved to ${outputPath}`);
         // In a real implementation, you might want to get actual duration
         resolve({ duration: 0 }); 
       });

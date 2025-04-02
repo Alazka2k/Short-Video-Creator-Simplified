@@ -10,18 +10,19 @@ function createServer(jobService) {
 
   // Request logging middleware with rate limiting
   const lastLogged = new Map(); // Keep track of when paths were last logged
+  const progressCheckTimes = new Map(); // Keep track of when progress was last checked
   
   app.use((req, res, next) => {
     const path = req.path;
     const now = Date.now();
     const pollingEndpoints = ['/jobs/:jobId/progress', '/jobs/:jobId'];
     
-    // For polling endpoints like progress and status, only log once per 10 seconds
+    // For polling endpoints like progress and status, only log once per 30 seconds
     if (pollingEndpoints.some(pattern => {
       return new RegExp(`^${pattern.replace(/:[^/]+/g, '[^/]+')}$`).test(path);
     })) {
       const lastTime = lastLogged.get(path) || 0;
-      if (now - lastTime < 10000) { // 10 seconds
+      if (now - lastTime < 30000) { // 30 seconds
         return next(); // Skip logging
       }
       lastLogged.set(path, now);
@@ -35,8 +36,8 @@ function createServer(jobService) {
   // Additional middleware to log request body and headers only for non-GET requests
   app.use((req, res, next) => {
     if (req.method !== 'GET') {
-      logger.info('Request headers:', req.headers);
-      logger.info('Request body:', req.body);
+      //logger.info('Request headers:', req.headers);
+      //logger.info('Request body:', req.body);
     }
     next();
   });
@@ -104,18 +105,32 @@ function createServer(jobService) {
   app.get('/jobs/:jobId/progress', (req, res) => {
     try {
       const { jobId } = req.params;
+      const now = Date.now();
+      
+      // Rate limit progress checks to once every 2 seconds per job
+      const lastCheck = progressCheckTimes.get(jobId) || 0;
+      if (now - lastCheck < 2000) {
+        return res.status(429).json({ 
+          error: 'Too many requests', 
+          message: 'Please wait before checking progress again' 
+        });
+      }
+      progressCheckTimes.set(jobId, now);
       
       // Check if we have this progress info cached to reduce logging
       const progress = jobService.getJobProgress(jobId);
       
       if (!progress) {
-        logger.info(`Job progress not found for ${jobId}`);
+        // Only log if explicitly requested
+        if (req.headers['x-log-progress'] === 'true') {
+          logger.info(`Job progress not found for ${jobId}`);
+        }
         return res.status(404).json({ error: 'Job progress not found' });
       }
       
-      // Only log if significant change in progress or status change
+      // Only log significant changes or status changes
       if (req.headers['x-log-progress'] === 'true' || 
-          progress.overallProgress % 10 === 0 || // Log at 0%, 10%, 20%, etc.
+          (progress.overallProgress % 25 === 0 && progress.status === 'in_progress') || // Log at 0%, 25%, 50%, 75%, 100%
           progress.status !== 'in_progress') {  // Always log on status change
         logger.info(`Job progress for ${jobId}: ${progress.overallProgress}% (${progress.status})`);
       }

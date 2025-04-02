@@ -292,8 +292,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                 </React.Fragment>
               ))}
 
-              {/* Music Section (if exists) */}
-              {jobWithFreshUrls.metadata.music && (
+              {/* Music Section (if exists and has valid URL) */}
+              {jobWithFreshUrls.metadata.music?.publicUrl && (
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
                   <div className="p-4 border-b border-border bg-muted/10">
                     <h3 className="font-medium">Background Music</h3>

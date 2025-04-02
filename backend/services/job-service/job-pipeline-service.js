@@ -309,14 +309,14 @@ class JobPipelineService {
         isLlmOnly: isLlmOnlyJob
       });
 
-      logger.info(`Created job record for jobId: ${jobId}`, {
+      /*logger.info(`Created job record for jobId: ${jobId}`, {
         userId,
         serviceConfig,
         visualizationType: serviceConfig.visualizationType,
         serviceSequence,
         sceneAmount,
         isLlmOnly: isLlmOnlyJob
-      });
+      });*/
 
       return jobId;
     } catch (error) {
@@ -520,7 +520,7 @@ class JobPipelineService {
     }
     
     // Log the scene results for debugging
-    logger.info('Scene results passed to analyzeResults:', {
+    /*logger.info('Scene results passed to analyzeResults:', {
       jobId,
       hasSceneResults: !!sceneResults,
       sceneResultsCount: sceneResults?.sceneResults?.length,
@@ -535,7 +535,7 @@ class JobPipelineService {
       })),
       hasMusicResult: !!musicResult,
       musicStatus: musicResult?.status
-    });
+    }); */
     
     // Analyze results
     const statusInfoFromResults = jobResultManager.analyzeResults(sceneResults, serviceConfig, musicResult);
