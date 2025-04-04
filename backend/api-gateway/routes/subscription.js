@@ -565,11 +565,11 @@ router.get('/token-packages/:packageId', serviceAuthMiddleware, async (req, res)
 });
 
 /**
- * @route POST /api/subscription/token-packages
+ * @route POST /api/subscription/token-packages/add
  * @description Create a new token package
  * @access Protected - requires manage:token_packages permission (admin only)
  */
-router.post('/token-packages', 
+router.post('/token-packages/add', 
   verifyAuth0Token,
   checkPermission('/api/subscription/token-packages'), 
   async (req, res) => {
@@ -590,7 +590,7 @@ router.post('/token-packages',
         });
       }
       
-      await forwardToSubscriptionService(req, res, '/token-packages');
+      await forwardToSubscriptionService(req, res, '/token-packages/add');
     } catch (error) {
       logger.error('Error creating token package:', {
         error: error.message,
@@ -944,6 +944,48 @@ router.post('/payments/:paymentId/status',
 });
 
 /**
+ * @route POST /api/subscription/payments/update
+ * @description Update a payment record with payment provider details
+ * @access Protected - requires manage:payments permission (administrative)
+ */
+router.post('/payments/update', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/payments:write'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to update payment records with payment provider details
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to update payment records'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/payments/update', req.body);
+    } catch (error) {
+      logger.error('Error updating payment record:', {
+        error: error.message,
+        stack: error.stack,
+        paymentData: req.body
+      });
+      
+      res.status(500).json({
+        error: 'Failed to update payment record',
+        details: error.message
+      });
+    }
+});
+
+/**
  * @route POST /api/subscription/token-packages/buy
  * @description Purchase a token package
  * @access Protected - requires purchase:tokens permission
@@ -1055,6 +1097,46 @@ router.post('/pending-cancellations/process', [verifyAuth0Token, checkPermission
     
     return res.status(500).json({ message: 'Failed to process pending cancellations', error: error.message });
   }
+});
+
+/**
+ * @route POST /api/subscription/plans/add
+ * @description Create a new subscription plan
+ * @access Protected - requires manage:plans permission (admin only)
+ */
+router.post('/plans/add', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/plans'), 
+  async (req, res) => {
+    try {
+      // Only allow admin users to create plans
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasAdminPermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:plans')) ||
+        tokenScopes.includes('manage:plans') ||
+        isApiUser;
+        
+      if (!hasAdminPermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Only administrators can create subscription plans'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/plans/add');
+    } catch (error) {
+      logger.error('Error creating subscription plan:', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      res.status(500).json({
+        error: 'Failed to create subscription plan',
+        details: error.message
+      });
+    }
 });
 
 module.exports = router; 

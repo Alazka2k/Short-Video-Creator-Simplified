@@ -112,3 +112,90 @@ Retrieves details for a specific plan.
 ```
 
 ---
+
+### 3 Add new plan
+
+**Endpoint**: `POST /plans/add`
+
+**Use Case**:
+- Add a new plan to the system
+- This endpoint is only available to admin users
+
+**Request Body**:
+```json
+{
+  "tier_id": 5,
+  "monthly_price": 29.99,
+  "annual_price": 299.99,
+  "billing_frequency": "monthly",
+  "price": 29.99,
+  "plan_name": "Professional Monthly",
+  "monthly_token_allocation": 5000,
+  "recreation_enabled": true,
+  "allowed_content_types": ["video", "image", "voice", "animation"],
+  "support_level": "email_24h",
+  "recreation_content_types": ["video", "image"],
+  "script_settings_enabled": true,
+  "has_watermark": false,
+  "template_selection_count": 10,
+  "voice_selection_count": 5,
+  "visual_selection_count": 8,
+  "video_quality": "1080p",
+  "max_jobs_per_month": 50,
+  "max_scenes_per_job": 10,
+  "marketing_description": {
+    "en": "Professional features for serious content creators",
+    "de": "Professionelle Funktionen für ernsthafte Content-Ersteller"
+  }
+}
+```
+
+**Response Example**:
+```json
+{
+    "success": true,
+    "data": {
+        "plan_id": 8,
+        "plan_name": "Professional Monthly",
+        "monthly_token_allocation": 5000,
+        "price": "29.99",
+        "billing_frequency": "monthly",
+        "annual_price": "299.99",
+        "max_scenes_per_job": 10,
+        "max_jobs_per_month": 50,
+        "video_quality": "1080p",
+        "visual_selection_count": 8,
+        "voice_selection_count": 5,
+        "template_selection_count": 10,
+        "has_watermark": false,
+        "script_settings_enabled": true,
+        "support_level": "email_24h",
+        "allowed_content_types": [
+            "video",
+            "image",
+            "voice",
+            "animation"
+        ],
+        "marketing_description": {
+            "en": "Professional features for serious content creators",
+            "de": "Professionelle Funktionen für ernsthafte Content-Ersteller"
+        },
+        "recreation_enabled": true,
+        "recreation_content_types": [
+            "video",
+            "image"
+        ],
+        "active": true,
+        "created_at": "2025-04-03T16:23:06.485Z",
+        "updated_at": "2025-04-03T16:23:06.485Z",
+        "monthly_price": "29.99",
+        "tier_id": 5
+    }
+}
+```
+
+**Notes**:
+- The endpoint is used to add a new plan to the system.
+- The `tier_id` is the ID of the tier that the plan belongs to.
+- The `monthly_price` is the price of the plan per month.
+- The `annual_price` is the price of the plan per year.

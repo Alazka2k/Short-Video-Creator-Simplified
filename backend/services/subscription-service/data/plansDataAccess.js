@@ -18,6 +18,7 @@ class PlansDataAccess {
   constructor() {
     this.tableName = 'plans';
     this.logger = logger;
+    this.knex = knex;
   }
 
   /**
@@ -25,11 +26,12 @@ class PlansDataAccess {
    * @param {boolean} includeInactive - Whether to include inactive plans
    * @param {string} sortBy - Field to sort by (default: 'monthly_price')
    * @param {string} sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
+   * @param {string} status - Filter by status ('active' or 'inactive')
    * @returns {Promise<Array>} - List of subscription plans
    */
-  async getAllPlans(includeInactive = false, sortBy = 'monthly_price', sortOrder = 'asc') {
+  async getAllPlans(includeInactive = false, sortBy = 'monthly_price', sortOrder = 'asc', status = null) {
     try {
-      this.logger.info('Fetching all plans:', { includeInactive, sortBy, sortOrder });
+      this.logger.info('Fetching all plans:', { includeInactive, sortBy, sortOrder, status });
       
       // Validate sort parameters to prevent SQL injection
       const validSortFields = ['plan_id', 'plan_name', 'monthly_price', 'price', 'created_at', 'billing_frequency'];
@@ -41,7 +43,13 @@ class PlansDataAccess {
       
       let query = knex(this.tableName);
       
-      if (!includeInactive) {
+      // Handle status filter
+      if (status === 'active') {
+        query = query.where('active', true);
+      } else if (status === 'inactive') {
+        query = query.where('active', false);
+      } else if (!includeInactive) {
+        // Default behavior if no status specified
         query = query.where('active', true);
       }
       
@@ -60,11 +68,12 @@ class PlansDataAccess {
    * @param {boolean} includeInactive - Whether to include inactive plans
    * @param {string} sortBy - Field to sort by (default: 'monthly_price')
    * @param {string} sortOrder - Sort order: 'asc' or 'desc' (default: 'asc')
+   * @param {string} status - Filter by status ('active' or 'inactive')
    * @returns {Promise<Array>} - List of subscription plans with specified billing frequency
    */
-  async getPlansByFrequency(billingFrequency, includeInactive = false, sortBy = 'monthly_price', sortOrder = 'asc') {
+  async getPlansByFrequency(billingFrequency, includeInactive = false, sortBy = 'monthly_price', sortOrder = 'asc', status = null) {
     try {
-      this.logger.info('Fetching plans by frequency:', { billingFrequency, includeInactive, sortBy, sortOrder });
+      this.logger.info('Fetching plans by frequency:', { billingFrequency, includeInactive, sortBy, sortOrder, status });
       
       // Validate sort parameters to prevent SQL injection
       const validSortFields = ['plan_id', 'plan_name', 'monthly_price', 'price', 'created_at', 'billing_frequency'];
@@ -77,7 +86,13 @@ class PlansDataAccess {
       let query = knex(this.tableName)
         .where('billing_frequency', billingFrequency);
       
-      if (!includeInactive) {
+      // Handle status filter
+      if (status === 'active') {
+        query = query.where('active', true);
+      } else if (status === 'inactive') {
+        query = query.where('active', false);
+      } else if (!includeInactive) {
+        // Default behavior if no status specified
         query = query.where('active', true);
       }
       
@@ -185,6 +200,9 @@ class PlansDataAccess {
     try {
       this.logger.info('Creating new plan:', planData);
       
+      // Remove userId as it's not needed for plans
+      delete planData.userId;
+      
       // Set timestamps
       planData.created_at = knex.fn.now();
       planData.updated_at = knex.fn.now();
@@ -193,9 +211,33 @@ class PlansDataAccess {
       if (planData.active === undefined) {
         planData.active = true;
       }
+
+      // Stringify JSON fields
+      if (planData.allowed_content_types) {
+        planData.allowed_content_types = JSON.stringify(planData.allowed_content_types);
+      }
+      if (planData.recreation_content_types) {
+        planData.recreation_content_types = JSON.stringify(planData.recreation_content_types);
+      }
+      if (planData.marketing_description) {
+        planData.marketing_description = JSON.stringify(planData.marketing_description);
+      }
+
+      // Get the highest existing plan_id
+      const maxResult = await knex(this.tableName)
+        .max('plan_id as max_id')
+        .first();
       
+      // Set the next plan_id (highest + 1)
+      const nextId = (maxResult.max_id || 0) + 1;
+      this.logger.info(`Using next plan_id: ${nextId}`);
+      
+      // Insert with the explicit ID
       const [newPlan] = await knex(this.tableName)
-        .insert(planData)
+        .insert({
+          ...planData,
+          plan_id: nextId
+        })
         .returning('*');
       
       this.logger.info('Plan created successfully:', { planId: newPlan.plan_id });

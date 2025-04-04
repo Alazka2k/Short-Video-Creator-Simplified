@@ -63,8 +63,8 @@ async function startServer() {
     const subscriptionService = new SubscriptionService(dataAccess);
     const planService = new PlanService(dataAccess);
     const tokenService = new TokenService(dataAccess, tokenCalculator);
-    const tokenPackageService = new TokenPackageService(dataAccess);
     const paymentService = new PaymentService(dataAccess, stripeService);
+    const tokenPackageService = new TokenPackageService(dataAccess, paymentService);
     const transactionService = new TransactionService(dataAccess, tokenCalculator);
     
     // Initialize controllers

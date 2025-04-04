@@ -31,14 +31,15 @@ A web-based application that automates the creation of short-form videos by orch
    - Video Generation Service
    - Assembly Service (Video Assembly)
    - Auth Service (with Social Login and Email/Password authentication)
+   - Billing/Premium Service
+     - Subscription system management
+     - Token package management
 
 2. **New Services to Develop**:
-   - Billing/Premium Service
-     - Credit system management
-     - Premium feature access control
-     - Payment processing
-   - Final Video Creation Service
-     - Export functionality
+    - Batch processing
+    - Payment processing
+    - Premium feature access control
+    - Share functionality
 
 ### Database Structure
 - PostgreSQL with Knex.js

@@ -43,7 +43,7 @@ class TokenCalculator {
         logger.info('Token costs loaded from configuration');
       }
       
-      logger.info('Token costs initialized:', this.tokenCosts);
+      //logger.info('Token costs initialized:', this.tokenCosts);
     } catch (error) {
       logger.error('Error initializing token costs:', error);
       // Fall back to default costs

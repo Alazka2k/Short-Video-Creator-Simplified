@@ -10,13 +10,13 @@ All endpoints include proper authentication and authorization checks.
 
 ## Token Packages
 
-### 1.  List All Token Packages
+### 1. ✅ List All Token Packages
 Retrieves all available token packages.
 
 **Endpoint**: `GET /token-packages`
 
 **Parameters**:
-- `includeInactive` (optional, query): Set to `true` to include inactive packages. Default is `false`.
+- `status` (optional, query): Set to `inactive` to query inactive packages. Set to `active` to query active packages. Default is query for all packages.
 
 **Response Example**:
 ```json
@@ -51,7 +51,7 @@ Retrieves all available token packages.
 }
 ```
 
-### 2.  Get Token Package Details
+### 2. ✅ Get Token Package Details
 Retrieves details for a specific token package.
 
 **Endpoint**: `GET /token-packages/:packageId`
@@ -78,44 +78,7 @@ Retrieves details for a specific token package.
 }
 ```
 
-### 3.  Create Token Package
-Creates a new token package.
-
-**Endpoint**: `POST /token-packages`
-
-**Request Body**:
-```json
-{
-  "packageName": "Pro Pack",
-  "tokenAllocation": 6000,
-  "price": 39.99,
-  "active": true,
-  "marketingDescription": {
-    "features": ["6,000 additional tokens", "Never expires", "Perfect for power users"]
-  }
-}
-```
-
-**Response Example**:
-```json
-{
-  "success": true,
-  "data": {
-    "package_id": 3,
-    "package_name": "Pro Pack",
-    "token_allocation": 6000,
-    "price": 39.99,
-    "active": true,
-    "marketing_description": {
-      "features": ["6,000 additional tokens", "Never expires", "Perfect for power users"]
-    },
-    "created_at": "2023-11-20T12:00:00.000Z",
-    "updated_at": "2023-11-20T12:00:00.000Z"
-  }
-}
-```
-
-### 4.  Buy Token Package
+### 3. ✅ Buy Token Package
 Purchase a new package of tokens for a user independently of a subscription.
 
 **Endpoint**: `POST /token-packages/buy`
@@ -184,3 +147,51 @@ Purchase a new package of tokens for a user independently of a subscription.
   1. Create a payment record in the database
   2. Allocate the tokens from the package to the user's balance
   3. Create a token transaction record tracking the allocation
+
+
+### 4. ✅ Add Token Package:
+
+**Endpoint**: `POST /token-packages/add`
+
+**Use Case**:
+- Add a new token package to the system
+- This endpoint is only available to admin users
+
+**Request Body**:
+```json
+{
+  "packageName": "Test3",
+  "tokenAllocation": 3,
+  "price": 39.99,
+  "active": false,
+  "marketingDescription": {
+    "features": ["This is a test for a new package"]
+  }
+}
+```
+
+**Response Example**:
+```json
+{
+    "success": true,
+    "data": {
+        "package_id": 7,
+        "package_name": "Test3",
+        "token_allocation": 3,
+        "price": "39.99",
+        "active": false,
+        "marketing_description": {
+            "features": [
+                "This is a test for a new package"
+            ]
+        },
+        "created_at": "2025-04-03T16:08:26.937Z",
+        "updated_at": "2025-04-03T16:08:26.937Z"
+    }
+}
+```
+
+**Notes**:
+- This endpoint is used to add a new token package to the system
+- The `active` field is used to determine if the package is currently available for purchase
+- The `marketingDescription` field is used to provide a description of the package for marketing purposes

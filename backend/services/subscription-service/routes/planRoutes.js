@@ -4,6 +4,7 @@
  * Defines routes for plan-related endpoints:
  * - GET /plans - List all plans
  * - GET /plans/:planId - Get plan by ID
+ * - POST /plans/add - Create a new plan (admin only)
  */
 
 const express = require('express');
@@ -23,6 +24,13 @@ module.exports = (planController) => {
    * @access Public
    */
   router.get('/:planId', planController.getPlanById.bind(planController));
+
+  /**
+   * @route POST /api/subscription/plans/add
+   * @description Create a new plan (admin only)
+   * @access Private (admin only)
+   */
+  router.post('/add', planController.createPlan.bind(planController));
 
   return router;
 }; 

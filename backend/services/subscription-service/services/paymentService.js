@@ -69,45 +69,25 @@ class PaymentService {
     try {
       logger.info('Creating payment record:', paymentData);
       
-      // Validate payment data
+      // Validate required fields
       if (!paymentData.userId) {
         throw new Error('userId is required');
-      }
-      
-      if (!paymentData.paymentProvider) {
-        throw new Error('paymentProvider is required');
-      }
-      
-      if (!paymentData.externalPaymentId) {
-        throw new Error('externalPaymentId is required');
       }
       
       if (!paymentData.paymentType) {
         throw new Error('paymentType is required');
       }
       
-      if (!['subscription_initial', 'subscription_renewal', 'token_package'].includes(paymentData.paymentType)) {
-        throw new Error('paymentType must be one of: subscription_initial, subscription_renewal, token_package');
+      if (!paymentData.status) {
+        throw new Error('status is required');
       }
       
-      // For subscription_renewal type, check if subscriptionId is provided
-      if (paymentData.paymentType === 'subscription_renewal' && !paymentData.subscriptionId) {
-        throw new Error('subscriptionId is required for subscription renewal payments');
-      }
-
-      // For token_package type, check if packageId is provided
-      if (paymentData.paymentType === 'token_package' && !paymentData.packageId) {
-        throw new Error('packageId is required for token package payments');
-      }
-
-      // For subscription types, validate that either planId or subscriptionId is provided
-      if ((paymentData.paymentType === 'subscription_initial' || paymentData.paymentType === 'subscription_renewal')) {
-        if (!paymentData.planId && !paymentData.subscriptionId) {
-          throw new Error('Either planId or subscriptionId is required for subscription payments');
-        }
+      // Only require paymentProvider for non-renewal payments
+      if (paymentData.paymentType !== 'subscription_renewal' && !paymentData.paymentProvider) {
+        throw new Error('paymentProvider is required');
       }
       
-      // If it's a subscription_renewal and has subscriptionId but no planId, try to get it from the subscription
+      // For subscription renewals, we'll get the plan details from the subscription
       if (paymentData.paymentType === 'subscription_renewal' && paymentData.subscriptionId && !paymentData.planId) {
         const subscription = await this.dataAccess.subscriptions.getSubscriptionById(paymentData.subscriptionId);
         
@@ -172,86 +152,39 @@ class PaymentService {
           };
         }
       }
-
-      // For token_package type, get the package details if not provided
-      if (paymentData.paymentType === 'token_package' && paymentData.packageId && !paymentData.amount) {
-        const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(paymentData.packageId);
-        
-        if (!tokenPackage) {
-          throw new Error(`Token package not found: ${paymentData.packageId}`);
-        }
-        
-        paymentData.amount = tokenPackage.price;
-        
-        logger.info('Using token package price for payment amount:', {
-          packageId: tokenPackage.package_id,
-          amount: paymentData.amount
-        });
-      }
       
-      // Final validation of amount
-      if (!paymentData.amount || paymentData.amount <= 0) {
-        throw new Error('amount must be a positive number');
+      // Convert camelCase to snake_case for database
+      const dbPaymentData = {
+        user_id: paymentData.userId,
+        payment_type: paymentData.paymentType,
+        status: paymentData.status,
+        amount: paymentData.amount,
+        payment_provider: paymentData.paymentProvider,
+        external_payment_id: paymentData.externalPaymentId,
+        payment_method: paymentData.paymentMethod || 'credit_card',
+        currency: paymentData.currency || 'eur',
+        plan_id: paymentData.planId,
+        subscription_id: paymentData.subscriptionId,
+        package_id: paymentData.packageId
+      };
+      
+      // Add billing period if provided
+      if (paymentData.billingPeriod) {
+        dbPaymentData.billing_period_start = paymentData.billingPeriod.billing_period_start || paymentData.billingPeriod.start;
+        dbPaymentData.billing_period_end = paymentData.billingPeriod.billing_period_end || paymentData.billingPeriod.end;
       }
       
       // Create the payment record
-      let paymentRecord;
+      const payment = await this.dataAccess.payments.createPayment(dbPaymentData);
       
-      if (paymentData.paymentType === 'subscription_initial' || paymentData.paymentType === 'subscription_renewal') {
-        // For subscription payments, use createSubscriptionPayment
-        paymentRecord = await this.dataAccess.payments.createSubscriptionPayment(
-          paymentData.userId,
-          paymentData.subscriptionId,
-          paymentData.planId,
-          paymentData.amount,
-          paymentData.paymentProvider,
-          paymentData.externalPaymentId,
-          paymentData.paymentType,
-          paymentData.billingPeriod || {},
-          undefined, // No transaction
-          paymentData.status || 'completed'
-        );
-      } else if (paymentData.paymentType === 'token_package') {
-        // For token package payments, use createTokenPackagePayment
-        paymentRecord = await this.dataAccess.payments.createTokenPackagePayment(
-          paymentData.userId,
-          paymentData.packageId,
-          paymentData.amount,
-          paymentData.paymentProvider,
-          paymentData.externalPaymentId,
-          paymentData.status || 'completed'
-        );
-        
-        // If the payment is completed, allocate tokens to the user
-        if (paymentData.status === 'completed') {
-          const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(paymentData.packageId);
-          
-          if (tokenPackage) {
-            await this.dataAccess.tokenTransactions.recordTokenPackagePurchase(
-              paymentData.userId,
-              paymentData.packageId,
-              tokenPackage.token_allocation,
-              paymentRecord.payment_id
-            );
-            
-            logger.info('Tokens allocated for token package purchase:', {
-              userId: paymentData.userId,
-              packageId: paymentData.packageId,
-              tokenAmount: tokenPackage.token_allocation,
-              paymentId: paymentRecord.payment_id
-            });
-          }
-        }
-      }
-      
-      logger.info('Payment record created:', {
-        paymentId: paymentRecord.payment_id,
-        amount: paymentRecord.amount,
-        paymentType: paymentRecord.payment_type,
-        status: paymentRecord.status
+      logger.info('Payment record created successfully:', {
+        paymentId: payment.payment_id,
+        userId: payment.user_id,
+        amount: payment.amount,
+        status: payment.status
       });
       
-      return paymentRecord;
+      return payment;
     } catch (error) {
       logger.error('Error in createPaymentRecord:', error);
       throw error;
@@ -259,25 +192,17 @@ class PaymentService {
   }
 
   /**
-   * Update payment status
+   * Update a payment record
    * @param {string} paymentId - The payment ID
-   * @param {string} status - The new status (pending, completed, failed, open)
+   * @param {Object} updateData - The data to update
    * @returns {Promise<Object>} - The updated payment record
    */
-  async updatePaymentStatus(paymentId, status) {
+  async updatePayment(paymentId, updateData) {
     try {
-      logger.info('Updating payment status:', { paymentId, status });
+      logger.info('Updating payment:', { paymentId, updateData });
       
       if (!paymentId) {
         throw new Error('Payment ID is required');
-      }
-      
-      if (!status) {
-        throw new Error('Status is required');
-      }
-      
-      if (!['pending', 'completed', 'failed', 'open'].includes(status)) {
-        throw new Error('Status must be one of: pending, completed, failed, open');
       }
       
       // Get the existing payment
@@ -287,16 +212,23 @@ class PaymentService {
         throw new Error(`Payment not found: ${paymentId}`);
       }
       
-      // Check if status is already set to the same value
-      if (existingPayment.status === status) {
-        logger.info(`Payment ${paymentId} status is already ${status}`);
-        return existingPayment;
+      // If updating to completed status, require paymentProvider and externalPaymentId
+      if (updateData.status === 'completed') {
+        if (!updateData.paymentProvider) {
+          throw new Error('paymentProvider is required when updating to completed status');
+        }
+        if (!updateData.externalPaymentId) {
+          throw new Error('externalPaymentId is required when updating to completed status');
+        }
+        
+        // Set payment_date to now when completing the payment
+        updateData.payment_date = new Date();
       }
-
+      
       // Special handling for token package payments that become completed
       if (existingPayment.payment_type === 'token_package' && 
           existingPayment.status !== 'completed' && 
-          status === 'completed') {
+          updateData.status === 'completed') {
         
         // Get the token package
         const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(existingPayment.package_id);
@@ -319,21 +251,28 @@ class PaymentService {
         }
       }
       
-      // Update the payment status
-      const updatedPayment = await this.dataAccess.payments.updatePayment(paymentId, {
-        status,
-        payment_date: status === 'completed' ? new Date() : existingPayment.payment_date
-      });
+      // Convert camelCase to snake_case for database
+      const dbUpdateData = {};
       
-      logger.info('Payment status updated:', {
+      // Map camelCase properties to snake_case
+      if (updateData.status !== undefined) dbUpdateData.status = updateData.status;
+      if (updateData.paymentProvider !== undefined) dbUpdateData.payment_provider = updateData.paymentProvider;
+      if (updateData.externalPaymentId !== undefined) dbUpdateData.external_payment_id = updateData.externalPaymentId;
+      if (updateData.paymentMethod !== undefined) dbUpdateData.payment_method = updateData.paymentMethod;
+      if (updateData.payment_date !== undefined) dbUpdateData.payment_date = updateData.payment_date;
+      if (updateData.amount !== undefined) dbUpdateData.amount = updateData.amount;
+      
+      // Update the payment
+      const updatedPayment = await this.dataAccess.payments.updatePayment(paymentId, dbUpdateData);
+      
+      logger.info('Payment updated successfully:', {
         paymentId,
-        oldStatus: existingPayment.status,
-        newStatus: status
+        status: updatedPayment.status
       });
       
       return updatedPayment;
     } catch (error) {
-      logger.error('Error in updatePaymentStatus:', error);
+      logger.error('Error updating payment:', error);
       throw error;
     }
   }

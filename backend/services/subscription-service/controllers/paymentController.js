@@ -5,7 +5,7 @@
  * - GET /payments/user/:userId - Get user's payment history
  * - GET /payments/user/:userId/summary - Get user's payment summary
  * - POST /payments - Create a payment record
- * - PUT /payments/:paymentId/status - Update payment status
+ * - POST /payments/update - Update a payment record
  * - POST /payments/token-package - Purchase a token package
  * - POST /payments/webhook/stripe - Handle Stripe webhook
  */
@@ -66,6 +66,25 @@ class PaymentController {
   async createPayment(req, res) {
     try {
       const paymentData = req.body;
+      
+      // Validate required fields
+      if (!paymentData.userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+      
+      if (!paymentData.paymentType) {
+        return res.status(400).json({ error: 'paymentType is required' });
+      }
+      
+      if (!paymentData.status) {
+        return res.status(400).json({ error: 'status is required' });
+      }
+      
+      // Only require paymentProvider for non-renewal payments
+      if (paymentData.paymentType !== 'subscription_renewal' && !paymentData.paymentProvider) {
+        return res.status(400).json({ error: 'paymentProvider is required for non-renewal payments' });
+      }
+      
       const payment = await this.paymentService.createPaymentRecord(paymentData);
       
       res.status(201).json({
@@ -79,24 +98,41 @@ class PaymentController {
   }
 
   /**
-   * Update payment status
+   * Update a payment record
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    */
-  async updatePaymentStatus(req, res) {
+  async updatePayment(req, res) {
     try {
-      const { paymentId } = req.params;
-      const { status } = req.body;
+      const { paymentId, status, paymentProvider, externalPaymentId } = req.body;
+      
+      if (!paymentId) {
+        return res.status(400).json({ error: 'paymentId is required' });
+      }
       
       if (!status) {
-        return res.status(400).json({ error: 'Status is required' });
+        return res.status(400).json({ error: 'status is required' });
       }
       
       if (!['pending', 'completed', 'failed', 'open'].includes(status)) {
-        return res.status(400).json({ error: 'Status must be one of: pending, completed, failed, open' });
+        return res.status(400).json({ error: 'status must be one of: pending, completed, failed, open' });
       }
       
-      const payment = await this.paymentService.updatePaymentStatus(paymentId, status);
+      // Require paymentProvider and externalPaymentId when updating to completed status
+      if (status === 'completed') {
+        if (!paymentProvider) {
+          return res.status(400).json({ error: 'paymentProvider is required when updating to completed status' });
+        }
+        if (!externalPaymentId) {
+          return res.status(400).json({ error: 'externalPaymentId is required when updating to completed status' });
+        }
+      }
+      
+      const payment = await this.paymentService.updatePayment(paymentId, {
+        status,
+        paymentProvider,
+        externalPaymentId
+      });
       
       if (!payment) {
         return res.status(404).json({ error: 'Payment not found' });
@@ -107,7 +143,7 @@ class PaymentController {
         data: payment
       });
     } catch (error) {
-      logger.error('Error updating payment status:', error);
+      logger.error('Error updating payment:', error);
       res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   }

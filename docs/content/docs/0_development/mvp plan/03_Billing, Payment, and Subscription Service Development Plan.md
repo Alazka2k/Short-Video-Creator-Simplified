@@ -37,6 +37,7 @@ Subscription Service Development Plan (Renamed from Billing Service)
 ### 2.1 Plan Management
 - ✅ GET /plans - List available plans
 - ✅ GET /plans/:planId - Get plan details
+- ✅ POST /plans/add - Add Subscription Plan (Admin Only)
 ### 2.2 Subscription Management
 - ✅ GET /subscriptions/user/:userId - Get user's current subscription
 - ✅ POST /subscriptions - Create a new subscription
@@ -55,20 +56,11 @@ Subscription Service Development Plan (Renamed from Billing Service)
 - ✅ GET /token-packages - List all token packages
 - ✅ GET /token-packages/:packageId - Get token package details
 - ✅ POST /token-packages - Create a new token package
-### 2.4 Payment History
+### 2.6 Payment Management
 - ✅ GET /payments/user/:userId - Get payment history
 - ✅ GET /payments/summary/:userId - Get payment summary
-
-### 2.5 Additional Token Endpoints
-- ⏳ POST /tokens/check - Check token availability without deducting (pre-authorization, also add to the response how many of each content type the user has used and is theoretically left for usage, add renewal date)
-- ⏳ GET /jobs/count/:userId/monthly - Get monthly job count for a user (for this we need to enhance the job service to track the job count per user and the user database to track the job count per user)
-- ⏳ GET /features/available/:userId - Check what features are available in user's plan
-- ⏳ GET /plans - List all Subscription Plans
-### 2.6 Additional Admin Endpoints
-- ⏳ POST /token-packages/change - Change Token Package Details (Admin Only)
-- ⏳ POST /token-packages/activate - Activate / Deactivate Token Package (Admin Only)
-- ⏳ POST /plans/change - Change Subscription Plan Details (Admin Only)
-- ⏳ POST /plans/activate - Activate / Deactivate Subscription (Admin Only)
+- ✅ POST /payments - Create a new payment
+- ✅ POST /payments/update - Update a payment
 
 ## Phase 3: API Gateway Integration
 ### 3.1 API Gateway Routes
@@ -89,11 +81,13 @@ Following the documentation of docs\content\docs\0_development\mvp plan\04_Subsc
 ## Phase 5: Batch Processing Integration
 Following the documentation of docs\content\docs\0_development\mvp plan\04_Subscription Management Details.
 ### 5.1 Batch Processing for Recurring Payments
-- ⏳ Implement batch processing for recurring payments
+- ⏳ Implement batch processing to recognize billing is due and create new payment entries when current billing period ended for a subscription
+- ⏳ Implement batch processing to process payments in status open (stripe integration, then switch status to completed)
+- ⏳ Implement batch processing for failed payments (retry payment, then switch status to completed or failed and count failed attempts. Downgrade directly to free plan if max failed attempts reached)
 ### 5.2 Batch Processing for Token Allocation
 - ⏳ Implement batch processing for token allocation and setting new periods for the next month
-### 5.3 Batch Processing for Plan Downgrades
-- ⏳ Implement batch processing for plan downgrades
+### 5.3 Batch Processing for Plan Downgrades / Upgrades
+- ⏳ Implement batch processing for plan downgrades / plan upgrades to the same tier but different plan (e.g. from creator monthly to creator yearly)
 
 ## Phase 6: Stripe Integration
 ### 6.1 Stripe Setup
@@ -130,6 +124,11 @@ Following the documentation of docs\content\docs\0_development\mvp plan\04_Subsc
 - ⏳ Add transaction rollback capabilities
 
 ## Phase 8: Plan Limitation Enforcement
+### 8.1 Additional Endpoints
+- ⏳ POST /tokens/check - Calculate how many tokens user used for each content type and is theoretically left for usage, add renewal date (when the user gets next token allocation)
+- ⏳ POST /token-packages/change - Change Token Package Details (Admin Only)
+- ⏳ POST /plans/change - Change Subscription Plan Details (Admin Only)
+
 ### 8.1 Feature Restriction Logic / Usage Limits / Plan-Based Configuration
 - ⏳ Implement middleware for checking subscription features
 - ⏳ Add validation for content types based on plan
@@ -140,12 +139,14 @@ Following the documentation of docs\content\docs\0_development\mvp plan\04_Subsc
 - ⏳ Create a centralized plan feature configuration
 - ⏳ Implement recreation feature availability based on plan
 - ⏳ Set up visual/voice selection limits
+
 ### 8.2 Plan Limitation Enforcement
 - ⏳ Create middleware for checking subscription features
 - ⏳ Implement validation for limitations based on plan
 - ⏳ Add restriction logic for premium features
 - ⏳ Create validation for max scenes per job logic
 - ⏳ Implement monthly job count tracking and limits (counter for every job)
+
 #### 8.2.1. Plan Limitation APIs
 - ⏳ POST /api/subscription/transactions/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
 - ⏳ POST /api/subscription/limitations/usage - 

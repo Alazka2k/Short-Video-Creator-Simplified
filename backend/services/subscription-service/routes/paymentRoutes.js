@@ -5,8 +5,7 @@
  * - GET /payments/user/:userId - Get user's payment history
  * - GET /payments/summary/:userId - Get user's payment summary
  * - POST /payments - Create a payment record
- * - POST /payments/:paymentId/status - Update payment status
- * - POST /payments/token-package - Purchase a token package
+ * - POST /payments/update - Update a payment record
  * - POST /webhooks/stripe - Handle Stripe webhook
  */
 
@@ -36,18 +35,11 @@ module.exports = (paymentController) => {
   router.post('/', paymentController.createPayment.bind(paymentController));
 
   /**
-   * @route POST /api/subscription/payments/:paymentId/status
-   * @description Update payment status
+   * @route POST /api/subscription/payments/update
+   * @description Update a payment record (e.g., mark as completed with payment provider details)
    * @access Private (admin only)
    */
-  router.post('/:paymentId/status', paymentController.updatePaymentStatus.bind(paymentController));
-
-  /**
-   * @route POST /api/subscription/payments/token-package
-   * @description Purchase a token package
-   * @access Private
-   */
-  router.post('/token-package', paymentController.purchaseTokenPackage.bind(paymentController));
+  router.post('/update', paymentController.updatePayment.bind(paymentController));
 
   /**
    * @route POST /api/subscription/webhooks/stripe

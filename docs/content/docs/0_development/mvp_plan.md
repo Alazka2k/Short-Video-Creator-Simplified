@@ -199,14 +199,16 @@
 #### 2.2.1. Plan Management Endpoints
 - ✅ GET /api/subscription/plans - Get available subscription plans
 - ✅ GET /api/subscription/plans/:planId - Get details of a specific plan
+- ✅ POST /api/subscription/plans/add - Add a new subscription plan
 
 #### 2.2.2. Subscription Management Endpoints
 - ✅ GET /api/subscription/plans - Get available subscription plans
 - ✅ GET /api/subscription/plans/:planId - Get details of a specific plan
 - ✅ GET /api/subscription/subscriptions/user/:userId - Get user's active subscription
-- ✅ POST /api/subscription/subscriptions - Create a new subscription for a user
+- ✅ POST /api/subscription/subscriptions - Downgrade or Upgrade a subscription for a user / Create a new subscription for a user -> Direct Integration of Stripe is needed depending on the use case
 - ✅ PUT /api/subscription/subscriptions/:subscriptionId - Update a subscription
 - ✅ POST /api/subscription/subscriptions/:subscriptionId/cancel - Cancel a subscription
+- ✅ POST /api/subscription/subscriptions/::userId/renew - Renew a subscription (update current periods start and end date and allocate new tokens)
 
 #### 2.2.1. Token Management Endpoints
 - ✅ GET /api/subscription/tokens/balance/:userId - Get user's current token balance
@@ -219,21 +221,21 @@
 - ✅ GET /api/subscription/transactions/user/:userId - Get complete token transaction history
 
 #### 2.2.3. Token Package Endpoints
+- ✅ POST /api/subscription/token-packages/buy - Buy a token package (creates a new payment entry in status paid and loads up the tokens to the user's balance) -> Direct Integration of Stripe is needed
 - ✅ GET /api/subscription/token-packages - Get all token packages
 - ✅ GET /api/subscription/token-packages/:packageId - Get details of a specific token package
 - ✅ POST /api/subscription/token-packages - Create a new token package
-- ✅ POST /api/subscription/token-packages/buy - Buy a token package (creates a new payment entry in status paid and loads up the tokens to the user's balance)
 
-#### 2.2.4. Payment Management Endpoints
+#### 2.2.4. Payment Management Endpoints (Testing Needed)
 - ✅ GET /api/subscription/payments/user/:userId - Get user's payment history
 - ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
-- ✅ POST /api/subscription/payments/:userId/status - Process a payment for renewal of billing period / status change of the payment
-- ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
-- ⏳ POST /api/subscription/payments - Create a new payment for a new billing period (before the collection of the payment in status open) or a payment for a token package purchase (in status open for subscription renewal or completed after a package purchase and positive feedback from the payment provider, payment provider (optional), external payment id (optional))
-- ⏳ PUT /api/subscription/payments/:paymentId - Update a payment (status, payment provider (optional), external payment id (optional))
+- ✅ POST /api/subscription/payments - Create a new payment for a new billing period after the current billing ended in status open for subscription payment renewal -> Used for the batch job of the payment collection
+- ✅ POST /api/subscription/payments/update - Update a payment with status property and payment id (open -> completed for a payment with payment provider and external payment id) after the payment is completed
 
 ### 2.3. Batch Processing Integration
-- ⏳ Implement batch processing for recurring payments
+- ⏳ Implement batch processing for creation of recurring payments
+- ⏳ Implement batch processing for collection of recurring payments
+- ⏳ Implement batch processing for retry failed payments
 - ⏳ Implement batch processing for plan downgrades / pending cancellations
 - ⏳ Implement batch processing for subscription renewals (token addition)
 

@@ -12,20 +12,14 @@ All endpoints include proper authentication and authorization checks.
 
 The following endpoints are currently in development:
 
-### 1. Update a payment
-**Endpoint**: `PUT /api/subscription/payments/:paymentId`
-
-**Use Case**:
-- Update a payment (status, payment provider (optional), external payment id (optional))
-
-### 2. Enhance calculate job cost endpoint as a precheck for the job processing
+### 1. Enhance calculate job cost endpoint as a precheck for the job processing
 **Endpoint**: `POST /limitations/calculate-job-cost`
 
 **Use Case**:
 - Pre-authorization of token usage before processing a job or other API call that consumes tokens. We can already calculate the cost of the job, but need to check if the user has enough tokens.
 - Calculation of theoretical token usage (how many images, voices, etc. can be generated with the remaining tokens)
 
-### 3. Get Feature Availability (to check if a feature is available in user's plan, to check how many jobs user executed in the current period)
+### 2. Get Feature Availability (to check if a feature is available in user's plan, to check how many jobs user executed in the current period)
 **Endpoint**: `GET limitations/usage`
 
 **Use Case**: 
@@ -33,22 +27,16 @@ The following endpoints are currently in development:
 - Get count of jobs executed by user in the current period
 - To compare the users selected plan with the available features
 
-### 4. Change Token Package Details (Admin Only)
+### 3. Change Token Package Details (Admin Only)
 **Endpoint**: `POST /token-packages/change`
 
-### 5. Activate / Deactivate Token Package (Admin Only)
-**Endpoint**: `POST /token-packages/activate`
-
-### 6. Change Subscription Plan Details (Admin Only)
+### 4. Change Subscription Plan Details (Admin Only)
 **Endpoint**: `POST /subscriptions/change`
 
-### 7. Activate/Deactivate Subscription (Admin Only)
-**Endpoint**: `POST /subscriptions/activate`
-
-### 8. Get Count for token renewal and payment renewal
+### 5. Get Count for token renewal and payment renewal
 **Endpoint**: `GET /subscriptions/count`
 
-### 10. Get different metrics for business analytics
+### 6. Get different metrics for business analytics
 **Endpoint**: `GET /subscriptions/metrics`
 
 **Use Case**:

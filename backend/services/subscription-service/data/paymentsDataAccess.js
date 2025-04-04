@@ -90,6 +90,11 @@ class PaymentsDataAccess {
         throw new Error('amount is required to create a payment');
       }
       
+      // Only require payment_provider for non-renewal payments
+      if (paymentData.payment_type !== 'subscription_renewal' && !paymentData.payment_provider) {
+        throw new Error('payment_provider is required for non-renewal payments');
+      }
+      
       // Only set payment_date for completed payments
       if (paymentData.status === 'completed') {
         paymentData.payment_date = paymentData.payment_date || knex.fn.now();

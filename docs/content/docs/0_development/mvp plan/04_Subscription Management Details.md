@@ -310,7 +310,13 @@ This batch job will allocate tokens to subscriptions at the beginning of each ne
 
 ### 3. Payment Renewal and Follow up processing (Planned)
 
-This batch job will process payments and follow up on any failed payments.
+Two different batch jobs. This batch job will process payments and follow up on any failed payments.
+
+#### Job 1: Payment Renewal creation
+
+#### Job 2: Payment Collection
+
+#### Job 3: Retry Failed Payments
 
 #### Job Responsibilities (To Be Implemented):
 1. Identify payments that are due for renewal

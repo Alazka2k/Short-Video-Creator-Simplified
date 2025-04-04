@@ -25,15 +25,18 @@ class TokenPackagesDataAccess {
   /**
    * Get all token packages
    * @param {boolean} includeInactive - Whether to include inactive packages
+   * @param {string} status - Optional status to filter by ('active', 'inactive')
    * @returns {Promise<Array>} - List of token packages
    */
-  async getAllTokenPackages(includeInactive = false) {
+  async getAllTokenPackages(includeInactive = true, status = null) {
     try {
-      this.logger.info('Fetching all token packages:', { includeInactive });
+      this.logger.info('Fetching all token packages:', { includeInactive, status });
       
       let query = knex(this.tableName);
       
-      if (!includeInactive) {
+      if (status) {
+        query = query.where('active', status === 'active');
+      } else if (!includeInactive) {
         query = query.where('active', true);
       }
       
@@ -203,7 +206,13 @@ class TokenPackagesDataAccess {
     // Parse JSON fields
     if (tokenPackage.marketing_description) {
       try {
-        formattedPackage.marketing_description = JSON.parse(tokenPackage.marketing_description);
+        // If it's already an object, use it as is
+        if (typeof tokenPackage.marketing_description === 'object') {
+          formattedPackage.marketing_description = tokenPackage.marketing_description;
+        } else {
+          // If it's a string, try to parse it as JSON
+          formattedPackage.marketing_description = JSON.parse(tokenPackage.marketing_description);
+        }
       } catch (error) {
         this.logger.warn('Error parsing marketing_description JSON:', { 
           packageId: tokenPackage.package_id,
