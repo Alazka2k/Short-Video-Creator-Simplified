@@ -226,16 +226,19 @@
 - ✅ GET /api/subscription/token-packages/:packageId - Get details of a specific token package
 - ✅ POST /api/subscription/token-packages - Create a new token package
 
-#### 2.2.4. Payment Management Endpoints (Testing Needed)
+#### 2.2.4. Payment Management Endpoints
 - ✅ GET /api/subscription/payments/user/:userId - Get user's payment history
 - ✅ GET /api/subscription/payments/summary/:userId - Get summary of user's payments
 - ✅ POST /api/subscription/payments - Create a new payment for a new billing period after the current billing ended in status open for subscription payment renewal -> Used for the batch job of the payment collection
 - ✅ POST /api/subscription/payments/update - Update a payment with status property and payment id (open -> completed for a payment with payment provider and external payment id) after the payment is completed
 
 ### 2.3. Batch Processing Integration
+#### 2.3.0. Batch Processing for Payment Management
 - ⏳ Implement batch processing for creation of recurring payments
 - ⏳ Implement batch processing for collection of recurring payments
 - ⏳ Implement batch processing for retry failed payments
+
+#### 2.3.1. Batch Processing for Subscription Management
 - ⏳ Implement batch processing for plan downgrades / pending cancellations
 - ⏳ Implement batch processing for subscription renewals (token addition)
 
@@ -308,9 +311,30 @@
 - ⏳ Refactor the features marketing page
 - ⏳ Update Login Page (currently inconsistent look)
 
-## Phase 4: Fix known bugs and security issues
+## Phase 4: Integrate web server (nginx) and containerization (docker)
 
-### 4.1. Fix known bugs
+### 4.1. Integrate nginx as a reverse proxy
+- ⏳ Integrate nginx as a reverse proxy for the backend services
+- ⏳ Configure nginx for SSL termination
+- ⏳ Configure nginx for rate limiting
+- ⏳ Configure nginx for logging
+- ⏳ Configure nginx for proper error handling
+- ⏳ Configure nginx for proper redirects
+- ⏳ Configure nginx for proper caching
+
+### 4.2. Containerize the application
+- ⏳ Containerize the application
+- ⏳ Configure docker-compose for the application
+- ⏳ Configure docker-compose for the nginx container
+- ⏳ Configure docker-compose for the database container
+- ⏳ Configure docker-compose for the redis container
+
+## Phase 5: Deployment to staging environment
+- ⏳ Deploy the application to the staging environment
+
+## Phase 6: Fix known bugs and security issues
+
+### 6.1. Fix known bugs
 - [ ] Fix the social login which is not working right now
 - [ ] Fix the refresh of the links to the files from the s3 bucket cloud. Right now the won´t be visible anymore after 30mins on the dashboard
 - [ ] Job Service with Animation is sometimes not working and gives an error (I think depends on the template of animation)
@@ -318,7 +342,7 @@
 ### 4.2. Security issues
 - [ ] Fix the encryption of password and username from the frontend (currently it is visible in the network tab of the browser)
 
-## Phase 5: Testing & Refinement
+## Phase 7: Testing & Refinement
 - User authentication
 - Video Service testing
 - User flow testing
@@ -326,38 +350,38 @@
 - Performance optimization
 - Documentation updates
 
-## Phase 6: Deployment of version 0.1.0
+## Phase 8: Deployment of version 0.1.0 to production environment
 - Deploy to Staging environment
 - Test the deployment on the staging environment
 - Deploy to Production environment
 
-## Phase 7: Post-MVP Enhancements
+## Phase 9: Post-MVP Enhancements (Create tickets on Jira for the following enhancements)
 
-### 7.1. Important and Critical Enhancements
+### 9.1. Important and Critical Enhancements
 - [ ] Music Generation with lyrics
 - [ ] Find a way to align voice length with video scene length
 - [ ] Select Option for Video Duration is not working well
 - [ ] Improve the loading feedback after job execution
 
-### 7.2. Feature, Profile and Protected Routes Enhancements
-#### 7.2.1 Profile Management (Frontend?)
+### 9.2. Feature, Profile and Protected Routes Enhancements
+#### 9.2.1 Profile Management (Frontend?)
 - [ ] Add progress visualization (after execution of a job)
 
-#### 7.2.2 High Priority Enhancements Content Creation to Video Features (Frontend)
+#### 9.2.2 High Priority Enhancements Content Creation to Video Features (Frontend)
 - [ ] Add possibility to recreate every part of the video (music, voice, images, etc.) (Phase after deployment of version 0.1.0) with new input
 - [ ] Integrate a connection to Social Media Platforms to directly post the video (e.g. Twitter, Instagram, TikTok, etc.) (Phase after deployment of version 0.1.0)
 
-#### 7.2.3 Video Assembly Enhancements (Frontend)
+#### 9.2.3 Video Assembly Enhancements (Frontend)
 - [ ] Add more video assembly options in the Content Overview page
 
-#### 7.2.4 Functionality Enhancements Content Creation to Video Features (Frontend)
+#### 9.2.4 Functionality Enhancements Content Creation to Video Features (Frontend)
 - [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
 
 #### 7.2.5 Functionality Enhancements Video Creation Flow (Frontend)
 - [ ] Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 
-### 7.3. Profile Management Enhancements
-#### 7.3.1 Profile Management (Frontend?)
+### 9.3. Profile Management Enhancements
+#### 9.3.1 Profile Management (Frontend?)
 - [ ] Add profile editing functionality
 - [ ] Update name/display name
 - [ ] Change profile picture
@@ -386,19 +410,18 @@
   - [ ] Analytics dashboard
   - [ ] API access
 
-### 7.3 Authentication Flow Improvement
+### 9.3 Authentication Flow Improvement
 - [ ] Improve authentication flow
 - [ ] Better token refresh handling
 - [ ] Loading states during auth checks
 - [ ] Proper redirects for unauthenticated users
 
-
-### 7.4 Enhance error handling and feedback
+### 9.4 Enhance error handling and feedback
 - [ ] Show upgrade prompts for premium features
 - [ ] Display proper unauthorized access messages
 - [ ] Handle expired subscriptions
 
-### 7.5 Advanced Progress Tracking System
+### 9.5 Advanced Progress Tracking System
 - [ ] Use Redis for real-time progress updates
 - [ ] Track individual service progress (LLM, Image, Voice, Video, Music)
 - [ ] Track scene-level progress for multi-scene videos
@@ -407,13 +430,11 @@
 - [ ] Support progress visualization in the frontend dashboard
 - [ ] Enable progress notifications (email, in-app)
 
-### 7.5 Optimize service startup process:
+### 9.5 Optimize service startup process:
 - [ ] Reduce redundant logging
 - [ ] Centralize common initialization
 - [ ] Improve configuration loading
 - [ ] Streamline service bootstrapping
-
-
 
 ## Success Criteria for MVP
 1. Users can create videos end-to-end

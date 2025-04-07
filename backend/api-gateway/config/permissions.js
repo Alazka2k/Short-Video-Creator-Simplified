@@ -50,6 +50,11 @@ const SERVICE_PERMISSIONS = {
     edit: 'edit:subscription',
     manage: 'manage:subscription'
   },
+  batch: {
+    start: 'start:batch',
+    read: 'read:batch',
+    manage: 'manage:batch'
+  },
   user: {
     manage_projects: 'manage:projects',
     use_templates: 'use:templates',
@@ -127,6 +132,11 @@ const ENDPOINT_PERMISSIONS = {
   '/api/subscription/transactions/*': SERVICE_PERMISSIONS.subscription.read,
   '/api/subscription/history': SERVICE_PERMISSIONS.subscription.read,
   '/api/subscription/history/*': SERVICE_PERMISSIONS.subscription.read,
+
+  // Batch Service Endpoints
+  '/api/batch/jobs': SERVICE_PERMISSIONS.batch.read,
+  '/api/batch/jobs/*': SERVICE_PERMISSIONS.batch.read,
+  '/api/batch/jobs/*/run': SERVICE_PERMISSIONS.batch.start,
 
   // User Service Endpoints (for frontend access)
   '/api/user/profile': SERVICE_PERMISSIONS.user.api_access,

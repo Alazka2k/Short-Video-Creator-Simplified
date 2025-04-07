@@ -84,9 +84,7 @@ Following the documentation of docs\content\docs\0_development\mvp plan\04_Subsc
 - ⏳ Implement batch processing to recognize billing is due and create new payment entries when current billing period ended for a subscription
 - ⏳ Implement batch processing to process payments in status open (stripe integration, then switch status to completed)
 - ⏳ Implement batch processing for failed payments (retry payment, then switch status to completed or failed and count failed attempts. Downgrade directly to free plan if max failed attempts reached)
-### 5.2 Batch Processing for Token Allocation
 - ⏳ Implement batch processing for token allocation and setting new periods for the next month
-### 5.3 Batch Processing for Plan Downgrades / Upgrades
 - ⏳ Implement batch processing for plan downgrades / plan upgrades to the same tier but different plan (e.g. from creator monthly to creator yearly)
 
 ## Phase 6: Stripe Integration

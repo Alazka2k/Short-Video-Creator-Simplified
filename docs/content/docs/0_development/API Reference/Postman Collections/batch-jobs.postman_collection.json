@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "Batch Jobs API",
+    "description": "Collection for testing batch job endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Jobs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs"]
+        }
+      }
+    },
+    {
+      "name": "Run Process Pending Cancellations Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"force\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/process-pending-cancellations/run",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "process-pending-cancellations", "run"]
+        }
+      }
+    },
+    {
+      "name": "Run Create Payments Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"force\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/create-payments/run",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "create-payments", "run"]
+        }
+      }
+    },
+    {
+      "name": "Run Collect Payments Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"force\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/collect-payments/run",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "collect-payments", "run"]
+        }
+      }
+    },
+    {
+      "name": "Run Retry Failed Payments Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"force\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/retry-failed-payments/run",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "retry-failed-payments", "run"]
+        }
+      }
+    },
+    {
+      "name": "Run Subscription Renewals Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"force\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/subscription-renewals/run",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "subscription-renewals", "run"]
+        }
+      }
+    },
+    {
+      "name": "Get Job Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/{{job_id}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "{{job_id}}", "status"],
+          "variable": [
+            {
+              "key": "job_id",
+              "value": "process-pending-cancellations"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Job History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/{{job_id}}/history",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "{{job_id}}", "history"],
+          "variable": [
+            {
+              "key": "job_id",
+              "value": "process-pending-cancellations"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Job Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/batch/jobs/{{job_id}}/logs",
+          "host": ["{{base_url}}"],
+          "path": ["api", "batch", "jobs", "{{job_id}}", "logs"],
+          "variable": [
+            {
+              "key": "job_id",
+              "value": "process-pending-cancellations"
+            }
+          ]
+        }
+      }
+    }
+  ]
+} 

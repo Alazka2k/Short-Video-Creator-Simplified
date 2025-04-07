@@ -127,6 +127,10 @@ function loadEnvConfig() {
         port: process.env.SUBSCRIPTION_SERVICE_PORT,
         url: process.env.SUBSCRIPTION_SERVICE_URL 
       },
+      batch: { 
+        port: process.env.BATCH_SERVICE_PORT,
+        url: process.env.BATCH_SERVICE_URL 
+      },
       frontend: { 
         port: process.env.FRONTEND_PORT,
         url: process.env.FRONTEND_URL 
@@ -211,6 +215,7 @@ function validateConfig(config) {
     ['services.music.port', 'services.music.url'],
     ['services.assembly.port', 'services.assembly.url'],
     ['services.job.port', 'services.job.url'],
+    ['services.batch.port', 'services.batch.url'],
     ['services.gateway.port', 'services.gateway.url'],
     ['services.auth.port', 'services.auth.url'],
     ['services.subscription.port', 'services.subscription.url'],
@@ -262,6 +267,7 @@ function logConfiguration(config) {
     logger.info('Storage configuration:', config.services.storage);
     logger.info('Auth configuration:', config.auth);
     logger.info('Subscription configuration:', config.subscription);
+    logger.info('Batch configuration:', config.batch);
   } else {
     // In staging/production, log only non-sensitive information
     logger.info('LLM configuration:', { provider: config.llm.provider, model: config.llm.model });
@@ -283,6 +289,8 @@ function logConfiguration(config) {
       }
     });
     logger.info('Subscription configuration:', {
+    });
+    logger.info('Batch configuration:', {
     });
   }
 }

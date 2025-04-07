@@ -22,6 +22,7 @@ const assemblyRoutes = require('./routes/assembly');
 const storageRoutes = require('./routes/storage');
 const downloadRoutes = require('./routes/download');
 const subscriptionRoutes = require('./routes/subscription');
+const batchRoutes = require('./routes/batch');
 
 // Log environment configuration
 logger.info('Environment Configuration:', {
@@ -108,6 +109,7 @@ app.use('/api/assembly', assemblyRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/batch', batchRoutes);
 
 // Auth routes
 app.use('/api/auth', authRoutes);
