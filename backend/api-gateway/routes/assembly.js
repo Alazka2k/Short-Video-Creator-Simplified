@@ -33,7 +33,7 @@ router.post('/assemble',
         databaseUser: req.user.databaseUser
       };
       
-      logger.info('Token and user context:', tokenInfo);
+      //logger.info('Token and user context:', tokenInfo);
 
       // Check if a user token is provided
       const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
@@ -45,10 +45,10 @@ router.post('/assemble',
 
       if (tokenInfo.type === 'M2M') {
         try {
-          logger.info('Checking for user token:', {
+          /*logger.info('Checking for user token:', {
             hasUserToken,
             tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null
-          });
+          });*/
 
           if (hasUserToken) {
             // Try to get user profile using the user token
@@ -274,7 +274,7 @@ router.get('/status/:assemblyId',
         databaseUser: req.user.databaseUser
       };
       
-      logger.info('Token and user context:', tokenInfo);
+      //logger.info('Token and user context:', tokenInfo);
 
       // If this is an M2M token, try to get the actual user profile
       let actualUserId = req.user.databaseUser?.userId;
@@ -286,11 +286,11 @@ router.get('/status/:assemblyId',
           const authHeader = req.headers.authorization;
           const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
 
-          logger.info('Checking for user token:', {
+          /*logger.info('Checking for user token:', {
             hasUserToken: !!userToken,
             tokenStart: userToken ? `${userToken}` : null,
             profileEndpoint: '/api/auth/profile'
-          });
+          });*/
 
           if (userToken) {
             // Try to get user profile using the user token
@@ -474,7 +474,7 @@ router.get('/templates/:aspectRatio',
         databaseUser: req.user.databaseUser
       };
       
-      logger.info('Token and user context:', tokenInfo);
+      //Slogger.info('Token and user context:', tokenInfo);
 
       // If this is an M2M token, try to get the actual user profile
       let actualUserId = req.user.databaseUser?.userId;
@@ -486,11 +486,11 @@ router.get('/templates/:aspectRatio',
           const authHeader = req.headers.authorization;
           const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
 
-          logger.info('Checking for user token:', {
+          /*logger.info('Checking for user token:', {
             hasUserToken: !!userToken,
             tokenStart: userToken ? `${userToken}` : null,
             profileEndpoint: '/api/auth/profile'
-          });
+          });*/
 
           if (userToken) {
             // Try to get user profile using the user token

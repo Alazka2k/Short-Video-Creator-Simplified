@@ -69,14 +69,14 @@ class CollectPaymentsBatch {
         throw new Error('API Gateway URL is not configured');
       }
       
-      logger.info(`Fetching pending payments from ${apiGatewayUrl}/api/subscription/payments/pending`);
+      logger.info(`Fetching payments to collect from ${apiGatewayUrl}/api/subscription/payments/collect`);
       
-      const response = await axios.get(`${apiGatewayUrl}/api/subscription/payments/pending`, {
+      const response = await axios.get(`${apiGatewayUrl}/api/subscription/payments/collect`, {
         headers: { authorization }
       });
       return response.data;
     } catch (error) {
-      logger.error('Failed to fetch pending payments:', error);
+      logger.error('Failed to fetch payments to collect:', error);
       throw error;
     }
   }

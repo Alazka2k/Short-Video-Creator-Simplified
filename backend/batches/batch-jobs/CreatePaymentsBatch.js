@@ -118,17 +118,27 @@ class CreatePaymentsBatch {
         paymentType: 'subscription_renewal',
         status: 'open',
         subscriptionId: payment.subscription_id, // Use the subscription_id from the payment data
+        planId: payment.plan_id, // Ensure we use the plan_id from the original payment
         billing_period_start: payment.next_billing_period_start, // Use the next billing period start from the payment data
         billing_period_end: payment.next_billing_period_end // Use the next billing period end from the payment data
       };
       
+      // Check if billing period dates are provided
+      if (!paymentData.billing_period_start || !paymentData.billing_period_end) {
+        logger.error(`Missing billing period dates for subscription ${payment.subscription_id}. Skipping payment creation.`);
+        throw new Error('billing_period_start and billing_period_end are required for subscription renewal payments');
+      }
+      
       logger.info(`Creating payment with data: ${JSON.stringify(paymentData)}`);
       
-      await axios.post(
+      const response = await axios.post(
         endpoint,
         paymentData,
         { headers: { authorization } }
       );
+      
+      logger.info(`Payment created successfully with ID: ${response.data.data.payment_id}`);
+      return response.data.data;
     } catch (error) {
       logger.error(`Failed to create payment for subscription ${payment.subscription_id}:`, error);
       throw error;

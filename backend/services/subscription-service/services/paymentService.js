@@ -169,9 +169,9 @@ class PaymentService {
       };
       
       // Add billing period if provided
-      if (paymentData.billingPeriod) {
-        dbPaymentData.billing_period_start = paymentData.billingPeriod.billing_period_start || paymentData.billingPeriod.start;
-        dbPaymentData.billing_period_end = paymentData.billingPeriod.billing_period_end || paymentData.billingPeriod.end;
+      if (paymentData.billing_period_start && paymentData.billing_period_end) {
+        dbPaymentData.billing_period_start = paymentData.billing_period_start;
+        dbPaymentData.billing_period_end = paymentData.billing_period_end;
       }
       
       // Create the payment record
@@ -181,7 +181,9 @@ class PaymentService {
         paymentId: payment.payment_id,
         userId: payment.user_id,
         amount: payment.amount,
-        status: payment.status
+        status: payment.status,
+        billing_period_start: payment.billing_period_start,
+        billing_period_end: payment.billing_period_end
       });
       
       return payment;
@@ -470,7 +472,9 @@ class PaymentService {
     try {
       logger.info('Getting payments for renewal:', { force });
       
-      // Get all completed payments that have reached their billing period end
+      // Get all payments that have reached their billing period end
+      // This now includes all payment statuses (open, completed, failed)
+      // and only returns the most recent payment for each active subscription
       const payments = await this.dataAccess.payments.getPaymentsWithCompletedBillingPeriod(force);
       
       if (!payments || payments.length === 0) {
@@ -533,22 +537,29 @@ class PaymentService {
    * @returns {Object} - Object containing start and end dates for the next billing period
    */
   calculateNextBillingPeriod(currentEndDate, frequency) {
-    const startDate = new Date(currentEndDate);
-    startDate.setDate(startDate.getDate() + 1); // Start the day after the current period ends
+    // Ensure currentEndDate is a Date object
+    const endDate = new Date(currentEndDate);
     
-    const endDate = new Date(startDate);
+    // Start date is the day after the current period ends
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() + 1);
+    
+    // End date is calculated based on the billing frequency
+    const nextEndDate = new Date(startDate);
     
     if (frequency === 'yearly') {
-      endDate.setFullYear(endDate.getFullYear() + 1);
+      nextEndDate.setFullYear(nextEndDate.getFullYear() + 1);
     } else {
-      endDate.setMonth(endDate.getMonth() + 1);
+      // For monthly billing, add one month and subtract one day
+      nextEndDate.setMonth(nextEndDate.getMonth() + 1);
+      nextEndDate.setDate(nextEndDate.getDate() - 1);
     }
     
-    endDate.setDate(endDate.getDate() - 1); // End the day before the next period starts
+    logger.info(`Calculated next billing period: ${startDate.toISOString().split('T')[0]} to ${nextEndDate.toISOString().split('T')[0]}`);
     
     return {
       start: startDate,
-      end: endDate
+      end: nextEndDate
     };
   }
 

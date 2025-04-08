@@ -205,10 +205,10 @@ function checkPermission(endpoint) {
         return next();
       }
       
-      logger.info('Checking permission:', {
+      /*logger.info('Checking permission:', {
         endpoint,
         requiredPermission: permission
-      });
+      });*/
 
       const scopes = (req.user.scope || '').split(' ');
       
@@ -220,10 +220,10 @@ function checkPermission(endpoint) {
       // Convert permission format if needed (e.g., create_job to create:job)
       const convertedPermission = permission.replace('_', ':');
       
-      logger.info('Permission conversion:', {
+      /*logger.info('Permission conversion:', {
         converted: convertedPermission,
         original: permission
-      });
+      });*/
 
       if (!scopes.includes(convertedPermission)) {
         logger.error('Permission denied:', {

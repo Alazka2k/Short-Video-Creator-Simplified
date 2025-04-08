@@ -507,11 +507,10 @@ class PaymentsDataAccess {
     try {
       this.logger.info('Getting payments with completed billing period', { force });
       
-      // Get all completed payments (both initial and renewal) that have reached their billing period end
+      // Get all payments (both initial and renewal) that have reached their billing period end
       // Join with subscriptions table to check subscription status and end_date
       const query = knex(`${this.tableName} as p`)
         .join('user_subscriptions as us', 'p.subscription_id', 'us.subscription_id')
-        .where('p.status', 'completed')
         .whereIn('p.payment_type', ['subscription_initial', 'subscription_renewal'])
         .where('us.status', 'active')
         .where(function() {
@@ -545,9 +544,29 @@ class PaymentsDataAccess {
       // Convert back to array
       const payments = Object.values(latestPaymentsBySubscription);
       
-      this.logger.info(`Found ${payments.length} payments with completed billing period and active subscription`);
+      // Filter out payments that have already been renewed
+      // A payment has been renewed if there's a newer payment with the same subscription_id
+      // and the newer payment's billing_period_start is after the current payment's billing_period_end
+      const paymentsToRenew = [];
+      for (const payment of payments) {
+        // Check if there's a newer payment for this subscription with a billing period that starts after this payment's billing period ends
+        const newerPaymentExists = await knex(this.tableName)
+          .where('subscription_id', payment.subscription_id)
+          .where('billing_period_start', '>', payment.billing_period_end)
+          .first();
+        
+        // If no newer payment exists with a later billing period, this payment needs to be renewed
+        if (!newerPaymentExists) {
+          paymentsToRenew.push(payment);
+          this.logger.info(`Payment ${payment.payment_id} for subscription ${payment.subscription_id} needs renewal`);
+        } else {
+          this.logger.info(`Payment ${payment.payment_id} for subscription ${payment.subscription_id} has already been renewed, skipping`);
+        }
+      }
       
-      return payments.map(payment => this.formatPayment(payment));
+      this.logger.info(`Found ${paymentsToRenew.length} payments with completed billing period and active subscription that need renewal`);
+      
+      return paymentsToRenew.map(payment => this.formatPayment(payment));
     } catch (error) {
       this.logger.error('Error getting payments with completed billing period:', error);
       throw error;

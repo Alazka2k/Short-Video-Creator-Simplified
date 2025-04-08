@@ -34,7 +34,7 @@ async function extractUserContext(req) {
     databaseUser: req.user.databaseUser
   };
   
-  logger.info('Token and user context:', tokenInfo);
+  //logger.info('Token and user context:', tokenInfo);
 
   // If this is an M2M token, try to get the actual user profile
   let actualUserId = req.user.databaseUser?.userId;
@@ -46,10 +46,10 @@ async function extractUserContext(req) {
       const authHeader = req.headers.authorization;
       const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
 
-      logger.info('Checking for user token:', {
+      /*logger.info('Checking for user token:', {
         hasUserToken: !!userToken,
         tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null
-      });
+      });*/
 
       if (userToken) {
         // Try to get user profile using the user token

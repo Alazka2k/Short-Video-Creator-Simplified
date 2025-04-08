@@ -30,7 +30,7 @@ router.post('/generate',
         databaseUser: req.user.databaseUser
       };
       
-      logger.info('Token and user context:', tokenInfo);
+      //logger.info('Token and user context:', tokenInfo);
 
       // Check if a user token is provided
       const userToken = req.headers['x-user-token'] || req.headers['x-forwarded-user-token'];
@@ -42,11 +42,11 @@ router.post('/generate',
 
       if (tokenInfo.type === 'M2M') {
         try {
-          logger.info('Checking for user token:', {
+          /*logger.info('Checking for user token:', {
             hasUserToken,
             tokenStart: userToken ? `${userToken.substring(0, 10)}...` : null,
             profileEndpoint: '/api/auth/profile'
-          });
+          });*/
 
           if (hasUserToken) {
             // Try to get user profile using the user token
