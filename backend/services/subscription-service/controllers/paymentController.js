@@ -210,6 +210,73 @@ class PaymentController {
       return res.status(400).json({ error: 'Webhook error', details: error.message });
     }
   }
+
+  /**
+   * Get payments that need to be renewed
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getPaymentsForRenewal(req, res) {
+    try {
+      const { force } = req.query;
+      
+      const payments = await this.paymentService.getPaymentsForRenewal(force === 'true');
+      
+      res.json({
+        success: true,
+        data: payments
+      });
+    } catch (error) {
+      logger.error('Error fetching payments for renewal:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  }
+
+  /**
+   * Get payments that need to be collected
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getPaymentsToCollect(req, res) {
+    try {
+      const { force } = req.query;
+      
+      const payments = await this.paymentService.getPaymentsToCollect(force === 'true');
+      
+      res.json({
+        success: true,
+        data: payments
+      });
+    } catch (error) {
+      logger.error('Error fetching payments to collect:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  }
+
+  /**
+   * Collect a payment
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async collectPayment(req, res) {
+    try {
+      const { paymentId } = req.params;
+      
+      if (!paymentId) {
+        return res.status(400).json({ error: 'Payment ID is required' });
+      }
+      
+      const result = await this.paymentService.collectPayment(paymentId);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      logger.error('Error collecting payment:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  }
 }
 
 module.exports = PaymentController; 

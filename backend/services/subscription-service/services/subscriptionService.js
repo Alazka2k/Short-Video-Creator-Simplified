@@ -642,10 +642,17 @@ class SubscriptionService {
   }
 
   /**
-   * Renew a subscription's token allocation period
-   * @param {string|number} userId - The user ID
-   * @param {boolean} forceRenew - Whether to force renewal even if not at period end
-   * @returns {Promise<Object>} - The renewed subscription with token allocation details
+   * Renews a subscription for a user.
+   * This method handles both token allocation and billing periods.
+   * - Token allocation period: Determines when tokens are allocated to the user
+   * - Subscription / token allocation period: Determines when the user receives new tokens
+   * - NOTE: This method does not handle payment renewals and also not the billing period. When a user changes or cancelles their
+   * subscription, the current subscription is either cancelled directly or at the end of the billing period (so the user keeps 
+   * their current benefits of the plan he paid for until the end of the subscription (end date))
+   * 
+   * @param {string} userId - The ID of the user whose subscription to renew
+   * @param {boolean} forceRenew - Whether to force renewal regardless of period end date
+   * @returns {Promise<Object>} - The renewed subscription details
    */
   async renewSubscription(userId, forceRenew = false) {
     try {
@@ -989,84 +996,101 @@ class SubscriptionService {
    */
   async processPendingCancellations() {
     try {
-      logger.info('Processing pending subscription cancellations');
+      logger.info('Processing pending cancellations');
       
-      const now = new Date();
+      // Get all subscriptions that are pending cancellation and have reached their end date
+      const subscriptions = await this.dataAccess.subscriptions.getPendingCancellations();
       
-      // Find all pending cancellations with end dates in the past
-      const pendingCancellations = await knex('user_subscriptions')
-        .where('status', 'pending_cancellation')
-        .whereNotNull('end_date')
-        .where('end_date', '<=', now)
-        .select('*');
+      if (!subscriptions || subscriptions.length === 0) {
+        logger.info('No pending cancellations found');
+        return { processed: 0, cancelled: 0, newSubscriptions: 0 };
+      }
       
-      logger.info(`Found ${pendingCancellations.length} pending cancellations ready to process`);
+      logger.info(`Found ${subscriptions.length} pending cancellations to process`);
       
-      const results = {
-        processed: 0,
-        newSubscriptions: 0,
-        errors: 0
-      };
+      let cancelledCount = 0;
+      let newSubscriptionsCount = 0;
       
-      // Process each pending cancellation
-      for (const subscription of pendingCancellations) {
+      // Process each subscription
+      for (const subscription of subscriptions) {
         try {
-          logger.info('Processing pending cancellation:', {
-            subscriptionId: subscription.subscription_id,
-            userId: subscription.user_id,
-            endDate: subscription.end_date,
-            upcomingPlanId: subscription.upcoming_plan_id
-          });
+          // Cancel the subscription
+          await this.cancelPaidPlan(subscription.subscription_id);
+          cancelledCount++;
           
-          // First, finalize the cancellation by updating status to 'cancelled'
-          await knex('user_subscriptions')
-            .where('subscription_id', subscription.subscription_id)
-            .update({
-              status: 'cancelled',
-              updated_at: knex.fn.now(),
-              ended_at: knex.fn.now() // Set ended_at date when finalizing cancellation
-            });
-          
-          logger.info('Subscription cancellation finalized:', {
-            subscriptionId: subscription.subscription_id,
-            userId: subscription.user_id,
-            endDate: subscription.end_date,
-            endedAt: new Date().toISOString()
-          });
-          
-          results.processed++;
-          
-          // If there's an upcoming plan ID, create a new subscription
+          // If there's an upcoming plan, create a new subscription
           if (subscription.upcoming_plan_id) {
-            logger.info('Creating new subscription with upcoming plan:', {
-              userId: subscription.user_id,
-              planId: subscription.upcoming_plan_id
-            });
-            
-            // Create a new subscription with the upcoming plan
             await this.createSubscription({
               userId: subscription.user_id,
               planId: subscription.upcoming_plan_id,
-              status: 'active',
-              startDate: new Date(),
-              externalSubscriptionId: subscription.external_subscription_id
+              status: 'active'
             });
-            
-            results.newSubscriptions++;
+            newSubscriptionsCount++;
           }
         } catch (error) {
-          logger.error('Error processing pending cancellation:', {
-            subscriptionId: subscription.subscription_id,
-            error: error.message
-          });
-          results.errors++;
+          logger.error(`Error processing pending cancellation for subscription ${subscription.subscription_id}:`, error);
         }
       }
       
-      logger.info('Finished processing pending cancellations:', results);
-      return results;
+      return {
+        processed: subscriptions.length,
+        cancelled: cancelledCount,
+        newSubscriptions: newSubscriptionsCount
+      };
     } catch (error) {
-      logger.error('Error in processPendingCancellations:', error);
+      logger.error('Error processing pending cancellations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscriptions that are pending cancellation
+   * @param {boolean} force - Whether to force retrieval regardless of end date
+   * @returns {Promise<Array>} - List of subscriptions that are pending cancellation
+   */
+  async getPendingCancellations(force = false) {
+    try {
+      logger.info('Getting pending cancellations:', { force });
+      
+      // Get all subscriptions that are pending cancellation
+      const subscriptions = await this.dataAccess.subscriptions.getPendingCancellations(force);
+      
+      if (!subscriptions || subscriptions.length === 0) {
+        logger.info('No pending cancellations found');
+        return [];
+      }
+      
+      logger.info(`Found ${subscriptions.length} pending cancellations`);
+      
+      return subscriptions;
+    } catch (error) {
+      logger.error('Error getting pending cancellations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscriptions that need to be renewed
+   * @param {boolean} force - Whether to force renewal regardless of period end date
+   * @returns {Promise<Array>} - List of subscriptions that need to be renewed
+   */
+  async getSubscriptionsToRenew(force = false) {
+    try {
+      logger.info('Getting subscriptions to renew:', { force });
+      
+      // Get all active subscriptions that need to be renewed
+      const subscriptions = await this.dataAccess.subscriptions.getSubscriptionsNeedingRenewal(force);
+      
+      if (!subscriptions || subscriptions.length === 0) {
+        logger.info('No subscriptions found that need renewal');
+        return [];
+      }
+      
+      logger.info(`Found ${subscriptions.length} subscriptions that need renewal`);
+      
+      return subscriptions;
+    } catch (error) {
+      logger.error('Error getting subscriptions to renew:', error);
       throw error;
     }
   }

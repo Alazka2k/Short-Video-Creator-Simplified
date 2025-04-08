@@ -9,12 +9,13 @@ const cors = require('cors');
 const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
 const batchRoutes = require('./routes/batchRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Initialize the batch service
 const initializeBatchService = async () => {
   try {
-    const { BatchLauncher } = require('./core/batchLauncher');
-    const { BatchRepository } = require('./core/batchRepository');
+    const { BatchLauncher } = require('./services/batchLauncher');
+    const { BatchRepository } = require('./services/batchRepository');
     const { BatchDataAccess } = require('./data/batchDataAccess');
     
     // Initialize data access
@@ -40,17 +41,16 @@ const initializeBatchService = async () => {
 
 // Create Express app
 const app = express();
-const PORT = process.env.BATCH_SERVICE_PORT || 3005;
+// Get batch service port from config
+const PORT = config.services.batch.port;
+if (!PORT) {
+  logger.error('Batch service port not found in config');
+  process.exit(1);
+}
 
-// CORS configuration
-const corsOptions = {
-  origin: '*', // In production, restrict this to specific origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
+// Simple CORS configuration that works for both API Gateway and direct access
+app.use(cors());
 
-app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -75,6 +75,7 @@ initializeBatchService()
     
     // Set up routes with the initialized components
     app.use('/api/batch', batchRoutes(batchLauncher, batchRepository));
+    app.use('/api/admin', adminRoutes(batchLauncher, batchRepository));
     
     // Start the server
     app.listen(PORT, () => {

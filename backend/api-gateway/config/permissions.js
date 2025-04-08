@@ -48,12 +48,22 @@ const SERVICE_PERMISSIONS = {
     create: 'create:subscription',
     read: 'read:subscription',
     edit: 'edit:subscription',
-    manage: 'manage:subscription'
+    manage: 'manage:subscription',
+    plan_management: 'manage:plans',
+    token_package_management: 'manage:token_packages',
+    token_read: 'read:tokens',
+    token_manage: 'manage:tokens',
+    transaction_read: 'read:transactions',
+    payment_read: 'read:payments',
+    payment_manage: 'manage:payments'
   },
   batch: {
     start: 'start:batch',
     read: 'read:batch',
     manage: 'manage:batch'
+  },
+  admin: {
+    manage: 'manage:admin'
   },
   user: {
     manage_projects: 'manage:projects',
@@ -122,10 +132,28 @@ const ENDPOINT_PERMISSIONS = {
   '/api/subscription/*': SERVICE_PERMISSIONS.subscription.read,
 
   // Plan Management Endpoints 
-  '/api/subscription/plans': SERVICE_PERMISSIONS.subscription.read,
-  '/api/subscription/plans/*': SERVICE_PERMISSIONS.subscription.read,
+  '/api/subscription/plans': SERVICE_PERMISSIONS.subscription.plan_management,
+  '/api/subscription/plans/*': SERVICE_PERMISSIONS.subscription.plan_management,
 
-  // Current Subscription Endpoints
+  // Token Package Management Endpoints
+  '/api/subscription/token-packages': SERVICE_PERMISSIONS.subscription.token_package_management,
+  '/api/subscription/token-packages/*': SERVICE_PERMISSIONS.subscription.token_package_management,
+
+  // Token Management Endpoints
+  '/api/subscription/tokens': SERVICE_PERMISSIONS.subscription.token_read,
+  '/api/subscription/tokens/*': SERVICE_PERMISSIONS.subscription.token_read,
+
+  // Transaction Management Endpoints
+  '/api/subscription/transactions': SERVICE_PERMISSIONS.subscription.transaction_read,
+  '/api/subscription/transactions/*': SERVICE_PERMISSIONS.subscription.transaction_read,
+  
+  // Payment Management Endpoints
+  '/api/subscription/payments': SERVICE_PERMISSIONS.subscription.payment_read,
+  '/api/subscription/payments/*': SERVICE_PERMISSIONS.subscription.payment_read,
+  '/api/subscription/payments': SERVICE_PERMISSIONS.subscription.payment_manage,
+  '/api/subscription/payments/*': SERVICE_PERMISSIONS.subscription.payment_manage,
+
+  // Subscription Subendpoints
   '/api/subscription/current': SERVICE_PERMISSIONS.subscription.read,
   '/api/subscription/current/*': SERVICE_PERMISSIONS.subscription.read,
   '/api/subscription/transactions': SERVICE_PERMISSIONS.subscription.read,
@@ -137,6 +165,10 @@ const ENDPOINT_PERMISSIONS = {
   '/api/batch/jobs': SERVICE_PERMISSIONS.batch.read,
   '/api/batch/jobs/*': SERVICE_PERMISSIONS.batch.read,
   '/api/batch/jobs/*/run': SERVICE_PERMISSIONS.batch.start,
+  '/api/batch/*': SERVICE_PERMISSIONS.batch.manage,
+
+  // Admin Service Endpoints
+  '/api/admin/*': SERVICE_PERMISSIONS.admin.manage,
 
   // User Service Endpoints (for frontend access)
   '/api/user/profile': SERVICE_PERMISSIONS.user.api_access,

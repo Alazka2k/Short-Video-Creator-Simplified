@@ -13,10 +13,10 @@ class AssemblyDataAccess {
     this.mediaBaseUrl = process.env.MEDIA_BASE_URL || config.services.gateway?.url || 'http://localhost:3000/media';
     
     // Log the paths we're using
-    logger.info('Assembly Data Access initialized with paths:', {
+    /*logger.info('Assembly Data Access initialized with paths:', {
       storageBasePath: this.storageBasePath,
       mediaBaseUrl: this.mediaBaseUrl
-    });
+    });*/
   }
 
   async createAssemblyOutput(jobId, userId, templateId) {

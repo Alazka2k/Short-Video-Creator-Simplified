@@ -36,11 +36,11 @@ class StorageService {
     this.bucket = storageConfig.bucket;
     this.cdnUrl = storageConfig.cdnUrl;
 
-    logger.info('Storage Service initialized:', {
+    /*logger.info('Storage Service initialized:', {
       region: storageConfig.region,
       bucket: storageConfig.bucket,
       hasCredentials: !!credentials.accessKeyId && !!credentials.secretAccessKey
-    });
+    });*/
   }
 
   async uploadFile(localPath, serviceType) {

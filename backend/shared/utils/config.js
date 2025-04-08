@@ -253,11 +253,11 @@ function logConfiguration(config) {
   };
 
   // Always log service URLs (they're not sensitive)
-  logger.info('Service URLs:', safeServiceUrls);
+  //logger.info('Service URLs:', safeServiceUrls);
 
   if (config.env === 'development') {
     // In development, log everything including sensitive data
-    logger.info('LLM configuration:', config.llm);
+    /*logger.info('LLM configuration:', config.llm);
     logger.info('Voice configuration:', config.voiceGen);
     logger.info('Image configuration:', config.imageGen);
     logger.info('Music configuration:', config.musicGen);
@@ -267,7 +267,7 @@ function logConfiguration(config) {
     logger.info('Storage configuration:', config.services.storage);
     logger.info('Auth configuration:', config.auth);
     logger.info('Subscription configuration:', config.subscription);
-    logger.info('Batch configuration:', config.batch);
+    logger.info('Batch configuration:', config.batch);*/
   } else {
     // In staging/production, log only non-sensitive information
     logger.info('LLM configuration:', { provider: config.llm.provider, model: config.llm.model });

@@ -6,229 +6,320 @@
   },
   "item": [
     {
-      "name": "Get All Jobs",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs"]
-        }
-      }
-    },
-    {
-      "name": "Run Process Pending Cancellations Job",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"force\": true\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/process-pending-cancellations/run",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "process-pending-cancellations", "run"]
-        }
-      }
-    },
-    {
-      "name": "Run Create Payments Job",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"force\": true\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/create-payments/run",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "create-payments", "run"]
-        }
-      }
-    },
-    {
-      "name": "Run Collect Payments Job",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"force\": true\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/collect-payments/run",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "collect-payments", "run"]
-        }
-      }
-    },
-    {
-      "name": "Run Retry Failed Payments Job",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"force\": true\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/retry-failed-payments/run",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "retry-failed-payments", "run"]
-        }
-      }
-    },
-    {
-      "name": "Run Subscription Renewals Job",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"force\": true\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/subscription-renewals/run",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "subscription-renewals", "run"]
-        }
-      }
-    },
-    {
-      "name": "Get Job Status",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/{{job_id}}/status",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "{{job_id}}", "status"],
-          "variable": [
-            {
-              "key": "job_id",
-              "value": "process-pending-cancellations"
+      "name": "General Batch Endpoints",
+      "item": [
+        {
+          "name": "Get All Available Batches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/batch/batches",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "batches"]
             }
-          ]
+          }
+        },
+        {
+          "name": "Run a Specific Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/batch/batches/{{batch_id}}/run",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "batches", "{{batch_id}}", "run"],
+              "variable": [
+                {
+                  "key": "batch_id",
+                  "value": "create-payments"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Batch Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/batch/batches/{{batch_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "batches", "{{batch_id}}", "status"],
+              "variable": [
+                {
+                  "key": "batch_id",
+                  "value": "create-payments"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Batch History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/batch/batches/{{batch_id}}/history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "batches", "{{batch_id}}", "history"],
+              "variable": [
+                {
+                  "key": "batch_id",
+                  "value": "create-payments"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Batch Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/batch/batches/{{batch_id}}/logs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "batches", "{{batch_id}}", "logs"],
+              "variable": [
+                {
+                  "key": "batch_id",
+                  "value": "create-payments"
+                }
+              ]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Get Job History",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/{{job_id}}/history",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "{{job_id}}", "history"],
-          "variable": [
-            {
-              "key": "job_id",
-              "value": "process-pending-cancellations"
+      "name": "Admin Batch Endpoints",
+      "item": [
+        {
+          "name": "Run Create Payments Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/create-payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "create-payments"]
             }
-          ]
-        }
-      }
-    },
-    {
-      "name": "Get Job Logs",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{auth_token}}",
-            "type": "text"
           }
-        ],
-        "url": {
-          "raw": "{{base_url}}/api/batch/jobs/{{job_id}}/logs",
-          "host": ["{{base_url}}"],
-          "path": ["api", "batch", "jobs", "{{job_id}}", "logs"],
-          "variable": [
-            {
-              "key": "job_id",
-              "value": "process-pending-cancellations"
+        },
+        {
+          "name": "Run Collect Payments Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/collect-payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "collect-payments"]
             }
-          ]
+          }
+        },
+        {
+          "name": "Run Process Pending Cancellations Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/process-pending-cancellations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "process-pending-cancellations"]
+            }
+          }
+        },
+        {
+          "name": "Run Subscription Renewals Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/subscription-renewals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "subscription-renewals"]
+            }
+          }
+        },
+        {
+          "name": "Run Retry Failed Payments Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/retry-failed-payments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "retry-failed-payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Admin Batch Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/status/{{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "status", "{{job_id}}"],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "create-payments"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Admin Batch Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/batch/admin/cancel/{{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "batch", "admin", "cancel", "{{job_id}}"],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "create-payments"
+                }
+              ]
+            }
+          }
         }
-      }
+      ]
     }
   ]
 } 

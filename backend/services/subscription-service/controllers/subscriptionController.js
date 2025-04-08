@@ -291,6 +291,48 @@ class SubscriptionController {
       });
     }
   }
+
+  /**
+   * Get subscriptions that are pending cancellation
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getPendingCancellations(req, res) {
+    try {
+      const { force } = req.query;
+      
+      const subscriptions = await this.subscriptionService.getPendingCancellations(force === 'true');
+      
+      res.json({
+        success: true,
+        data: subscriptions
+      });
+    } catch (error) {
+      logger.error('Error fetching pending cancellations:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  }
+
+  /**
+   * Get subscriptions that need to be renewed
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getSubscriptionsToRenew(req, res) {
+    try {
+      const { force } = req.query;
+      
+      const subscriptions = await this.subscriptionService.getSubscriptionsToRenew(force === 'true');
+      
+      res.json({
+        success: true,
+        data: subscriptions
+      });
+    } catch (error) {
+      logger.error('Error fetching subscriptions to renew:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  }
 }
 
 module.exports = SubscriptionController; 

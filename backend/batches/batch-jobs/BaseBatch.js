@@ -13,6 +13,13 @@ class BaseBatch {
       throw new Error('BaseBatch class cannot be instantiated directly');
     }
 
+    // Initialize default parameters
+    if (!this.parameters) {
+      this.parameters = {};
+    }
+  }
+
+  validate() {
     if (!this.id) {
       throw new Error('Batch job must have an id');
     }
@@ -23,10 +30,6 @@ class BaseBatch {
 
     if (!this.description) {
       throw new Error('Batch job must have a description');
-    }
-
-    if (!this.parameters) {
-      this.parameters = {};
     }
   }
 

@@ -232,6 +232,8 @@
 - ✅ POST /api/subscription/payments - Create a new payment for a new billing period after the current billing ended in status open for subscription payment renewal -> Used for the batch job of the payment collection
 - ✅ POST /api/subscription/payments/update - Update a payment with status property and payment id (open -> completed for a payment with payment provider and external payment id) after the payment is completed
 
+
+
 ### 2.3. Batch Processing Integration
 #### 2.3.0. Batch Processing for Payment Management
 - ⏳ Implement batch processing for creation of recurring payments
@@ -241,6 +243,23 @@
 #### 2.3.1. Batch Processing for Subscription Management
 - ⏳ Implement batch processing for plan downgrades / pending cancellations
 - ⏳ Implement batch processing for subscription renewals (token addition)
+
+#### 2.3.2 Add missing endpoints for batch processing
+- ⏳ Add missing endpoints for batch processing in the subscription service
+  - ⏳ GET /api/subscription/subscriptions/pending-cancellations -> Get subscriptions to cancel
+  - ⏳ GET /api/subscription/subscriptions/renewal -> Get subscriptions to renew -> New token allocation
+- ⏳ Add missing endpoints for batch processing in the payment service
+  - ⏳ GET /api/subscription/payments/renewal -> Get payments to renew
+  - ⏳ GET /api/subscription/payments/collect -> Get payments to collect
+  - ⏳ POST /api/subscription/payments/:paymentId/collect -> Collect a payment
+
+#### 2.3.3 Add missing endpoints for batch processing in the admin service
+- ⏳ Add missing endpoints for batch processing in the admin service
+  - ⏳ POST /api/admin/batches/run/create-payments -> Create payments batch (in status open)
+  - ⏳ POST /api/admin/batches/run/collect-payments -> Collect payments batch (collect all payments in status open)
+  - ⏳ POST /api/admin/batches/run/retry-failed-payments -> Retry failed payments batch (for payments with status failed)
+  - ⏳ POST /api/admin/batches/run/process-pending-cancellations -> Process pending cancellations batch (cancel all subscriptions in status pending-cancellation)
+  - ⏳ POST /api/admin/batches/run/process-renewals -> Process renewals batch (renew all subscriptions in status active and allocate new tokens)
 
 ### 2.4. Stripe Integration
 - ⏳ Configure Stripe products and prices to match plans

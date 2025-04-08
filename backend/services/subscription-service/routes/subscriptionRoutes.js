@@ -23,6 +23,27 @@ module.exports = (subscriptionController) => {
   router.get('/user/:userId', subscriptionController.getUserSubscriptions.bind(subscriptionController));
 
   /**
+   * @route POST /api/subscription/subscriptions/user/:userId/renew
+   * @description Renew a user's subscription token allocation
+   * @access Private
+   */
+  router.post('/user/:userId/renew', subscriptionController.renewSubscription.bind(subscriptionController));
+
+  /**
+   * @route GET /api/subscription/subscriptions/pending-cancellations
+   * @description Get subscriptions that are pending cancellation
+   * @access Private (admin only)
+   */
+  router.get('/pending-cancellations', subscriptionController.getPendingCancellations.bind(subscriptionController));
+
+  /**
+   * @route GET /api/subscription/subscriptions/renewal
+   * @description Get subscriptions that need to be renewed
+   * @access Private (admin only)
+   */
+  router.get('/renewal', subscriptionController.getSubscriptionsToRenew.bind(subscriptionController));
+
+  /**
    * @route GET /api/subscription/subscriptions/:subscriptionId
    * @description Get subscription by ID
    * @access Private
@@ -49,13 +70,6 @@ module.exports = (subscriptionController) => {
    * @access Private
    */
   router.post('/:subscriptionId/cancel', subscriptionController.cancelSubscription.bind(subscriptionController));
-
-  /**
-   * @route POST /api/subscription/subscriptions/user/:userId/renew
-   * @description Renew a user's subscription token allocation
-   * @access Private
-   */
-  router.post('/user/:userId/renew', subscriptionController.renewSubscription.bind(subscriptionController));
 
   return router;
 }; 

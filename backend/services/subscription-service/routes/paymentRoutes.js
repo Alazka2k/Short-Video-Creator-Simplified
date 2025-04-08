@@ -48,5 +48,26 @@ module.exports = (paymentController) => {
    */
   router.post('/webhooks/stripe', paymentController.handleStripeWebhook.bind(paymentController));
 
+  /**
+   * @route GET /api/subscription/payments/renewal
+   * @description Get payments that need to be renewed
+   * @access Private (admin only)
+   */
+  router.get('/renewal', paymentController.getPaymentsForRenewal.bind(paymentController));
+
+  /**
+   * @route GET /api/subscription/payments/collect
+   * @description Get payments that need to be collected
+   * @access Private (admin only)
+   */
+  router.get('/collect', paymentController.getPaymentsToCollect.bind(paymentController));
+
+  /**
+   * @route POST /api/subscription/payments/:paymentId/collect
+   * @description Collect a specific payment
+   * @access Private (admin only)
+   */
+  router.post('/:paymentId/collect', paymentController.collectPayment.bind(paymentController));
+
   return router;
 }; 

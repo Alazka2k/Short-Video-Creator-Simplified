@@ -23,6 +23,8 @@
  * - /api/assembly - Assembly service endpoints (create:assembly)
  * - /api/job - Job management endpoints (create:job)
  * - /api/subscription - Subscription management endpoints (create:subscription)
+ * - /api/admin/batches - Admin endpoints
+ * - /api/batches - Batch endpoints
  * 
  * Required M2M Scopes:
  * - create:llm - Access to LLM generation
@@ -34,6 +36,8 @@
  * - create:assembly - Access to assembly operations
  * - create:job - Access to job management
  * - create:subscription - Access to subscription management
+ * - manage:admin - Access to all admin endpoints
+ * - manage:batch - Access to all batch endpoints
  * 
  * @module api-gateway/middleware/auth0
  */
@@ -48,11 +52,11 @@ const auth0Domain = config.auth.auth0.domain;
 const auth0Audience = config.auth.auth0.audience;
 
 // Log configuration (without sensitive data)
-logger.info('Auth0 Gateway Configuration:', {
+/*logger.info('Auth0 Gateway Configuration:', {
   environment: process.env.NODE_ENV,
   domain: auth0Domain,
   audience: auth0Audience
-});
+});*/
 
 // Validate Auth0 configuration
 if (!auth0Domain || !auth0Audience) {
@@ -75,7 +79,9 @@ const SERVICE_ENDPOINTS = [
   '/api/music',
   '/api/assembly',
   '/api/job',
-  '/api/subscription'
+  '/api/subscription',
+  '/api/admin',  // Allow access to all admin endpoints
+  '/api/batch'   // Allow access to all batch endpoints
 ];
 
 // Initialize Auth0 JWT middleware
@@ -103,7 +109,7 @@ const checkPermission = (requiredPermission) => {
   return async (req, res, next) => {
     try {
       const payload = req.auth.payload;
-      logger.info('Auth payload:', payload);
+      //logger.info('Auth payload:', payload);
 
       // Handle M2M tokens
       if (payload.gty === 'client-credentials') {

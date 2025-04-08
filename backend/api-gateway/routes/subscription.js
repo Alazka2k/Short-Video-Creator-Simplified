@@ -398,8 +398,8 @@ router.post('/subscriptions',
       const isApiUser = userContext.isApiUser;
       const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
       const hasAdminPermission = 
-        (req.user.permissions && req.user.permissions.includes('create:subscriptions')) ||
-        tokenScopes.includes('create:subscriptions') ||
+        (req.user.permissions && req.user.permissions.includes('create:subscription')) ||
+        tokenScopes.includes('create:subscription') ||
         isApiUser;
         
       if (!hasAdminPermission && userContext.actualUserId.toString() !== requestBody.userId) {
@@ -471,6 +471,88 @@ router.post('/subscriptions',
 });
 
 /**
+ * @route GET /api/subscription/subscriptions/pending-cancellations
+ * @description Get subscriptions that are pending cancellation
+ * @access Protected - requires manage:subscriptions permission (administrative)
+ */
+router.get('/subscriptions/pending-cancellations', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/subscriptions'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to get subscriptions that are pending cancellation
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:subscription')) ||
+        tokenScopes.includes('manage:subscription') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to access pending cancellation information'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/subscriptions/pending-cancellations', req.body);
+    } catch (error) {
+      logger.error('Error fetching pending cancellations:', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      res.status(500).json({
+        error: 'Failed to fetch pending cancellations',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route GET /api/subscription/subscriptions/renewal
+ * @description Get subscriptions that need to be renewed
+ * @access Protected - requires manage:subscriptions permission (administrative)
+ */
+router.get('/subscriptions/renewal', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/subscriptions'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to get subscriptions that need to be renewed
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:subscription')) ||
+        tokenScopes.includes('manage:subscription') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to access renewal information'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/subscriptions/renewal', req.body);
+    } catch (error) {
+      logger.error('Error fetching subscriptions to renew:', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      res.status(500).json({
+        error: 'Failed to fetch subscriptions to renew',
+        details: error.message
+      });
+    }
+});
+
+/**
  * @route PUT /api/subscription/subscriptions/:subscriptionId
  * @description Update an existing subscription
  * @access Protected - requires update:subscription permission
@@ -510,8 +592,8 @@ router.post('/subscriptions/:subscriptionId/cancel', [verifyAuth0Token, checkPer
     const isApiUser = userContext.isApiUser;
     const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
     const hasAdminPermission = 
-      (req.user.permissions && req.user.permissions.includes('create:subscriptions')) ||
-      tokenScopes.includes('create:subscriptions') ||
+      (req.user.permissions && req.user.permissions.includes('create:subscription')) ||
+      tokenScopes.includes('create:subscription') ||
       isApiUser;
     
     // Get subscription details to validate plan ID and ownership
@@ -569,6 +651,7 @@ router.get('/token-packages/:packageId', serviceAuthMiddleware, async (req, res)
  * @description Create a new token package
  * @access Protected - requires manage:token_packages permission (admin only)
  */
+// TODO Add only for admins
 router.post('/token-packages/add', 
   verifyAuth0Token,
   checkPermission('/api/subscription/token-packages'), 
@@ -669,13 +752,13 @@ router.post('/tokens/usage', serviceAuthMiddleware, async (req, res) => {
 });
 
 /**
- * @route POST /api/subscription/tokens/purchase
- * @description Purchase tokens package
+ * @route POST /api/subscription/tokens/buy
+ * @description Buy tokens package
  * @access Protected - requires purchase:tokens permission
  */
-router.post('/tokens/purchase', 
+router.post('/tokens/buy', 
   verifyAuth0Token,
-  checkPermission('/api/subscription/tokens/purchase'), 
+  checkPermission('/api/subscription/tokens/buy'), 
   async (req, res) => {
     try {
       const userContext = await extractUserContext(req);
@@ -865,7 +948,7 @@ router.get('/payments/summary/:userId',
  */
 router.post('/payments', 
   verifyAuth0Token,
-  checkPermission('/api/subscription/payments:write'), 
+  checkPermission('/api/subscription/payments'), 
   async (req, res) => {
     try {
       // This endpoint is for administrative use only
@@ -907,7 +990,7 @@ router.post('/payments',
  */
 router.post('/payments/:paymentId/status', 
   verifyAuth0Token,
-  checkPermission('/api/subscription/payments:write'), 
+  checkPermission('/api/subscription/payments'), 
   async (req, res) => {
     try {
       // This endpoint is for administrative use only - typically used by batch jobs
@@ -950,7 +1033,7 @@ router.post('/payments/:paymentId/status',
  */
 router.post('/payments/update', 
   verifyAuth0Token,
-  checkPermission('/api/subscription/payments:write'), 
+  checkPermission('/api/subscription/payments'), 
   async (req, res) => {
     try {
       // This endpoint is for administrative use only - typically used by batch jobs
@@ -988,11 +1071,11 @@ router.post('/payments/update',
 /**
  * @route POST /api/subscription/token-packages/buy
  * @description Purchase a token package
- * @access Protected - requires purchase:tokens permission
+ * @access Protected - requires manage:tokens permission
  */
 router.post('/token-packages/buy', 
   verifyAuth0Token,
-  checkPermission('/api/subscription/tokens:purchase'), 
+  checkPermission('/api/subscription/tokens'), 
   async (req, res) => {
     try {
       const userContext = await extractUserContext(req);
@@ -1079,7 +1162,8 @@ router.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async
   }
 });
 
-// Process pending cancellations (admin only)
+// Process pending cancellations (admin only) 
+// // TODO: How is the `admin` permission set and checked?
 router.post('/pending-cancellations/process', [verifyAuth0Token, checkPermission(['admin'])], async (req, res) => {
   try {
     // Only admins can process pending cancellations
@@ -1104,6 +1188,7 @@ router.post('/pending-cancellations/process', [verifyAuth0Token, checkPermission
  * @description Create a new subscription plan
  * @access Protected - requires manage:plans permission (admin only)
  */
+// TODO Add only for admins
 router.post('/plans/add', 
   verifyAuth0Token,
   checkPermission('/api/subscription/plans'), 
@@ -1134,6 +1219,130 @@ router.post('/plans/add',
       
       res.status(500).json({
         error: 'Failed to create subscription plan',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route GET /api/subscription/payments/renewal
+ * @description Get payments that need to be renewed
+ * @access Protected - requires manage:payments permission (administrative)
+ */
+router.get('/payments/renewal', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/payments'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to get payments that need to be renewed
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to access payment renewal information'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/payments/renewal', req.body);
+    } catch (error) {
+      logger.error('Error fetching payments for renewal:', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      res.status(500).json({
+        error: 'Failed to fetch payments for renewal',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route GET /api/subscription/payments/collect
+ * @description Get payments that need to be collected
+ * @access Protected - requires manage:payments permission (administrative)
+ */
+router.get('/payments/collect', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/payments'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to get payments that need to be collected
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to access payment collection information'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, '/payments/collect', req.query);
+    } catch (error) {
+      logger.error('Error fetching payments to collect:', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      res.status(500).json({
+        error: 'Failed to fetch payments to collect',
+        details: error.message
+      });
+    }
+});
+
+/**
+ * @route POST /api/subscription/payments/:paymentId/collect
+ * @description Collect a specific payment by ID
+ * @access Protected - requires manage:payments permission (administrative)
+ */
+router.post('/payments/:paymentId/collect', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/payments'), 
+  async (req, res) => {
+    try {
+      // This endpoint is for administrative use only - typically used by batch jobs
+      // to collect a specific payment
+      const userContext = await extractUserContext(req);
+      const isApiUser = userContext.isApiUser;
+      const tokenScopes = req.user.scope ? req.user.scope.split(' ') : [];
+      const hasManagePermission = 
+        (req.user.permissions && req.user.permissions.includes('manage:payments')) ||
+        tokenScopes.includes('manage:payments') ||
+        isApiUser;
+      
+      if (!hasManagePermission) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You do not have permission to collect payments'
+        });
+      }
+      
+      await forwardToSubscriptionService(req, res, `/payments/${req.params.paymentId}/collect`);
+    } catch (error) {
+      logger.error('Error collecting payment:', {
+        error: error.message,
+        stack: error.stack,
+        paymentId: req.params.paymentId
+      });
+      
+      res.status(500).json({
+        error: 'Failed to collect payment',
         details: error.message
       });
     }

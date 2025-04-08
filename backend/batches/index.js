@@ -9,23 +9,23 @@ const server = require('./server');
 const config = require('../shared/utils/config');
 
 // Import core components
-const { JobLauncher } = require('./core/batchLauncher');
-const { JobRepository } = require('./core/batchRepository');
+const { BatchLauncher } = require('./services/batchLauncher');
+const { BatchRepository } = require('./services/batchRepository');
 
 // Import controllers
-const JobController = require('./controllers/batchController');
+const BatchController = require('./controllers/batchController');
 
 // Import data access
-const { JobDataAccess } = require('./data/batchDataAccess');
+const { BatchDataAccess } = require('./data/batchDataAccess');
 
 // Data access layer
 const dataAccess = {
-  jobs: new JobDataAccess()
+  jobs: new BatchDataAccess()
 };
 
 // Core components
-const jobRepository = new JobRepository(dataAccess.jobs);
-const jobLauncher = new JobLauncher(jobRepository);
+const jobRepository = new BatchRepository(dataAccess.jobs);
+const jobLauncher = new BatchLauncher(jobRepository);
 
 async function startServer() {
   try {
@@ -36,28 +36,25 @@ async function startServer() {
     await jobLauncher.initialize();
     
     // Initialize controller
-    const jobController = new JobController(jobLauncher);
+    const jobController = new BatchController(jobLauncher);
     
     // Create and start the server
     const app = server.createServer({
       jobController
     });
     
-    // Get port from config, or use 3020 as a fallback
+    // Get batch service port from config
     let PORT;
     try {
       // First check for environment variable
-      PORT = process.env.BATCH_SERVICE_PORT;
-      
-      // If not found, try to extract from config url
+      PORT = config.services.batch.port;
       if (!PORT) {
-        const serviceUrl = config.services?.batch?.url || '';
-        const portMatch = serviceUrl.match(/:(\d+)$/);
-        PORT = portMatch ? parseInt(portMatch[1]) : 3020;
+        logger.error('Batch service port not found in config');
+        process.exit(1);
       }
     } catch (error) {
-      PORT = 3020;
-      logger.warn(`Could not parse port from config, using default port ${PORT}`);
+      logger.error('Failed to get batch service port from config:', error);
+      process.exit(1);
     }
 
     app.listen(PORT, () => {

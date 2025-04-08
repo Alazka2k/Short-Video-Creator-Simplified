@@ -4,7 +4,7 @@
  * This file handles the database operations for batch metadata and execution history.
  */
 
-const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV || 'development']);
+const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 
@@ -55,7 +55,7 @@ class BatchDataAccess {
       this.logger.info('Getting last execution for batch:', { batchId });
       
       const execution = await knex(this.batchJobExecutionsTable)
-        .where('job_id', batchId)
+        .where('batch_id', batchId)
         .orderBy('start_time', 'desc')
         .first();
       
@@ -71,7 +71,7 @@ class BatchDataAccess {
       this.logger.info('Recording execution for batch:', { batchId });
       
       const executionData = {
-        job_id: batchId,
+        batch_id: batchId,
         start_time: execution.startTime,
         end_time: execution.endTime,
         status: execution.status,
@@ -95,7 +95,7 @@ class BatchDataAccess {
       this.logger.info('Getting history for batch:', { batchId });
       
       const history = await knex(this.batchJobExecutionsTable)
-        .where('job_id', batchId)
+        .where('batch_id', batchId)
         .orderBy('start_time', 'desc')
         .limit(100);
       
@@ -113,7 +113,7 @@ class BatchDataAccess {
       const logs = await knex(this.batchJobLogsTable)
         .select(`${this.batchJobLogsTable}.*`, `${this.batchJobExecutionsTable}.start_time as execution_start_time`)
         .leftJoin(this.batchJobExecutionsTable, `${this.batchJobLogsTable}.execution_id`, `${this.batchJobExecutionsTable}.id`)
-        .where(`${this.batchJobLogsTable}.job_id`, batchId)
+        .where(`${this.batchJobLogsTable}.batch_id`, batchId)
         .orderBy(`${this.batchJobLogsTable}.created_at`, 'desc')
         .limit(1000);
       
@@ -129,7 +129,7 @@ class BatchDataAccess {
       this.logger.info('Logging message for batch:', { batchId, level });
       
       const logData = {
-        job_id: batchId,
+        batch_id: batchId,
         execution_id: executionId,
         level: level,
         message: message,

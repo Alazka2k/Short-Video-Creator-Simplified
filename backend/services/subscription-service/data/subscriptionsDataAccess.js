@@ -808,6 +808,128 @@ class SubscriptionsDataAccess {
       throw error;
     }
   }
+
+  /**
+   * Get subscriptions that are pending cancellation
+   * @param {boolean} force - Whether to force retrieval regardless of end date
+   * @returns {Promise<Array>} - List of subscriptions that are pending cancellation
+   */
+  async getPendingCancellations(force = false) {
+    try {
+      this.logger.info('Getting pending cancellations:', { force });
+      
+      let query = this.knex(`${this.tableName} as us`)
+        // .join('plans as p', 'us.plan_id', 'p.plan_id')
+        .select(
+          'us.subscription_id',
+          'us.user_id',
+          'us.plan_id',
+          'us.current_period_start',
+          'us.current_period_end',
+          'us.start_date',
+          'us.end_date',
+          'us.status'
+          // 'p.plan_name',
+          // 'p.billing_frequency',
+          // 'p.monthly_price',
+          // 'p.annual_price',
+          // 'p.monthly_token_allocation',
+          // 'p.video_quality',
+          // 'p.max_scenes_per_job',
+          // 'p.max_jobs_per_month',
+          // 'p.allowed_content_types',
+          // 'p.recreation_content_types',
+          // 'p.support_level'
+        )
+        .where('us.status', 'pending_cancellation');
+      
+      if (!force) {
+        // Only get subscriptions where end_date is today or in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        query = query.where('us.end_date', '<=', today);
+      }
+      
+      const subscriptions = await query.orderBy('us.end_date', 'asc');
+      
+      // Format dates in the response
+      const formattedSubscriptions = subscriptions.map(subscription => {
+        return {
+          subscription_id: subscription.subscription_id,
+          user_id: subscription.user_id,
+          plan_id: subscription.plan_id,
+          current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start).toISOString() : null,
+          current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end).toISOString() : null,
+          start_date: subscription.start_date ? new Date(subscription.start_date).toISOString() : null,
+          end_date: subscription.end_date ? new Date(subscription.end_date).toISOString() : null,
+          status: subscription.status
+        };
+      });
+      
+      this.logger.info(`Found ${formattedSubscriptions.length} pending cancellations`);
+      
+      return formattedSubscriptions;
+    } catch (error) {
+      this.logger.error('Error getting pending cancellations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscriptions that need to be renewed
+   * @param {boolean} force - Whether to force renewal regardless of period end date
+   * @returns {Promise<Array>} - List of subscriptions that need to be renewed
+   */
+  async getSubscriptionsNeedingRenewal(force = false) {
+    try {
+      this.logger.info('Getting subscriptions to renew:', { force });
+      
+      let query = this.knex(`${this.tableName} as us`)
+        .select(
+          'us.subscription_id',
+          'us.user_id',
+          'us.plan_id',
+          'us.current_period_start',
+          'us.current_period_end',
+          'us.start_date',
+          'us.end_date',
+          'us.status'
+        )
+        .where('us.status', 'active');
+      
+      if (!force) {
+        // Only get subscriptions where current_period_end is today or in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        query = query.where('us.current_period_end', '<=', today);
+      }
+      
+      const subscriptions = await query.orderBy('us.current_period_end', 'asc');
+      
+      // Format dates in the response
+      const formattedSubscriptions = subscriptions.map(subscription => {
+        return {
+          subscription_id: subscription.subscription_id,
+          user_id: subscription.user_id,
+          plan_id: subscription.plan_id,
+          current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start).toISOString() : null,
+          current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end).toISOString() : null,
+          start_date: subscription.start_date ? new Date(subscription.start_date).toISOString() : null,
+          end_date: subscription.end_date ? new Date(subscription.end_date).toISOString() : null,
+          status: subscription.status
+        };
+      });
+      
+      this.logger.info(`Found ${formattedSubscriptions.length} subscriptions that need renewal`);
+      
+      return formattedSubscriptions;
+    } catch (error) {
+      this.logger.error('Error getting subscriptions to renew:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new SubscriptionsDataAccess(); 

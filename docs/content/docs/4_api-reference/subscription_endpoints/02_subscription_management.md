@@ -377,7 +377,57 @@ Cancels an active subscription.
 }
 ```
 
-### 5. ✅ Renew Subscription
+### 5. ✅ Get Subscriptions to Renew
+Retrieves subscriptions that need to be renewed.
+
+**Endpoint**: `GET /subscriptions/renewal`
+
+**Query Parameters**:
+- `force` (boolean, optional): Force retrieval regardless of period end date (default: false)
+
+**Use Case**:
+- Used by batch jobs to identify subscriptions that need to be renewed
+- Typically called by the SubscriptionRenewalsBatch job
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "subscription_id": 123,
+      "user_id": 30,
+      "plan_id": 2,
+      "status": "active",
+      "start_date": "2023-11-01T00:00:00.000Z",
+      "end_date": null,
+      "current_period_start": "2023-11-01T00:00:00.000Z",
+      "current_period_end": "2023-12-01T00:00:00.000Z",
+      "canceled_at": null,
+      "ended_at": null,
+      "external_subscription_id": "sub_987654321",
+      "created_at": "2023-11-01T12:00:00.000Z",
+      "updated_at": "2023-11-01T12:00:00.000Z",
+      "plan": {
+        "plan_id": 2,
+        "plan_name": "Basic Tier",
+        "billing_frequency": "monthly",
+        "tier_id": 2,
+        "monthly_token_allocation": 2500
+      }
+    }
+  ]
+}
+```
+
+**Notes**:
+- Both endpoints require administrative access with the `manage:subscriptions` permission
+- The `force` parameter allows batch jobs to retrieve all subscriptions regardless of their end date or period end date
+- These endpoints are primarily used by batch jobs to identify subscriptions that need to be processed
+
+---
+
+### 6. ✅ Renew Subscription
 Renews a subscription's token allocation period and allocates fresh tokens.
 
 **Endpoint**: `POST /subscriptions/user/:userId/renew`
@@ -452,4 +502,48 @@ Renews a subscription's token allocation period and allocates fresh tokens.
 }
 ```
 
----
+### 7. ✅ Get Pending Cancellations
+Retrieves subscriptions that are pending cancellation.
+
+**Endpoint**: `GET /subscriptions/pending-cancellations`
+
+**Query Parameters**:
+- `force` (boolean, optional): Force retrieval regardless of end date (default: false)
+
+**Use Case**:
+- Used by batch jobs to identify subscriptions that need to be processed for cancellation
+- Typically called by the ProcessPendingCancellationsBatch job
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "subscription_id": 123,
+      "user_id": 30,
+      "plan_id": 3,
+      "status": "pending_cancellation",
+      "start_date": "2023-11-01T00:00:00.000Z",
+      "end_date": "2023-12-01T00:00:00.000Z",
+      "current_period_start": "2023-11-01T00:00:00.000Z",
+      "current_period_end": "2023-12-01T00:00:00.000Z",
+      "canceled_at": "2023-11-15T12:00:00.000Z",
+      "ended_at": null,
+      "upcoming_plan_id": 2,
+      "cancellation_reason": "CANCEL_FOR_DOWNGRADE",
+      "external_subscription_id": "sub_987654321",
+      "created_at": "2023-11-01T12:00:00.000Z",
+      "updated_at": "2023-11-15T12:00:00.000Z",
+      "plan": {
+        "plan_id": 3,
+        "plan_name": "Professional Tier",
+        "billing_frequency": "monthly",
+        "tier_id": 3,
+        "monthly_token_allocation": 5000
+      }
+    }
+  ]
+}
+```
+

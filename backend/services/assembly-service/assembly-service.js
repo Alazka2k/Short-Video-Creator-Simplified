@@ -16,7 +16,7 @@ class AssemblyService {
     
     this.apiKey = config.assembly.apiKey;
     this.client = new creatomate.Client(this.apiKey);
-    logger.info('Assembly Service initialized with API key');
+    //logger.info('Assembly Service initialized with API key');
   }
 
   async init() {

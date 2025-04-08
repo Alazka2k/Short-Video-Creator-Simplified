@@ -30,11 +30,11 @@ const auth0Config = {
 
 
 // Log configuration (without sensitive data)
-logger.info('Auth0 Service Configuration:', {
+/*logger.info('Auth0 Service Configuration:', {
   domain: auth0Config.domain,
   audience: auth0Config.audience,
   environment: process.env.NODE_ENV
-});
+});*/
 
 /**
  * Auth0 Management API Client

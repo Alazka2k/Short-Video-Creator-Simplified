@@ -440,6 +440,119 @@ class PaymentsDataAccess {
     
     return formattedPayment;
   }
+
+  /**
+   * Get the latest payment for a subscription
+   * @param {number} subscriptionId - The subscription ID
+   * @returns {Promise<Object|null>} - The latest payment or null if not found
+   */
+  async getLatestPaymentBySubscriptionId(subscriptionId) {
+    try {
+      this.logger.info('Getting latest payment for subscription:', { subscriptionId });
+      
+      const payment = await knex(this.tableName)
+        .where('subscription_id', subscriptionId)
+        .whereIn('payment_type', ['subscription_initial', 'subscription_renewal'])
+        .orderBy('created_at', 'desc')
+        .first();
+      
+      if (!payment) {
+        this.logger.warn('No payment found for subscription:', { subscriptionId });
+        return null;
+      }
+      
+      return this.formatPayment(payment);
+    } catch (error) {
+      this.logger.error('Error getting latest payment for subscription:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get payments that need to be collected
+   * @param {boolean} force - Whether to force collection regardless of billing period
+   * @returns {Promise<Array>} - List of payments that need to be collected
+   */
+  async getPaymentsToCollect(force = false) {
+    try {
+      this.logger.info('Getting payments to collect:', { force });
+      
+      let query = knex(this.tableName)
+        .where('status', 'open')
+        .whereIn('payment_type', ['subscription_renewal', 'subscription_initial']);
+      
+      if (!force) {
+        // Only get payments where billing_period_start is today or in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        query = query.where('billing_period_start', '<=', today);
+      }
+      
+      const payments = await query.orderBy('created_at', 'asc');
+      
+      return payments.map(payment => this.formatPayment(payment));
+    } catch (error) {
+      this.logger.error('Error getting payments to collect:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get payments that have completed their billing period
+   * @param {boolean} force - Whether to force retrieval regardless of billing period end date
+   * @returns {Promise<Array>} - Array of payments that need renewal
+   */
+  async getPaymentsWithCompletedBillingPeriod(force = false) {
+    try {
+      this.logger.info('Getting payments with completed billing period', { force });
+      
+      // Get all completed payments (both initial and renewal) that have reached their billing period end
+      // Join with subscriptions table to check subscription status and end_date
+      const query = knex(`${this.tableName} as p`)
+        .join('user_subscriptions as us', 'p.subscription_id', 'us.subscription_id')
+        .where('p.status', 'completed')
+        .whereIn('p.payment_type', ['subscription_initial', 'subscription_renewal'])
+        .where('us.status', 'active')
+        .where(function() {
+          // Only include subscriptions that don't have an end_date or have an end_date in the future
+          this.whereNull('us.end_date')
+            .orWhere('us.end_date', '>', new Date());
+        });
+      
+      // If not forcing, only get payments where billing_period_end is today or in the past
+      if (!force) {
+        query.where('p.billing_period_end', '<=', new Date());
+      }
+      
+      // Get all payments ordered by subscription_id, payment_type (renewal first), and created_at (desc)
+      // This ensures we prioritize subscription_renewal over subscription_initial
+      const allPayments = await query
+        .select('p.*') // Select only payment fields to avoid column name conflicts
+        .orderBy('p.subscription_id')
+        .orderByRaw("CASE WHEN p.payment_type = 'subscription_renewal' THEN 0 ELSE 1 END")
+        .orderBy('p.created_at', 'desc');
+      
+      // Filter to keep only the latest payment for each subscription
+      // With the ordering above, subscription_renewal will be preferred over subscription_initial
+      const latestPaymentsBySubscription = {};
+      for (const payment of allPayments) {
+        if (!latestPaymentsBySubscription[payment.subscription_id]) {
+          latestPaymentsBySubscription[payment.subscription_id] = payment;
+        }
+      }
+      
+      // Convert back to array
+      const payments = Object.values(latestPaymentsBySubscription);
+      
+      this.logger.info(`Found ${payments.length} payments with completed billing period and active subscription`);
+      
+      return payments.map(payment => this.formatPayment(payment));
+    } catch (error) {
+      this.logger.error('Error getting payments with completed billing period:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new PaymentsDataAccess(); 

@@ -126,7 +126,7 @@ Creates a new payment record for subscription renewals or token package purchase
 
 **Request Body Examples**:  
 
-1. **Subscription Renewal Payment (Open Status)** - For creating a renewal payment that will be collected one day before billing period ends:
+1. **Subscription Renewal Payment (Open Status)** - For creating a renewal payment that will be collected after the current billing period ends:
 ```json
 {
   "userId": 30,
@@ -242,6 +242,206 @@ Updates an existing payment with payment provider details and status update. E.g
 
 **Special Behavior**:
 - When a token package payment is updated to "completed" status, the system automatically allocates the corresponding tokens to the user
-- This endpoint is primarily used by automated batch jobs to update payment records with payment provider details after successful processing
 - When updating a payment to "completed" status, both `paymentProvider` and `externalPaymentId` must be provided
+- This endpoint does NOT interact with any payment provider - it only updates the database record
 
+### 5. ✅ Get Payments for Renewal
+Retrieves payments that need to be renewed. This endpoint is used by batch jobs to identify payments that need renewal.
+
+**Endpoint**: `GET /payments/renewal`
+
+**Query Parameters**:
+- `force` (boolean, optional): Force retrieval regardless of billing period end date
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "payment_id": 790,
+      "user_id": 123,
+      "subscription_id": 456,
+      "plan_id": 2,
+      "amount": 29.99,
+      "payment_type": "subscription_renewal",
+      "billing_period_start": "2025-03-04",
+      "billing_period_end": "2025-04-03",
+      "next_billing_period_start": "2025-04-04",
+      "next_billing_period_end": "2025-05-03"
+    }
+  ]
+}
+```
+
+**Notes**:
+- This endpoint is used by batch jobs to identify payments needing renewal and is typically called by the CreatePaymentsBatch job.
+- It includes both initial and renewal payments and only returns the latest payment for each subscription to avoid duplicates.
+- It prioritizes subscription_renewal payments over subscription_initial payments when selecting the latest payment for each subscription.
+- It only returns payments for subscriptions that are in 'active' status and haven't reached their end date.
+- The endpoint is primarily for automated batch jobs to create new payment records for subscriptions needing renewal.
+
+### 6. ✅ Get Payments to Collect
+Retrieves payments that need to be collected.
+
+**Endpoint**: `GET /payments/collect`
+
+**Query Parameters**:
+- `force` (boolean, optional): Force retrieval regardless of collection date (default: false)
+
+**Use Case**:
+- Used by batch jobs to identify payments that need to be collected
+- Typically called by the CollectPaymentsBatch job
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "payment_id": 32,
+      "user_id": 30,
+      "amount": 24.99,
+      "currency": "eur",
+      "payment_method": "credit_card",
+      "payment_date": null,
+      "status": "open",
+      "payment_type": "subscription_renewal",
+      "plan_id": 2,
+      "package_id": null,
+      "subscription_id": 73,
+      "external_payment_id": null,
+      "billing_period_start": "2025-05-03T22:00:00.000Z",
+      "billing_period_end": "2025-06-03T22:00:00.000Z",
+      "payment_metadata": null,
+      "payment_provider": null,
+      "created_at": "2025-04-04T10:50:32.816Z",
+      "updated_at": "2025-04-04T10:50:32.816Z"
+    }
+  ]
+}
+```
+
+### 7. ✅ Collect Payment
+Collects a specific payment by ID. This endpoint actively processes the payment through the payment provider (e.g., Stripe) and then updates the payment record with the result.
+
+**Endpoint**: `POST /payments/:paymentId/collect`
+
+**URL Parameters**:
+- `paymentId`: The ID of the payment to collect
+
+**Use Case**:
+- Used by batch jobs to collect a specific payment
+- Typically called by the CollectPaymentsBatch job for each payment that needs to be collected
+- This endpoint actively processes the payment through the payment provider, unlike the `/payments/update` endpoint which only updates the database record
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": 32,
+    "user_id": 30,
+    "amount": 24.99,
+    "currency": "eur",
+    "payment_method": "credit_card",
+    "payment_date": "2025-05-03T22:00:00.000Z",
+    "status": "completed",
+    "payment_type": "subscription_renewal",
+    "plan_id": 2,
+    "package_id": null,
+    "subscription_id": 73,
+    "external_payment_id": "pi_3NvZN2Iuyt123456",
+    "billing_period_start": "2025-05-03T22:00:00.000Z",
+    "billing_period_end": "2025-06-03T22:00:00.000Z",
+    "payment_metadata": null,
+    "payment_provider": "stripe",
+    "created_at": "2025-04-04T10:50:32.816Z",
+    "updated_at": "2025-05-03T22:00:00.000Z"
+  }
+}
+```
+
+**Error Response Example**:
+```json
+{
+  "success": false,
+  "error": "Payment collection failed",
+  "message": "Payment provider returned an error: Insufficient funds"
+}
+```
+
+**Notes**:
+- This endpoint requires administrative access with the `manage:payments` permission
+- The payment must be in `open` status to be collected
+- The payment will be updated with the payment provider details and status will be changed to `completed` if successful
+- If the payment collection fails, the status will be updated to `failed` and an error message will be returned
+- This endpoint actively calls the payment provider (e.g., Stripe) to process the payment, unlike the `/payments/update` endpoint which only updates the database record
+
+The system provides two different endpoints for managing payments that serve distinct purposes:
+
+#### `/payments/update` vs `/payments/:paymentId/collect`
+
+| Feature | `/payments/update` | `/payments/:paymentId/collect` |
+|---------|-------------------|--------------------------------|
+| **Purpose** | Updates payment record with new information | Processes payment through payment provider and updates record |
+| **Payment Provider Interaction** | No interaction with payment providers | Actively calls payment provider to process payment |
+| **Status Requirements** | Can update to any valid status | Only works on payments in "open" status |
+| **Use Cases** | Manual updates, webhook callbacks | Batch job payment processing |
+| **Implementation** | Simple database update | Payment provider integration with error handling |
+
+**When to Use Each Endpoint**:
+
+- Use `/payments/update` when:
+  - You need to manually update a payment record
+  - You're handling a webhook callback from a payment provider
+  - You need to update a payment to a status other than "completed" or "failed"
+
+- Use `/payments/:paymentId/collect` when:
+  - You need to process a payment through a payment provider
+  - You're running a batch job to collect payments
+  - The payment is in "open" status and ready to be collected
+
+//Missing for the retry failed payment batch job
+
+### 8. ⏳ Get Failed Payments
+Retrieves failed payments.
+
+**Endpoint**: `GET /payments/failed`
+
+**Query Parameters**:
+- `force` (boolean, optional): Force retrieval regardless of collection date (default: false)
+
+**Response Example**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "payment_id": 32,
+      "user_id": 30,
+      "amount": 24.99,
+      "currency": "eur",
+      "payment_method": "credit_card",
+      "payment_date": null, 
+      "status": "failed",
+      "payment_type": "subscription_renewal",
+      "plan_id": 2,
+      "package_id": null,
+      "subscription_id": 73,
+      "external_payment_id": null,
+      "billing_period_start": "2025-05-03T22:00:00.000Z",
+      "billing_period_end": "2025-06-03T22:00:00.000Z",
+      "payment_metadata": null,
+      "payment_provider": null,
+      "created_at": "2025-04-04T10:50:32.816Z",
+      "updated_at": "2025-04-04T10:50:32.816Z"
+    }
+  ]   
+}
+```
+
+### 9. ⏳ Retry Failed Payment
+Collect and retry a failed payment. Add a counter to the payment to avoid infinite retries. Downgrades the subscription to the lowest plan if max retries reached.
+
+**Endpoint**: `POST /payments/:paymentId/retry`

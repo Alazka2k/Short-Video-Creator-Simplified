@@ -28,6 +28,14 @@ This batch job processes pending payments and updates their status based on the 
 - Processes pending payments through the payment provider
 - Updates payment and subscription status based on provider response
 
+### Retry Failed Payments: `RetryFailedPaymentsBatch.js`
+
+This batch job retries failed payments for subscriptions that are in the status `failed`. Retry should be done twice. If the payment is still not successful, the payment status is set to `failed` and the counter is incremented.
+
+**Parameters:**
+- `force` (boolean, optional): Force retry regardless of retry count
+
+   
 ### Process Pending Cancellations: `ProcessPendingCancellationsBatch.js`
 
 This batch job processes pending cancellations for subscriptions that have reached their cancellation date.

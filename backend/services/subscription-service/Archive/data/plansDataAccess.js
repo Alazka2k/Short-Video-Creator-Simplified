@@ -77,7 +77,7 @@ class PlansDataAccess {
    */
   async getPlanById(planId) {
     try {
-      this.logger.info('Fetching plan by ID:', { planId });
+      //this.logger.info('Fetching plan by ID:', { planId });
       
       const plan = await knex(this.tableName)
         .where('plan_id', planId)

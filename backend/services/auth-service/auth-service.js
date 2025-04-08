@@ -23,6 +23,7 @@ const socialAuthService = require('./services/social-auth.service');
 const { TokenService } = require('./utils/token');
 const logger = require('../../shared/utils/logger');
 const axios = require('axios');
+const config = require('../../shared/utils/config');
 
 class AuthService {
   // User management
@@ -76,16 +77,15 @@ class AuthService {
   // M2M Authentication
   async getM2MToken({ clientId, clientSecret, audience }) {
     try {
-      const envPrefix = process.env.NODE_ENV?.toUpperCase();
-      const auth0Domain = process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`];
+      // Get Auth0 Domain configuration from config
+      const auth0Domain = config.auth.auth0.domain;
       
       if (!auth0Domain) {
-        logger.error('Auth0 domain not configured:', {
+        logger.error('Auth0 domain not configured in config:', {
           environment: process.env.NODE_ENV,
-          envPrefix,
           availableEnvVars: Object.keys(process.env).filter(key => key.includes('AUTH0'))
         });
-        throw new Error('Auth0 domain not configured');
+        throw new Error('Auth0 domain not configured in config');
       }
 
       logger.info('Requesting M2M token from Auth0', { 

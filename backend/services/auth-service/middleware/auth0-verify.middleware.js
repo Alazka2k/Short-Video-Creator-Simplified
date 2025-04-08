@@ -25,11 +25,11 @@ const auth0Domain = config.auth.auth0.domain;
 const auth0Audience = config.auth.auth0.audience;
 
 // Log Auth0 configuration
-logger.info('Auth0 Configuration:', {
+/*logger.info('Auth0 Configuration:', {
   environment: process.env.NODE_ENV,
   domain: auth0Domain,
   audience: auth0Audience
-});
+});*/
 
 // Initialize JWKS client for Auth0 public key retrieval
 const jwksClient = jwksRsa({

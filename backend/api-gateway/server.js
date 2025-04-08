@@ -23,6 +23,7 @@ const storageRoutes = require('./routes/storage');
 const downloadRoutes = require('./routes/download');
 const subscriptionRoutes = require('./routes/subscription');
 const batchRoutes = require('./routes/batch');
+const adminRoutes = require('./routes/admin');
 
 // Log environment configuration
 logger.info('Environment Configuration:', {
@@ -110,6 +111,7 @@ app.use('/api/storage', storageRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/batch', batchRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Auth routes
 app.use('/api/auth', authRoutes);

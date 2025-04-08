@@ -460,6 +460,186 @@ class PaymentService {
     // Implementation to be added
     logger.info('Subscription deleted:', subscription.id);
   }
+
+  /**
+   * Get payments that need to be renewed
+   * @param {boolean} force - Whether to force renewal regardless of billing period
+   * @returns {Promise<Array>} - List of payments that need to be renewed
+   */
+  async getPaymentsForRenewal(force = false) {
+    try {
+      logger.info('Getting payments for renewal:', { force });
+      
+      // Get all completed payments that have reached their billing period end
+      const payments = await this.dataAccess.payments.getPaymentsWithCompletedBillingPeriod(force);
+      
+      if (!payments || payments.length === 0) {
+        logger.info('No payments found that need renewal');
+        return [];
+      }
+      
+      logger.info(`Found ${payments.length} payments that need renewal`);
+      
+      // For each payment, calculate the next billing period
+      const paymentsForRenewal = [];
+      
+      for (const payment of payments) {
+        // Get the plan to determine billing frequency
+        const plan = await this.dataAccess.plans.getPlanById(payment.plan_id);
+        
+        if (!plan) {
+          logger.warn(`Plan not found for payment ${payment.payment_id}, skipping`);
+          continue;
+        }
+        
+        // Calculate next billing period based on the payment's frequency
+        const nextBillingPeriod = this.calculateNextBillingPeriod(
+          payment.billing_period_end,
+          plan.billing_frequency
+        );
+        
+        // Format dates as YYYY-MM-DD to match database schema
+        const formatDate = (date) => {
+          if (!date) return null;
+          const d = new Date(date);
+          return d.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        };
+        
+        paymentsForRenewal.push({
+          payment_id: payment.payment_id,
+          user_id: payment.user_id,
+          subscription_id: payment.subscription_id,
+          plan_id: payment.plan_id,
+          amount: payment.amount,
+          payment_type: 'subscription_renewal',
+          billing_period_start: formatDate(payment.billing_period_start),
+          billing_period_end: formatDate(payment.billing_period_end),
+          next_billing_period_start: formatDate(nextBillingPeriod.start),
+          next_billing_period_end: formatDate(nextBillingPeriod.end)
+        });
+      }
+      
+      return paymentsForRenewal;
+    } catch (error) {
+      logger.error('Error getting payments for renewal:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Calculate the next billing period based on the current end date and billing frequency
+   * @param {Date} currentEndDate - The end date of the current billing period
+   * @param {string} frequency - The billing frequency ('monthly' or 'yearly')
+   * @returns {Object} - Object containing start and end dates for the next billing period
+   */
+  calculateNextBillingPeriod(currentEndDate, frequency) {
+    const startDate = new Date(currentEndDate);
+    startDate.setDate(startDate.getDate() + 1); // Start the day after the current period ends
+    
+    const endDate = new Date(startDate);
+    
+    if (frequency === 'yearly') {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
+    
+    endDate.setDate(endDate.getDate() - 1); // End the day before the next period starts
+    
+    return {
+      start: startDate,
+      end: endDate
+    };
+  }
+
+  /**
+   * Get payments that need to be collected
+   * @param {boolean} force - Whether to force collection regardless of billing period
+   * @returns {Promise<Array>} - List of payments that need to be collected
+   */
+  async getPaymentsToCollect(force = false) {
+    try {
+      logger.info('Getting payments to collect:', { force });
+      
+      // Get all open payments that need to be collected
+      const payments = await this.dataAccess.payments.getPaymentsToCollect(force);
+      
+      if (!payments || payments.length === 0) {
+        logger.info('No payments found that need to be collected');
+        return [];
+      }
+      
+      logger.info(`Found ${payments.length} payments that need to be collected`);
+      
+      return payments;
+    } catch (error) {
+      logger.error('Error getting payments to collect:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Collect a payment
+   * @param {string} paymentId - The payment ID
+   * @returns {Promise<Object>} - The updated payment
+   */
+  async collectPayment(paymentId) {
+    try {
+      logger.info('Collecting payment:', { paymentId });
+      
+      // Get the payment
+      const payment = await this.dataAccess.payments.getPaymentById(paymentId);
+      
+      if (!payment) {
+        throw new Error(`Payment not found: ${paymentId}`);
+      }
+      
+      // Check if the payment is in the correct status
+      if (payment.status !== 'open') {
+        throw new Error(`Payment is not in open status: ${payment.status}`);
+      }
+      
+      // Process the payment with the payment provider (e.g., Stripe)
+      // This is a placeholder for the actual payment processing logic
+      // In a real implementation, this would call the payment provider's API
+      const paymentResult = await this.processPaymentWithProvider(payment);
+      
+      // Update the payment with the result
+      const updatedPayment = await this.dataAccess.payments.updatePayment(paymentId, {
+        status: paymentResult.success ? 'completed' : 'failed',
+        payment_provider: paymentResult.provider,
+        external_payment_id: paymentResult.externalId,
+        payment_date: paymentResult.success ? new Date() : null
+      });
+      
+      logger.info('Payment collected successfully:', { 
+        paymentId, 
+        status: updatedPayment.status 
+      });
+      
+      return updatedPayment;
+    } catch (error) {
+      logger.error('Error collecting payment:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process a payment with the payment provider
+   * @param {Object} payment - The payment to process
+   * @returns {Promise<Object>} - The payment result
+   */
+  async processPaymentWithProvider(payment) {
+    // This is a placeholder for the actual payment processing logic
+    // In a real implementation, this would call the payment provider's API
+    
+    // For now, we'll simulate a successful payment
+    return {
+      success: true,
+      provider: 'stripe',
+      externalId: `pi_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+    };
+  }
 }
 
 module.exports = PaymentService;
