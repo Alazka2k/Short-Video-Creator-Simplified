@@ -252,55 +252,72 @@
   - ✅ GET /api/subscription/payments/renewal -> Get payments to renew
   - ✅ GET /api/subscription/payments/collect -> Get payments to collect
   - ✅ POST /api/subscription/payments/:paymentId/collect -> Collect a payment
-  - ⏳ TESTING NEEDED GET /api/subscription/payments/failed -> Get failed payments
-  - ⏳ TESTING NEEDED POST /api/subscription/payments/:paymentId/retry -> Retry a payment
+  - ✅ TESTING NEEDED GET /api/subscription/payments/failed -> Get failed payments
+  - ✅ TESTING NEEDED POST /api/subscription/payments/:paymentId/retry -> Retry a payment
 
 #### 2.3.3 Add missing endpoints for batch processing in the admin service
-- ⏳ Add missing endpoints for batch processing in the admin service
+- ✅ Add missing endpoints for batch processing in the admin service
   - ✅ POST /api/admin/batches/run/create-payments -> Create payments batch (in status open)
   - ✅ POST /api/admin/batches/run/collect-payments -> Collect payments batch (collect all payments in status open)
-  - ⏳ TESTING NEEDED POST /api/admin/batches/run/retry-failed-payments -> Retry failed payments batch (for payments with status failed)
-  - ⏳ TESTING NEEDED POST /api/admin/batches/run/process-pending-cancellations -> Process pending cancellations batch (cancel all subscriptions in status pending-cancellation)
-  - ⏳ TESTING NEEDED POST /api/admin/batches/run/process-renewals -> Process renewals batch (renew all subscriptions in status active and allocate new tokens)
+  - ✅ TESTING NEEDED POST /api/admin/batches/run/retry-failed-payments -> Retry failed payments batch (for payments with status failed)
+  - ✅ TESTING NEEDED POST /api/admin/batches/run/process-pending-cancellations -> Process pending cancellations batch (cancel all subscriptions in status pending-cancellation)
+  - ✅ TESTING NEEDED POST /api/admin/batches/run/process-renewals -> Process renewals batch (renew all subscriptions in status active and allocate new tokens)
 
-### 2.4. Stripe Integration
+### 2.4 Prelaunch Page Creation and Release
+
+#### 2.4.1 Prelaunch Page Creation
+- ⏳ Create a prelaunch marketing page
+  - ⏳ Interface to join the waitlist
+  - ⏳ Integrate beehive (email newsletter system)
+  - ⏳ Disable registration and login for the prelaunch
+  - ⏳ Remove routes to other pages (to only have a plain marketing page)
+  - ⏳ Add Terms of Service and all other important pages for the prelaunch
+  - ⏳ Remove "Careers" from the footer
+  - ⏳ Contact
+  - ⏳ Privacy Policy
+  - ⏳ About
+
+#### 2.4.2 Prelaunch Page Release
+- ⏳ Release the prelaunch page
+
+### 2.5. Stripe Integration
 - ⏳ Configure Stripe products and prices to match plans
 - ⏳ Implement credit card and paypal payment processing
 - ⏳ Set up subscription creation in Stripe
 - ⏳ Handle subscription lifecycle events via webhooks
 - ⏳ Add token package purchases
 
-### 2.5. Service-Level Token Deduction
+### 2.6. Service-Level Token Deduction
 - ⏳ Implement token deduction in each individual service (LLM, Image, Voice, etc.)
 - ⏳ Add token cost calculation per service
 - ⏳ Create token pre-authorization checks (without deducting)
 - ⏳ Implement proper error handling for insufficient tokens
 - ⏳ Add detailed metadata for token transactions
 
-### 2.6. Plan Limitation Enforcement
+### 2.7. Plan Limitation Enforcement
 - ⏳ Create middleware for checking subscription features
 - ⏳ Implement validation for limitations based on plan
 - ⏳ Add restriction logic for premium features
 - ⏳ Create validation for max scenes per job logic
 - ⏳ Implement monthly job count tracking and limits (counter for every job)
 
-#### 2.6.1. Plan Limitation APIs
+#### 2.7.1. Plan Limitation APIs
 - ⏳ POST /api/subscription/limitations/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
 - ⏳ POST /api/subscription/limitations/usage - 
 -> Check if a feature is available in user's plan (content type is allowed, max scenes) 
   --> If not backend validation and frontend different render behaviour (e.g. disable button, show a message, etc.). Max scenes, content type limitation 
 -> Check if a job counter has reached the limit defined in the plan
 
-#### 2.6.2 Frontend Limitation Check
+#### 2.7.2 Frontend Limitation Check
 - ⏳ Check configuration of the options in the json files for each option (planId) -> Render different feedback and disable options if the user has not the permission to use them
 -> Duration / max scenes
 -> Visual Selection
 -> Voice Selection
 -> Assembly Templates Selection
 
-### 2.7. Frontend Dashboard Pages for Subscription and Tokens
+### 2.8. Frontend Dashboard Pages for Subscription and Tokens
 
-#### 2.7.1. Subscription Management UI
+#### 2.8.1. Subscription Management UI
 - ⏳ Create subscription plan comparison page
 - ⏳ Implement subscription management interface
 - ⏳ Add plan upgrade/downgrade flow
@@ -324,17 +341,12 @@
 - ⏳ Update Features Page with current content creation flow
 - ⏳ FAQ Section
 - ⏳ Blog Entries
-- ⏳ Contact
-- ⏳ Privacy Policy
-- ⏳ Terms of Service
-- ⏳ About
-- ⏳ Remove "Careers" from the footer
 - ⏳ Refactor the features marketing page
 - ⏳ Update Login Page (currently inconsistent look)
 
-## Phase 4: Integrate web server (nginx) and containerization (docker)
+## Phase 5: Integrate web server (nginx) and containerization (docker)
 
-### 4.1. Integrate nginx as a reverse proxy
+### 5.1. Integrate nginx as a reverse proxy
 - ⏳ Integrate nginx as a reverse proxy for the backend services
 - ⏳ Configure nginx for SSL termination
 - ⏳ Configure nginx for rate limiting
@@ -350,12 +362,13 @@
 - ⏳ Configure docker-compose for the database container
 - ⏳ Configure docker-compose for the redis container
 
-## Phase 5: Deployment to staging environment
+## Phase 6: Deployment to staging environment
 - ⏳ Deploy the application to the staging environment
+- ⏳ Testing the production application in staging environment
 
-## Phase 6: Fix known bugs and security issues
+## Phase 7: Fix known bugs and security issues
 
-### 6.1. Fix known bugs
+### 7.1. Fix known bugs
 - [ ] Fix the social login which is not working right now
 - [ ] Fix the refresh of the links to the files from the s3 bucket cloud. Right now the won´t be visible anymore after 30mins on the dashboard
 - [ ] Job Service with Animation is sometimes not working and gives an error (I think depends on the template of animation)
@@ -363,7 +376,7 @@
 ### 4.2. Security issues
 - [ ] Fix the encryption of password and username from the frontend (currently it is visible in the network tab of the browser)
 
-## Phase 7: Testing & Refinement
+## Phase 8: Testing & Refinement
 - User authentication
 - Video Service testing
 - User flow testing
@@ -371,21 +384,21 @@
 - Performance optimization
 - Documentation updates
 
-## Phase 8: Deployment of version 0.1.0 to production environment
+## Phase 9: Deployment of version 0.1.0 to production environment
 - Deploy to Staging environment
 - Test the deployment on the staging environment
 - Deploy to Production environment
 
-## Phase 9: Post-MVP Enhancements (Create tickets on Jira for the following enhancements)
+## Phase 10: Post-MVP Enhancements (Create tickets on Jira for the following enhancements)
 
-### 9.1. Important and Critical Enhancements
+### 10.1. Important and Critical Enhancements
 - [ ] Music Generation with lyrics
 - [ ] Find a way to align voice length with video scene length
 - [ ] Select Option for Video Duration is not working well
 - [ ] Improve the loading feedback after job execution
 
-### 9.2. Feature, Profile and Protected Routes Enhancements
-#### 9.2.1 Profile Management (Frontend?)
+### 10.2. Feature, Profile and Protected Routes Enhancements
+#### 10.2.1 Profile Management (Frontend?)
 - [ ] Add progress visualization (after execution of a job)
 
 #### 9.2.2 High Priority Enhancements Content Creation to Video Features (Frontend)
@@ -398,18 +411,18 @@
 #### 9.2.4 Functionality Enhancements Content Creation to Video Features (Frontend)
 - [ ] Add possibility to manually upload images and videos for scenes before the assembly (Phase after deployment of version 0.1.0) -> To exchange or add add content from a single scene
 
-#### 7.2.5 Functionality Enhancements Video Creation Flow (Frontend)
+#### 10.2.5 Functionality Enhancements Video Creation Flow (Frontend)
 - [ ] Add possibility to reload input from a previous job (from the parameters object in the metadata column of the jobs table)
 
-### 9.3. Profile Management Enhancements
-#### 9.3.1 Profile Management (Frontend?)
+### 10.3. Profile Management Enhancements
+#### 10.3.1 Profile Management (Frontend?)
 - [ ] Add profile editing functionality
 - [ ] Update name/display name
 - [ ] Change profile picture
 - [ ] Manage notification preferences
 - [ ] Configure video preferences (default style, voice, resolution)
 
-#### 7.3.2 Profile Management (Backend)
+#### 10.3.2 Profile Management (Backend)
 - [ ] Implement user settings API endpoints
 - [ ] POST /api/auth/profile/update - Update profile information
 - [ ] POST /api/auth/preferences/update - Update user preferences
@@ -421,7 +434,7 @@
 - [ ] Add form validation and error handling
 - [ ] Implement optimistic updates for better UX
 
-#### 7.3.3 Protected Routes Enhancement
+#### 10.3.3 Protected Routes Enhancement
 - [ ] Implement role-based access control (RBAC)
   - [ ] Define user roles (free, premium, admin)
   - [ ] Add role-based route protection
@@ -431,18 +444,18 @@
   - [ ] Analytics dashboard
   - [ ] API access
 
-### 9.3 Authentication Flow Improvement
+### 10.3 Authentication Flow Improvement
 - [ ] Improve authentication flow
 - [ ] Better token refresh handling
 - [ ] Loading states during auth checks
 - [ ] Proper redirects for unauthenticated users
 
-### 9.4 Enhance error handling and feedback
+### 10.4 Enhance error handling and feedback
 - [ ] Show upgrade prompts for premium features
 - [ ] Display proper unauthorized access messages
 - [ ] Handle expired subscriptions
 
-### 9.5 Advanced Progress Tracking System
+### 10.5 Advanced Progress Tracking System
 - [ ] Use Redis for real-time progress updates
 - [ ] Track individual service progress (LLM, Image, Voice, Video, Music)
 - [ ] Track scene-level progress for multi-scene videos
@@ -451,7 +464,7 @@
 - [ ] Support progress visualization in the frontend dashboard
 - [ ] Enable progress notifications (email, in-app)
 
-### 9.5 Optimize service startup process:
+### 10.6 Optimize service startup process:
 - [ ] Reduce redundant logging
 - [ ] Centralize common initialization
 - [ ] Improve configuration loading
