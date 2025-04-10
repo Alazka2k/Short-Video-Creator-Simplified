@@ -42,14 +42,14 @@ class CollectPaymentsBatch {
         try {
           await this.collectPayment(payment, authorization);
           results.succeeded++;
-          logger.info(`Successfully collected payment ${payment.id}`);
+          logger.info(`Successfully collected payment ${payment.payment_id}`);
         } catch (error) {
           results.failed++;
           results.errors.push({
-            paymentId: payment.id,
+            paymentId: payment.payment_id,
             error: error.message
           });
-          logger.error(`Failed to collect payment ${payment.id}:`, error);
+          logger.error(`Failed to collect payment ${payment.payment_id}:`, error);
         }
         results.processed++;
       }
@@ -74,7 +74,14 @@ class CollectPaymentsBatch {
       const response = await axios.get(`${apiGatewayUrl}/api/subscription/payments/collect`, {
         headers: { authorization }
       });
-      return response.data;
+      
+      // The API returns a response with a data property containing the array of payments
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        return response.data.data;
+      } else {
+        logger.warn('Unexpected response format from payments API:', response.data);
+        return [];
+      }
     } catch (error) {
       logger.error('Failed to fetch payments to collect:', error);
       throw error;
@@ -88,15 +95,15 @@ class CollectPaymentsBatch {
         throw new Error('API Gateway URL is not configured');
       }
       
-      logger.info(`Collecting payment ${payment.id} at ${apiGatewayUrl}/api/subscription/payments/${payment.id}/collect`);
+      logger.info(`Collecting payment ${payment.payment_id} at ${apiGatewayUrl}/api/subscription/payments/${payment.payment_id}/collect`);
       
       await axios.post(
-        `${apiGatewayUrl}/api/subscription/payments/${payment.id}/collect`,
+        `${apiGatewayUrl}/api/subscription/payments/${payment.payment_id}/collect`,
         {},
         { headers: { authorization } }
       );
     } catch (error) {
-      logger.error(`Failed to collect payment ${payment.id}:`, error);
+      logger.error(`Failed to collect payment ${payment.payment_id}:`, error);
       throw error;
     }
   }

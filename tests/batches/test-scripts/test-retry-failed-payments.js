@@ -9,7 +9,7 @@
 
 const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV]);
 const { createTestSubscription, createTestPayment } = require('../test-data/create-test-data');
-const BatchLauncher = require('../../../backend/batches/services/batchLauncher');
+const BatchLauncher = require('../../../backend/batches/services/BatchLauncher');
 const RetryFailedPaymentsBatch = require('../../../backend/batches/batch-jobs/RetryFailedPaymentsBatch');
 const config = require('../../../shared/utils/config');
 const axios = require('axios');

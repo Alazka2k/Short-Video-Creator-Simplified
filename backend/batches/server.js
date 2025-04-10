@@ -14,8 +14,8 @@ const adminRoutes = require('./routes/adminRoutes');
 // Initialize the batch service
 const initializeBatchService = async () => {
   try {
-    const { BatchLauncher } = require('./services/batchLauncher');
-    const { BatchRepository } = require('./services/batchRepository');
+    const { BatchLauncher } = require('./services/BatchLauncher');
+    const { BatchRepository } = require('./services/BatchRepository');
     const { BatchDataAccess } = require('./data/batchDataAccess');
     
     // Initialize data access

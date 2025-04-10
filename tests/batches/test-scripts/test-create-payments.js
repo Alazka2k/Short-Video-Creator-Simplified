@@ -17,7 +17,7 @@ const axios = require('axios');
 const knex = require('knex')(require('../../../knexfile')[process.env.NODE_ENV]);
 const config = require('../../../shared/utils/config');
 const { createTestSubscription } = require('../test-data/create-test-data');
-const { BatchLauncher } = require('../../../backend/batches/services/batchLauncher');
+const { BatchLauncher } = require('../../../backend/batches/services/BatchLauncher');
 const CreatePaymentsBatch = require('../../../backend/batches/batch-jobs/CreatePaymentsBatch');
 
 // Configuration

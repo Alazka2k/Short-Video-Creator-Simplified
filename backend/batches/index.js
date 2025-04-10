@@ -8,9 +8,9 @@ const logger = require('../shared/utils/logger');
 const server = require('./server');
 const config = require('../shared/utils/config');
 
-// Import core components
-const { BatchLauncher } = require('./services/batchLauncher');
-const { BatchRepository } = require('./services/batchRepository');
+// Import service components
+const { BatchLauncher } = require('./services/BatchLauncher');
+const { BatchRepository } = require('./services/BatchRepository');
 
 // Import controllers
 const BatchController = require('./controllers/batchController');
@@ -20,27 +20,27 @@ const { BatchDataAccess } = require('./data/batchDataAccess');
 
 // Data access layer
 const dataAccess = {
-  jobs: new BatchDataAccess()
+  batches: new BatchDataAccess()
 };
 
-// Core components
-const jobRepository = new BatchRepository(dataAccess.jobs);
-const jobLauncher = new BatchLauncher(jobRepository);
+// Service components
+const batchRepository = new BatchRepository(dataAccess.batches);
+const batchLauncher = new BatchLauncher(batchRepository);
 
 async function startServer() {
   try {
     logger.info('Starting Batch Processing Service...');
     
     // Initialize core components
-    await jobRepository.initialize();
-    await jobLauncher.initialize();
+    await batchRepository.initialize();
+    await batchLauncher.initialize();
     
     // Initialize controller
-    const jobController = new BatchController(jobLauncher);
+    const batchController = new BatchController(batchLauncher);
     
     // Create and start the server
     const app = server.createServer({
-      jobController
+      batchController
     });
     
     // Get batch service port from config
@@ -64,7 +64,7 @@ async function startServer() {
     // Handle graceful shutdown
     const shutdown = async () => {
       logger.info('Shutting down Batch Processing Service...');
-      await jobLauncher.shutdown();
+      await batchLauncher.shutdown();
       process.exit(0);
     };
     

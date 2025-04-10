@@ -103,7 +103,7 @@ A unified approach for subscription management has been implemented:
    - `ended_at`: Timestamp when status changed to `cancelled`
    - `current_period_start`/`current_period_end`: Current billing period
 
-## API Gateway Integration (Completed) // TODO: Check if all route endpoints are documented
+## API Gateway Integration (Completed)
 
 1. **Subscription Routes:**
    - Implemented `/api/subscription/plans` for plan listing
@@ -121,7 +121,7 @@ A unified approach for subscription management has been implemented:
    - Implemented payment history and management endpoints
    - Added webhook handler for payment processing
 
-## Batch Job Infrastructure (Started but needs refactoring)
+## Batch Job Infrastructure (Completed)
 
 Implemented batch job infrastructure with:
 
