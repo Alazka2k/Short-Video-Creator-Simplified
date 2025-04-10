@@ -1,5 +1,7 @@
 'use client'
 
+//This page summarizes all features and the workflow of the content creation process on a /features page.
+
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'

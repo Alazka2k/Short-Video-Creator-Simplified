@@ -1,0 +1,113 @@
+{
+    "title": "Privacy Policy",
+    "lastUpdated": "2025-04-10",
+    "sections": [
+      {
+        "title": "1. Introduction",
+        "content": "Welcome to {{company.name}}. We respect your privacy and are committed to protecting your personal data. This Privacy Policy informs you about how we collect, use, and process your personal data when you use our website and services, as well as your rights under applicable data protection laws, including the General Data Protection Regulation (GDPR)."
+      },
+      {
+        "title": "2. The Data We Collect",
+        "content": "We may collect, use, store, and transfer different kinds of personal data about you, which we have grouped together as follows:",
+        "dataTypes": [
+          {
+            "name": "Identity Data",
+            "description": "includes first name, last name, username or similar identifier"
+          },
+          {
+            "name": "Contact Data",
+            "description": "includes email address and telephone numbers"
+          },
+          {
+            "name": "Technical Data",
+            "description": "includes internet protocol (IP) address, browser type and version, time zone setting and location, browser plug-in types and versions, operating system and platform, and other technology on the devices you use to access this website"
+          },
+          {
+            "name": "Usage Data",
+            "description": "includes information about how you use our website and services"
+          },
+          {
+            "name": "Generated Content Data",
+            "description": "includes content inputs provided by you (which may contain personal data, depending on your input)"
+          }
+        ]
+      },
+      {
+        "title": "3. How We Use Your Data",
+        "content": "We will only process your personal data when permitted by law. Most commonly, we rely on the following legal bases under Article 6 of the GDPR:",
+        "uses": [
+          "Performance of a contract: to provide and maintain our service",
+          "Legal obligation: to comply with applicable legal requirements",
+          "Legitimate interests: to monitor and improve our services, maintain security, and prevent abuse",
+          "Consent: where we ask for your consent, such as for optional communications or cookies"
+        ]
+      },
+      {
+        "title": "4. Data Sharing and Third Parties",
+        "content": "We use trusted third-party services to operate and improve our platform. These providers may process personal data on our behalf:",
+        "thirdParties": [
+          {
+            "name": "Auth0",
+            "purpose": "User authentication and registration"
+          },
+          {
+            "name": "Stripe",
+            "purpose": "Payment processing"
+          },
+          {
+            "name": "OpenAI, ElevenLabs, Suno, Luma Dreamlabs, ImmersityAI, Creatomate",
+            "purpose": "Content generation services (may receive user input that could contain personal data)"
+          },
+          {
+            "name": "Vercel",
+            "purpose": "Frontend hosting"
+          },
+          {
+            "name": "AWS S3",
+            "purpose": "Backend hosting and file storage"
+          }
+        ],
+        "additionalContent": "Some of these providers may be located outside the EU/EEA. In such cases, data transfers are carried out in compliance with Chapter V of the GDPR, based on appropriate safeguards such as Standard Contractual Clauses (SCCs) or adequacy decisions."
+      },
+      {
+        "title": "5. Data Retention",
+        "content": "We retain personal data only for as long as necessary to fulfill the purposes we collected it for, including legal, accounting, or reporting obligations. User accounts and associated data will be deleted if they remain inactive for an extended period, in accordance with GDPR-compliant retention rules."
+      },
+      {
+        "title": "6. Data Security",
+        "content": "We implement appropriate technical and organizational security measures to prevent unauthorized access, misuse, loss, or disclosure of your personal data. Access is limited to those with a business need to know."
+      },
+      {
+        "title": "7. Your Rights",
+        "content": "Under the GDPR, you have the following rights regarding your personal data:",
+        "rights": [
+          "Right of access – obtain a copy of your personal data",
+          "Right to rectification – correct inaccurate data",
+          "Right to erasure – delete your data (‘right to be forgotten’)",
+          "Right to restriction of processing – limit how we use your data",
+          "Right to data portability – receive your data in a usable format",
+          "Right to object – object to data processing based on legitimate interests",
+          "Right to withdraw consent – if processing is based on your consent"
+        ]
+      },
+      {
+        "title": "8. Supervisory Authority",
+        "content": "You have the right to lodge a complaint with a data protection authority. For users located in Germany, the competent authority is:",
+        "authority": {
+          "name": "Bayerisches Landesamt für Datenschutzaufsicht (BayLDA)",
+          "address": "Promenade 27, 91522 Ansbach, Germany",
+          "website": "https://www.lda.bayern.de"
+        }
+      },
+      {
+        "title": "9. Contact Us",
+        "content": "If you have any questions or concerns about this Privacy Policy or how we process your data, please contact us at:",
+        "contact": {
+          "email": "{{company.contact.email}}",
+          "phone": "{{company.contact.phone}}",
+          "address": "{{company.name}}, {{company.address.street}}, {{company.address.postalCode}} {{company.address.city}}, {{company.address.country}}"
+        }
+      }
+    ]
+  }
+  

@@ -1,6 +1,7 @@
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Auth0ProviderWrapper } from '@/components/providers/auth0-provider';
+import { ConsentProvider } from '@/components/providers/consent-provider';
 import { Toaster } from '@/components/ui/toaster';
 import '@/styles/globals.css';
 import { logEnvironmentConfig } from '@/lib/debug/env-logger';
@@ -34,9 +35,11 @@ export default function RootLayout({
             disableTransitionOnChange
             storageKey="video-creator-theme"
           >
-            <ApiProvider>
-              {children}
-            </ApiProvider>
+            <ConsentProvider>
+              <ApiProvider>
+                {children}
+              </ApiProvider>
+            </ConsentProvider>
             <Toaster />
           </ThemeProvider>
         </Auth0ProviderWrapper>

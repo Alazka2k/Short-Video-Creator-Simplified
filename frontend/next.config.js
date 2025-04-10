@@ -9,6 +9,13 @@ const nextConfig = {
   experimental: {
     externalDir: true,
   },
+  // Enable Vercel Analytics
+  analytics: {
+    // This setting requires user consent
+    vercelAnalytics: {
+      mode: 'consent',
+    },
+  },
   // Add CORS headers to API routes
   async headers() {
     return [

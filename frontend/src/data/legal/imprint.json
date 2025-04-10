@@ -1,0 +1,33 @@
+{
+    "title": "Imprint",
+    "lastUpdated": "2025-04-10",
+    "sections": [
+      {
+        "title": "1. Information According to § 5 TMG",
+        "content": "{{company.name}}\n{{company.representative}}\n{{company.address.street}}\n{{company.address.postalCode}} {{company.address.city}}\n{{company.address.country}}"
+      },
+      {
+        "title": "2. Contact",
+        "content": "Phone: {{company.contact.phone}}\nEmail: {{company.contact.email}}\nWebsite: {{company.website}}",
+        "representatives": "Represented by {{company.representative}}"
+      },
+      {
+        "title": "3. Commercial Register",
+        "content": "No entry in the commercial register (Einzelunternehmer).\nVAT identification number according to § 27a of the German Value Added Tax Act: {{company.registration.vatId}}"
+      },
+      {
+        "title": "4. Responsible for Content",
+        "content": "According to § 18 Abs. 2 MStV:\n{{company.contentResponsibility.name}}\n{{company.contentResponsibility.position}}\n{{company.contentResponsibility.address.street}}\n{{company.contentResponsibility.address.postalCode}} {{company.contentResponsibility.address.city}}\n{{company.contentResponsibility.address.country}}"
+      },
+      {
+        "title": "5. Dispute Resolution",
+        "content": "The European Commission provides a platform for online dispute resolution (ODR), available at {{company.disputeResolution.platform}}. Our email address can be found above in the site notice.",
+        "additionalContent": "{{company.disputeResolution.participation}}",
+        "link": {
+          "text": "{{company.disputeResolution.platform}}",
+          "url": "{{company.disputeResolution.platform}}"
+        }
+      }
+    ]
+  }
+  

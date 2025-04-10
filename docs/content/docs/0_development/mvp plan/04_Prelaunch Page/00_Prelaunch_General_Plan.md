@@ -12,77 +12,110 @@
 - Ensure these pages are accessible throughout the entire application for compliance
 
 ### Transition/Later Phase
-- Initially deploy the prelaunch page on Vercel for quick iteration and ease of updates
-- Later, migrate the full SaaS product to AWS
-- Add Google Analytics 4 to the full application
+- ⏳ Initially deploy the prelaunch page on Vercel for quick iteration and ease of updates
+- ⏳ Later, migrate the full SaaS product to AWS
+- ⏳ Add Google Analytics 4 to the full application
 
 ## 2. Branching Strategy and Code Adjustments
 
 ### 2.1 Develop Legal Pages in the Main (Develop) Branch
-**Create Legal Pages:**
-- Build pages such as 
-    `/src/app/legal/imprint.tsx`: Required by German law (Telemediengesetz) for most commercial websites accessible in Germany. It needs specific company details (name, address, contact info, registration numbers, etc.)
-    `/src/app/legal/privacy-policy.tsx`: Required by GDPR for any site processing personal data (which includes IP addresses logged by the server, analytics data, newsletter signups).
-    `/src/app/legal/cookie-policy.tsx`: Cookie Policy - can sometimes be part of the Privacy Policy, but often separate for clarity
-    `/src/app/legal/terms-of-service.tsx`:  These outline the contractual rules between you and your users for using your service. You might not strictly need full ToS publicly visible for just the prelaunch landing page with only a newsletter signup. However, it's good practice to have them drafted. You will absolutely need them before allowing user registration or accepting payments for the actual SaaS product.
-- Integrate these pages into the global footer or navigation so that they are accessible from every part of the application
+**Create Legal Pages:** ✅ Completed
+- ✅ Build pages such as 
+    - ✅ `/src/app/(legal)/imprint/page.tsx`: Required by German law (Telemediengesetz)
+    - ✅ `/src/app/(legal)/privacy-policy/page.tsx`: Required by GDPR
+    - ✅ `/src/app/(legal)/cookie-policy/page.tsx`: Cookie Policy
+    - ✅ `/src/app/(legal)/terms-of-service/page.tsx`: Terms of Service
+- ✅ Integrate these pages into the global footer or navigation
 
 ### 2.2. Implement cookie and analytics feature and cookie consent
-**Implement Cookie and Analytics Feature:**
-- Implement a GDPR/ePrivacy compliant cookie consent mechanism and basic, privacy-conscious analytics for the prelaunch page (and later the full application).
-- Use a lightweight library like react-cookie-consent
-- Implement Consent Banner/Modal with our own desing (react-cookie-consent)
+**Implement Cookie and Analytics Feature:** 🔄 In Progress
+- 🔄 Implement a GDPR/ePrivacy compliant cookie consent mechanism
+  - ⏳ Use a lightweight library like react-cookie-consent
+  - ⏳ Implement Consent Banner/Modal with our own design
 
-**Enable Vercel Analytics**: 
-- For basic traffic insights on the landing page. Simple, free, privacy-friendly. Integrate Google Analytics 4 later when the full application is ready.
+**Enable Vercel Analytics:** ✅ Completed
+- ✅ Configured Vercel Analytics in next.config.js with 'consent' mode
+- ✅ Analytics will only be collected from users who explicitly consent
 
-**Integration of Vercel Analytics**:
+**Integration of Vercel Analytics:** ✅ Completed
 Cookie Policy & Privacy Policy Update:
 
-Even though Vercel Analytics is designed to be privacy-focused and cookieless by default, you must mention its use in your Privacy Policy (/legal/privacy-policy.tsx).
+- Vercel Analytics is now properly configured to respect user consent choices.
+- Key implementation details:
+  - Set up in next.config.js with `mode: 'consent'`
+  - Only collects data when users click "Accept All" in the cookie banner
+  - Does not collect data when users select "Accept Only Essential"
+  - Uses localStorage to track consent status
 
-Describe:
-- That you use Vercel Analytics.
+In your Privacy Policy and Cookie Policy, you should:
+- Describe that you use Vercel Analytics.
 - What data it collects (page URL, referrer, browser/OS type, country - anonymized).
 - The purpose (website traffic analysis, performance monitoring).
 - That it's provided by Vercel Inc.
 - Link to Vercel's privacy policy.
-- Mention that it operates without using tracking cookies by default.
+- Clearly state that it only operates when users have provided explicit consent.
 
-In your Cookie Policy (/legal/cookie-policy.tsx), you can explicitly state that Vercel Analytics (as configured) does not place cookies, reinforcing its privacy aspect.
+The cookie consent banner now properly controls the Vercel Analytics functionality, ensuring full GDPR compliance.
 
-Interaction with Cookie Consent Banner:
-- Challenge: Because Vercel Analytics is auto-injected by the platform during deployment, you cannot easily wrap it in conditional logic based on your react-cookie-consent banner within your code. The script is added externally by Vercel.
+### 2.2.1. Vercel Dashboard Configuration for Analytics
 
-Pragmatic Approach:
-- Rely on Vercel's privacy-preserving defaults (cookieless, anonymized data).
-- Clearly disclose the use of Vercel Analytics in your Privacy Policy (as per step 4).
-- Your consent banner will still control other potentially cookie-setting scripts (like GA4 if added later), but it won't block the auto-injected Vercel script.
-- This is a common approach for platform-level, cookieless analytics. The user is informed via the policy, and the tool itself minimizes data collection. Strict interpretations might differ, but this balances usability, compliance, and ease of implementation.
+To enable and monitor analytics in the Vercel dashboard:
+
+1. **Enable Web Analytics in Vercel Dashboard**:
+   - Log in to your Vercel dashboard
+   - Select your project
+   - Go to "Analytics" tab in the left sidebar
+   - Click "Enable Analytics" if not already enabled
+   - Ensure "Web Analytics" is turned on
+
+2. **Verify Consent Mode Implementation**:
+   - Vercel automatically detects your consent configuration from next.config.js
+   - No additional setup is needed in the dashboard for consent settings
+   - The platform respects the 'consent' mode setting we've configured
+
+3. **Test Analytics Collection**:
+   - Deploy your site with the updated configuration
+   - Visit your site in incognito/private browsing mode
+   - Accept cookies by clicking "Accept All" in the banner
+   - Perform some navigation actions
+   - Check the Analytics dashboard to verify data is being collected
+
+4. **View Analytics Data**:
+   - After collecting some data, you'll see:
+     - Page views
+     - Visitors
+     - Countries
+     - Device types
+     - Referrers
+   - These metrics will only include users who explicitly consented
+
+5. **Troubleshooting**:
+   - If no data appears, use browser developer tools to:
+     - Check that localStorage has a `cookie-consent-analytics=true` entry after clicking "Accept All"
+     - Verify the Vercel Analytics script is loading in the Network tab
+     - Ensure there are no console errors related to analytics
+
+Note: After deployment, analytics data will take some time (usually a few hours) to appear in the dashboard.
 
 ### 2.3 Create a Dedicated Prelaunch Branch
-**Branch Creation:**
-- Once legal pages are in place and integrated into the landing page on develop, create a prelaunch branch to isolate changes related to the prelaunch messaging and access restrictions
-- Example command:
-  ```bash
-  git checkout -b feature/prelaunch-page
-  ```
+**Branch Creation:** ⏳ Not Started
+- ⏳ Create a prelaunch branch to isolate changes related to the prelaunch messaging and access restrictions
+- ⏳ Use git command: `git checkout -b feature/prelaunch-page`
 
-**Purpose of the Prelaunch Branch:**
-- Customize the landing page exclusively for prelaunch (e.g., integrate Beehiiv, modify CTAs, remove access to unfinished app sections)
-- This separation minimizes the risk of deploying incomplete features from your main application
+**Purpose of the Prelaunch Branch:** ⏳ Not Started
+- ⏳ Customize the landing page exclusively for prelaunch
+- ⏳ Remove access to unfinished app sections
 
 ### 2.4 Update the Marketing Landing Page
-**Based on Your Existing Page (page.tsx):**
-- Use the current marketing landing page (under `/src/app/(marketing)/page.tsx`) as the starting point
-- Update the content to focus on prelaunch messaging (e.g., teaser text, minimal feature descriptions)
-- Consider temporarily disabling or hiding links to authentication routes (like `/signup`, `/login`) and other incomplete areas
+**Based on Your Existing Page (page.tsx):** ⏳ Not Started
+- ⏳ Update the content to focus on prelaunch messaging
+- ⏳ Temporarily disable or hide links to authentication routes -> login-form (/login), register-form (/signup)
 
 ## 3. Beehiiv Integration
 
-**Using the Embed Code:**
-- Retrieve the HTML embed code for the Beehiiv newsletter form from your Beehiiv dashboard
-- Integrate the embed code into a prominent section of your landing page (typically in the hero section or a dedicated CTA block)
+**Using the Embed Code:** ⏳ Not Started
+- ⏳ Retrieve the HTML embed code for the Beehiiv newsletter form
+- ⏳ Integrate the embed code into a prominent section of the landing page
 
 **Future Flexibility:**
 - The embed code approach is lightweight and can be easily removed or replaced with a custom API integration later when your full SaaS product is ready
@@ -90,20 +123,19 @@ Pragmatic Approach:
 ## 4. Deployment on Vercel for the Prelaunch Phase
 
 ### 4.1 Prelaunch Deployment Process
-**Deploying the Prelaunch Branch:**
-- Configure Vercel to deploy the `feature/prelaunch-page` branch
-- This allows you to preview and then deploy your prelaunch landing page on your production domain (e.g., www.yourdomain.com)
+**Deploying the Prelaunch Branch:** ⏳ Not Started
+- ⏳ Configure Vercel to deploy the `feature/prelaunch-page` branch
 
-**Key Configurations:**
-- Ensure that only the prelaunch landing page (with the updated marketing messaging and legal pages) is accessible
-- Verify that there are no active links or navigational elements to routes for login, registration, or dashboard
-- Confirm that the Beehiiv integration works properly through testing (e.g., test email submission)
+**Key Configurations:** ⏳ Not Started
+- ⏳ Ensure that only the prelaunch landing page with legal pages is accessible
+- ⏳ Verify no active links to protected routes
+- ⏳ Confirm Beehiiv integration works properly
 
-### 4.2 Testing Prior to Going Live
+### 4.2 Testing Prior to Going Live ⏳ Not Started
 Thoroughly test the following:
-- Functionality of the Beehiiv form
-- Accessibility and correctness of the legal pages
-- That any attempts to navigate to restricted areas (e.g., `/login`, `/dashboard`) either redirect to the landing page or show an appropriate message
+- ⏳ Functionality of the Beehiiv form
+- ⏳ Accessibility and correctness of the legal pages
+- ⏳ Redirect or message for protected areas
 
 ## 5. Later Migration or Parallel Hosting on AWS
 
@@ -115,23 +147,29 @@ Thoroughly test the following:
 - Host your complete application (including authentication, dashboard, and other full features) on AWS using your preferred services (e.g., S3/CloudFront for static assets, EC2/ECS, or Amplify for dynamic content)
 - Use a subdomain such as app.yourdomain.com for the SaaS app
 
-## 6. Summary of the End-to-End Plan
+## 6. Summary of Current Status
 
-### Core Development on Develop Branch
-- Build and integrate legal pages in the develop branch for Impressum, Privacy Policy, and Cookie Settings
-- Update the marketing landing page (from `/src/app/(marketing)/page.tsx`) to focus on prelaunch messaging, including minimal feature details and strong CTAs
-- Include links to the legal pages in the footer
+### Completed (✅)
+- Legal pages have been created and integrated (Imprint, Privacy Policy, Cookie Policy)
+- Content for legal pages is in place and accessible
+- Privacy/Cookie policies include references to Vercel Analytics
+- Vercel Analytics configured to respect user consent ('consent' mode)
 
-### Branching for Prelaunch
-- Create a dedicated branch (`feature/prelaunch-page`) from develop after the legal pages and landing page updates are complete
-- In this branch, further tailor the landing page by adding the Beehiiv newsletter embed code and removing or protecting any links/routes leading to unfinished areas (e.g., login, signup, dashboard)
+### In Progress (🔄)
+- Cookie consent mechanism implementation (banner UI is in place but may need refinement)
 
-### Prelaunch Deployment on Vercel
-- Configure Vercel to deploy the `feature/prelaunch-page` branch
-- Ensure that only the prelaunch landing page and legal pages are accessible
-- Perform comprehensive testing for functionality, navigation, and legal compliance before going live
+### Not Started (⏳)
+- Beehiiv newsletter integration 
+- Dedicated prelaunch branch creation
+- Landing page update for prelaunch messaging
+- Deployment configuration on Vercel
+- Testing prior to going live
+- Migration planning for AWS
 
-### Planning for Later Transition to AWS
-- **Option A:** Continue to host the prelaunch/marketing page on Vercel and deploy the full SaaS on AWS using a separate subdomain
-- **Option B:** Migrate the entire application, including the landing page and full app, to AWS
-- Update DNS settings and CI/CD pipelines accordingly, and perform thorough testing post-migration
+## 7. Next Steps
+1. Finalize the cookie consent banner UI/UX
+2. Create the feature/prelaunch-page branch
+3. Update the landing page with prelaunch messaging
+4. Add Beehiiv newsletter integration
+5. Configure Vercel for deployment of the prelaunch branch
+6. Test the prelaunch page thoroughly before going live

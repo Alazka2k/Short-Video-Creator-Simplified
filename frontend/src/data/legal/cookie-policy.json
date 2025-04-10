@@ -1,0 +1,57 @@
+{
+    "title": "Cookie Policy",
+    "lastUpdated": "2025-04-10",
+    "sections": [
+      {
+        "title": "1. Introduction",
+        "content": "This Cookie Policy explains how Narravid (\"we\", \"us\", or \"our\") uses cookies and similar technologies to recognize you when you visit our website. It explains what these technologies are, why we use them, and your rights to control our use of them in accordance with the EU General Data Protection Regulation (GDPR) and the German Telecommunications-Telemedia Data Protection Act (TTDSG)."
+      },
+      {
+        "title": "2. What are Cookies?",
+        "content": "Cookies are small data files that are placed on your computer or mobile device when you visit a website. Cookies are widely used to make websites function properly or more efficiently and to provide reporting information.",
+        "additionalContent": "Cookies set by Narravid are called \"first-party cookies\". Cookies set by parties other than us are called \"third-party cookies\". These third-party cookies enable features or functionalities provided by third parties through the website."
+      },
+      {
+        "title": "3. How We Use Cookies",
+        "content": "We use both first-party and third-party cookies for several reasons. Some cookies are strictly necessary for the operation of our website (\"essential cookies\"). Other cookies help us understand your preferences and usage patterns to improve user experience or enable third-party features like analytics."
+      },
+      {
+        "title": "4. Types of Cookies We Use",
+        "content": "Our website uses the following categories of cookies:",
+        "cookieTypes": [
+          {
+            "name": "Essential Cookies",
+            "description": "These cookies are necessary to provide core functionality on our website, such as secure user authentication and access to certain features. They do not require user consent under § 25 (2) TTDSG."
+          },
+          {
+            "name": "Performance Cookies",
+            "description": "These cookies enhance the performance and usability of our website but are not strictly necessary. We only use these with your prior consent."
+          },
+          {
+            "name": "Analytics Cookies",
+            "description": "These cookies collect aggregated information about how visitors use the website to help us improve it. We only place these cookies after receiving your explicit consent via our cookie banner."
+          }
+        ]
+      },
+      {
+        "title": "5. Vercel Analytics",
+        "content": "We use Vercel Analytics, a privacy-first, cookieless analytics tool. Vercel Analytics does not store any cookies on your device but uses alternative technologies to gather anonymous usage data for improving our website.",
+        "additionalContent": "As Vercel Analytics does not rely on cookies or personal data, it operates without requiring user consent under the TTDSG.",
+        "link": {
+          "text": "Vercel Analytics documentation",
+          "url": "https://vercel.com/analytics"
+        }
+      },
+      {
+        "title": "6. Cookie Consent",
+        "content": "On your first visit to our site, you will be presented with a cookie banner that allows you to accept or reject non-essential cookies. We store your preferences in accordance with GDPR and TTDSG guidelines.",
+        "additionalContent": "You can modify or withdraw your consent at any time by accessing the cookie settings in your browser or through the cookie banner."
+      },
+      {
+        "title": "7. How to Control Cookies",
+        "content": "You can configure your browser settings to block or alert you about cookies. If you disable or reject cookies, certain parts of the website may become inaccessible or not function as intended.",
+        "additionalContent": "For any questions or concerns regarding our use of cookies, please contact us at t.todd@aiservice-hub.com."
+      }
+    ]
+  }
+  

@@ -1,0 +1,44 @@
+{
+  "name": "Narravid",
+  "representative": "Timothy Peter Todd",
+  "address": {
+    "street": "Friedrich Ebert Ring 31",
+    "city": "Würzburg",
+    "postalCode": "97072",
+    "country": "Germany"
+  },
+  "contact": {
+    "phone": "+49 1729165076",
+    "email": "contact@narravid.io"
+  },
+  "registration": {
+    "vatId": "DE123456789"
+  },
+  "contentResponsibility": {
+    "name": "Timothy Todd",
+    "position": "Content Manager",
+    "address": {
+      "street": "Friedrich Ebert Ring 31",
+      "city": "Würzburg",
+      "postalCode": "97072",
+      "country": "Germany"
+    }
+  },
+  "disputeResolution": {
+    "platform": "https://ec.europa.eu/consumers/odr/",
+    "participation": "We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board."
+  },
+  "dataProtection": {
+    "officer": {
+      "name": "Timothy Todd",
+      "email": "contact@narravid.io",
+      "phone": "+49 1729165076"
+    },
+    "supervisoryAuthority": {
+      "name": "Bayerisches Landesamt für Datenschutzaufsicht",
+      "address": "Promenade 27, 91522 Ansbach, Germany",
+      "website": "https://www.lda.bayern.de"
+    }
+  },
+  "lastUpdated": "2024-04-10"
+} 

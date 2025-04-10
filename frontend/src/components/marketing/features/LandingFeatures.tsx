@@ -11,24 +11,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const keyFeatures = [
-  {
-    title: "AI-Powered End-to-End",
-    description: "From script to final video, our AI handles every aspect of content creation",
-    icon: Wand2
-  },
-  {
-    title: "100% Royalty-Free",
-    description: "All generated content is uniquely created for your project with full usage rights",
-    icon: Shield
-  },
-  {
-    title: "Unlimited Iterations",
-    description: "Refine and regenerate content until it's perfect, at no additional cost",
-    icon: Clock
-  }
-]
-
 const features = [
   {
     name: "AI-Powered Creation",

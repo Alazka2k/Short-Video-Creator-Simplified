@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation"
 import { User } from "lucide-react"
 
 export function SiteHeader() {
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth() // TODO check the history of useAuth() why it is missing?
   const router = useRouter()
 
   const handleLogout = async () => {

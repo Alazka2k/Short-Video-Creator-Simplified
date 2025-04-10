@@ -4,6 +4,8 @@
  * Displays a curated collection of videos created with our platform.
  * Uses a masonry grid layout for visually appealing presentation.
  * 
+ * TODO: YOUTUBE VIDEOS are not loading anymore.
+ * 
  * URL: /showcase
  */
 

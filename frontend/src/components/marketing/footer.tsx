@@ -49,13 +49,23 @@ export function MarketingFooter() {
             <h3 className="text-sm font-semibold">Legal</h3>
             <ul className="mt-4 space-y-3">
               <li>
-                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Privacy
+                <Link href="/imprint" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Imprint
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Terms
+                <Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookie-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Cookie Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms-of-service" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Terms of Service
                 </Link>
               </li>
             </ul>
@@ -66,11 +76,6 @@ export function MarketingFooter() {
               <li>
                 <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   About
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Careers
                 </Link>
               </li>
             </ul>

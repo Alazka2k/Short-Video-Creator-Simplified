@@ -17,7 +17,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 
 export function DashboardHeader() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // TODO check the history of useAuth() why it is missing?
   const router = useRouter();
 
   const handleLogout = async () => {

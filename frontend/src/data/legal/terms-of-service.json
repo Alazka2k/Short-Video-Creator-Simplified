@@ -1,0 +1,99 @@
+{
+    "title": "Terms of Service",
+    "lastUpdated": "2025-04-10",
+    "sections": [
+      {
+        "title": "1. Introduction",
+        "content": "Welcome to {{company.name}}. These Terms of Service govern your use of our website and services. By accessing or using our services, you agree to be bound by these Terms and our Privacy Policy. If you disagree with any part of the terms, you may not access the service."
+      },
+      {
+        "title": "2. Definitions",
+        "content": "For the purpose of these Terms of Service:",
+        "definitions": [
+          {
+            "term": "Service",
+            "meaning": "refers to the {{company.name}} platform, website, and all related applications and tools."
+          },
+          {
+            "term": "User",
+            "meaning": "refers to any individual who accesses or uses the Service."
+          },
+          {
+            "term": "User Content",
+            "meaning": "refers to any content, including but not limited to text, images, videos, audio, and other materials that users upload, share, or create using the Service."
+          },
+          {
+            "term": "Generated Content",
+            "meaning": "refers to the outputs created by the Service based on User Content or other inputs."
+          }
+        ]
+      },
+      {
+        "title": "3. Account Registration",
+        "content": "To use certain features of the Service, you may need to register for an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete. You are responsible for safeguarding your password and for all activities that occur under your account.",
+        "additionalContent": "We reserve the right to disable any user account if we believe you have violated these Terms of Service or if we determine that your actions may cause financial loss or legal liability for us or other users."
+      },
+      {
+        "title": "4. User Content and Ownership",
+        "content": "By uploading, sharing, or creating User Content, you grant us a worldwide, non-exclusive, royalty-free license to use, copy, modify, and display that content in connection with the services we provide to you.",
+        "additionalContent": "You represent and warrant that you own or have the necessary rights to all User Content that you submit to the Service and that such User Content does not violate the intellectual property rights or any other rights of any third party. You retain all ownership rights to your User Content."
+      },
+      {
+        "title": "5. Generated Content and Intellectual Property",
+        "content": "Subject to your compliance with these Terms, we grant you a worldwide, non-exclusive, non-transferable license to use the Generated Content created by the Service for your personal or business purposes.",
+        "additionalContent": "You acknowledge that the technology, software, and systems used to provide the Service and create Generated Content are protected by intellectual property rights owned by us or our licensors. Nothing in these Terms transfers any such rights to you except for the limited license explicitly granted above."
+      },
+      {
+        "title": "6. Prohibited Uses",
+        "content": "You agree not to use the Service to:",
+        "prohibitions": [
+          "Violate any law, regulation, or third-party rights",
+          "Upload or transmit viruses, malware, or other malicious code",
+          "Attempt to gain unauthorized access to the Service or related systems",
+          "Generate content that is illegal, harmful, threatening, abusive, defamatory, or otherwise objectionable",
+          "Use the Service for automated scraping or data mining",
+          "Engage in any activity that interferes with or disrupts the Service",
+          "Use the Service to generate content that infringes third-party intellectual property rights"
+        ]
+      },
+      {
+        "title": "7. Service Modifications and Termination",
+        "content": "We reserve the right to modify, suspend, or discontinue the Service (or any part thereof) at any time, with or without notice. We shall not be liable to you or any third party for any modification, suspension, or discontinuation of the Service."
+      },
+      {
+        "title": "8. Payment and Subscription Terms",
+        "content": "Certain features of the Service may require payment of fees. You agree to pay all applicable fees as described on our website or when you subscribe to such features.",
+        "additionalContent": "Subscription fees are charged on a recurring basis. You can cancel your subscription at any time, but no refunds will be provided for any unused portion of your current billing period."
+      },
+      {
+        "title": "9. Disclaimer of Warranties",
+        "content": "THE SERVICE IS PROVIDED ON AN \"AS IS\" AND \"AS AVAILABLE\" BASIS. TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, WE DISCLAIM ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.",
+        "additionalContent": "We make no warranty that the Service will meet your requirements, be available on an uninterrupted, secure, or error-free basis, or that defects will be corrected."
+      },
+      {
+        "title": "10. Limitation of Liability",
+        "content": "TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL WE BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM YOUR ACCESS TO OR USE OF OR INABILITY TO ACCESS OR USE THE SERVICE."
+      },
+      {
+        "title": "11. Indemnification",
+        "content": "You agree to indemnify, defend, and hold harmless {{company.name}} and its officers, directors, employees, agents, and affiliates from and against any and all claims, liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) that such parties may incur as a result of or arising from your violation of these Terms."
+      },
+      {
+        "title": "12. Governing Law",
+        "content": "These Terms shall be governed by the laws of {{company.address.country}} without regard to its conflict of law provisions. You agree to submit to the personal and exclusive jurisdiction of the courts located in {{company.address.city}}, {{company.address.country}}."
+      },
+      {
+        "title": "13. Changes to Terms",
+        "content": "We reserve the right to modify these Terms at any time. If we make material changes, we will notify you via the Service or by email. Your continued use of the Service after such notification constitutes your acceptance of the new Terms."
+      },
+      {
+        "title": "14. Contact Information",
+        "content": "If you have any questions about these Terms, please contact us at:",
+        "contact": {
+          "email": "{{company.contact.email}}",
+          "address": "{{company.name}}{{#company.legalForm}}, {{company.legalForm}}{{/company.legalForm}}, {{company.address.street}}, {{company.address.postalCode}} {{company.address.city}}, {{company.address.country}}"
+        }
+      }
+    ]
+  }
+  
