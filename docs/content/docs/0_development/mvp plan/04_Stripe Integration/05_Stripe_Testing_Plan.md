@@ -1,8 +1,8 @@
-# Stripe Integration Testing Plan
+# Stripe Integration Testing Plan (Revised)
 
 ## Overview
 
-This document outlines the comprehensive testing strategy for the Stripe payment integration in the Short-Video-Creator-Simplified application. It covers all aspects of testing, from unit tests to end-to-end integration tests, and includes specific test cases for various payment scenarios.
+This document outlines the comprehensive testing strategy for the Stripe payment integration in the Short-Video-Creator-Simplified application. The testing plan has been revised to align with our updated integration approach, which leverages Stripe Checkout, Customer Portal, and webhook-driven synchronization. This plan covers all aspects of testing, from unit tests to end-to-end integration tests, and includes specific test cases for various payment scenarios.
 
 ## Test Environment Setup
 
@@ -21,6 +21,18 @@ This document outlines the comprehensive testing strategy for the Stripe payment
    - Set up ngrok for local webhook testing
    - Configure webhook endpoints in Stripe dashboard
    - Set up webhook signature verification
+   - Configure webhook events to listen for:
+     - `checkout.session.completed`
+     - `invoice.paid`
+     - `invoice.payment_failed`
+     - `customer.subscription.created`
+     - `customer.subscription.updated`
+     - `customer.subscription.deleted`
+
+4. **Configure Customer Portal**
+   - Set up test Customer Portal configuration
+   - Configure allowed actions (update payment methods, cancel subscriptions)
+   - Set up branding and return URL
 
 ## Unit Tests
 
@@ -36,107 +48,19 @@ describe('StripeService', () => {
     // Setup
   });
   
-  test('createPaymentIntent should create a payment intent', async () => {
-    // Test implementation
-  });
-  
   test('createCustomer should create a customer', async () => {
     // Test implementation
   });
   
-  test('attachPaymentMethodToCustomer should attach a payment method', async () => {
+  test('createCheckoutSession should create a session for subscription', async () => {
     // Test implementation
   });
   
-  test('createSubscription should create a subscription', async () => {
+  test('createCheckoutSession should create a session for token package', async () => {
     // Test implementation
   });
   
-  test('updateSubscription should update a subscription', async () => {
-    // Test implementation
-  });
-  
-  test('cancelSubscription should cancel a subscription', async () => {
-    // Test implementation
-  });
-  
-  test('processPayment should process a payment', async () => {
-    // Test implementation
-  });
-  
-  test('createProduct should create a product', async () => {
-    // Test implementation
-  });
-  
-  test('createPrice should create a price', async () => {
-    // Test implementation
-  });
-  
-  test('verifyWebhookSignature should verify webhook signature', () => {
-    // Test implementation
-  });
-});
-```
-
-### 2. TokenPackageService Tests
-
-```javascript
-// tests/unit/tokenPackageService.test.js
-
-describe('TokenPackageService', () => {
-  let tokenPackageService;
-  let stripeService;
-  let paymentService;
-  
-  beforeEach(() => {
-    // Setup
-  });
-  
-  test('createTokenPackagePayment should create a payment intent', async () => {
-    // Test implementation
-  });
-  
-  test('processTokenPackagePayment should process a payment', async () => {
-    // Test implementation
-  });
-  
-  test('getTokenPackages should retrieve available packages', async () => {
-    // Test implementation
-  });
-  
-  test('getTokenBalance should retrieve user token balance', async () => {
-    // Test implementation
-  });
-  
-  test('getPurchaseHistory should retrieve user purchase history', async () => {
-    // Test implementation
-  });
-});
-```
-
-### 3. PaymentController Tests
-
-```javascript
-// tests/unit/paymentController.test.js
-
-describe('PaymentController', () => {
-  let paymentController;
-  let paymentService;
-  let stripeService;
-  
-  beforeEach(() => {
-    // Setup
-  });
-  
-  test('createPaymentIntent should create a payment intent', async () => {
-    // Test implementation
-  });
-  
-  test('processPayment should process a payment', async () => {
-    // Test implementation
-  });
-  
-  test('createSubscription should create a subscription', async () => {
+  test('createCustomerPortalSession should create a portal session', async () => {
     // Test implementation
   });
   
@@ -147,41 +71,22 @@ describe('PaymentController', () => {
   test('cancelSubscription should cancel a subscription', async () => {
     // Test implementation
   });
-});
-```
-
-### 4. TokenPackageController Tests
-
-```javascript
-// tests/unit/tokenPackageController.test.js
-
-describe('TokenPackageController', () => {
-  let tokenPackageController;
-  let tokenPackageService;
   
-  beforeEach(() => {
-    // Setup
-  });
-  
-  test('getTokenPackages should retrieve available packages', async () => {
+  test('constructWebhookEvent should verify webhook signature', () => {
     // Test implementation
   });
   
-  test('purchaseTokenPackage should create a payment intent', async () => {
+  test('getSubscription should retrieve a subscription', async () => {
     // Test implementation
   });
   
-  test('getTokenBalance should retrieve user token balance', async () => {
-    // Test implementation
-  });
-  
-  test('getPurchaseHistory should retrieve user purchase history', async () => {
+  test('getInvoice should retrieve an invoice', async () => {
     // Test implementation
   });
 });
 ```
 
-### 5. WebhookController Tests
+### 2. WebhookController Tests
 
 ```javascript
 // tests/unit/webhookController.test.js
@@ -190,7 +95,8 @@ describe('WebhookController', () => {
   let webhookController;
   let paymentService;
   let stripeService;
-  let tokenPackageService;
+  let subscriptionService;
+  let tokenService;
   
   beforeEach(() => {
     // Setup
@@ -200,15 +106,11 @@ describe('WebhookController', () => {
     // Test implementation
   });
   
-  test('handlePaymentIntentSucceeded should process successful payment', async () => {
+  test('handleCheckoutSessionCompleted should process completed checkout', async () => {
     // Test implementation
   });
   
-  test('handlePaymentIntentFailed should handle failed payment', async () => {
-    // Test implementation
-  });
-  
-  test('handleInvoicePaymentSucceeded should process successful invoice', async () => {
+  test('handleInvoicePaid should process successful invoice', async () => {
     // Test implementation
   });
   
@@ -228,11 +130,102 @@ describe('WebhookController', () => {
     // Test implementation
   });
   
-  test('handleTokenPackagePaymentSucceeded should process successful token package payment', async () => {
+  test('should implement idempotency check for webhook events', async () => {
+    // Test implementation
+  });
+});
+```
+
+### 3. PaymentController Tests
+
+```javascript
+// tests/unit/paymentController.test.js
+
+describe('PaymentController', () => {
+  let paymentController;
+  let paymentService;
+  let stripeService;
+  
+  beforeEach(() => {
+    // Setup
+  });
+  
+  test('createCheckoutSession should create a session for subscription', async () => {
     // Test implementation
   });
   
-  test('handleTokenPackagePaymentFailed should handle failed token package payment', async () => {
+  test('createCheckoutSession should create a session for token package', async () => {
+    // Test implementation
+  });
+  
+  test('getPaymentHistory should retrieve user payment history', async () => {
+    // Test implementation
+  });
+  
+  test('getPaymentSummary should retrieve user payment summary', async () => {
+    // Test implementation
+  });
+});
+```
+
+### 4. SubscriptionController Tests
+
+```javascript
+// tests/unit/subscriptionController.test.js
+
+describe('SubscriptionController', () => {
+  let subscriptionController;
+  let subscriptionService;
+  let stripeService;
+  
+  beforeEach(() => {
+    // Setup
+  });
+  
+  test('createCustomerPortalSession should create a portal session', async () => {
+    // Test implementation
+  });
+  
+  test('updateSubscription should update a subscription', async () => {
+    // Test implementation
+  });
+  
+  test('cancelSubscription should cancel a subscription', async () => {
+    // Test implementation
+  });
+  
+  test('getSubscription should retrieve a subscription', async () => {
+    // Test implementation
+  });
+  
+  test('getSubscriptions should retrieve user subscriptions', async () => {
+    // Test implementation
+  });
+});
+```
+
+### 5. TokenPackageController Tests
+
+```javascript
+// tests/unit/tokenPackageController.test.js
+
+describe('TokenPackageController', () => {
+  let tokenPackageController;
+  let tokenPackageService;
+  
+  beforeEach(() => {
+    // Setup
+  });
+  
+  test('getTokenPackages should retrieve available packages', async () => {
+    // Test implementation
+  });
+  
+  test('getTokenBalance should retrieve user token balance', async () => {
+    // Test implementation
+  });
+  
+  test('getTokenTransactions should retrieve user token transactions', async () => {
     // Test implementation
   });
 });
@@ -240,57 +233,57 @@ describe('WebhookController', () => {
 
 ## Integration Tests
 
-### 1. Subscription Payment Flow Tests
+### 1. Checkout Flow Tests
 
 ```javascript
-// tests/integration/subscriptionPayment.test.js
+// tests/integration/checkoutFlow.test.js
 
-describe('Subscription Payment Flow', () => {
-  test('should create a subscription with valid payment method', async () => {
+describe('Checkout Flow', () => {
+  test('should create a checkout session for subscription', async () => {
     // Test implementation
   });
   
-  test('should handle failed payment method', async () => {
+  test('should create a checkout session for token package', async () => {
     // Test implementation
   });
   
-  test('should update subscription with new payment method', async () => {
+  test('should handle successful checkout completion', async () => {
     // Test implementation
   });
   
-  test('should cancel subscription', async () => {
+  test('should handle cancelled checkout', async () => {
     // Test implementation
   });
   
-  test('should handle subscription renewal', async () => {
+  test('should process webhook events after successful checkout', async () => {
     // Test implementation
   });
 });
 ```
 
-### 2. Token Package Purchase Flow Tests
+### 2. Customer Portal Flow Tests
 
 ```javascript
-// tests/integration/tokenPackagePurchase.test.js
+// tests/integration/customerPortalFlow.test.js
 
-describe('Token Package Purchase Flow', () => {
-  test('should purchase token package with valid payment method', async () => {
+describe('Customer Portal Flow', () => {
+  test('should create a customer portal session', async () => {
     // Test implementation
   });
   
-  test('should handle failed payment method', async () => {
+  test('should handle subscription update via portal', async () => {
     // Test implementation
   });
   
-  test('should update token balance after successful purchase', async () => {
+  test('should handle subscription cancellation via portal', async () => {
     // Test implementation
   });
   
-  test('should create payment record after successful purchase', async () => {
+  test('should handle payment method update via portal', async () => {
     // Test implementation
   });
   
-  test('should handle purchase history', async () => {
+  test('should process webhook events after portal actions', async () => {
     // Test implementation
   });
 });
@@ -302,15 +295,11 @@ describe('Token Package Purchase Flow', () => {
 // tests/integration/webhook.test.js
 
 describe('Webhook Handling', () => {
-  test('should handle payment_intent.succeeded event', async () => {
+  test('should handle checkout.session.completed event', async () => {
     // Test implementation
   });
   
-  test('should handle payment_intent.failed event', async () => {
-    // Test implementation
-  });
-  
-  test('should handle invoice.payment_succeeded event', async () => {
+  test('should handle invoice.paid event', async () => {
     // Test implementation
   });
   
@@ -330,31 +319,35 @@ describe('Webhook Handling', () => {
     // Test implementation
   });
   
-  test('should handle token package payment success', async () => {
-    // Test implementation
-  });
-  
-  test('should handle token package payment failure', async () => {
-    // Test implementation
-  });
-  
   test('should reject invalid webhook signatures', async () => {
+    // Test implementation
+  });
+  
+  test('should implement idempotency for duplicate events', async () => {
     // Test implementation
   });
 });
 ```
 
-### 4. Batch Job Tests
+### 4. SubscriptionRenewalsBatch Tests
 
 ```javascript
-// tests/integration/batchJobs.test.js
+// tests/integration/subscriptionRenewalsBatch.test.js
 
-describe('Batch Jobs', () => {
-  test('CollectPaymentsBatch should collect pending payments', async () => {
+describe('SubscriptionRenewalsBatch', () => {
+  test('should allocate tokens for subscriptions with successful renewals', async () => {
     // Test implementation
   });
   
-  test('RetryFailedPaymentsBatch should retry failed payments', async () => {
+  test('should not allocate tokens for subscriptions without successful renewals', async () => {
+    // Test implementation
+  });
+  
+  test('should handle token allocation for different plan tiers', async () => {
+    // Test implementation
+  });
+  
+  test('should mark token allocation as complete for processed subscriptions', async () => {
     // Test implementation
   });
 });
@@ -362,73 +355,61 @@ describe('Batch Jobs', () => {
 
 ## End-to-End Tests
 
-### 1. Frontend Payment Flow Tests
+### 1. Frontend Checkout Flow Tests
 
 ```javascript
-// tests/e2e/paymentFlow.test.js
+// tests/e2e/checkoutFlow.test.js
 
-describe('Payment Flow', () => {
-  test('should display payment form', async () => {
+describe('Checkout Flow', () => {
+  test('should display plan selection page', async () => {
     // Test implementation
   });
   
-  test('should validate card details', async () => {
+  test('should display token package selection page', async () => {
     // Test implementation
   });
   
-  test('should handle successful payment', async () => {
+  test('should redirect to Stripe Checkout', async () => {
     // Test implementation
   });
   
-  test('should handle failed payment', async () => {
+  test('should handle successful payment completion', async () => {
     // Test implementation
   });
   
-  test('should display success message', async () => {
+  test('should handle cancelled payment', async () => {
     // Test implementation
   });
   
-  test('should display error message', async () => {
+  test('should display success message after payment', async () => {
+    // Test implementation
+  });
+  
+  test('should display error message for failed payment', async () => {
     // Test implementation
   });
 });
 ```
 
-### 2. Token Package Purchase Flow Tests
+### 2. Frontend Customer Portal Flow Tests
 
 ```javascript
-// tests/e2e/tokenPackagePurchase.test.js
+// tests/e2e/customerPortalFlow.test.js
 
-describe('Token Package Purchase Flow', () => {
-  test('should display token packages', async () => {
+describe('Customer Portal Flow', () => {
+  test('should redirect to Stripe Customer Portal', async () => {
     // Test implementation
   });
   
-  test('should select a token package', async () => {
+  test('should handle return from Customer Portal', async () => {
     // Test implementation
   });
   
-  test('should display payment form for token package', async () => {
+  test('should display updated subscription status after portal changes', async () => {
     // Test implementation
   });
   
-  test('should validate card details', async () => {
-    // Test implementation
-  });
-  
-  test('should handle successful token package purchase', async () => {
-    // Test implementation
-  });
-  
-  test('should handle failed token package purchase', async () => {
-    // Test implementation
-  });
-  
-  test('should update token balance after successful purchase', async () => {
-    // Test implementation
-  });
-  
-  test('should display purchase history', async () => {
+  test('should display updated payment method after portal changes', async () => {
     // Test implementation
   });
 });
@@ -440,11 +421,11 @@ describe('Token Package Purchase Flow', () => {
 // tests/e2e/userJourney.test.js
 
 describe('User Journey', () => {
-  test('should sign up and subscribe to a plan', async () => {
+  test('should sign up and subscribe to a plan via Checkout', async () => {
     // Test implementation
   });
   
-  test('should purchase a token package', async () => {
+  test('should purchase a token package via Checkout', async () => {
     // Test implementation
   });
   
@@ -452,15 +433,23 @@ describe('User Journey', () => {
     // Test implementation
   });
   
-  test('should upgrade subscription', async () => {
+  test('should manage subscription via Customer Portal', async () => {
     // Test implementation
   });
   
-  test('should downgrade subscription', async () => {
+  test('should upgrade subscription via Customer Portal', async () => {
     // Test implementation
   });
   
-  test('should cancel subscription', async () => {
+  test('should downgrade subscription via Customer Portal', async () => {
+    // Test implementation
+  });
+  
+  test('should cancel subscription via Customer Portal', async () => {
+    // Test implementation
+  });
+  
+  test('should update payment method via Customer Portal', async () => {
     // Test implementation
   });
 });
@@ -468,103 +457,102 @@ describe('User Journey', () => {
 
 ## Test Scenarios
 
-### 1. Direct Payment Scenarios
+### 1. Checkout Scenarios
 
-1. **Successful Payment**
-   - Valid card details
-   - Sufficient funds
-   - Correct amount
-
-2. **Failed Payment Scenarios**
-   - Declined card
-   - Insufficient funds
-   - Invalid card details
-   - Expired card
-   - 3D Secure authentication required
-
-### 2. Subscription Scenarios
-
-1. **Subscription Creation**
-   - New customer
-   - Existing customer
+1. **Subscription Checkout**
+   - New customer subscription
+   - Existing customer subscription
    - Different plan tiers
    - Different billing frequencies
 
-2. **Subscription Management**
-   - Upgrade subscription
-   - Downgrade subscription
-   - Cancel subscription
-   - Reactivate subscription
-   - Change payment method
-
-3. **Subscription Renewal**
-   - Successful renewal
-   - Failed renewal
-   - Retry after failure
-   - Subscription cancellation after failed retries
-
-### 3. Token Package Scenarios
-
-1. **Token Package Purchase**
-   - Successful purchase
-   - Failed purchase
+2. **Token Package Checkout**
+   - New customer purchase
+   - Existing customer purchase
    - Different package sizes
    - Multiple purchases
 
-2. **Token Balance Management**
-   - Balance update after purchase
-   - Balance history
-   - Token usage tracking
-   - Balance display
+3. **Checkout Completion**
+   - Successful payment
+   - Cancelled payment
+   - Failed payment
+   - 3D Secure authentication required
 
-3. **Purchase History**
-   - Purchase record creation
-   - Purchase record retrieval
-   - Purchase history filtering
-   - Purchase history pagination
+### 2. Customer Portal Scenarios
 
-### 4. Webhook Scenarios
+1. **Subscription Management**
+   - View subscription details
+   - Update subscription (upgrade/downgrade)
+   - Cancel subscription
+   - Reactivate subscription
 
-1. **Payment Events**
-   - payment_intent.succeeded
-   - payment_intent.failed
-   - payment_intent.canceled
+2. **Payment Method Management**
+   - View payment methods
+   - Add new payment method
+   - Update default payment method
+   - Remove payment method
+
+3. **Invoice Management**
+   - View invoice history
+   - Download invoices
+   - View upcoming invoices
+
+### 3. Webhook Scenarios
+
+1. **Checkout Events**
+   - `checkout.session.completed`
+   - `checkout.session.expired`
 
 2. **Subscription Events**
-   - customer.subscription.created
-   - customer.subscription.updated
-   - customer.subscription.deleted
-   - customer.subscription.trial_will_end
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `customer.subscription.trial_will_end`
 
 3. **Invoice Events**
-   - invoice.payment_succeeded
-   - invoice.payment_failed
-   - invoice.upcoming
+   - `invoice.paid`
+   - `invoice.payment_failed`
+   - `invoice.upcoming`
 
-4. **Token Package Events**
-   - token_package.purchase.succeeded
-   - token_package.purchase.failed
-
-5. **Error Scenarios**
+4. **Error Scenarios**
    - Invalid signature
    - Duplicate events
    - Processing errors
+   - Idempotency handling
 
-### 5. Batch Job Scenarios
+### 4. Token Allocation Scenarios
 
-1. **Collect Payments Batch**
-   - No payments to collect
-   - Single payment collection
-   - Multiple payment collection
-   - Failed payment collection
+1. **Subscription Renewal**
+   - Successful renewal and token allocation
+   - Failed renewal and no token allocation
+   - Different token amounts for different plans
 
-2. **Retry Failed Payments Batch**
-   - No failed payments
-   - Single payment retry
-   - Multiple payment retry
-   - Successful retry
-   - Failed retry
-   - Maximum retry attempts reached
+2. **Token Package Purchase**
+   - Successful purchase and token addition
+   - Failed purchase and no token addition
+   - Different token amounts for different packages
+
+3. **Token Usage**
+   - Token deduction for content generation
+   - Insufficient tokens handling
+   - Token balance tracking
+
+### 5. Database Synchronization Scenarios
+
+1. **User Data**
+   - Stripe customer ID storage
+   - Customer ID retrieval
+
+2. **Subscription Data**
+   - Stripe subscription ID storage
+   - Subscription status synchronization
+   - Billing period synchronization
+   - Cancellation flag synchronization
+
+3. **Payment Data**
+   - Payment record creation
+   - Payment status synchronization
+   - Invoice ID storage
+   - Payment method details storage
 
 ## Rollback Testing
 
@@ -593,6 +581,7 @@ describe('User Journey', () => {
 - [ ] Transaction management
 - [ ] Token balance consistency
 - [ ] Payment status consistency
+- [ ] Idempotency implementation
 
 ### 2. Security Testing
 
@@ -606,21 +595,20 @@ describe('User Journey', () => {
 
 ### 3. Performance Testing
 
-- [ ] Payment processing time
+- [ ] Checkout session creation time
+- [ ] Customer Portal session creation time
 - [ ] Webhook processing time
-- [ ] Batch job execution time
-- [ ] Token balance update time
+- [ ] Token allocation time
 - [ ] API response time
 - [ ] Concurrent request handling
 
 ### 4. Monitoring and Alerts
 
-- [ ] Payment failure alerts
 - [ ] Webhook failure alerts
-- [ ] Batch job failure alerts
-- [ ] Token balance inconsistency alerts
+- [ ] Token allocation failure alerts
 - [ ] API error rate monitoring
 - [ ] Performance monitoring
+- [ ] Database synchronization monitoring
 
 ## Test Data Management
 

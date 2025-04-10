@@ -1,889 +1,195 @@
-# Stripe Integration Development Plan
+# Stripe Integration Development Plan (Revised)
 
 ## Overview
 
-This document outlines the development plan for implementing Stripe payment processing in the Short-Video-Creator-Simplified application. It covers all necessary components, code changes, and implementation steps for both subscription-based payments and one-time token package purchases.
+This document outlines the development plan for implementing Stripe payment processing in the Short-Video-Creator-Simplified application, focusing on **Stripe Checkout**, **Stripe Customer Portal**, and **Webhook-driven synchronization**. It covers necessary components, code changes, database updates, API endpoints, and revised batch job roles.
 
 ## Components to Develop
 
-### 1. Stripe Service
+### 1. Stripe Service (`utils/stripeService.js`)
 
-A dedicated class inside the subscription service to handle all Stripe-related operations:
+**Purpose:** A dedicated class acting as the sole interface with the Stripe Node.js SDK, encapsulating all direct API interactions.
 
-```javascript
-// backend/services/subscription-service/utils/stripeService.js
-class StripeService {
-  constructor(config) {
-    // Initialize Stripe client with secret key
-    // Set webhook secret
-  }
-
-  // Create a checkout session for direct payments
-  async createCheckoutSession(params) {
-    // Create a Stripe checkout session with:
-    // - Customer ID
-    // - Price ID
-    // - Success/cancel URLs
-    // - Mode (payment/subscription)
-    // - Metadata
-    // - Idempotency key
-    // Return the session
-  }
-
-  // Create a customer in Stripe
-  async createCustomer(email, name, metadata) {
-    // Create a Stripe customer with:
-    // - Email
-    // - Name
-    // - Metadata
-    // - Idempotency key
-    // Return the customer
-  }
-
-  // Create a customer portal session
-  async createCustomerPortalSession(customerId, returnUrl) {
-    // Create a Stripe customer portal session with:
-    // - Customer ID
-    // - Return URL
-    // - Idempotency key
-    // Return the session
-  }
-
-  // Create a subscription
-  async createSubscription(customerId, priceId, metadata) {
-    // Create a Stripe subscription with:
-    // - Customer ID
-    // - Price ID
-    // - Metadata
-    // - Idempotency key
-    // Return the subscription
-  }
-
-  // Update a subscription
-  async updateSubscription(subscriptionId, updates) {
-    // Update a Stripe subscription with:
-    // - Subscription ID
-    // - Updates
-    // - Idempotency key
-    // Return the updated subscription
-  }
-
-  // Cancel a subscription
-  async cancelSubscription(subscriptionId, cancelAtPeriodEnd) {
-    // Cancel a Stripe subscription with:
-    // - Subscription ID
-    // - Cancel at period end flag
-    // - Idempotency key
-    // Return the canceled subscription
-  }
-
-  // Create a product
-  async createProduct(name, description, metadata) {
-    // Create a Stripe product with:
-    // - Name
-    // - Description
-    // - Metadata
-    // - Idempotency key
-    // Return the product
-  }
-
-  // Create a price
-  async createPrice(productId, amount, currency, interval, metadata) {
-    // Create a Stripe price with:
-    // - Product ID
-    // - Amount
-    // - Currency
-    // - Interval (for recurring)
-    // - Metadata
-    // - Idempotency key
-    // Return the price
-  }
-
-  // Verify webhook signature
-  verifyWebhookSignature(payload, signature) {
-    // Verify the webhook signature using:
-    // - Payload
-    // - Signature
-    // - Webhook secret
-    // Return the event or throw an error
-  }
-}
-```
+**Key Responsibilities & Methods:**
+*   Initialize the Stripe client with the secret key.
+*   Store and use the webhook secret for signature verification.
+*   Implement methods for:
+    *   `createCustomer`: Creates a customer in Stripe.
+    *   `createCheckoutSession`: Creates Stripe Checkout sessions for both subscription initiations and one-time token package purchases. Handles necessary parameters like customer ID, line items (price IDs), mode, success/cancel URLs, and metadata.
+    *   `createCustomerPortalSession`: Creates Stripe Customer Portal sessions for user self-service.
+    *   `updateSubscription`: Updates an existing Stripe subscription (used for plan changes like upgrades/downgrades/frequency changes). Handles parameters like items, proration behavior, and cancellation flags.
+    *   `cancelSubscription`: Cancels a Stripe subscription, either immediately or at the period end.
+    *   `constructWebhookEvent`: Verifies the signature of incoming webhooks and constructs the event object.
+    *   (Optional) Helper methods to retrieve Stripe objects like `getSubscription`, `getInvoice` if needed for webhook processing or reconciliation.
+*   Implement robust error handling for all Stripe API calls.
+*   Support passing **deterministic idempotency keys** for mutating operations.
 
 ### 2. Frontend Integration
 
-#### Checkout Button Component
+**Approach:** Utilize simple button components that trigger backend API calls to create Stripe sessions and then redirect the user to Stripe's hosted pages (Checkout or Customer Portal).
 
-Instead of a custom payment form, we'll use a simple button that redirects to Stripe Checkout:
-
-```jsx
-// frontend/src/components/subscription/CheckoutButton.jsx
-const CheckoutButton = ({ planId, packageId, onSuccess, onError }) => {
-  // State for loading
-  const [loading, setLoading] = useState(false);
-
-  // Handle checkout button click
-  const handleCheckout = async () => {
-    // Set loading state
-    // Try to create checkout session
-    // Redirect to Stripe Checkout
-    // Handle success/error
-  };
-
-  // Render button
-  return (
-    <button onClick={handleCheckout} disabled={loading}>
-      {loading ? 'Processing...' : 'Proceed to Checkout'}
-    </button>
-  );
-};
-```
-
-#### Plan Selection Component
-
-```jsx
-// frontend/src/components/subscription/PlanSelection.jsx
-const PlanSelection = ({ currentPlan, onPlanSelected }) => {
-  // State for plans, selected plan, loading
-  const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch plans on component mount
-  useEffect(() => {
-    // Fetch available plans
-    // Set plans state
-    // Set loading state
-  }, []);
-
-  // Handle plan selection
-  const handlePlanSelect = (plan) => {
-    // Set selected plan
-    // Call onPlanSelected callback
-  };
-
-  // Handle checkout success/error
-  const handleCheckoutSuccess = () => {
-    // Handle successful checkout
-  };
-
-  const handleCheckoutError = (error) => {
-    // Handle checkout error
-  };
-
-  // Render loading state
-  if (loading) {
-    return <div>Loading plans...</div>;
-  }
-
-  // Render plan selection UI
-  return (
-    <div className="plan-selection">
-      <h2>Select a Plan</h2>
-      <div className="plans-grid">
-        {/* Render plan cards */}
-        {/* Show checkout button for selected plan */}
-      </div>
-    </div>
-  );
-};
-```
-
-#### Token Package Purchase Component
-
-```jsx
-// frontend/src/components/tokens/TokenPackagePurchase.jsx
-const TokenPackagePurchase = () => {
-  // State for packages, selected package, loading
-  const [packages, setPackages] = useState([]);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch packages on component mount
-  useEffect(() => {
-    // Fetch available token packages
-    // Set packages state
-    // Set loading state
-  }, []);
-
-  // Handle package selection
-  const handlePackageSelect = (pkg) => {
-    // Set selected package
-  };
-
-  // Handle checkout success/error
-  const handleCheckoutSuccess = () => {
-    // Handle successful checkout
-  };
-
-  const handleCheckoutError = (error) => {
-    // Handle checkout error
-  };
-
-  // Render loading state
-  if (loading) {
-    return <div>Loading token packages...</div>;
-  }
-
-  // Render token package purchase UI
-  return (
-    <div className="token-package-purchase">
-      <h2>Purchase Token Packages</h2>
-      <div className="packages-grid">
-        {/* Render package cards */}
-        {/* Show checkout button for selected package */}
-      </div>
-    </div>
-  );
-};
-```
-
-#### Customer Portal Button Component
-
-```jsx
-// frontend/src/components/subscription/CustomerPortalButton.jsx
-const CustomerPortalButton = () => {
-  // State for loading
-  const [loading, setLoading] = useState(false);
-
-  // Handle portal redirect
-  const handlePortalRedirect = async () => {
-    // Set loading state
-    // Try to create customer portal session
-    // Redirect to Stripe Customer Portal
-    // Handle error
-  };
-
-  // Render button
-  return (
-    <button onClick={handlePortalRedirect} disabled={loading}>
-      {loading ? 'Loading...' : 'Manage Subscription'}
-    </button>
-  );
-};
-```
+**Components:**
+*   **`CheckoutButton` Component:**
+    *   Takes parameters like `priceId`, `type` ('subscription'/'token_package'), `packageId`.
+    *   Calls the backend endpoint (`/checkout/create-session`) to get a Stripe Checkout URL.
+    *   Redirects the user's browser to the received Stripe URL.
+    *   Handles loading states and displays appropriate button text.
+*   **`PlanSelection` Component:**
+    *   Fetches available plans (including their `stripe_price_id`) from the backend.
+    *   Displays plan details.
+    *   Integrates the `CheckoutButton` for each selectable plan, passing the correct `stripe_price_id` and type 'subscription'.
+*   **`TokenPackagePurchase` Component:**
+    *   Fetches available token packages (including their `stripe_price_id`) from the backend.
+    *   Displays package details.
+    *   Integrates the `CheckoutButton` for each package, passing the correct `stripe_price_id`, type 'token_package', and `packageId`.
+*   **`CustomerPortalButton` Component:**
+    *   Calls the backend endpoint (`/portal/create-session`) to get a Stripe Customer Portal URL.
+    *   Redirects the user's browser to the received Stripe URL.
+    *   Handles loading states.
+*   **UI Updates:** Update `UserDashboard`, `SubscriptionManagement` pages to display subscription status and token balance fetched from the backend (kept in sync via webhooks) and include the `CustomerPortalButton`.
 
 ### 3. Backend Integration
 
-#### Webhook Handler
+#### Webhook Controller (`controllers/webhookController.js`)
 
-```javascript
-// backend/services/subscription-service/controllers/webhookController.js
-class WebhookController {
-  constructor(paymentService, stripeService, tokenPackageService) {
-    // Initialize services
-  }
+**Purpose:** Central component responsible for receiving, verifying, and processing incoming Stripe webhook events to keep the application state synchronized.
 
-  // Handle Stripe webhook
-  async handleStripeWebhook(req, res) {
-    // Get signature and payload
-    // Verify webhook signature
-    // Handle different event types:
-    // - checkout.session.completed
-    // - invoice.payment_succeeded
-    // - invoice.payment_failed
-    // - customer.subscription.created
-    // - customer.subscription.updated
-    // - customer.subscription.deleted
-    // Return success response
-  }
+**Key Responsibilities:**
+*   Define the handler function for the `POST /webhooks/stripe` route.
+*   Retrieve the raw request body and `Stripe-Signature` header.
+*   Call `StripeService.constructWebhookEvent` to verify the signature and get the event object. Handle signature verification errors.
+*   **Implement idempotency:** Check if the `event.id` has already been processed before taking action (requires a persistent store for event IDs).
+*   Use a `switch` statement on `event.type` to route to specific handler methods within the controller.
+*   Implement handler methods for key events:
+    *   `handleCheckoutSessionCompleted`: Identify purpose (subscription vs. token package) based on session mode and metadata. Potentially create initial 'pending' payment record or update user with customer ID. Actual activation/allocation often relies on subsequent events.
+    *   `handleInvoicePaid`: **Crucial for renewals and initial payments.** Create/update local `payments` record to 'completed'. Update `user_subscriptions` with new `current_period_start`/`end`. Trigger token allocation logic (e.g., signal `SubscriptionRenewalsBatch`).
+    *   `handleInvoicePaymentFailed`: Log failure, update local `payments` record to 'failed'. Rely on Stripe Smart Retries and subsequent subscription events for final state.
+    *   `handleSubscriptionUpdated`: Update the corresponding local `user_subscriptions` record based on changes in the Stripe subscription object (status, plan, `cancel_at_period_end`, etc.).
+    *   `handleSubscriptionDeleted`: Update the local `user_subscriptions` record to reflect cancellation (e.g., switch to free tier plan, set status to 'cancelled', set `ended_at`).
+*   Log events received and processing outcomes (success/failure).
+*   Return `200 OK` promptly to Stripe upon successful receipt and verification (even if processing takes longer or fails, unless a retry is desired for processing failures).
 
-  // Handle checkout session completed
-  async handleCheckoutSessionCompleted(session) {
-    // Get customer and metadata
-    // If token package purchase:
-    //   Process token package purchase
-    // If subscription purchase:
-    //   Process subscription purchase
-  }
+#### Controller Enhancements (`PaymentController`, `SubscriptionController`, `TokenPackageController`)
 
-  // Handle invoice payment succeeded
-  async handleInvoicePaymentSucceeded(invoice) {
-    // Process invoice payment
-  }
+*   **`PaymentController` / `TokenPackageController`:** Refocus to handle requests for creating Checkout sessions by calling `StripeService.createCheckoutSession`.
+*   **`SubscriptionController`:**
+    *   Handle requests for creating Customer Portal sessions by calling `StripeService.createCustomerPortalSession`.
+    *   Handle requests to update plans (`PUT /subscriptions/:subscriptionId`) by validating the request, determining the new `stripe_price_id`, and calling `StripeService.updateSubscription`.
+    *   Handle requests to cancel subscriptions (`POST /subscriptions/:subscriptionId/cancel`) by calling `StripeService.cancelSubscription`.
 
-  // Handle invoice payment failed
-  async handleInvoicePaymentFailed(invoice) {
-    // Process invoice payment failure
-  }
+### 4. Batch Job Enhancements (Revised Roles)
 
-  // Handle subscription created
-  async handleSubscriptionCreated(subscription) {
-    // Process subscription creation
-  }
+*   **Eliminate/Deprecate:** `CreatePaymentsBatch`, `CollectPaymentsBatch`, `RetryFailedPaymentsBatch`. These functions are superseded by Stripe's automated billing and webhook events.
+*   **Eliminate/Re-evaluate:** `ProcessPendingCancellationsBatch`. Handling plan changes/cancellations via direct Stripe API calls and reacting to webhooks is the preferred, more synchronized approach.
+*   **Refine:** `SubscriptionRenewalsBatch`:
+    *   **New Focus:** Primarily responsible for **allocating tokens** upon successful subscription renewal.
+    *   **Trigger:** Should be triggered or informed by the processing of `invoice.paid` webhooks, not run independently based on dates. It processes subscriptions confirmed to have entered a new, paid period.
+    *   **Action:** Calls `TokenService` to allocate tokens based on the subscription's current plan. Marks the allocation as complete for that period.
 
-  // Handle subscription updated
-  async handleSubscriptionUpdated(subscription) {
-    // Process subscription update
-  }
+## Database Schema Updates (Revised)
 
-  // Handle subscription deleted
-  async handleSubscriptionDeleted(subscription) {
-    // Process subscription deletion
-  }
-}
-```
+Implement the necessary schema changes via migrations to support the integration.
 
-#### Payment Controller Enhancements
+### Required Schema Changes:
 
-```javascript
-// backend/services/subscription-service/controllers/paymentController.js
-class PaymentController {
-  constructor(paymentService, stripeService) {
-    // Initialize services
-  }
+1.  **`users` Table:**
+    *   Add `stripe_customer_id` (VARCHAR, Nullable, Indexed)
+2.  **`user_subscriptions` Table:**
+    *   Add `stripe_subscription_id` (VARCHAR, Nullable, Indexed)
+    *   Add `stripe_price_id` (VARCHAR, Nullable) - Stores the *currently active* Stripe Price ID.
+    *   Add `stripe_status` (VARCHAR, Nullable) - Mirrors Stripe status (e.g., `active`, `past_due`).
+    *   Add `cancel_at_period_end` (BOOLEAN, Default: false) - Mirrors Stripe flag.
+    *   Add `current_period_start` (TIMESTAMP, Nullable) - Synced from Stripe via webhooks.
+    *   Add `current_period_end` (TIMESTAMP, Nullable) - Synced from Stripe via webhooks.
+3.  **`payments` Table:** (Represents Payment Events)
+    *   Add `stripe_payment_intent_id` (VARCHAR, Nullable, Indexed)
+    *   Add `stripe_invoice_id` (VARCHAR, Nullable, Indexed) - Key link for subscription payments.
+    *   Add `stripe_charge_id` (VARCHAR, Nullable, Indexed)
+    *   Add `payment_method_details` (JSONB, Nullable) - e.g., card brand, last4.
+    *   Add `receipt_url` (VARCHAR, Nullable)
+    *   *Ensure previous incorrect Stripe fields are removed.*
+4.  **`plans` Table:**
+    *   Add `stripe_product_id` (VARCHAR, Nullable)
+    *   Add `stripe_price_id` (VARCHAR, Nullable, Indexed) - The *default* Price ID for this plan/frequency.
+5.  **`token_packages` Table:**
+    *   Add `stripe_product_id` (VARCHAR, Nullable)
+    *   Add `stripe_price_id` (VARCHAR, Nullable, Indexed)
 
-  // Create a checkout session
-  async createCheckoutSession(req, res) {
-    // Get plan ID or package ID from request
-    // Get user ID from request
-    // Get or create Stripe customer
-    // Get price ID based on plan or package
-    // Create checkout session
-    // Return session ID
-  }
+### Migration Script Example (`YYYYMMDDHHMMSS_add_stripe_integration_fields.js`):
 
-  // Create a customer portal session
-  async createCustomerPortalSession(req, res) {
-    // Get user ID from request
-    // Get Stripe customer
-    // Create customer portal session
-    // Return portal URL
-  }
-}
-```
+*(Generate a migration script based on the schema changes detailed above. Ensure both `up` and `down` functions correctly add/remove the necessary columns and indexes.)*
 
-#### Token Package Controller
-
-```javascript
-// backend/services/subscription-service/controllers/tokenPackageController.js
-class TokenPackageController {
-  constructor(tokenPackageService) {
-    // Initialize service
-  }
-
-  // Get token packages
-  async getTokenPackages(req, res) {
-    // Get all token packages
-    // Return packages
-  }
-
-  // Get token balance
-  async getTokenBalance(req, res) {
-    // Get user ID from request
-    // Get token balance
-    // Return balance
-  }
-
-  // Get purchase history
-  async getPurchaseHistory(req, res) {
-    // Get user ID from request
-    // Get purchase history
-    // Return history
-  }
-}
-```
-
-### 4. Batch Job Enhancements
-
-#### Collect Payments Batch
-
-```javascript
-// backend/batches/batch-jobs/CollectPaymentsBatch.js
-class CollectPaymentsBatch {
-  constructor(paymentService, stripeService) {
-    // Initialize services
-  }
-
-  // Collect payment
-  async collectPayment(payment, authorization) {
-    // Get Stripe customer
-    // Create payment intent
-    // Update payment record
-    // Confirm payment
-    // Update payment status
-    // Return result
-  }
-}
-```
-
-#### Retry Failed Payments Batch
-
-```javascript
-// backend/batches/batch-jobs/RetryFailedPaymentsBatch.js
-class RetryFailedPaymentsBatch {
-  constructor(paymentService, stripeService) {
-    // Initialize services
-  }
-
-  // Retry payment
-  async retryPayment(payment, authorization) {
-    // Get payment intent
-    // If payment intent exists and not succeeded:
-    //   Confirm payment intent
-    //   Update payment status
-    // Return result
-  }
-}
-```
-
-
-## Database Schema Updates
-
-Based on our application's architecture, we need to make the following schema updates to support Stripe integration:
-
-### Required Schema Changes
-
-1. **`users` Table Updates**
-   - Add `stripe_customer_id` (VARCHAR) - To store Stripe's customer ID for the user
-
-2. **`payments` Table Updates**
-   - Add `stripe_payment_intent_id` (VARCHAR) - To store Stripe's payment intent ID
-   - Add `stripe_subscription_id` (VARCHAR) - To store Stripe's subscription ID
-   - Add `payment_method` (VARCHAR) - To store the payment method type (card, etc.)
-   - Add `payment_method_details` (JSONB) - To store payment method details
-   - Add `receipt_url` (VARCHAR) - To store the URL to the payment receipt
-   - Add `idempotency_key` (VARCHAR) - To prevent duplicate operations
-   - Add `subscription_status` (VARCHAR) - To store Stripe's subscription status
-   - Add `cancel_at_period_end` (BOOLEAN) - To indicate if the subscription will be canceled at the end of the period
-
-3. **`plans` Table Updates**
-   - Add `stripe_price_id` (VARCHAR) - To store Stripe's price ID
-   - Add `stripe_product_id` (VARCHAR) - To store Stripe's product ID
-
-4. **`token_packages` Table Updates**
-   - Add `stripe_price_id` (VARCHAR) - To store Stripe's price ID
-   - Add `stripe_product_id` (VARCHAR) - To store Stripe's product ID
-
-### Migration Script
-
-Create a new migration file `20240408000000_add_stripe_fields.js`:
-
-```javascript
-exports.up = function(knex) {
-  return knex.schema
-    .alterTable('users', table => {
-      table.string('stripe_customer_id').nullable();
-    })
-    .alterTable('payments', table => {
-      table.string('stripe_payment_intent_id').nullable();
-      table.string('stripe_subscription_id').nullable();
-      table.string('payment_method').nullable();
-      table.jsonb('payment_method_details').nullable();
-      table.string('receipt_url').nullable();
-      table.string('idempotency_key').nullable();
-      table.string('subscription_status').nullable();
-      table.boolean('cancel_at_period_end').defaultTo(false);
-    })
-    .alterTable('plans', table => {
-      table.string('stripe_price_id').nullable();
-      table.string('stripe_product_id').nullable();
-    })
-    .alterTable('token_packages', table => {
-      table.string('stripe_price_id').nullable();
-      table.string('stripe_product_id').nullable();
-    });
-};
-
-exports.down = function(knex) {
-  return knex.schema
-    .alterTable('users', table => {
-      table.dropColumn('stripe_customer_id');
-    })
-    .alterTable('payments', table => {
-      table.dropColumn('stripe_payment_intent_id');
-      table.dropColumn('stripe_subscription_id');
-      table.dropColumn('payment_method');
-      table.dropColumn('payment_method_details');
-      table.dropColumn('receipt_url');
-      table.dropColumn('idempotency_key');
-      table.dropColumn('subscription_status');
-      table.dropColumn('cancel_at_period_end');
-    })
-    .alterTable('plans', table => {
-      table.dropColumn('stripe_price_id');
-      table.dropColumn('stripe_product_id');
-    })
-    .alterTable('token_packages', table => {
-      table.dropColumn('stripe_price_id');
-      table.dropColumn('stripe_product_id');
-    });
-};
-```
+*   Add `stripe_customer_id` to `users`.
+*   Add `stripe_subscription_id`, `stripe_price_id`, `stripe_status`, `cancel_at_period_end`, `current_period_start`, `current_period_end` to `user_subscriptions`.
+*   Add `stripe_payment_intent_id`, `stripe_invoice_id`, `stripe_charge_id`, `payment_method_details`, `receipt_url` to `payments`. Remove any incorrectly placed subscription fields from `payments`.
+*   Add `stripe_product_id`, `stripe_price_id` to `plans`.
+*   Add `stripe_product_id`, `stripe_price_id` to `token_packages`.
 
 ### Data Access Layer Updates
 
-Update the data access files in `backend/services/subscription-service/data/` to include methods for:
+*   Update Data Access Object (DAO) or repository files (e.g., `userDataAccess.js`, `subscriptionDataAccess.js`, `paymentDataAccess.js`, etc.) to support the new schema.
+*   Implement methods to read and write the new Stripe ID fields.
+*   Implement lookup methods to find local records using Stripe IDs (e.g., `findSubscriptionByStripeId`, `findUserByStripeCustomerId`).
+*   Ensure DAO methods used by webhook handlers correctly update the mirrored Stripe status and period fields on the `user_subscriptions` table based on data received from Stripe.
 
-1. **`userDataAccess.js`**
-   - `updateUserWithStripeCustomerId(userId, stripeCustomerId)`
-   - `getUserByStripeCustomerId(stripeCustomerId)`
+## API Endpoints (Revised Summary)
 
-2. **`paymentDataAccess.js`**
-   - `updatePaymentWithStripeData(paymentId, stripeData)`
-   - `getPaymentByStripePaymentIntentId(stripePaymentIntentId)`
-   - `getPaymentsByStripeSubscriptionId(stripeSubscriptionId)`
+### New/Primary Endpoints:
 
-3. **`planDataAccess.js`**
-   - `updatePlanWithStripeData(planId, stripeData)`
-   - `getPlanByStripePriceId(stripePriceId)`
+1.  **Create Checkout Session:**
+    *   `POST /api/subscription/checkout/create-session`
+    *   Handles requests for both new subscriptions and token package purchases.
+    *   Requires `type` ('subscription' | 'token_package') and `priceId` in the request body.
+    *   Returns a Stripe Checkout session URL for frontend redirection.
+2.  **Create Customer Portal Session:**
+    *   `POST /api/subscription/portal/create-session`
+    *   Requires `returnUrl` in the request body.
+    *   Returns a Stripe Customer Portal session URL for frontend redirection.
+3.  **Webhook Handler:**
+    *   `POST /api/subscription/webhooks/stripe`
+    *   Receives all events from Stripe. Requires signature verification. Triggers internal processing via `WebhookController`.
 
-4. **`tokenPackageDataAccess.js`**
-   - `updateTokenPackageWithStripeData(packageId, stripeData)`
-   - `getTokenPackageByStripePriceId(stripePriceId)`
+### Endpoints Triggering Stripe Actions:
 
-## API Endpoints
+4.  **Update Subscription (Plan Change):**
+    *   `PUT /api/subscription/subscriptions/:subscriptionId`
+    *   Handles user requests to change their current subscription plan (upgrade, downgrade, frequency change).
+    *   Requires the target `planId` (or `stripe_price_id`) in the request body.
+    *   Triggers `StripeService.updateSubscription` call.
+5.  **Cancel Subscription:**
+    *   `POST /api/subscription/subscriptions/:subscriptionId/cancel`
+    *   Handles user requests to cancel their subscription.
+    *   Triggers `StripeService.cancelSubscription` call (typically with `cancel_at_period_end=true`).
 
-### New Required Endpoints
+### Supporting/Existing Endpoints (Ensure Relevant Stripe IDs Included Where Applicable):
 
-1. **Create Checkout Session**
-   ```
-   POST /api/subscription/payments/create-checkout-session
-   ```
-   
-   **Use Case**: Creates a Stripe Checkout session for subscription or token package purchase
-   
-   **Request Body**:
-   ```json
-   {
-     "type": "subscription" | "token_package",
-     "priceId": "price_xyz123", // Stripe price ID
-     "packageId": 123, // Required for token packages
-     "successUrl": "https://example.com/success",
-     "cancelUrl": "https://example.com/cancel"
-   }
-   ```
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": {
-       "sessionId": "cs_test_xyz123",
-       "url": "https://checkout.stripe.com/xyz123"
-     }
-   }
-   ```
-   
-   **Notes**:
-   - Requires authentication
-   - Automatically creates or retrieves Stripe customer
-   - Handles both subscription and token package purchases
-   - Returns session URL for redirect
+*   `GET /api/subscription/plans`: Return plans including `stripe_price_id`.
+*   `GET /api/subscription/token-packages`: Return packages including `stripe_price_id`.
+*   `GET /api/subscription/tokens/balance/:userId`
+*   `GET /api/subscription/payments/user/:userId`: Return payment history.
+*   `GET /api/subscription/transactions/user/:userId`: Return token transaction history.
 
-2. **Create Customer Portal Session**
-   ```
-   POST /api/subscription/customer-portal
-   ```
-   
-   **Use Case**: Creates a Stripe Customer Portal session for managing subscriptions and payment methods
-   
-   **Request Body**:
-   ```json
-   {
-     "returnUrl": "https://example.com/account"
-   }
-   ```
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": {
-       "url": "https://billing.stripe.com/xyz123"
-     }
-   }
-   ```
-   
-   **Notes**:
-   - Requires authentication
-   - Automatically retrieves existing Stripe customer
-   - Returns portal URL for redirect
+### Removed/De-emphasized Endpoints:
 
-3. **Webhook Handler**
-   ```
-   POST /api/subscription/webhook
-   ```
-   
-   **Use Case**: Handles Stripe webhook events for payment and subscription status updates
-   
-   **Headers**:
-   ```
-   Stripe-Signature: t=timestamp,v1=signature
-   ```
-   
-   **Request Body**: Raw Stripe event payload
-   
-   **Response**:
-   ```
-   HTTP 200 OK
-   ```
-   
-   **Notes**:
-   - No authentication required (verified via Stripe signature)
-   - Handles events: payment_intent.succeeded, payment_intent.failed, customer.subscription.created, etc.
-   - Updates local database based on event type
-   - Returns 200 quickly to acknowledge receipt
-
-### Enhanced Existing Endpoints
-
-1. **Get Token Packages** (Enhanced)
-   ```
-   GET /api/tokens/packages
-   ```
-   
-   **Use Case**: Lists available token packages with Stripe price information
-   
-   **Query Parameters**:
-   - `status` (optional): Filter by package status
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": [
-       {
-         "package_id": 1,
-         "name": "Basic Package",
-         "token_amount": 1000,
-         "price": 9.99,
-         "stripe_price_id": "price_xyz123",
-         "status": "active"
-       }
-     ]
-   }
-   ```
-   
-   **Notes**:
-   - Now includes Stripe price IDs
-   - Used by frontend to display package options
-
-2. **Buy Token Package** (Enhanced)
-   ```
-   POST /api/tokens/packages/buy
-   ```
-   
-   **Use Case**: Initiates a token package purchase using Stripe Checkout
-   
-   **Request Body**:
-   ```json
-   {
-     "packageId": 1
-   }
-   ```
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": {
-       "sessionId": "cs_test_xyz123",
-       "url": "https://checkout.stripe.com/xyz123"
-     }
-   }
-   ```
-   
-   **Notes**:
-   - Now creates Stripe Checkout session instead of direct payment
-   - Returns session URL for redirect
-   - Tokens are allocated after successful payment via webhook
-
-3. **Collect Payment** (Enhanced)
-   ```
-   POST /api/subscription/payments/:paymentId/collect
-   ```
-   
-   **Use Case**: Processes a payment through Stripe
-   
-   **URL Parameters**:
-   - `paymentId`: The ID of the payment to collect
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": {
-       "payment_id": 123,
-       "status": "completed",
-       "external_payment_id": "pi_xyz123",
-       "amount": 9.99,
-       "currency": "usd"
-     }
-   }
-   ```
-   
-   **Notes**:
-   - Now uses Stripe PaymentIntent for processing
-   - Updates payment record with Stripe payment ID
-   - Handles various payment statuses
-
-4. **Retry Payment** (Enhanced)
-   ```
-   POST /api/subscription/payments/:paymentId/retry
-   ```
-   
-   **Use Case**: Retries a failed payment using Stripe
-   
-   **URL Parameters**:
-   - `paymentId`: The ID of the payment to retry
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": {
-       "payment_id": 123,
-       "status": "completed",
-       "external_payment_id": "pi_xyz123",
-       "amount": 9.99,
-       "currency": "usd"
-     }
-   }
-   ```
-   
-   **Notes**:
-   - Now uses Stripe PaymentIntent for retry
-   - Maintains retry count and downgrade logic
-   - Updates payment record with new status
-
-### Additional Existing Endpoints
-
-1. **Get Token Balance**
-   ```
-   GET /api/tokens/balance
-   ```
-   
-   **Use Case**: Retrieves user's current token balance and usage
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": {
-       "balance": 5000,
-       "used_this_month": 1500,
-       "monthly_allocation": 6500
-     }
-   }
-   ```
-   
-   **Notes**:
-   - Requires authentication
-   - Used by frontend to display token information
-
-2. **Get Purchase History**
-   ```
-   GET /api/tokens/purchases
-   ```
-   
-   **Use Case**: Retrieves user's token package purchase history
-   
-   **Query Parameters**:
-   - `limit` (optional): Number of records to return
-   - `offset` (optional): Number of records to skip
-   
-   **Response Example**:
-   ```json
-   {
-     "success": true,
-     "data": [
-       {
-         "purchase_id": 1,
-         "package_id": 1,
-         "token_amount": 1000,
-         "amount_paid": 9.99,
-         "purchase_date": "2024-01-01T00:00:00.000Z",
-         "status": "completed"
-       }
-     ]
-   }
-   ```
-   
-   **Notes**:
-   - Requires authentication
-   - Used by frontend to display purchase history
+*   Endpoints previously designed for direct payment collection (`/collect`).
+*   Endpoints previously designed for payment retries (`/retry`).
+*   Endpoints for manually adding/managing payment methods (handled by Checkout/Portal).
 
 ## Error Handling
 
-1. **Payment Processing Errors**
-   - Handle insufficient funds
-   - Handle declined cards
-   - Handle network errors
-   - Handle validation errors
-   - Handle token balance update errors
-
-2. **Webhook Errors**
-   - Handle signature verification failures
-   - Handle duplicate events
-   - Handle processing errors
-   - Handle token balance update failures
-
-3. **Batch Job Errors**
-   - Handle API errors
-   - Handle database errors
-   - Implement retry logic
+*   Implement comprehensive try/catch blocks and error handling within the `StripeService` for all Stripe API interactions. Log detailed error information from Stripe.
+*   Ensure the `WebhookController` gracefully handles errors during event processing. Log errors thoroughly. Return appropriate HTTP status codes (200 for successful receipt acknowledgement, 500 for internal processing errors where a Stripe retry might be appropriate).
+*   Implement user-facing error handling on the frontend for failures during the creation of Checkout or Customer Portal sessions.
 
 ## Monitoring and Logging
 
-1. **Payment Processing Logs**
-   - Log all payment attempts
-   - Log successful payments
-   - Log failed payments with error details
-
-2. **Token Package Purchase Logs**
-   - Log all purchase attempts
-   - Log successful purchases
-   - Log failed purchases with error details
-   - Log token balance updates
-
-3. **Webhook Logs**
-   - Log all received webhooks
-   - Log webhook processing results
-   - Log webhook errors
-   - Log token balance update results
-
-4. **Batch Job Logs**
-   - Log batch job execution
-   - Log payment collection results
-   - Log payment retry results
+*   Log all incoming webhook events (including `event.type` and `event.id`).
+*   Log the start and successful completion or failure of processing for each significant webhook event type. Include relevant IDs (subscription ID, invoice ID, user ID).
+*   Log any errors encountered during `StripeService` API calls.
+*   Monitor the health of the `POST /api/subscription/webhooks/stripe` endpoint (response times, error rates - especially 5xx errors which might indicate processing failures).
+*   Monitor the execution status, duration, and any errors from the revised `SubscriptionRenewalsBatch` (Token Allocation).
 
 ## Idempotency Implementation
 
-To prevent duplicate operations, we'll implement idempotency keys for all Stripe API calls:
-
-1. **Checkout Sessions**
-   ```javascript
-   const session = await this.stripeService.createCheckoutSession({
-     // ... other parameters
-     idempotency_key: `checkout_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
-   });
-   ```
-
-2. **Customer Creation**
-   ```javascript
-   const customer = await this.stripeService.createCustomer(
-     email,
-     name,
-     metadata,
-     `customer_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
-   );
-   ```
-
-3. **Subscription Creation**
-   ```javascript
-   const subscription = await this.stripeService.createSubscription(
-     customerId,
-     priceId,
-     metadata,
-     `subscription_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
-   );
-   ```
-
-4. **Payment Processing**
-   ```javascript
-   const paymentIntent = await this.stripeService.createPaymentIntent({
-     // ... other parameters
-     idempotency_key: `payment_${paymentId}_${Date.now()}`,
-   });
-   ```
-
+*   **Webhook Handling:** Implement a mechanism within the `WebhookController` to check if a Stripe `event.id` has already been successfully processed before executing the main logic. This requires storing processed event IDs persistently (e.g., in a database table or cache like Redis) with a suitable TTL. If an event ID is found, log it as a duplicate and return 200 OK immediately.
+*   **API Calls:** For backend-initiated mutating calls to the Stripe API (e.g., via `StripeService` methods like `updateSubscription`, `cancelSubscription`, `createCustomer`) that might be retried due to network issues or timeouts, generate and pass a **deterministic** `Idempotency-Key` header. The key should be unique for each distinct logical operation attempt but the same across retries of that *same* attempt. (e.g., use a UUID generated for the specific user action).
