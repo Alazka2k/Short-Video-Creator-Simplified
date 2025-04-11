@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Subscription - Video Creator',
+  title: 'Subscription - Narravid',
   description: 'Manage your subscription and tokens',
 };
 

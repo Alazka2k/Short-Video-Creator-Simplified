@@ -22,7 +22,14 @@ const registerWithEmail = async (req, res) => {
 
     res.json({ user, tokens });
   } catch (error) {
-    logger.error('Email registration error:', error);
+    logger.error('Email registration error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      statusCode: error.statusCode,
+      details: error.details
+    });
     
     if (error.message?.includes('already exists')) {
       return res.status(409).json({ 

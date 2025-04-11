@@ -244,6 +244,8 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
         setRefreshInterval(null);
       }
       localStorage.removeItem('access_token');
+      localStorage.removeItem(M2M_TOKEN_KEY);
+      localStorage.removeItem(M2M_TOKEN_EXPIRY_KEY);
       setUser(null);
       await auth0Logout({
         logoutParams: {
@@ -263,6 +265,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       
       if (cachedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
         AuthLogger.log('Using cached M2M token', { cachedToken: !!cachedToken });
+        // Return the token directly without decryption
         return cachedToken;
       }
 
@@ -301,7 +304,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
         expiresIn: data.expires_in
       });
       
-      // Cache token with expiration
+      // Store the token directly without encryption
       localStorage.setItem(M2M_TOKEN_KEY, data.access_token);
       localStorage.setItem(M2M_TOKEN_EXPIRY_KEY, (Date.now() + data.expires_in * 1000).toString());
       
@@ -359,7 +362,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (context === undefined || context === null) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

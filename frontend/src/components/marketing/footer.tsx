@@ -83,7 +83,7 @@ export function MarketingFooter() {
         </div>
         <div className="mt-8 border-t pt-8">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Video Creator. All rights reserved.
+            © {new Date().getFullYear()} Narravid. All rights reserved.
           </p>
         </div>
       </div>

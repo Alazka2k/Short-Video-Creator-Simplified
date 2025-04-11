@@ -15,15 +15,22 @@ import {
 import { useRouter } from "next/navigation";
 import { User } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 
 export function NavBar() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
 
   const handleLogout = async () => {
     await logout();
     router.push("/");
   };
+
+  const brandSrc = resolvedTheme === "dark" 
+    ? "/branding/dark/brand.svg" 
+    : "/branding/white/brand.svg";
 
   if (isLoading) {
     return null;
@@ -34,9 +41,14 @@ export function NavBar() {
       <nav className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">
-              <span className="text-primary">Video Creator</span>
-            </span>
+            <Image
+              src={brandSrc}
+              alt="Narravid"
+              width={150}
+              height={40}
+              className="h-28 w-auto"
+              priority
+            />
           </Link>
           <div className="hidden md:flex gap-6">
             {!isAuthenticated && (

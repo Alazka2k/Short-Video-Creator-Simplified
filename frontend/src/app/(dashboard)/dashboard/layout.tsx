@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Dashboard - Video Creator',
+  title: 'Dashboard - Narravid',
   description: 'Create and manage your video content',
 };
 

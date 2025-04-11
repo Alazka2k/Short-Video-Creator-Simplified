@@ -15,8 +15,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export const metadata = {
-  title: 'Video Creator',
-  description: 'Create engaging videos with AI',
+  title: 'Narravid',
+  description: 'Break Content Barriers - Create engaging videos with AI',
 };
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
             defaultTheme="dark"
             enableSystem
             disableTransitionOnChange
-            storageKey="video-creator-theme"
+            storageKey="narravid-theme"
           >
             <ConsentProvider>
               <ApiProvider>

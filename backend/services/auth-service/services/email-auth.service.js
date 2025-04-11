@@ -32,7 +32,16 @@ class EmailAuthService {
       logger.info('Creating user in Auth0 with data:', {
         email: userData.email,
         name: userData.name,
-        connection: 'Username-Password-Authentication'
+        connection: 'Username-Password-Authentication',
+        hasPassword: !!userData.password
+      });
+      
+      // Log the management client configuration
+      logger.info('Management client configuration:', {
+        domain: managementClient.domain,
+        hasClientId: !!managementClient.clientId,
+        hasClientSecret: !!managementClient.clientSecret,
+        scope: managementClient.scope
       });
       
       const auth0User = await managementClient.users.create({

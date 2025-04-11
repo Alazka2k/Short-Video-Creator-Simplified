@@ -15,24 +15,36 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import Image from 'next/image';
 
 export function DashboardHeader() {
   const { user, logout } = useAuth(); // TODO check the history of useAuth() why it is missing?
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
   };
 
+  const brandSrc = resolvedTheme === "dark" 
+    ? "/branding/dark/brand.svg" 
+    : "/branding/white/brand.svg";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">
-              <span className="text-primary">Video Creator</span>
-            </span>
+            <Image
+              src={brandSrc}
+              alt="Narravid"
+              width={150}
+              height={40}
+              className="h-28 w-auto"
+              priority
+            />
           </Link>
         </div>
 

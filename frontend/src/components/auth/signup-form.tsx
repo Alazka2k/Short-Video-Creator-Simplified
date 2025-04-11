@@ -12,6 +12,21 @@ import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
 import { PasswordValidation } from "./password-validation";
 import { SocialAuth } from "./social-auth";
 
+// Password validation helper functions
+const meetsLengthRequirement = (password: string) => password.length >= 8;
+const getComplexityScore = (password: string) => {
+  let score = 0;
+  if (/[a-z]/.test(password)) score++; // lowercase
+  if (/[A-Z]/.test(password)) score++; // uppercase
+  if (/\d/.test(password)) score++;     // numbers
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++; // special chars
+  return score;
+};
+
+const isPasswordValid = (password: string) => {
+  return meetsLengthRequirement(password) && getComplexityScore(password) >= 3;
+};
+
 export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +43,15 @@ export function SignupForm() {
         variant: "destructive",
         title: "Terms Required",
         description: getAuthError(AuthErrorKeys.signup.TERMS_REQUIRED, 'signup'),
+      });
+      return;
+    }
+
+    if (!isPasswordValid(password)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Password",
+        description: getAuthError(AuthErrorKeys.signup.INVALID_PASSWORD, 'signup'),
       });
       return;
     }
@@ -125,7 +149,7 @@ export function SignupForm() {
             />
             <label htmlFor="terms" className="text-sm text-muted-foreground">
               I accept the{" "}
-              <Link href="/terms" className="text-primary hover:underline">
+              <Link href="/terms-of-service" className="text-primary hover:underline">
                 terms and conditions
               </Link>
             </label>
@@ -134,7 +158,7 @@ export function SignupForm() {
           <Button 
             type="submit" 
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            disabled={isLoading}
+            disabled={isLoading || !acceptTerms || !isPasswordValid(password)}
           >
             {isLoading ? "Creating account..." : "Create account"}
           </Button>

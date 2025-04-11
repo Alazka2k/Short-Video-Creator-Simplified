@@ -132,7 +132,7 @@ POST /api/subscription/webhooks/stripe: Receives webhook events. No auth needed 
 
 REVISED PURPOSE (Manage Local State & Trigger Stripe Actions):
 
-POST /api/subscription/subscriptions: Handles creating the initial local free tier subscription on user signup. Maybe handles triggering an upgrade flow by calling createCheckoutSession? Clarify if this endpoint initiates paid plans or if that's solely via the checkout/create-session endpoint after plan selection.
+POST /api/subscription/subscriptions: Handles creating the initial local free tier subscription on user registration. Maybe handles triggering an upgrade flow by calling createCheckoutSession? Clarify if this endpoint initiates paid plans or if that's solely via the checkout/create-session endpoint after plan selection.
 
 PUT /api/subscription/subscriptions/:subscriptionId: Handles requests to change a plan (upgrade, downgrade, frequency change). Backend logic here should:
 

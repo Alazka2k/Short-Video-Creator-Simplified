@@ -2,18 +2,20 @@
 
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getAuthError } from "@/lib/errors/auth";
+import loginErrors from '@/data/errors/login.json';
 
 interface PasswordValidationProps {
   password: string;
   lang?: 'en' | 'de';
 }
 
+type ValidationKey = 'MIN_LENGTH' | 'COMPLEXITY' | 'LOWERCASE' | 'UPPERCASE' | 'NUMBER' | 'SPECIAL';
+
 interface ValidationRule {
   key: 'MIN_LENGTH' | 'COMPLEXITY';
   test: (password: string) => boolean;
   subRules?: {
-    key: string;
+    key: ValidationKey;
     test: (password: string) => boolean;
   }[];
 }
@@ -64,6 +66,14 @@ export function PasswordValidation({ password, lang = 'en' }: PasswordValidation
     return score;
   };
 
+  const getMessage = (key: ValidationKey) => {
+    try {
+      return loginErrors[lang].auth.signup.PASSWORD_VALIDATION[key];
+    } catch (error) {
+      return loginErrors.en.auth.signup.PASSWORD_VALIDATION[key];
+    }
+  };
+
   return (
     <div className="space-y-4 text-sm">
       {validationRules.map(({ key, test, subRules }) => {
@@ -82,7 +92,7 @@ export function PasswordValidation({ password, lang = 'en' }: PasswordValidation
               ) : (
                 <X className="h-4 w-4" />
               )}
-              <span>{getAuthError(`PASSWORD_VALIDATION.${key}` as any, 'signup', lang)}</span>
+              <span>{getMessage(key)}</span>
             </div>
 
             {key === 'COMPLEXITY' && subRules && (
@@ -115,7 +125,7 @@ export function PasswordValidation({ password, lang = 'en' }: PasswordValidation
                     ) : (
                       <X className="h-3 w-3" />
                     )}
-                    <span>{getAuthError(`PASSWORD_VALIDATION.${subKey}` as any, 'signup', lang)}</span>
+                    <span>{getMessage(subKey)}</span>
                   </div>
                 ))}
               </div>

@@ -18,23 +18,19 @@
 
 const { ManagementClient, AuthenticationClient } = require('auth0');
 const logger = require('../../shared/utils/logger');
+const config = require('../../shared/utils/config');
 
-// Get environment-specific M2M Auth0 configuration 
-const envPrefix = process.env.NODE_ENV?.toUpperCase();
-const auth0Config = {
-  domain: process.env[`${envPrefix}_AUTH0_M2M_DOMAIN`],
-  clientId: process.env[`${envPrefix}_AUTH0_M2M_CLIENT_ID`],
-  clientSecret: process.env[`${envPrefix}_AUTH0_M2M_CLIENT_SECRET`],
-  audience: process.env[`${envPrefix}_AUTH0_M2M_AUDIENCE`]
-};
-
+// Get Auth0 configuration from the centralized config
+const auth0Config = config.auth.auth0;
 
 // Log configuration (without sensitive data)
-/*logger.info('Auth0 Service Configuration:', {
+logger.info('Auth0 Service Configuration:', {
   domain: auth0Config.domain,
   audience: auth0Config.audience,
+  hasClientId: !!auth0Config.clientId,
+  hasClientSecret: !!auth0Config.clientSecret,
   environment: process.env.NODE_ENV
-});*/
+});
 
 /**
  * Auth0 Management API Client

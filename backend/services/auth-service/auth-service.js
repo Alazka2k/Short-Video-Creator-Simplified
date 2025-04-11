@@ -83,7 +83,7 @@ class AuthService {
       if (!auth0Domain) {
         logger.error('Auth0 domain not configured in config:', {
           environment: process.env.NODE_ENV,
-          availableEnvVars: Object.keys(process.env).filter(key => key.includes('AUTH0'))
+          configAuth0: config.auth.auth0
         });
         throw new Error('Auth0 domain not configured in config');
       }

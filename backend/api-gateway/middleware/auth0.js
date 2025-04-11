@@ -60,11 +60,11 @@ const auth0Audience = config.auth.auth0.audience;
 
 // Validate Auth0 configuration
 if (!auth0Domain || !auth0Audience) {
-  logger.error('Auth0 M2M configuration missing or incorrect:', {
+  logger.error('Auth0 configuration missing or incorrect:', {
     environment: process.env.NODE_ENV,
     hasDomain: !!auth0Domain,
     hasAudience: !!auth0Audience,
-    availableEnvVars: Object.keys(process.env).filter(key => key.includes('AUTH0'))
+    configAuth0: config.auth.auth0
   });
   process.exit(1);
 }
