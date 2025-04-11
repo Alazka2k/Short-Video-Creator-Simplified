@@ -105,10 +105,10 @@ export function SiteHeader() {
             </div>
           ) : (
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild>
                 <Link href="/login">Log in</Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button variant="default" size="sm" asChild>
                 <Link href="/signup">Sign up</Link>
               </Button>
             </div>

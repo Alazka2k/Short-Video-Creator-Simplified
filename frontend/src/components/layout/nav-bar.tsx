@@ -74,7 +74,7 @@ export function NavBar() {
           {isAuthenticated ? (
             <div className="flex items-center gap-4">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 onClick={() => router.push("/dashboard")}
               >
@@ -113,12 +113,10 @@ export function NavBar() {
           ) : (
             <>
               <Link href="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="outline" size="sm">Log in</Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  Get Started
-                </Button>
+                <Button variant="default" size="sm">Sign up</Button>
               </Link>
             </>
           )}
