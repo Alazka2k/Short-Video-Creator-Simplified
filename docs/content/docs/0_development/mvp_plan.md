@@ -341,7 +341,7 @@
 - ⏳ Refactor the features marketing page
 - ⏳ Update Login Page (currently inconsistent look)
 
-## Phase 5: Integrate web server (nginx) and containerization (docker)
+## Phase 5: Integrate web server (nginx) and containerization (docker) (if necessary for the first deployment)
 
 ### 5.1. Integrate nginx as a reverse proxy
 - ⏳ Integrate nginx as a reverse proxy for the backend services
@@ -365,8 +365,11 @@
 
 ## Phase 7: Fix known bugs and security issues
 
+### 7.0. Fix known tasks and bugs we have tickets for
+- [ ] https://aiservice-hub.atlassian.net/browse/SVCC-27 - Implement One-Time Token Approach for Secure Credential Transmission
+- [ ] https://aiservice-hub.atlassian.net/browse/SVCC-28 - Fix Google Social Login Flow and Error Handling
+
 ### 7.1. Fix known bugs
-- [ ] Fix the social login which is not working right now
 - [ ] Fix the refresh of the links to the files from the s3 bucket cloud. Right now the won´t be visible anymore after 30mins on the dashboard
 - [ ] Job Service with Animation is sometimes not working and gives an error (I think depends on the template of animation)
 
