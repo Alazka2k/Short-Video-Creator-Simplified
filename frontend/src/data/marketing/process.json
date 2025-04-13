@@ -1,0 +1,40 @@
+{
+  "steps": [
+    {
+      "id": "share-idea",
+      "title": "Share Your Idea",
+      "description": "Tell us what you want to create - from educational content to engaging stories. Our AI understands your vision and prepares to bring it to life.",
+      "imagePath": {
+        "dark": "/marketing/process/share-idea-dark.svg",
+        "light": "/marketing/process/share-idea-light.svg"
+      }
+    },
+    {
+      "id": "ai-magic",
+      "title": "AI Magic Happens",
+      "description": "Our AI generates professional visuals, voice, and music for your content. Watch as your idea transforms into a polished video in minutes.",
+      "imagePath": {
+        "dark": "/marketing/process/ai-magic-dark.svg",
+        "light": "/marketing/process/ai-magic-light.svg"
+      }
+    },
+    {
+      "id": "review-customize",
+      "title": "Review & Customize",
+      "description": "Preview and fine-tune each scene until it's perfect for your audience. Adjust visuals, voice, and music to match your vision exactly.",
+      "imagePath": {
+        "dark": "/marketing/process/review-customize-dark.svg",
+        "light": "/marketing/process/review-customize-light.svg"
+      }
+    },
+    {
+      "id": "share-grow",
+      "title": "Share & Grow",
+      "description": "Publish your content across platforms and watch your audience grow. Download your videos in multiple formats or share directly to social media.",
+      "imagePath": {
+        "dark": "/marketing/process/share-grow-dark.svg",
+        "light": "/marketing/process/share-grow-light.svg"
+      }
+    }
+  ]
+}

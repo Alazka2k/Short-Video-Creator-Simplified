@@ -1,36 +1,18 @@
 'use client'
 
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
-import { 
-  MessageSquare,
-  Wand2,
-  Pencil,
-  Share2,
-} from "lucide-react"
+import { motion, useScroll, useTransform } from "framer-motion"
+import processData from "@/data/marketing/process.json"
+import { Share2Icon, Wand2Icon, PencilIcon, RocketIcon } from "lucide-react"
+import { useRef } from "react"
+import Image from "next/image"
+import { useTheme } from "next-themes"
 
-const steps = [
-  {
-    icon: MessageSquare,
-    title: "Share Your Idea",
-    description: "Tell us what you want to create - from educational content to engaging stories.",
-  },
-  {
-    icon: Wand2,
-    title: "AI Magic Happens",
-    description: "Our AI generates professional visuals, voice, and music for your content.",
-  },
-  {
-    icon: Pencil,
-    title: "Review & Customize",
-    description: "Preview and fine-tune each scene until it's perfect for your audience.",
-  },
-  {
-    icon: Share2,
-    title: "Share & Grow",
-    description: "Publish your content across platforms and watch your audience grow.",
-  },
-]
+const STEP_ICONS = {
+  "share-idea": Share2Icon,
+  "ai-magic": Wand2Icon,
+  "review-customize": PencilIcon,
+  "share-grow": RocketIcon,
+} as const;
 
 /**
  * Process Section Component
@@ -65,91 +47,99 @@ const steps = [
  */
 
 export function ProcessSection() {
-  return (
-    <section className="min-h-screen flex items-center relative py-24 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent blur-3xl opacity-50" />
-      </div>
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start 60%", "end 40%"],
+  });
+  const { theme } = useTheme();
+  const progress = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-      <div className="container px-4 md:px-6 relative">
-        {/* Section header */}
-        <div className="text-center mb-24">
+  return (
+    <section className="py-24 bg-accent/5">
+      <div className="container">
+        <div className="text-center mb-16">
           <motion.div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
-            <span className="text-sm font-medium">The Process</span>
+            <span className="text-sm font-medium">How It Works</span>
           </motion.div>
-
-          <motion.h2 
-            className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-foreground"
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-bold"
           >
-            How It Works
+            Create Professional Videos in Minutes
           </motion.h2>
-          <motion.p 
-            className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            Create professional videos in four simple steps
-          </motion.p>
         </div>
 
-        {/* Steps grid with connecting lines */}
-        <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Connecting lines */}
-          <div className="absolute hidden lg:block left-0 right-0 top-1/2 h-0.5 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 transform -translate-y-1/2" />
+        <div ref={containerRef} className="relative max-w-4xl mx-auto">
+          {/* Timeline Line */}
+          <div className="absolute left-8 md:left-1/2 top-0 w-px h-full bg-border -translate-x-px" />
           
-          {steps.map((step, index) => (
-            <motion.div
-              key={step.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="relative group"
-            >
-              <div className="relative p-8 rounded-2xl bg-card hover:bg-accent/5 transition-colors border border-border/50 shadow-lg">
-                {/* Step number */}
-                <div className="absolute -top-4 -right-4 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-foreground flex items-center justify-center text-white font-semibold text-sm">
-                  {index + 1}
-                </div>
+          {/* Progress Line */}
+          <motion.div 
+            className="absolute left-8 md:left-1/2 top-0 w-px bg-primary -translate-x-px origin-top"
+            style={{ height: "100%", scaleY: progress }}
+          />
 
-                {/* Icon */}
-                <div className={cn(
-                  "w-16 h-16 rounded-xl mb-6 flex items-center justify-center",
-                  "bg-gradient-to-br shadow-lg transform-gpu transition-transform group-hover:scale-110",
-                  index === 0 ? "from-violet-500 to-purple-500" :
-                  index === 1 ? "from-blue-500 to-violet-500" :
-                  index === 2 ? "from-indigo-500 to-blue-500" :
-                  "from-purple-500 to-pink-500"
-                )}>
-                  <step.icon className="w-8 h-8 text-white" />
-                </div>
+          <div className="space-y-16 md:space-y-24">
+            {processData.steps.map((step, index) => {
+              const Icon = STEP_ICONS[step.id as keyof typeof STEP_ICONS];
+              // Get the appropriate image path based on the current theme
+              const imagePath = theme === 'dark' ? step.imagePath.dark : step.imagePath.light;
+              
+              return (
+                <motion.div
+                  key={step.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ delay: index * 0.2 }}
+                  className={`relative grid md:grid-cols-2 gap-8 items-center ${
+                    index % 2 === 1 ? "md:rtl" : ""
+                  }`}
+                >
+                  {/* Timeline Dot */}
+                  <div 
+                    className={`absolute left-8 md:left-1/2 top-0 w-4 h-4 rounded-full bg-background border-2 border-primary -translate-x-[7px] ${
+                      index % 2 === 1 ? "md:-translate-x-[7px]" : "md:-translate-x-[7px]"
+                    }`}
+                  />
 
-                <h3 className="text-2xl font-semibold mb-4">{step.title}</h3>
-                <p className="text-muted-foreground text-lg">{step.description}</p>
+                  <div className={`${index % 2 === 1 ? "md:text-right" : ""}`}>
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card mb-6">
+                      <Icon className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-semibold mb-4">{step.title}</h3>
+                    <p className="text-muted-foreground">{step.description}</p>
+                  </div>
 
-                {/* Hover decoration */}
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/20 rounded-2xl transition-colors duration-300" />
-              </div>
-            </motion.div>
-          ))}
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                    className="relative aspect-video rounded-xl overflow-hidden bg-card"
+                  >
+                    <Image
+                      src={imagePath}
+                      alt={step.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </motion.div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
-  )
+  );
 } 

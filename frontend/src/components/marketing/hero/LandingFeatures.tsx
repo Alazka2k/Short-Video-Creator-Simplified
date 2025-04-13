@@ -100,11 +100,11 @@ export function LandingFeatures() {
                   <feature.icon className="w-6 h-6" />
                 </div>
 
-                <h3 className="text-xl font-semibold mb-2">{feature.name}</h3>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">{feature.name}</h3>
                 <p className="text-muted-foreground">{feature.description}</p>
 
                 {/* Hover decoration */}
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-accent/20 rounded-xl transition-colors duration-300" />
+                <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/20 rounded-xl transition-colors duration-300" />
               </div>
             </motion.div>
           ))}

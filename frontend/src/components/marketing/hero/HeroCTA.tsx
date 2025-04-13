@@ -1,8 +1,10 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Play, ChevronDown } from 'lucide-react'
+import { Play } from 'lucide-react'
+import { useAuth } from "@/lib/auth/AuthContext"
 
 /**
  * Hero Call-to-Action Component
@@ -31,9 +33,20 @@ import { Play, ChevronDown } from 'lucide-react'
  */
 
 export function HeroCTA() {
-  const scrollToHowItWorks = () => {
-    const element = document.getElementById('how-it-works')
-    element?.scrollIntoView({ behavior: 'smooth' })
+  const router = useRouter()
+  const { isAuthenticated } = useAuth()
+
+  const handleCreateClick = () => {
+    if (isAuthenticated) {
+      router.push('/create')
+    } else {
+      // Redirect to login with return URL
+      router.push(`/login?returnTo=${encodeURIComponent('/create')}`)
+    }
+  }
+
+  const handleLearnMoreClick = () => {
+    router.push('/features')
   }
 
   return (
@@ -46,16 +59,20 @@ export function HeroCTA() {
       >
         <Button 
           size="lg" 
-          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all"
+          onClick={handleCreateClick}
+          className="bg-gradient-animate hover:shadow-glow transition-all duration-300
+                   bg-primary hover:bg-primary/90 text-primary-foreground 
+                   shadow-lg shadow-primary/25 hover:shadow-primary/35"
         >
           Start Creating
           <Play className="w-4 h-4 ml-2" />
         </Button>
+        
         <Button 
           size="lg" 
           variant="outline" 
-          className="border-primary/20 hover:bg-primary/10"
-          onClick={scrollToHowItWorks}
+          onClick={handleLearnMoreClick}
+          className="border-primary/20 hover:bg-primary/10 transition-all duration-300"
         >
           Learn More
         </Button>

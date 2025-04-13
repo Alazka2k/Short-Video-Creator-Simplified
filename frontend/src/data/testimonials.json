@@ -4,13 +4,13 @@
       "id": 1,
       "name": "Sarah Chen",
       "role": "Creator of History Bytes",
-      "personalImage": "/testimonials/sarah-chen.png",
+      "personalImage": "/marketing/testimonials/persons/sarah-chen.png",
       "channel": {
         "name": "History Bytes",
         "platform": "youtube",
         "url": "https://youtube.com/@historybytes",
         "subscribers": "65K+",
-        "iconUrl": "/channels/history-bytes.png"
+        "iconUrl": "/marketing/testimonials/channels/history-bytes.png"
       },
       "content": "What drives me is making history accessible to everyone. Since using this tool, my average video views increased from 500 to over 10,000 per video, and my subscriber count grew from 5K to 65K in just eight months. It's amazing to see how many people we're reaching with educational content!",
       "rating": 5
@@ -19,13 +19,13 @@
       "id": 2,
       "name": "Michael Rodriguez",
       "role": "Creator of Science Simplified",
-      "personalImage": "/testimonials/michael-rodriguez.png",
+      "personalImage": "/marketing/testimonials/persons/michael-rodriguez.png",
       "channel": {
         "name": "Science Simplified",
         "platform": "tiktok",
         "url": "https://tiktok.com/@sciencesimplified",
         "followers": "100K+",
-        "iconUrl": "/channels/science-simplified.png"
+        "iconUrl": "/marketing/testimonials/channels/science-simplified.png"
       },
       "content": "When I started, I wasn't even eligible for the Creator Fund. This tool helped me post consistently three times a week, and within 6 months, I qualified and now earn around $800 monthly sharing science content. The AI makes it possible to maintain quality while posting regularly.",
       "rating": 5
@@ -34,13 +34,13 @@
       "id": 3,
       "name": "Emma Thompson",
       "role": "Host of Tech Education Weekly",
-      "personalImage": "/testimonials/emma-thompson.png",
+      "personalImage": "/marketing/testimonials/persons/emma-thompson.png",
       "channel": {
         "name": "Tech Education Weekly",
         "platform": "youtube",
         "url": "https://youtube.com/@techeduweekly",
         "subscribers": "75K+",
-        "iconUrl": "/channels/tech-education-weekly.png"
+        "iconUrl": "/marketing/testimonials/channels/tech-education-weekly.png"
       },
       "content": "My goal was to make tech education more approachable for beginners. This AI tool helps me break down complex topics into bite-sized videos that even complete beginners can understand. The feedback from my community has been incredible - they say the explanations are clearer than ever!",
       "rating": 5

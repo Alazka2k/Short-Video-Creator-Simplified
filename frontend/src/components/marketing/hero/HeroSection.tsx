@@ -67,9 +67,9 @@ export function HeroSection() {
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
                 Create Engaging{' '}
-                <span className="relative">
+                <span className="relative inline-block">
                   <span className="relative z-10 text-primary">Social Videos</span>
-                  <div className="absolute -bottom-2 left-0 right-0 h-3 bg-primary/20 -rotate-1" />
+                  <div className="absolute -bottom-2 left-0 right-0 h-3 bg-primary/20 -rotate-1 transform-gpu" />
                 </span>{' '}
                 with AI
               </h1>
