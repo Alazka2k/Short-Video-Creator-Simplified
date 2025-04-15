@@ -271,8 +271,8 @@
   - ⏳ Integrate beehive (email newsletter system)
   - ⏳ Disable registration and login for the prelaunch
   - ⏳ Remove routes to other pages (to only have a plain marketing page) // How is it currently done?
-  - ✅ Add Imprint, Privacy Policy and Cookie Policy
-  - ✅ Contact Form
+  - ✅ Add Imprint, Privacy Policy and Cookie Policy (done on the develop branch)
+  - ✅ Contact Form (done on the develop, but white mode is not working yet)
 
 #### 2.4.2 Prelaunch Page Release
 - ⏳ Release the prelaunch page
