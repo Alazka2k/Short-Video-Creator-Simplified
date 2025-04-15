@@ -1,5 +1,7 @@
 "use client";
 
+//Not used after the real application is launched
+
 import { PrelaunchFooter } from "@/components/marketing/prelaunch-footer";
 import { PrelaunchHeader } from "@/components/layout/prelaunch-header";
 

@@ -17,6 +17,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 export function DashboardHeader() {
   const { user, logout } = useAuth(); // TODO check the history of useAuth() why it is missing?
@@ -33,18 +34,34 @@ export function DashboardHeader() {
     : "/branding/white/brand.svg";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <nav className="container flex h-16 items-center justify-between px-4 md:px-6">
+    <motion.header 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
+    >
+      <div className="absolute inset-0 border-b border-border/40">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5"></div>
+      </div>
+      <nav className="container flex h-16 items-center justify-between px-4 md:px-6 relative">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <Image
-              src={brandSrc}
-              alt="Narravid"
-              width={150}
-              height={40}
-              className="h-28 w-auto"
-              priority
-            />
+          <Link href="/" className="flex items-center space-x-2 relative group">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <Image
+                src={brandSrc}
+                alt="Narravid"
+                width={150}
+                height={40}
+                className="h-28 w-auto"
+                priority
+              />
+              <div className="absolute -inset-2 -z-10 rounded-lg bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 opacity-0 blur transition duration-300 group-hover:opacity-100"></div>
+            </motion.div>
           </Link>
         </div>
 
@@ -52,12 +69,14 @@ export function DashboardHeader() {
           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.picture} alt={user?.name || "User avatar"} />
-                <AvatarFallback>
-                  <User className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
+              <motion.div whileHover={{ scale: 1.05 }} className="cursor-pointer">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.picture} alt={user?.name || "User avatar"} />
+                  <AvatarFallback>
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </motion.div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
@@ -80,6 +99,6 @@ export function DashboardHeader() {
           </DropdownMenu>
         </div>
       </nav>
-    </header>
+    </motion.header>
   );
 } 

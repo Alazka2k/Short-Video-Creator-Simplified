@@ -1,5 +1,7 @@
 "use client"
 
+//Not used after the real application is launched
+
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "next-themes"

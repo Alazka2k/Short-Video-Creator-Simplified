@@ -11,6 +11,12 @@
  * - Early access signup form (Beehiiv integration)
  * - Social proof
  * 
+ * NOT USED AFTER THE REAL APPLICATION IS LAUNCHED.
+ * Files which are connected to this file are:
+ * - prelaunch-layout.tsx //Path: frontend\src\app\prelaunch-layout.tsx
+ * - prelaunch-header.tsx //Path: frontend\src\components\layout\prelaunch-header.tsx
+ * - prelaunch-footer.tsx //Path: frontend\src\components\marketing\prelaunch-footer.tsx
+ * 
  * @page
  * @example
  * URL: /

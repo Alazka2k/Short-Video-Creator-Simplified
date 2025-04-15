@@ -1,5 +1,7 @@
 "use client"
 
+//Not used after the real application is launched
+
 import Link from "next/link"
 import { motion } from "framer-motion"
 
