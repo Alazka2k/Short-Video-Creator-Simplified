@@ -29,6 +29,10 @@
           {
             "name": "Generated Content Data",
             "description": "includes content inputs provided by you (which may contain personal data, depending on your input)"
+          },
+          {
+            "name": "Marketing and Communications Data",
+            "description": "includes your preferences in receiving marketing from us and our third parties and your communication preferences"
           }
         ]
       },
@@ -65,6 +69,10 @@
           {
             "name": "AWS S3",
             "purpose": "Backend hosting and file storage"
+          },
+          {
+            "name": "Beehiiv",
+            "purpose": "Email newsletter service for sending updates, managing waitlist, and marketing communications"
           }
         ],
         "additionalContent": "Some of these providers may be located outside the EU/EEA. In such cases, data transfers are carried out in compliance with Chapter V of the GDPR, based on appropriate safeguards such as Standard Contractual Clauses (SCCs) or adequacy decisions."
@@ -83,7 +91,7 @@
         "rights": [
           "Right of access – obtain a copy of your personal data",
           "Right to rectification – correct inaccurate data",
-          "Right to erasure – delete your data (‘right to be forgotten’)",
+          "Right to erasure – delete your data ('right to be forgotten')",
           "Right to restriction of processing – limit how we use your data",
           "Right to data portability – receive your data in a usable format",
           "Right to object – object to data processing based on legitimate interests",
@@ -91,7 +99,11 @@
         ]
       },
       {
-        "title": "8. Supervisory Authority",
+        "title": "8. Marketing and Newsletter",
+        "content": "If you have opted to join our waitlist or receive our newsletter, we process your email address and name (if provided) to send you updates about our product launch, service information, and marketing communications. This processing is based on your consent, which you can withdraw at any time by clicking the unsubscribe link in our emails or contacting us directly. We use Beehiiv as our newsletter service provider, which helps us manage subscriber lists, send emails, and track engagement metrics (such as email opens and clicks) to improve our communications."
+      },
+      {
+        "title": "9. Supervisory Authority",
         "content": "You have the right to lodge a complaint with a data protection authority. For users located in Germany, the competent authority is:",
         "authority": {
           "name": "Bayerisches Landesamt für Datenschutzaufsicht (BayLDA)",
@@ -100,7 +112,7 @@
         }
       },
       {
-        "title": "9. Contact Us",
+        "title": "10. Contact Us",
         "content": "If you have any questions or concerns about this Privacy Policy or how we process your data, please contact us at:",
         "contact": {
           "email": "{{company.contact.email}}",

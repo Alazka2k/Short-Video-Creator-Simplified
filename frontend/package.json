@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test-prelaunch": "node tests/test-prelaunch-routes.js",
     "dev": "cross-env NODE_ENV=development next dev -p 4000",
     "staging": "cross-env NODE_ENV=staging next dev -p 4000",
     "build": "cross-env NODE_ENV=production next build",

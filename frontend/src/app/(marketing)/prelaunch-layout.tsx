@@ -1,30 +1,9 @@
-/**
- * Prelaunch Layout Component
- * 
- * Root layout for the prelaunch marketing landing page.
- * Provides simplified structure focused on lead generation.
- * 
- * Features:
- * - Simplified header without navigation
- * - Only legal pages in footer
- * - Theme provider integration
- * - SEO optimization setup
- * 
- * Layout Elements:
- * - Prelaunch header (logo only)
- * - Main content area
- * - Prelaunch footer (legal links only)
- * - Theme handling
- * 
- * @component
- */
-
 "use client";
 
 import { PrelaunchFooter } from "@/components/marketing/prelaunch-footer";
 import { PrelaunchHeader } from "@/components/layout/prelaunch-header";
 
-export default function MarketingLayout({
+export default function PrelaunchLayout({
   children,
 }: {
   children: React.ReactNode;

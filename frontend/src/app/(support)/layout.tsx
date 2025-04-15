@@ -1,5 +1,5 @@
-import { MarketingFooter } from "@/components/marketing/footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { PrelaunchFooter } from "@/components/marketing/prelaunch-footer";
+import { PrelaunchHeader } from "@/components/layout/prelaunch-header";
 
 export default function SupportLayout({
   children,
@@ -18,9 +18,9 @@ export default function SupportLayout({
         <div className="absolute -bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/20 rounded-full blur-3xl" />
       </div>
 
-      <SiteHeader />
+      <PrelaunchHeader />
       <main className="flex-1">{children}</main>
-      <MarketingFooter />
+      <PrelaunchFooter />
     </div>
   );
 } 
