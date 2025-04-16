@@ -5,6 +5,7 @@ import CookieConsentLib from "react-cookie-consent";
 import Link from "next/link";
 import { X, Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 
 interface CookieConsentProps {
   acceptAnalytics?: () => void;
@@ -13,6 +14,7 @@ interface CookieConsentProps {
 
 export function CookieConsent({ acceptAnalytics, declineAnalytics }: CookieConsentProps) {
   const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   // Prevent hydration mismatch by only rendering on client
   useEffect(() => {
@@ -21,6 +23,9 @@ export function CookieConsent({ acceptAnalytics, declineAnalytics }: CookieConse
 
   if (!mounted) return null;
 
+  // Determine if we're in dark mode
+  const isDarkMode = resolvedTheme === 'dark';
+
   return (
     <CookieConsentLib
       location="bottom"
@@ -28,16 +33,18 @@ export function CookieConsent({ acceptAnalytics, declineAnalytics }: CookieConse
       declineButtonText="Accept Only Essential"
       cookieName="videocreator-cookie-consent"
       style={{
-        background: "rgba(var(--background), 0.95)",
+        background: isDarkMode ? "hsl(240 10% 3.9% / 0.95)" : "hsl(0 0% 100% / 0.98)",
         backdropFilter: "blur(8px)",
         boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.1)",
-        borderTop: "1px solid rgba(var(--border), 0.2)",
+        borderTop: isDarkMode 
+          ? "1px solid rgba(var(--border), 0.2)" 
+          : "1px solid rgba(0, 0, 0, 0.08)",
         zIndex: 9999,
         padding: "1rem 1.5rem",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        color: "rgb(var(--foreground))",
+        color: isDarkMode ? "hsl(0 0% 98%)" : "hsl(240 10% 3.9%)",
       }}
       buttonStyle={{
         background: "rgb(var(--primary))",
@@ -49,17 +56,21 @@ export function CookieConsent({ acceptAnalytics, declineAnalytics }: CookieConse
         cursor: "pointer",
         transition: "background 0.2s ease-in-out",
         border: "none",
+        boxShadow: isDarkMode ? "none" : "0 2px 5px rgba(var(--primary), 0.25)",
       }}
       declineButtonStyle={{
-        background: "transparent",
-        color: "rgb(var(--foreground))",
+        background: isDarkMode ? "transparent" : "hsl(0 0% 97%)",
+        color: isDarkMode ? "hsl(0 0% 98%)" : "hsl(240 10% 3.9%)",
         fontSize: "0.875rem",
         fontWeight: 500,
         padding: "0.5rem 1rem",
         borderRadius: "0.375rem",
         cursor: "pointer",
-        transition: "background 0.2s ease-in-out",
-        border: "1px solid rgba(var(--border), 0.5)",
+        transition: "all 0.2s ease-in-out",
+        border: isDarkMode 
+          ? "1px solid hsl(240 3.7% 25%)" 
+          : "1px solid hsl(240 5% 84%)",
+        boxShadow: isDarkMode ? "none" : "0 1px 3px rgba(0, 0, 0, 0.05)",
       }}
       contentStyle={{
         flex: 1,
@@ -81,21 +92,25 @@ export function CookieConsent({ acceptAnalytics, declineAnalytics }: CookieConse
       }}
       customContentAttributes={{ className: "leading-relaxed" }}
       customButtonProps={{ className: "hover:bg-primary/90" }}
-      customDeclineButtonProps={{ className: "hover:bg-muted" }}
+      customDeclineButtonProps={{ 
+        className: isDarkMode 
+          ? "hover:bg-muted" 
+          : "hover:bg-gray-100 hover:border-gray-300"
+      }}
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 mt-1">
           <Cookie className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <p className="mb-2">
+          <p className={`mb-2 ${isDarkMode ? "text-gray-100" : "text-gray-800 font-medium"}`}>
             We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. 
             By clicking "Accept All", you consent to our use of cookies as described in our{" "}
             <Link href="/cookie-policy" className="text-primary hover:underline font-medium">
               Cookie Policy
             </Link>.
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
             Vercel Analytics is used to collect anonymous usage data for website improvement without tracking cookies.
           </p>
         </div>
@@ -106,6 +121,8 @@ export function CookieConsent({ acceptAnalytics, declineAnalytics }: CookieConse
 
 export function CookieSettings() {
   const [showModal, setShowModal] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const isDarkMode = resolvedTheme === 'dark';
 
   if (!showModal) {
     return (
@@ -123,7 +140,9 @@ export function CookieSettings() {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center">
-      <div className="bg-background border border-border rounded-lg shadow-lg max-w-md w-full p-6 relative">
+      <div className={`bg-background border border-border rounded-lg shadow-lg max-w-md w-full p-6 relative ${
+        isDarkMode ? "" : "shadow-xl"
+      }`}>
         <Button 
           variant="ghost" 
           size="sm" 

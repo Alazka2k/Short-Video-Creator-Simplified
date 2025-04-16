@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -11,6 +11,8 @@ import { toast } from "@/components/ui/use-toast";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { Check, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
 // Define the form schema with validation rules
 const formSchema = z.object({
@@ -31,6 +33,15 @@ export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
+
+  // Handle mounting state to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDarkMode = resolvedTheme === 'dark';
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -86,18 +97,40 @@ export default function ContactForm() {
     }
   }
 
+  if (!mounted) {
+    // Return a placeholder with the same dimensions to prevent layout shift
+    return (
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="h-[600px] animate-pulse rounded-xl bg-muted"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="relative">
-        <div className="bg-black/90 backdrop-blur-sm border border-zinc-800 rounded-xl shadow-lg p-8 md:p-10 relative z-10">
+        <div className={cn(
+          "backdrop-blur-sm border rounded-xl shadow-lg p-8 md:p-10 relative z-10",
+          isDarkMode 
+            ? "bg-black/90 border-zinc-800" 
+            : "bg-white/95 border-zinc-200"
+        )}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div>
-              <label htmlFor="name" className="text-sm text-zinc-400 mb-1 block">Full Name</label>
+              <label htmlFor="name" className={cn(
+                "text-sm mb-1 block",
+                isDarkMode ? "text-zinc-400" : "text-zinc-600"
+              )}>Full Name</label>
               <Input
                 id="name"
                 placeholder="Full Name"
                 {...form.register("name")}
-                className="h-12 bg-zinc-900/70 border-zinc-700 focus:border-primary placeholder:text-zinc-500"
+                className={cn(
+                  "h-12 focus:border-primary",
+                  isDarkMode 
+                    ? "bg-zinc-900/70 border-zinc-700 placeholder:text-zinc-500" 
+                    : "bg-zinc-100/70 border-zinc-300 placeholder:text-zinc-400"
+                )}
               />
               {form.formState.errors.name && (
                 <p className="text-sm text-red-500 mt-1">{form.formState.errors.name.message}</p>
@@ -105,13 +138,21 @@ export default function ContactForm() {
             </div>
             
             <div>
-              <label htmlFor="email" className="text-sm text-zinc-400 mb-1 block">Email Address</label>
+              <label htmlFor="email" className={cn(
+                "text-sm mb-1 block",
+                isDarkMode ? "text-zinc-400" : "text-zinc-600"
+              )}>Email Address</label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Email Address"
                 {...form.register("email")}
-                className="h-12 bg-zinc-900/70 border-zinc-700 focus:border-primary placeholder:text-zinc-500"
+                className={cn(
+                  "h-12 focus:border-primary",
+                  isDarkMode 
+                    ? "bg-zinc-900/70 border-zinc-700 placeholder:text-zinc-500" 
+                    : "bg-zinc-100/70 border-zinc-300 placeholder:text-zinc-400"
+                )}
               />
               {form.formState.errors.email && (
                 <p className="text-sm text-red-500 mt-1">{form.formState.errors.email.message}</p>
@@ -119,17 +160,28 @@ export default function ContactForm() {
             </div>
             
             <div>
-              <label htmlFor="message" className="text-sm text-zinc-400 mb-1 block">Message</label>
+              <label htmlFor="message" className={cn(
+                "text-sm mb-1 block",
+                isDarkMode ? "text-zinc-400" : "text-zinc-600"
+              )}>Message</label>
               <Textarea
                 id="message"
                 placeholder="Enter your main text here..."
-                className="min-h-[150px] bg-zinc-900/70 border-zinc-700 focus:border-primary placeholder:text-zinc-500 resize-none"
+                className={cn(
+                  "min-h-[150px] focus:border-primary resize-none",
+                  isDarkMode 
+                    ? "bg-zinc-900/70 border-zinc-700 placeholder:text-zinc-500" 
+                    : "bg-zinc-100/70 border-zinc-300 placeholder:text-zinc-400"
+                )}
                 {...form.register("message")}
               />
               {form.formState.errors.message && (
                 <p className="text-sm text-red-500 mt-1">{form.formState.errors.message.message}</p>
               )}
-              <div className="text-right text-zinc-500 text-xs mt-1">
+              <div className={cn(
+                "text-right text-xs mt-1",
+                isDarkMode ? "text-zinc-500" : "text-zinc-400"
+              )}>
                 {form.watch("message")?.length || 0}/300
               </div>
             </div>
@@ -141,11 +193,16 @@ export default function ContactForm() {
               <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
                 acceptedPrivacy 
                   ? 'bg-primary border border-primary' 
-                  : 'border border-zinc-600 bg-zinc-900/50'
+                  : isDarkMode
+                    ? 'border border-zinc-600 bg-zinc-900/50'
+                    : 'border border-zinc-300 bg-zinc-100/50'
               }`}>
                 {acceptedPrivacy && <Check className="w-3.5 h-3.5 text-white" />}
               </div>
-              <span className="text-sm text-zinc-300">
+              <span className={cn(
+                "text-sm",
+                isDarkMode ? "text-zinc-300" : "text-zinc-600"
+              )}>
                 I hereby agree to our <Link href="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link> terms.
               </span>
             </div>

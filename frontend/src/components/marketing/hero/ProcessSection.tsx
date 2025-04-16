@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import processData from "@/data/marketing/process.json"
 import { Share2Icon, Wand2Icon, PencilIcon, RocketIcon } from "lucide-react"
-import { useRef } from "react"
+import { useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import { useTheme } from "next-themes"
 
@@ -52,8 +52,14 @@ export function ProcessSection() {
     target: containerRef,
     offset: ["start 60%", "end 40%"],
   });
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const progress = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
+  // Handle mounting state to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <section className="py-24 bg-accent/5">
@@ -80,7 +86,7 @@ export function ProcessSection() {
           </motion.h2>
         </div>
 
-        <div ref={containerRef} className="relative max-w-4xl mx-auto">
+        <div ref={containerRef} className="relative max-w-5xl mx-auto">
           {/* Timeline Line */}
           <div className="absolute left-8 md:left-1/2 top-0 w-px h-full bg-border -translate-x-px" />
           
@@ -93,8 +99,17 @@ export function ProcessSection() {
           <div className="space-y-16 md:space-y-24">
             {processData.steps.map((step, index) => {
               const Icon = STEP_ICONS[step.id as keyof typeof STEP_ICONS];
-              // Get the appropriate image path based on the current theme
-              const imagePath = theme === 'dark' ? step.imagePath.dark : step.imagePath.light;
+              
+              // Only show images after component is mounted to prevent hydration issues
+              // Default to light theme images during SSR
+              let imagePath = step.imagePath.light;
+              
+              // After mounting, use the resolvedTheme to determine the image path
+              if (mounted) {
+                imagePath = resolvedTheme === 'dark' 
+                  ? step.imagePath.dark 
+                  : step.imagePath.light;
+              }
               
               return (
                 <motion.div
@@ -103,7 +118,7 @@ export function ProcessSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-100px" }}
                   transition={{ delay: index * 0.2 }}
-                  className={`relative grid md:grid-cols-2 gap-8 items-center ${
+                  className={`relative grid md:grid-cols-2 md:gap-16 items-center ${
                     index % 2 === 1 ? "md:rtl" : ""
                   }`}
                 >
@@ -114,7 +129,7 @@ export function ProcessSection() {
                     }`}
                   />
 
-                  <div className={`${index % 2 === 1 ? "md:text-right" : ""}`}>
+                  <div className={`${index % 2 === 1 ? "md:text-right md:pr-8" : "md:pl-8"}`}>
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card mb-6">
                       <Icon className="w-8 h-8 text-primary" />
                     </div>
@@ -122,18 +137,23 @@ export function ProcessSection() {
                     <p className="text-muted-foreground">{step.description}</p>
                   </div>
 
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                    className="relative aspect-video rounded-xl overflow-hidden bg-card"
-                  >
-                    <Image
-                      src={imagePath}
-                      alt={step.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </motion.div>
+                  <div className={index % 2 === 1 ? "md:pl-8" : "md:pr-8"}>
+                    <motion.div
+                      whileHover={{ scale: 1.03 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      className="relative aspect-video rounded-xl overflow-hidden bg-card"
+                    >
+                      {mounted && (
+                        <Image
+                          src={imagePath}
+                          alt={step.title}
+                          fill
+                          className="object-cover"
+                          priority={index < 2} // Prioritize loading of the first two images
+                        />
+                      )}
+                    </motion.div>
+                  </div>
                 </motion.div>
               );
             })}

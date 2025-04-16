@@ -1,7 +1,17 @@
+/**
+ * Middleware for the prelaunch page
+ * 
+ * This middleware is used to block all routes that are not the prelaunch page.
+ * It also allows access to static files and API routes.
+ * 
+ * For production, you can set PRELAUNCH_MODE to false to disable the restrictions.
+*/
+
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-//For the prelaunch page, we want to block all routes that are not the prelaunch page.
+// Set this to false to disable prelaunch mode and allow all routes
+const PRELAUNCH_MODE = false
 
 // Routes that should be accessible during prelaunch
 const ALLOWED_ROUTES = [
@@ -34,6 +44,12 @@ export function middleware(request: NextRequest) {
   const fullPath = `${pathname}${search}`
 
   console.log(`Middleware processing: ${fullPath}`)
+
+  // If prelaunch mode is disabled, allow all routes
+  if (!PRELAUNCH_MODE) {
+    console.log('Prelaunch mode disabled, allowing all routes')
+    return NextResponse.next()
+  }
 
   // Allow access to static files and API routes
   if (
