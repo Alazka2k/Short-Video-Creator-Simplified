@@ -97,6 +97,7 @@ export function useAssembly() {
       }
       
       // Make the API request with the available tokens
+      // TODO: Hardcoded endpoint?
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/assembly/assemble`, {
         method: 'POST',
         headers,
@@ -185,6 +186,7 @@ export function useAssembly() {
       }
       
       // Make the API request with the available tokens
+      // TODO: Hardcoded endpoint?
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/assembly/${assemblyId}`, {
         headers,
       });

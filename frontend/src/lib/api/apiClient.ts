@@ -221,33 +221,69 @@ export const apiClient = new ApiClient({
   }
 });
 
+// Make the apiClient available globally for state detection
+if (typeof window !== 'undefined') {
+  (globalThis as any).apiClient = apiClient;
+}
+
 // Export a function to initialize the API client with auth
 export function initializeApiClient(getToken: () => Promise<string>): ApiClient {
-  //console.log('initializeApiClient CALLED', {
-  //  hasToken: !!getToken,
-  //  tokenFunction: getToken.toString()
-  //});
-
   AuthLogger.log('Starting API client initialization', {
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-    hasTokenGetter: !!getToken
+    hasTokenGetter: !!getToken,
+    isAlreadyInitialized: apiClient.isInitialized
   });
+
+  // If already initialized, return the existing instance
+  if (apiClient.isInitialized) {
+    AuthLogger.log('API client already initialized, returning existing instance');
+    return apiClient;
+  }
 
   // Update the existing client instance instead of creating a new one
   apiClient.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  apiClient.getToken = getToken;
+  apiClient.getToken = async () => {
+    try {
+      return await getToken();
+    } catch (error) {
+      // If we're in a post-auth redirect scenario, don't break on token failure
+      // as Auth0 might still be setting up the tokens
+      const isPostAuthRedirect = typeof window !== 'undefined' && (
+        !!localStorage.getItem('a0.spajs.txs') || 
+        document.cookie.includes('auth_redirect=true') ||
+        new URLSearchParams(window.location.search).get('auth_callback') === 'true'
+      );
+      
+      if (isPostAuthRedirect) {
+        AuthLogger.warning('Token getter failed in post-auth scenario, using fallback token', { error });
+        const fallbackToken = localStorage.getItem('access_token');
+        if (fallbackToken) {
+          return fallbackToken;
+        }
+      }
+      
+      AuthLogger.error('Token getter failed:', error);
+      throw error;
+    }
+  };
 
-  //console.log('About to call initialize()', {
-  //  baseURL: apiClient.baseURL,
-  //  hasTokenGetter: !!apiClient.getToken,
-  //  isInitialized: apiClient.isInitialized
-  //});
-
-  apiClient.initialize();
-
-  //console.log('After initialize() call', {
-  //  isInitialized: apiClient.isInitialized
-  //});
-
+  try {
+    apiClient.initialize();
+    AuthLogger.log('API client initialization successful');
+  } catch (error) {
+    AuthLogger.error('API client initialization failed:', error);
+    // Try one more time after a short delay
+    setTimeout(() => {
+      try {
+        if (!apiClient.isInitialized) {
+          AuthLogger.log('Retrying API client initialization');
+          apiClient.initialize();
+        }
+      } catch (retryError) {
+        AuthLogger.error('API client retry initialization failed:', retryError);
+      }
+    }, 500);
+  }
+  
   return apiClient;
 }

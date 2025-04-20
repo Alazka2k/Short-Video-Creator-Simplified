@@ -25,6 +25,7 @@ export const auth0Config = {
   authorizationParams: {
     redirect_uri: `${envConfig.appUrl}/dashboard`,
     audience: envConfig.audience,
+    scope: "openid profile email offline_access"
   },
   onRedirectCallback: (appState: any) => {
     window.location.href = appState?.returnTo || '/dashboard';

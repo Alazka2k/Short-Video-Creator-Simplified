@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
@@ -43,6 +43,19 @@ interface VideoCreationFlowProps {
   onSubmit?: (data: any) => void
   defaultValues?: any
   isDemo?: boolean
+  renderActionButton?: (
+    onClick: () => void, 
+    isDisabled: boolean, 
+    isGenerating: boolean, 
+    jobProgress: any,
+    validationData?: {
+      prompt: string;
+      selectedDuration: any;
+      selectedContent: ContentState;
+      selectedVoice: string;
+      visualSettings: any;
+    }
+  ) => React.ReactNode
 }
 
 const STEPS = [
@@ -85,11 +98,18 @@ interface State {
   showFocusField: boolean
 }
 
+function debugLog(message: string, data?: any, isImportant = false) {
+  if (typeof window !== 'undefined' && window.__debugCreatePage && isImportant) {
+    console.log(`[VideoCreationFlow] ${message}`, data || '');
+  }
+}
+
 export function VideoCreationFlow({ 
   mode, 
   onSubmit, 
   defaultValues,
-  isDemo = false 
+  isDemo = false,
+  renderActionButton
 }: VideoCreationFlowProps) {
   const router = useRouter()
   const { 
@@ -292,17 +312,119 @@ export function VideoCreationFlow({
     return true
   })
 
-  // Add validation check for Create Content button
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Add this ref before the canCreateContent useMemo
+  const prevValidRef = useRef(false);
+
+  // Replace original canCreateContent with a more robust implementation
   const canCreateContent = useMemo(() => {
-    return (
-      prompt.trim() !== '' && // Has prompt
-      selectedDuration && // Has duration selected
-      selectedContent && // Has content type selected
-      (selectedContent.voice ? selectedVoice !== '' : true) && // Has voice if voice is selected
-      (selectedContent.visuals ? visualSettings.aspectRatio !== '' : true) && // Has aspect ratio if visuals selected
-      !isGenerating // Not currently generating
-    )
-  }, [prompt, selectedDuration, selectedContent, selectedVoice, visualSettings, isGenerating])
+    const hasPrompt = prompt && prompt.trim() !== '';
+    const hasDuration = !!selectedDuration;
+    const hasAnyContentSelected = selectedContent.voice === true || 
+                                 selectedContent.visuals === true || 
+                                 selectedContent.music === true;
+    const hasVoiceIfNeeded = !selectedContent.voice || (selectedContent.voice && selectedVoice !== '');
+    const hasVisualsIfNeeded = !selectedContent.visuals || (
+      selectedContent.visuals && 
+      visualSettings.aspectRatio && 
+      visualSettings.shotStyle
+    );
+    
+    const isValid = hasPrompt && hasDuration && hasAnyContentSelected && hasVoiceIfNeeded && hasVisualsIfNeeded && !isGenerating;
+    
+    // Only log validation state changes
+    if (isValid !== prevValidRef.current) {
+      debugLog('Validation state changed:', {
+        hasPrompt,
+        hasDuration,
+        hasAnyContentSelected,
+        hasVoiceIfNeeded,
+        hasVisualsIfNeeded,
+        isGenerating,
+        isValid
+      }, true);
+      prevValidRef.current = Boolean(isValid);
+    }
+    
+    return isValid;
+  }, [prompt, selectedDuration, selectedContent, selectedVoice, visualSettings, isGenerating]);
+  
+  // Expose the button click handler to window object for external access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // @ts-ignore - Adding a custom property to the window object
+      window.__videoCreationTrigger = () => {
+        if (triggerButtonRef.current) {
+          debugLog('Video creation trigger called, can create content:', canCreateContent, true);
+          if (canCreateContent) {
+            triggerButtonRef.current.click();
+          } else {
+            debugLog('Cannot create content - validation failed', null, true);
+          }
+        }
+      };
+      
+      return () => {
+        // @ts-ignore - Cleanup
+        delete window.__videoCreationTrigger;
+      };
+    }
+  }, [canCreateContent]);
+  
+  // Keep track of previous validation data to avoid unnecessary parent updates
+  const prevValidationDataRef = useRef({
+    prompt,
+    selectedDuration,
+    selectedContent,
+    selectedVoice,
+    visualSettings
+  });
+  
+  // Update parent component with current validation state whenever it changes
+  useEffect(() => {
+    // Prepare validation data for parent component
+    const validationDataForParent = {
+      prompt,
+      selectedDuration,
+      selectedContent,
+      selectedVoice,
+      visualSettings
+    };
+    
+    // Only update parent if validation data actually changed
+    const hasChanged = JSON.stringify(prevValidationDataRef.current) !== JSON.stringify(validationDataForParent);
+    
+    // Call renderActionButton if provided to update parent state
+    if (renderActionButton && hasChanged) {
+      // Only log when debugging is explicitly enabled
+      if (typeof window !== 'undefined' && window.__debugCreatePage) {
+        console.log('Updating parent with validation data:', validationDataForParent);
+      }
+      
+      renderActionButton(
+        onGenerateVideo,
+        !canCreateContent,
+        isGenerating,
+        jobProgress,
+        validationDataForParent
+      );
+      
+      // Update ref with current values
+      prevValidationDataRef.current = validationDataForParent;
+    }
+  }, [
+    renderActionButton, 
+    onGenerateVideo, 
+    canCreateContent, 
+    isGenerating, 
+    jobProgress, 
+    prompt, 
+    selectedDuration, 
+    selectedContent, 
+    selectedVoice, 
+    visualSettings
+  ]);
 
   if (mode === 'quick') {
   return (
@@ -398,56 +520,35 @@ export function VideoCreationFlow({
 
   return (
     <div className="space-y-8">
-      {/* Header with Create Button */}
-      <div className="flex flex-col items-center gap-4 pb-6 border-b">
-        <div className="relative">
+      {/* Replace the conditional renderActionButton call with a simpler approach */}
+      {!renderActionButton && (
+        <div className="flex flex-col items-center gap-4 pb-6 border-b">
           <Button
             onClick={onGenerateVideo}
             disabled={!canCreateContent}
             className={cn(
-              "relative px-16 py-6 w-[600px] z-10",
-              "bg-gradient-to-r from-background via-accent/5 to-background",
-              "dark:from-slate-900 dark:via-slate-800 dark:to-slate-900",
-              "hover:from-accent/5 hover:via-accent/10 hover:to-accent/5",
-              "dark:hover:from-slate-800 dark:hover:via-slate-700 dark:hover:to-slate-800",
-              "transition-all duration-300",
-              "shadow-lg hover:shadow-xl",
-              "border border-border/50",
-              !canCreateContent && "opacity-50 cursor-not-allowed hover:from-background hover:via-accent/5 hover:to-background dark:hover:from-slate-900 dark:hover:via-slate-800 dark:hover:to-slate-900"
+              "gap-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 px-8",
+              "w-auto md:w-auto lg:w-auto",
+              !canCreateContent && "opacity-70"
             )}
             size="lg"
           >
-            <div className="relative flex items-center justify-center gap-3">
-              {isGenerating || jobProgress.status === 'polling' ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  <span className="text-lg font-medium text-primary">
-                    {jobProgress.status === 'polling' 
-                      ? `Creating Content... ${jobProgress.progress}%` 
-                      : 'Preparing Content...'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span className="text-lg font-medium text-primary">Create Content</span>
-                </>
-              )}
-            </div>
+            {isGenerating || jobProgress.status === 'polling' ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {jobProgress.status === 'polling' 
+                  ? `Creating Content... ${jobProgress.progress}%` 
+                  : 'Preparing Content...'}
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Create Content
+              </>
+            )}
           </Button>
-          <div className="absolute inset-[-2px] -z-10 rounded-lg overflow-hidden">
-            <HoverBorderGradient
-              as="div"
-              containerClassName="w-full h-full"
-              className={cn(
-                "bg-transparent transition-opacity duration-300",
-                !canCreateContent && "opacity-30"
-              )}
-              duration={3}
-            />
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Process Steps */}
       <ProcessSteps
@@ -497,6 +598,21 @@ export function VideoCreationFlow({
           </Button>
         )}
       </div>
+      
+      {/* If external button renderer is provided, render it here outside the view */}
+      {renderActionButton && (
+        <>
+          <button 
+            id="create-content-trigger" 
+            ref={triggerButtonRef}
+            onClick={onGenerateVideo}
+            disabled={!canCreateContent || isGenerating}
+            className="hidden"
+            aria-hidden="true"
+            type="button"
+          />
+        </>
+      )}
     </div>
   )
 } 

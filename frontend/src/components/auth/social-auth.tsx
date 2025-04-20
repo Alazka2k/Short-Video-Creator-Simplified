@@ -13,9 +13,10 @@ interface SocialAuthProps {
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   mode?: 'login' | 'signup';
+  returnPath?: string;
 }
 
-export function SocialAuth({ isLoading, setIsLoading, mode = 'login' }: SocialAuthProps) {
+export function SocialAuth({ isLoading, setIsLoading, mode = 'login', returnPath = '/dashboard' }: SocialAuthProps) {
   const { loginWithRedirect, getAccessTokenSilently, user: auth0User } = useAuth0();
   const { toast } = useToast();
   const router = useRouter();
@@ -23,7 +24,7 @@ export function SocialAuth({ isLoading, setIsLoading, mode = 'login' }: SocialAu
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
-    AuthLogger.log(`Starting Google ${mode}`);
+    AuthLogger.log(`Starting Google ${mode}`, { returnPath });
     
     try {
       // First, authenticate with Google through Auth0
@@ -32,6 +33,9 @@ export function SocialAuth({ isLoading, setIsLoading, mode = 'login' }: SocialAu
           connection: "google-oauth2",
           screen_hint: mode === 'signup' ? 'signup' : undefined,
         },
+        appState: {
+          returnTo: returnPath
+        }
       });
 
       AuthLogger.log('Google Auth0 redirect initiated');
@@ -75,9 +79,9 @@ export function SocialAuth({ isLoading, setIsLoading, mode = 'login' }: SocialAu
         throw new Error(getAuthError(errorKey, 'google'));
       }
 
-      AuthLogger.log('Google auth successful', { userId: data.user.user_id });
+      AuthLogger.log('Google auth successful', { userId: data.user.user_id, redirectingTo: returnPath });
       await login(data.user, data.tokens);
-      router.push("/dashboard");
+      router.push(returnPath);
     } catch (error: any) {
       AuthLogger.error('Google auth error:', error);
       let errorKey = AuthErrorKeys.google.DEFAULT;

@@ -63,24 +63,29 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-full p-10 rounded-xl bg-black/40 backdrop-blur-md shadow-2xl border border-white/5"
+        className="w-full p-10 rounded-xl bg-background/95 backdrop-blur-md shadow-md border border-border relative overflow-hidden"
+        style={{
+          backgroundImage: 'radial-gradient(circle at top right, var(--primary-50, #f0f0ff) 0%, transparent 60%)',
+        }}
       >
-        <div className="space-y-8">
+        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl -z-10 transform translate-x-1/4 -translate-y-1/4"></div>
+        <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl -z-10 transform -translate-x-1/4 translate-y-1/4"></div>
+        <div className="space-y-8 relative z-10">
           <div className="space-y-2 text-center">
             <div className="flex justify-center mb-8">
-              <div className="p-3 rounded-full bg-purple-500/10">
-                <Mail className="h-8 w-8 text-purple-500" />
+              <div className="p-3 rounded-full bg-primary/10">
+                <Mail className="h-8 w-8 text-primary" />
               </div>
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">Reset password</h1>
-            <p className="text-base text-zinc-400">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Reset password</h1>
+            <p className="text-base text-muted-foreground">
               Enter your email address and we'll send you a link to reset your password
             </p>
           </div>
 
           <form onSubmit={handleRequestReset} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-zinc-300">Email address</label>
+              <label htmlFor="email" className="text-sm font-medium text-foreground">Email address</label>
               <Input
                 id="email"
                 type="email"
@@ -89,13 +94,13 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 placeholder="name@example.com"
                 required
                 disabled={isLoading}
-                className="bg-black/20 border-white/10 text-white placeholder:text-zinc-500 h-12 text-base"
+                className="bg-background border-foreground/20"
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white h-12 text-base"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={isLoading}
             >
               {isLoading ? "Sending..." : "Send reset link"}
@@ -105,7 +110,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           <div className="text-center">
             <Link 
               href="/login" 
-              className="inline-flex items-center text-base text-zinc-400 hover:text-purple-500 transition-colors"
+              className="inline-flex items-center text-base text-muted-foreground hover:text-primary transition-colors"
             >
               <ArrowLeft className="mr-2 h-5 w-5" />
               Back to login
@@ -174,24 +179,29 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="w-full p-10 rounded-xl bg-black/40 backdrop-blur-md shadow-2xl border border-white/5"
+      className="w-full p-10 rounded-xl bg-background/95 backdrop-blur-md shadow-md border border-border relative overflow-hidden"
+      style={{
+        backgroundImage: 'radial-gradient(circle at top right, var(--primary-50, #f0f0ff) 0%, transparent 60%)',
+      }}
     >
-      <div className="space-y-8">
+      <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl -z-10 transform translate-x-1/4 -translate-y-1/4"></div>
+      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl -z-10 transform -translate-x-1/4 translate-y-1/4"></div>
+      <div className="space-y-8 relative z-10">
         <div className="space-y-2 text-center">
           <div className="flex justify-center mb-8">
-            <div className="p-3 rounded-full bg-purple-500/10">
-              <Mail className="h-8 w-8 text-purple-500" />
+            <div className="p-3 rounded-full bg-primary/10">
+              <Mail className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Create new password</h1>
-          <p className="text-base text-zinc-400">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Create new password</h1>
+          <p className="text-base text-muted-foreground">
             Enter your new password below
           </p>
         </div>
 
         <form onSubmit={handleResetPassword} className="space-y-6">
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-zinc-300">New password</label>
+            <label htmlFor="password" className="text-sm font-medium text-foreground">New password</label>
             <Input
               id="password"
               type="password"
@@ -200,12 +210,12 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               placeholder="Enter your new password"
               required
               disabled={isLoading}
-              className="bg-black/20 border-white/10 text-white placeholder:text-zinc-500 h-12 text-base"
+              className="bg-background border-foreground/20"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-300">Confirm password</label>
+            <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm password</label>
             <Input
               id="confirmPassword"
               type="password"
@@ -214,7 +224,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               placeholder="Confirm your new password"
               required
               disabled={isLoading}
-              className="bg-black/20 border-white/10 text-white placeholder:text-zinc-500 h-12 text-base"
+              className="bg-background border-foreground/20"
             />
           </div>
 
@@ -223,7 +233,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="text-zinc-400"
+              className="text-muted-foreground"
             >
               <PasswordValidation password={password} />
             </motion.div>
@@ -231,7 +241,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
           <Button 
             type="submit" 
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white h-12 text-base"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             disabled={isLoading}
           >
             {isLoading ? "Resetting..." : "Reset password"}
@@ -241,7 +251,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         <div className="text-center">
           <Link 
             href="/login" 
-            className="inline-flex items-center text-base text-zinc-400 hover:text-purple-500 transition-colors"
+            className="inline-flex items-center text-base text-muted-foreground hover:text-primary transition-colors"
           >
             <ArrowLeft className="mr-2 h-5 w-5" />
             Back to login

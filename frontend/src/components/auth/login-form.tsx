@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
 import { AuthLogger } from "@/lib/debug/auth-logger";
@@ -15,14 +15,27 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [returnPath, setReturnPath] = useState("/dashboard");
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
+
+  // Extract and save the returnTo parameter when component mounts
+  useEffect(() => {
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo) {
+      // Decode the URL parameter
+      const decodedPath = decodeURIComponent(returnTo);
+      AuthLogger.log('Found returnTo path:', { path: decodedPath });
+      setReturnPath(decodedPath);
+    }
+  }, [searchParams]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    AuthLogger.log('Starting email login attempt', { email });
+    AuthLogger.log('Starting email login attempt', { email, returnPath });
 
     try {
       const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/login`, {
@@ -53,9 +66,11 @@ export function LoginForm() {
         throw new Error(getAuthError(errorKey, 'login'));
       }
 
-      AuthLogger.log('Email login successful', { userId: data.user.user_id });
+      AuthLogger.log('Email login successful', { userId: data.user.user_id, redirectingTo: returnPath });
       await login(data.user, data.tokens);
-      router.push("/dashboard");
+      
+      // Redirect to the originally requested path or default to dashboard
+      router.push(returnPath);
     } catch (error: any) {
       AuthLogger.error('Login error:', error);
       toast({
@@ -95,10 +110,10 @@ export function LoginForm() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium text-zinc-300">Password</label>
+              <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
               <Link 
                 href="/reset-password" 
-                className="text-sm text-purple-500 hover:text-purple-400 transition-colors"
+                className="text-sm text-primary hover:text-primary/90 transition-colors"
               >
                 Forgot password?
               </Link>
@@ -111,7 +126,7 @@ export function LoginForm() {
               placeholder="Enter your password"
               required
               disabled={isLoading}
-              className="bg-black/20 border-white/10 text-white placeholder:text-zinc-500 h-12 text-base"
+              className="bg-background border-foreground/20"
             />
           </div>
 
@@ -124,7 +139,7 @@ export function LoginForm() {
           </Button>
         </form>
 
-        <SocialAuth isLoading={isLoading} setIsLoading={setIsLoading} mode="login" />
+        <SocialAuth isLoading={isLoading} setIsLoading={setIsLoading} mode="login" returnPath={returnPath} />
 
         <p className="text-center text-sm text-muted-foreground">
           Don't have an account?{" "}

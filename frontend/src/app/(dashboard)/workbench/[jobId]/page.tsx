@@ -261,7 +261,6 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           <TemplateSelector
             aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio || '16:9'}
             sceneCount={jobWithFreshUrls.metadata.scenes.length}
-            userPlanId="1" // Default to free tier for now
             onSelectTemplate={setSelectedTemplateId}
             selectedTemplateId={selectedTemplateId}
           />

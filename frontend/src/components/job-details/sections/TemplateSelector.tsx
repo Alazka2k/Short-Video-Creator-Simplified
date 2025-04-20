@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import templateTypeOptions from "@/data/video-creation/assembly/template-type-select-option.json"
 import Image from "next/image"
+import { useSubscription } from '@/lib/hooks/useSubscription'
+import { useAuth } from '@/lib/auth/AuthContext'
+import { LoadingScreen } from '@/components/ui/loading'
 
 interface Template {
   id?: string
@@ -29,7 +32,6 @@ interface Template {
 interface TemplateSelectorProps {
   aspectRatio: string
   sceneCount: number
-  userPlanId: string
   onSelectTemplate: (templateId: string) => void
   selectedTemplateId: string | null
 }
@@ -37,7 +39,6 @@ interface TemplateSelectorProps {
 export function TemplateSelector({
   aspectRatio,
   sceneCount,
-  userPlanId,
   onSelectTemplate,
   selectedTemplateId
 }: TemplateSelectorProps) {
@@ -46,6 +47,16 @@ export function TemplateSelector({
   const [error, setError] = useState<string | null>(null)
   const [selectedTemplateType, setSelectedTemplateType] = useState<string | null>(null)
   const { toast } = useToast()
+  const { user } = useAuth()
+  const { 
+    data: subscriptionData, 
+    isLoading: isLoadingSubscription,
+    error: subscriptionError,
+    isError: isSubscriptionError
+  } = useSubscription(user?.user_id?.toString())
+
+  // Get the user's plan ID from the subscription data
+  const userPlanId = subscriptionData?.data?.plan_id?.toString() || ''
 
   // Group templates by type
   const templateGroups = templates.reduce((groups: Record<string, Template[]>, template) => {
@@ -77,6 +88,11 @@ export function TemplateSelector({
     // Fetch templates from the API
     const fetchTemplates = async () => {
       try {
+        // Don't fetch templates if we're still loading subscription or have an error
+        if (isLoadingSubscription || isSubscriptionError) {
+          return;
+        }
+
         // For now, use the mock data
         const templates = templateData.options.filter(template => {
           // Filter by aspect ratio and scene count if provided
@@ -105,7 +121,7 @@ export function TemplateSelector({
     };
     
     fetchTemplates();
-  }, [aspectRatio, sceneCount, userPlanId, selectedTemplateId, selectedTemplateType]);
+  }, [aspectRatio, sceneCount, userPlanId, selectedTemplateId, selectedTemplateType, isLoadingSubscription, isSubscriptionError]);
 
   // Handle template type selection
   const handleTemplateTypeChange = (value: string | null) => {
@@ -119,13 +135,37 @@ export function TemplateSelector({
     onSelectTemplate('')
   }
 
+  // Show loading state while subscription data is being fetched
+  if (isLoadingSubscription) {
+    return (
+      <div className="template-selector-container min-h-[200px] flex items-center justify-center">
+        <LoadingScreen />
+      </div>
+    );
+  }
+
+  // Show error state if subscription fetch failed
+  if (isSubscriptionError) {
+    return (
+      <div className="template-selector-container min-h-[200px]">
+        <div className="text-center">
+          <p className="text-red-500 font-medium">Unable to load your subscription information</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please try refreshing the page. If the problem persists, contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message when no templates are available
   if (templates.length === 0) {
     return (
       <div className="template-selector-container">
         <div className="text-center">
           <p className="text-muted-foreground">No compatible templates found for your content.</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Templates are filtered based on aspect ratio ({aspectRatio}), scene count ({sceneCount}), and your plan.
+            Templates are filtered based on aspect ratio ({aspectRatio}), scene count ({sceneCount}), and your subscription plan.
           </p>
         </div>
       </div>
@@ -160,10 +200,6 @@ export function TemplateSelector({
             <div className="inline-flex items-center bg-primary/10 text-primary px-4 py-2 rounded-full">
               <span className="text-sm mr-2">Selected:</span>
               <span className="font-medium text-sm">{selectedTemplateName}</span>
-              {/* This is outcommented for the moment - shows information about the template type when a template is selected from a different template type */}
-              {/*{selectedTemplateTypeName && selectedTemplateTypeName !== selectedTemplateType && (
-                <span className="text-xs ml-2 text-muted-foreground">({selectedTemplateTypeName})</span>
-              )}*/}
               <Button 
                 variant="ghost" 
                 size="icon" 
