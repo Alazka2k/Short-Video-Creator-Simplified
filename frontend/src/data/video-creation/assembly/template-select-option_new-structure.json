@@ -1,0 +1,74 @@
+{
+    "options": 
+    [ 
+        {   
+            "allowedPlanId":[1,2,3],
+            "aspectRatios":[
+                {
+                    "aspectRatio":"16:9",
+                    "sceneAmounts":[
+                        {
+                            "sceneAmount":1,
+                            "templates":[
+                                {
+                                    "id":"slideshow-16-9",
+                                    "name":"Slideshow 16:9",
+                                    "description":"A slideshow template for 16:9 videos",
+                                    "templateId":"345d569b-534c-4acd-a187-ed09dd37a5e1",
+                                    "templateType":"slideshow"
+                                }
+                            ]
+                        },
+                        {
+                            "sceneAmount":3,
+                            "templates":[
+                                {
+                                    "id":"slideshow-16-9",
+                                    "name":"Slideshow 16:9",
+                                    "description":"A slideshow template for 16:9 videos",
+                                    "templateId":"345d569b-534c-4acd-a187-ed09dd37a5e1",
+                                    "templateType":"slideshow"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "aspectRatio":"9:16",
+                    "sceneAmounts":[
+                        {}
+                    ]
+                },
+                {
+                    "aspectRatio":"1:1",
+                    "sceneAmounts":[
+                        {}
+                    ]
+                }
+            ]
+        },
+        {
+            "allowedPlanId":[2,3,4,5],
+            "aspectRatios":[
+                {
+                    "aspectRatio":"16:9",
+                    "sceneAmounts":[
+                        {}
+                    ]
+                },
+                {
+                    "aspectRatio":"9:16",
+                    "sceneAmounts":[
+                        {}
+                    ]
+                },
+                {
+                    "aspectRatio":"1:1",
+                    "sceneAmounts":[
+                        {}
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -182,6 +182,71 @@
             }
         },
         {
+            "id": "slideshow-9-16-5scenes",
+            "name": "Slideshow in 9:16 Format",
+            "description": "A slideshow template for 9:16 videos",
+            "templateId": "14029139-3186-45f5-a52a-26cc6a50347f",
+            "templateType": "slideshow",
+            "preview":"/assembly/preview/free/9-16/slideshow-9-16.mp4",
+            "templateContent": ["image", "text"],
+            "planId": "2",
+            "aspectRatio": "9:16",
+            "sceneAmount": 5,
+            "subtitle": "false",
+            "modificationProperties":{
+                "Text-Scene-1.source":{
+                    "keyPath": ["metadata.llmResult.scenes[0].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-2.source":{
+                    "keyPath": ["metadata.llmResult.scenes[1].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-3.source":{
+                    "keyPath": ["metadata.llmResult.scenes[2].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-4.source":{
+                    "keyPath": ["metadata.llmResult.scenes[3].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Text-Scene-5.source":{ 
+                    "keyPath": ["metadata.llmResult.scenes[4].description"],
+                    "type": "text",
+                    "allowedContent": ["text"]
+                },
+                "Image-Scene-1.source":{
+                    "keyPath": ["metadata.scenes[0].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-2.source":{
+                    "keyPath": ["metadata.scenes[1].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-3.source":{
+                    "keyPath": ["metadata.scenes[2].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-4.source":{
+                    "keyPath": ["metadata.scenes[3].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                },
+                "Image-Scene-5.source":{
+                    "keyPath": ["metadata.scenes[4].image.publicUrl"],
+                    "type": "image",
+                    "allowedContent": ["image"]
+                }
+            }
+        },
+        {
             "id": "slideshow-1-1",
             "name": "Slideshow 1:1",
             "description": "A slideshow template for 1:1 videos",
