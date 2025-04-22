@@ -1,11 +1,11 @@
 {
   "name": "Narravid",
   "short_name": "Narravid",
-  "description": "Break Content Barriers - Create engaging videos with AI",
+  "description": "Transform prompts into visual stories with voice, visuals, music, and animation",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
   "icons": [
     {
       "src": "/icons/icon-192.png",

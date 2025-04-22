@@ -1,7 +1,17 @@
+/**
+ * Middleware for the prelaunch page
+ * 
+ * This middleware is used to block all routes that are not the prelaunch page.
+ * It also allows access to static files and API routes.
+ * 
+ * For production, you can set PRELAUNCH_MODE to false to disable the restrictions.
+*/
+
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-//For the prelaunch page, we want to block all routes that are not the prelaunch page.
+// Set this to false to disable prelaunch mode and allow all routes
+const PRELAUNCH_MODE = false
 
 // Routes that should be accessible during prelaunch
 const ALLOWED_ROUTES = [
@@ -35,6 +45,12 @@ export function middleware(request: NextRequest) {
 
   console.log(`Middleware processing: ${fullPath}`)
 
+  // If prelaunch mode is disabled, allow all routes
+  if (!PRELAUNCH_MODE) {
+    console.log('Prelaunch mode disabled, allowing all routes')
+    return NextResponse.next()
+  }
+
   // Allow access to static files and API routes
   if (
     pathname.startsWith('/_next') ||
@@ -42,9 +58,13 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/branding') || 
     pathname.startsWith('/images') ||
     pathname.startsWith('/static') ||
+    pathname.startsWith('/prelaunch') ||  // Allow access to prelaunch assets
     pathname.endsWith('.ico') ||
     pathname.endsWith('.png') ||
-    pathname.endsWith('.svg')
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.mp4') ||  // Allow access to video files
+    pathname.endsWith('.webm') || // Allow access to webm videos
+    pathname.endsWith('.m4v')     // Allow access to m4v videos
   ) {
     console.log(`Allowing static resource: ${pathname}`)
     return NextResponse.next()

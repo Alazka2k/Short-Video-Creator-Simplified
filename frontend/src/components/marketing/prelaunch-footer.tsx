@@ -33,7 +33,7 @@ export function PrelaunchFooter() {
             <h3 className="text-base font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Product</h3>
             <ul className="mt-4 space-y-3">
               <FooterLink href="/features">Features</FooterLink>
-              <FooterLink href="/support">Contact</FooterLink>
+              <FooterLink href="/contact">Contact</FooterLink>
             </ul>
           </div>
           

@@ -22,14 +22,19 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { Sparkles, Clock, Wand2, LayoutGrid, ArrowRight } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 export default function Home() {
   const [showSignupModal, setShowSignupModal] = useState(false)
+  // Hover-to-play video ref
+  const videoRef = useRef<HTMLVideoElement>(null)
   
   const openSignupModal = () => setShowSignupModal(true)
   const closeSignupModal = () => setShowSignupModal(false)
+  
+  const handleHoverEnter = () => { videoRef.current?.play().catch(() => {}) }
+  const handleHoverLeave = () => { videoRef.current?.pause() }
   
   return (
     <div className="flex flex-col relative">
@@ -103,35 +108,30 @@ export default function Home() {
             </p>
           </motion.div>
           
-          {/* Demo reel preview */}
+          {/* Demo reel preview with local MP4 hover-to-play */}
           <motion.div 
             className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border/40 shadow-xl bg-card/30 backdrop-blur-sm"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <div className="relative w-full aspect-video">
-              {/* Replace with your actual demo reel or preview image */}
-              <Image 
-                src="/prelaunch/demo-reel-preview.jpg" 
-                alt="Narravid Demo Reel"
-                width={1200}
-                height={675}
+            <div
+              className="relative w-full aspect-video"
+              onMouseEnter={handleHoverEnter}
+              onMouseLeave={handleHoverLeave}
+            >
+              <video
+                ref={videoRef}
+                src="/prelaunch/demo-reel.mp4"
+                poster="/prelaunch/demo-reel-preview.png"
+                muted
+                playsInline
+                loop
                 className="w-full h-full object-cover"
-                priority
+                preload="metadata"
               />
-              
-              {/* Play button overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-accent/90 backdrop-blur-sm cursor-not-allowed">
-                  <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
-                  <div className="absolute inset-0 rounded-full border border-white/20 animate-ping"></div>
-                </div>
-              </div>
             </div>
-
-            {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none"></div>
           </motion.div>
           
           {/* CTA Button instead of inline form */}
@@ -180,7 +180,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               viewport={{ once: true, margin: "-100px" }}
-              className="flex flex-col items-center p-6 bg-card/40 rounded-xl border border-border/40 backdrop-blur-sm"
+              className="flex flex-col items-center p-6 bg-card/40 rounded-xl border border-border/70 shadow-sm hover:shadow-md hover:border-accent/50 transition-all duration-300"
             >
               <div className="p-3 bg-accent/10 rounded-full mb-4">
                 <Clock className="w-7 h-7 text-accent" />
@@ -196,7 +196,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true, margin: "-100px" }}
-              className="flex flex-col items-center p-6 bg-card/40 rounded-xl border border-border/40 backdrop-blur-sm"
+              className="flex flex-col items-center p-6 bg-card/40 rounded-xl border border-border/70 shadow-sm hover:shadow-md hover:border-accent/50 transition-all duration-300"
             >
               <div className="p-3 bg-accent/10 rounded-full mb-4">
                 <LayoutGrid className="w-7 h-7 text-accent" />
@@ -212,7 +212,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               viewport={{ once: true, margin: "-100px" }}
-              className="flex flex-col items-center p-6 bg-card/40 rounded-xl border border-border/40 backdrop-blur-sm"
+              className="flex flex-col items-center p-6 bg-card/40 rounded-xl border border-border/70 shadow-sm hover:shadow-md hover:border-accent/50 transition-all duration-300"
             >
               <div className="p-3 bg-accent/10 rounded-full mb-4">
                 <Wand2 className="w-7 h-7 text-accent" />
@@ -266,7 +266,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true, margin: "-100px" }}
-                className="flex flex-col items-center text-center p-8 rounded-2xl border border-border/40 bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300"
+                className="flex flex-col items-center text-center p-8 rounded-2xl border border-border/70 shadow-sm bg-gradient-to-b from-card/50 to-card/30 backdrop-blur-sm hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40 transition-all duration-300"
               >
                 <div className="text-4xl mb-4">{item.icon}</div>
                 <h3 className="text-xl font-semibold mb-3">{item.title}</h3>

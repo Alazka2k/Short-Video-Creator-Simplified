@@ -55,7 +55,7 @@ export function PrelaunchHeader() {
           {/* Prelaunch navigation links */}
           <div className="hidden md:flex items-center gap-6">
             <NavLink href="/features">Features</NavLink>
-            <NavLink href="/support">Contact</NavLink>
+            <NavLink href="/contact">Contact</NavLink>
           </div>
         </div>
         <div className="flex items-center gap-4">
