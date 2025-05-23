@@ -6,6 +6,8 @@
  * A visually dynamic landing page that showcases the brand essence of "Futuristic Creativity Meets Effortless Simplicity"
  * while capturing leads through an engaging, motion-rich experience.
  * 
+ * Needs to be overridden by the production landing page
+ * 
  * Page Sections:
  * - HERO SECTION: Bold value proposition with newsletter signup and animated elements
  * - PROBLEM SECTION: Emotional problem statement with visual reinforcement
@@ -24,17 +26,54 @@ import { Sparkles, Clock, Wand2, LayoutGrid, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import SubscriptionForm from "@/components/marketing/subscription/SubscriptionForm"
 
 export default function Home() {
   const [showSignupModal, setShowSignupModal] = useState(false)
   // Hover-to-play video ref
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null)
   
   const openSignupModal = () => setShowSignupModal(true)
   const closeSignupModal = () => setShowSignupModal(false)
   
   const handleHoverEnter = () => { videoRef.current?.play().catch(() => {}) }
   const handleHoverLeave = () => { videoRef.current?.pause() }
+  
+  const refreshSubscriberCount = () => {
+    fetch('/api/email-subscription')
+      .then(res => res.json())
+      .then(data => {
+        if (typeof data.count === 'number') {
+          //console.log('Subscriber count:', data.count);
+          setSubscriberCount(data.count)
+        }
+      })
+      .catch(err => console.error('Failed to load subscriber count:', err))
+  }
+  
+  useEffect(() => {
+    const fetchSubscriberCount = () => {
+      fetch('/api/email-subscription')
+        .then(res => res.json())
+        .then(data => {
+          if (typeof data.count === 'number') {
+            console.log('Subscriber count:', data.count);
+            setSubscriberCount(data.count)
+          }
+        })
+        .catch(err => console.error('Failed to load subscriber count:', err))
+    }
+
+    // Fetch on mount and every hour
+    fetchSubscriberCount()
+    const intervalId = setInterval(fetchSubscriberCount, 3600000) // 3600000 ms = 1 hour
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId)
+  }, [])
+  
+  const displaySubscriberCount = subscriberCount !== null && subscriberCount > 99 ? subscriberCount : 143
   
   return (
     <div className="flex flex-col relative">
@@ -70,8 +109,8 @@ export default function Home() {
       </div>
       
       {/* HERO SECTION */}
-      <section className="py-24 md:py-32 overflow-hidden">
-        <div className="container px-4 md:px-6 flex flex-col items-center text-center space-y-12">
+      <section className="py-12 md:py-10 overflow-visible">
+        <div className="container px-4 md:px-6 flex flex-col items-center text-center space-y-12 md:space-y-8">
           <motion.div 
             className="relative flex flex-col items-center"
             initial={{ opacity: 0, y: 20 }}
@@ -90,16 +129,8 @@ export default function Home() {
                 ease: "easeInOut"
               }}
             >
-              <div className="w-3 h-3 bg-accent/70 rounded-full relative">
-                <div className="absolute inset-0 bg-accent/70 rounded-full animate-ping opacity-75"></div>
-              </div>
             </motion.div>
-            
-            <div className="inline-flex items-center rounded-full border bg-background/95 px-4 py-1.5 text-sm font-medium mb-6">
-              <span className="text-accent">Coming Soon</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tighter max-w-5xl bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-accent to-secondary">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tighter max-w-5xl text-black dark:text-white">
               Turn Prompts Into Visual Stories
             </h1>
 
@@ -108,9 +139,9 @@ export default function Home() {
             </p>
           </motion.div>
           
-          {/* Demo reel preview with local MP4 hover-to-play */}
+          {/* Demo reel preview with local MP4 hover-to-play (max 50vh to fit hero) */}
           <motion.div 
-            className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border/40 shadow-xl bg-card/30 backdrop-blur-sm"
+            className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border/40 shadow-xl bg-card/30"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.02 }}
@@ -151,7 +182,7 @@ export default function Home() {
               <ArrowRight className="ml-2 h-5 w-5 text-accent transition-transform group-hover:translate-x-1" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
-              Join over 143 creators on our waitlist
+              Join over {displaySubscriberCount} creators on our waitlist
             </p>
           </motion.div>
         </div>
@@ -291,7 +322,7 @@ export default function Home() {
               <span className="text-accent">Join the Waitlist</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-8">
-              Over <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-accent">143</span> Creators Are Already Waiting
+              Over <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-accent">{displaySubscriberCount}</span> Creators Are Already Waiting
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
@@ -300,11 +331,11 @@ export default function Home() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true, margin: "-100px" }}
-                className="p-6 rounded-xl border border-border/40 backdrop-blur-sm bg-card/40 text-left"
+                className="relative p-6 rounded-2xl bg-card/40 backdrop-blur-lg border-l-4 border-primary/70 hover:shadow-xl transition-shadow duration-300 text-left"
               >
                 <h3 className="text-xl font-semibold mb-3">When Will It Launch?</h3>
                 <p className="text-muted-foreground">
-                  Our official launch is planned for Q2 2025. Early access users will get priority access starting in Q1 2025.
+                  Our official launch is planned for Q3 2025. Early access users will get priority and discounted access starting in Q2 2025.
                 </p>
               </motion.div>
               
@@ -313,7 +344,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true, margin: "-100px" }}
-                className="p-6 rounded-xl border border-border/40 backdrop-blur-sm bg-card/40 text-left"
+                className="relative p-6 rounded-2xl bg-card/40 backdrop-blur-lg border-l-4 border-secondary/70 hover:shadow-xl transition-shadow duration-300 text-left"
               >
                 <h3 className="text-xl font-semibold mb-3">What Happens With My Email?</h3>
                 <p className="text-muted-foreground">
@@ -367,26 +398,11 @@ export default function Home() {
               <span>Secure Your Early Access</span>
             </DialogTitle>
             <DialogDescription>
-              Join over 143 creators on our waitlist and be among the first to experience Narravid.
+              {`Join over ${displaySubscriberCount} creators on our waitlist and be among the first to experience Narravid.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {/* REPLACE THIS FORM with Beehiiv embed code */}
-            <div className="flex flex-col space-y-4">
-              <input 
-                type="email" 
-                placeholder="Your Email Address" 
-                className="w-full p-3 bg-background/70 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                autoFocus
-              />
-              <Button 
-                type="submit"
-                size="lg" 
-                className="w-full bg-background text-foreground border border-accent/30 hover:bg-background/90 hover:border-accent transition-all duration-300 hover:shadow-md hover:shadow-accent/10"
-              >
-                Join the Waitlist
-              </Button>
-            </div>
+            <SubscriptionForm onSubscriptionSuccess={refreshSubscriberCount} />
             <p className="text-xs text-muted-foreground mt-4">
               By inserting your email you confirm you agree to Narravid contacting you about our product and services. You can opt out at any time by clicking unsubscribe in our emails. Find out more about how we use data in our <a href="/privacy-policy" className="text-accent hover:underline">Privacy Policy</a>.
             </p>

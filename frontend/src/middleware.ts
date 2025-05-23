@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Set this to false to disable prelaunch mode and allow all routes
-const PRELAUNCH_MODE = false
+const PRELAUNCH_MODE = true
 
 // Routes that should be accessible during prelaunch
 const ALLOWED_ROUTES = [
@@ -20,8 +20,9 @@ const ALLOWED_ROUTES = [
   '/privacy-policy',
   '/cookie-policy',
   '/terms-of-service',
-  '/support',
+  '/contact',
   '/features',
+  '/thank-you',
 ]
 
 // Routes that should be explicitly blocked
@@ -64,7 +65,8 @@ export function middleware(request: NextRequest) {
     pathname.endsWith('.svg') ||
     pathname.endsWith('.mp4') ||  // Allow access to video files
     pathname.endsWith('.webm') || // Allow access to webm videos
-    pathname.endsWith('.m4v')     // Allow access to m4v videos
+    pathname.endsWith('.m4v') || // Allow access to m4v videos
+    pathname.endsWith('.mp3') // Allow access to mp3 files
   ) {
     console.log(`Allowing static resource: ${pathname}`)
     return NextResponse.next()

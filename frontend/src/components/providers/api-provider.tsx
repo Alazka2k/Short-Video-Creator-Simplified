@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
 })
 
 export function ApiProvider({ children }: { children: React.ReactNode }) {
-  console.log('API Provider rendered');
+  //console.log('API Provider rendered');
 
   const handleAuthInit = (auth: any) => {
     //console.log('Auth initialization started');

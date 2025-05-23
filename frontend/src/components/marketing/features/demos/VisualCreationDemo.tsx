@@ -1,113 +1,124 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import visualConfig from '@/data/features/visual-creation.json'
 import { useState } from 'react'
+import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
+import aspectRatioData from '@/data/video-creation/image/aspect-ratio_select-option.json'
+import { Card, CardContent } from '@/components/ui/card'
+import { VisualStyleCarousel } from '@/components/video-creation/sections/VisualStyleCarousel'
+import Image from 'next/image'
+import { AspectRatio } from '@/components/ui/aspect-ratio'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 
 export function VisualCreationDemo() {
-  const [selectedArtist, setSelectedArtist] = useState(visualConfig.artistStyles[0].id)
-  const [currentSample, setCurrentSample] = useState(0)
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(visualConfig.aspectRatios[0].id)
+  // Shot style selection
+  const [selectedShotStyle, setSelectedShotStyle] = useState(shotStyleData.categories[0].options[0].id)
+  // Aspect ratio selection
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState(aspectRatioData.options[0].id)
+
+  // Find selected shot style object
+  const filteredCategories = shotStyleData.categories.map(category => ({
+    ...category,
+    options: category.options.filter(opt => opt.demo)
+  })).filter(category => category.options.length > 0)
+
+  const selectedStyle = filteredCategories
+    .flatMap(cat => cat.options)
+    .find(opt => opt.id === selectedShotStyle)
 
   return (
-    <div className="space-y-6 min-h-[400px]">
-      <div className="grid grid-cols-2 gap-4">
-        {/* Artist Style */}
+    <TooltipProvider>
+      <div className="space-y-8 min-h-[400px]">
+        {/* Style Selection */}
         <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-accent/5">
-            <h4 className="font-medium mb-2">Artist Style</h4>
-            <select 
-              className="w-full bg-transparent border-none text-sm text-muted-foreground focus:outline-none"
-              value={selectedArtist}
-              onChange={(e) => setSelectedArtist(e.target.value)}
-            >
-              {visualConfig.artistStyles.map(artist => (
-                <option key={artist.id} value={artist.id}>{artist.name}</option>
-              ))}
-            </select>
+          <h4 className="font-medium mb-2">Style</h4>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredCategories.map(category => (
+              <div key={category.id} className="min-w-0">
+                <div className="text-base font-semibold text-muted-foreground mb-3 border-b pb-1 border-border/40 uppercase tracking-wide">{category.name}</div>
+                <div className="flex flex-col gap-4">
+                  {category.options.map(option => (
+                    <Card
+                      key={option.id}
+                      className={cn(
+                        'cursor-pointer transition-colors',
+                        selectedShotStyle === option.id ? 'border-primary' : 'hover:border-primary/50'
+                      )}
+                      style={{ minHeight: 120 }}
+                      onClick={() => setSelectedShotStyle(option.id)}
+                    >
+                      <CardContent className="p-5 flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            'rounded-lg overflow-hidden bg-muted flex-shrink-0',
+                            selectedShotStyle === option.id ? 'ring-2 ring-primary' : ''
+                          )} style={{ width: 56, height: 56 }}>
+                            <Image
+                              src={option.previewImages[0]}
+                              alt={option.name}
+                              width={56}
+                              height={56}
+                              className="object-cover w-full h-full"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-base truncate">{option.name}</div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="text-xs text-muted-foreground line-clamp-2 cursor-help">
+                                  {option.description}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <span className="text-xs">{option.description}</span>
+                              </TooltipContent>
+                            </Tooltip>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {option.tags.map(tag => (
+                                <span key={tag} className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs">{tag}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          {/* Artist Sample Preview */}
-          <div className="aspect-video rounded-lg overflow-hidden bg-accent/5 relative">
-            {visualConfig.artistStyles.map(artist => (
-              artist.id === selectedArtist && (
-                <div key={artist.id} className="absolute inset-0">
-                  <img 
-                    src={artist.samples[currentSample]} 
-                    alt={artist.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-center gap-2">
-                    {artist.samples.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentSample(index)}
-                        className={cn(
-                          "w-2 h-2 rounded-full transition-colors",
-                          currentSample === index ? "bg-primary" : "bg-white/50"
-                        )}
-                      />
-                    ))}
+          {/* Carousel for selected style */}
+          {selectedStyle && (
+            <div className="pt-4">
+              <VisualStyleCarousel previewImages={selectedStyle.previewImages} selectedStyle={selectedStyle.id} />
+            </div>
+          )}
+        </div>
+
+        {/* Aspect Ratio Selection */}
+        <div className="space-y-4">
+          <h4 className="font-medium mb-2">Aspect Ratio</h4>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {aspectRatioData.options.map(ratio => (
+              <Card
+                key={ratio.id}
+                className={cn(
+                  'cursor-pointer transition-colors flex flex-col h-[110px] p-0 border',
+                  selectedAspectRatio === ratio.id ? 'border-primary' : 'hover:border-primary/50'
+                )}
+                onClick={() => setSelectedAspectRatio(ratio.id)}
+              >
+                <CardContent className="flex flex-col items-center px-3 py-2 h-full justify-center">
+                  <div className="font-medium text-base mb-2">{ratio.name}</div>
+                  <div className="flex items-center justify-center mt-1">
+                    <div className="text-xs text-muted-foreground text-center px-1">{ratio.description}</div>
                   </div>
-                </div>
-              )
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
-
-        {/* Shot Style */}
-        <div className="p-4 rounded-lg bg-accent/5">
-          <h4 className="font-medium mb-2">Shot Style</h4>
-          <select className="w-full bg-transparent border-none text-sm text-muted-foreground focus:outline-none">
-            {visualConfig.shotStyles.map(style => (
-              <option key={style.id} value={style.id}>{style.name}</option>
-            ))}
-          </select>
-        </div>
       </div>
-
-      {/* Aspect Ratio */}
-      <div className="p-4 rounded-lg bg-accent/5">
-        <h4 className="font-medium mb-4">Aspect Ratio</h4>
-        <div className="flex gap-4">
-          {visualConfig.aspectRatios.map(ratio => (
-            <button
-              key={ratio.id}
-              onClick={() => setSelectedAspectRatio(ratio.id)}
-              className={cn(
-                "group flex-1 p-2 rounded-lg transition-colors",
-                selectedAspectRatio === ratio.id ? "bg-primary/20" : "bg-accent/10 hover:bg-accent/20"
-              )}
-            >
-              <div className="flex justify-center mb-2">
-                <div 
-                  className={cn(
-                    "bg-accent/20 rounded overflow-hidden transition-transform group-hover:scale-105",
-                    selectedAspectRatio === ratio.id && "ring-2 ring-primary"
-                  )}
-                  style={{ 
-                    width: ratio.width * 12, 
-                    height: ratio.height * 12,
-                    maxWidth: '120px',
-                    maxHeight: '120px'
-                  }}
-                >
-                  <img 
-                    src={ratio.preview} 
-                    alt={ratio.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-              <div className="text-center">
-                <span className="text-xs font-medium">{ratio.name}</span>
-                <span className="block text-xs text-muted-foreground mt-0.5">
-                  {ratio.width}:{ratio.height}
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    </TooltipProvider>
   )
 } 

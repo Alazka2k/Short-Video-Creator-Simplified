@@ -5,23 +5,72 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { Sparkles, Video, Music, Image, Mic, Check } from 'lucide-react'
+import Select from '@/components/ui/select'
+import videoDurationData from '@/data/video-creation/basic/video-duration-prompt.json'
+import { Card, CardContent } from '@/components/ui/card'
 
-const durationOptions = [
-  { label: '0-30 Seconds', value: 30, scenes: 5 },
-  { label: '30-60 Seconds', value: 60, scenes: 9 },
-  { label: 'Up to 90 Seconds', value: 90, scenes: 13 }
-]
+// Map duration options from the new format (mimic real flow)
+const durationOptions = videoDurationData.options.map(option => ({
+  label: option.name,
+  value: option.sceneAmount * 10,
+  scenes: option.sceneAmount,
+  description: option.description,
+  lengthDescription: option.lengthDescription,
+  icon: option.icon
+}))
+
+const durationSelectOptions = videoDurationData.options.map(option => ({
+  id: option.name,
+  label: option.name,
+  value: String(option.sceneAmount * 10),
+  description: option.description,
+  custom: option.icon ? (
+    <div className="flex h-12 w-12 items-center justify-center">
+      <img src={option.icon} alt={option.name} className="w-8 h-8 object-contain" />
+    </div>
+  ) : (
+    <div className="flex h-12 w-12 items-center justify-center">
+      <span className="text-xl">⏱️</span>
+    </div>
+  )
+}))
 
 export function ContentGenerationDemo() {
   const [showFocusField, setShowFocusField] = useState(false)
   const [focus, setFocus] = useState("")
-  const [enabledServices, setEnabledServices] = useState({
+  const [selectedContent, setSelectedContent] = useState({
     voice: true,
     music: true,
-    image: true
+    visuals: true
   })
   const [selectedVisualization, setSelectedVisualization] = useState<'plain' | 'video' | 'animation'>('plain')
-  const [selectedDuration, setSelectedDuration] = useState(durationOptions[0])
+  const [selectedDuration, setSelectedDuration] = useState<typeof durationOptions[0] | undefined>(durationOptions[0])
+
+  // Handler for Select component
+  const handleDurationChange = (value: string | null) => {
+    if (!value) {
+      setSelectedDuration(undefined)
+      return
+    }
+    const option = durationOptions.find(opt => String(opt.value) === value)
+    if (!option) {
+      setSelectedDuration(undefined)
+      return
+    }
+    setSelectedDuration(option)
+  }
+
+  // Handler for content selection
+  const handleContentChange = (key: 'voice' | 'music' | 'visuals') => {
+    setSelectedContent(prev => {
+      const newState = { ...prev, [key]: !prev[key] }
+      // If visuals are disabled, reset visualization type
+      if (key === 'visuals' && !newState.visuals) {
+        setSelectedVisualization('plain')
+      }
+      return newState
+    })
+  }
 
   return (
     <div className="space-y-6 min-h-[400px]">
@@ -56,127 +105,111 @@ export function ContentGenerationDemo() {
         {/* Duration Selection */}
         <div className="space-y-4">
           <h4 className="font-medium">Video Duration</h4>
-          <div className="flex gap-4">
-            {durationOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setSelectedDuration(option)}
-                className={cn(
-                  "flex-1 p-4 rounded-lg border-2 transition-colors",
-                  selectedDuration.value === option.value
-                    ? "border-primary bg-primary/5"
-                    : "border-transparent bg-accent/5 hover:bg-accent/10"
-                )}
-              >
-                <div className="font-medium">{option.label}</div>
-                <div className="text-sm text-muted-foreground">
-                  ~{option.scenes} scenes
-                </div>
-              </button>
-            ))}
+          <div className="w-full">
+            <Select
+              data={durationSelectOptions}
+              value={selectedDuration ? String(selectedDuration.value) : undefined}
+              onChange={handleDurationChange}
+              title="Choose Duration"
+              allowDeselect={true}
+              className="!rounded-lg border-input hover:border-primary/50 [&.border-purple-500\/50]:border-primary [&.bg-purple-500\/5]:bg-primary/5"
+            />
           </div>
         </div>
       </div>
 
       {/* Service Selection */}
       <div className="space-y-4">
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => setEnabledServices(prev => ({ ...prev, voice: !prev.voice }))}
+        <h3 className="text-lg font-semibold">Content</h3>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-              enabledServices.voice ? "bg-primary/20" : "bg-accent/5"
+              'cursor-pointer transition-colors',
+              selectedContent.voice ? 'border-primary' : 'hover:border-primary/50'
             )}
+            onClick={() => handleContentChange('voice')}
           >
-            <Mic className={cn(
-              "w-4 h-4",
-              enabledServices.voice ? "text-primary" : "text-muted-foreground"
-            )} />
-            <span className="text-sm">Voice</span>
-            <Check className={cn(
-              "w-4 h-4 ml-1",
-              enabledServices.voice ? "opacity-100" : "opacity-0"
-            )} />
-          </button>
-          <button
-            onClick={() => setEnabledServices(prev => ({ ...prev, music: !prev.music }))}
+            <CardContent className="p-4 flex items-center gap-4">
+              <Mic className={cn('w-8 h-8', selectedContent.voice ? 'text-primary' : 'text-muted-foreground')} />
+              <div>
+                <div className="font-medium">Voice Narration</div>
+                <div className="text-sm text-muted-foreground">AI-powered voiceover</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-              enabledServices.music ? "bg-primary/20" : "bg-accent/5"
+              'cursor-pointer transition-colors',
+              selectedContent.visuals ? 'border-primary' : 'hover:border-primary/50'
             )}
+            onClick={() => handleContentChange('visuals')}
           >
-            <Music className={cn(
-              "w-4 h-4",
-              enabledServices.music ? "text-primary" : "text-muted-foreground"
-            )} />
-            <span className="text-sm">Music</span>
-            <Check className={cn(
-              "w-4 h-4 ml-1",
-              enabledServices.music ? "opacity-100" : "opacity-0"
-            )} />
-          </button>
-          <button
-            onClick={() => {
-              setEnabledServices(prev => {
-                const newState = { ...prev, image: !prev.image }
-                if (!newState.image) {
-                  setSelectedVisualization('plain')
-                }
-                return newState
-              })
-            }}
+            <CardContent className="p-4 flex items-center gap-4">
+              <Image className={cn('w-8 h-8', selectedContent.visuals ? 'text-primary' : 'text-muted-foreground')} />
+              <div>
+                <div className="font-medium">Visual Content</div>
+                <div className="text-sm text-muted-foreground">AI-generated visuals</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-              enabledServices.image ? "bg-primary/20" : "bg-accent/5"
+              'cursor-pointer transition-colors',
+              selectedContent.music ? 'border-primary' : 'hover:border-primary/50'
             )}
+            onClick={() => handleContentChange('music')}
           >
-            <Image className={cn(
-              "w-4 h-4",
-              enabledServices.image ? "text-primary" : "text-muted-foreground"
-            )} />
-            <span className="text-sm">Visuals</span>
-            <Check className={cn(
-              "w-4 h-4 ml-1",
-              enabledServices.image ? "opacity-100" : "opacity-0"
-            )} />
-          </button>
+            <CardContent className="p-4 flex items-center gap-4">
+              <Music className={cn('w-8 h-8', selectedContent.music ? 'text-primary' : 'text-muted-foreground')} />
+              <div>
+                <div className="font-medium">Background Music</div>
+                <div className="text-sm text-muted-foreground">AI-generated music</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Visualization Options */}
-        {enabledServices.image && (
-          <div className="p-4 rounded-lg bg-accent/5">
+        {selectedContent.visuals && (
+          <div className="space-y-4">
             <h4 className="font-medium mb-3">Visualization Type</h4>
-            <div className="flex gap-3">
-              <button
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Card
+                className={cn(
+                  selectedVisualization === 'plain' ? 'border-primary' : 'hover:border-primary/50'
+                )}
                 onClick={() => setSelectedVisualization('plain')}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                  selectedVisualization === 'plain' ? "bg-primary/20" : "bg-accent/10"
-                )}
               >
-                <Image className="w-4 h-4" />
-                <span className="text-sm">Plain</span>
-              </button>
-              <button
+                <CardContent className="flex flex-col items-center p-4">
+                  <Image className="w-6 h-6 mb-2 text-primary" />
+                  <div className="font-medium">Image</div>
+                  <div className="text-xs text-muted-foreground text-center mt-1">Static images for each scene</div>
+                </CardContent>
+              </Card>
+              <Card
+                className={cn(
+                  selectedVisualization === 'video' ? 'border-primary' : 'hover:border-primary/50'
+                )}
                 onClick={() => setSelectedVisualization('video')}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                  selectedVisualization === 'video' ? "bg-primary/20" : "bg-accent/10"
-                )}
               >
-                <Video className="w-4 h-4" />
-                <span className="text-sm">Video</span>
-              </button>
-              <button
+                <CardContent className="flex flex-col items-center p-4">
+                  <Video className="w-6 h-6 mb-2 text-primary" />
+                  <div className="font-medium">Video</div>
+                  <div className="text-xs text-muted-foreground text-center mt-1">Dynamic video sequences</div>
+                </CardContent>
+              </Card>
+              <Card
+                className={cn(
+                  selectedVisualization === 'animation' ? 'border-primary' : 'hover:border-primary/50'
+                )}
                 onClick={() => setSelectedVisualization('animation')}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                  selectedVisualization === 'animation' ? "bg-primary/20" : "bg-accent/10"
-                )}
               >
-                <Sparkles className="w-4 h-4" />
-                <span className="text-sm">Animation</span>
-              </button>
+                <CardContent className="flex flex-col items-center p-4">
+                  <Sparkles className="w-6 h-6 mb-2 text-primary" />
+                  <div className="font-medium">Animation</div>
+                  <div className="text-xs text-muted-foreground text-center mt-1">Animated effects & transitions</div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}

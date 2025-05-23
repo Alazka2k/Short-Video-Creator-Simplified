@@ -5,33 +5,80 @@
       "name": "Realistic",
       "options": [
         {
-          "id": "cinematic",
-          "name": "Cinematic",
-          "description": "Professional cinematic shots with dramatic lighting and composition",
-          "tags": ["Professional", "Dramatic", "High-quality"],
-          "promptDefinition": "--sref 3326977824",
+          "id": "documentaryfilm",
+          "name": "Documentary Film",
+          "demo":true,
+          "description": "Cinematic documentary look with analog textures and historical depth",
+          "tags": ["Analog", "Cinematic", "Photojournalism"],
+          "promptDefinition": "--sref 3326977824 --sw 1000",
           "previewImages": [
-            "/creation/visual-settings/shot-style/realistic/cinematic/preview1.png",
-            "/creation/visual-settings/shot-style/realistic/cinematic/preview2.png",
-            "/creation/visual-settings/shot-style/realistic/cinematic/preview3.png",
-            "/creation/visual-settings/shot-style/realistic/cinematic/preview4.png",
-            "/creation/visual-settings/shot-style/realistic/cinematic/preview5.png",
-            "/creation/visual-settings/shot-style/realistic/cinematic/preview6.png"
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview6.png"
           ]
         },
         {
-          "id": "blackwhite",
-          "name": "Black & White",
+          "id": "cinematicrealism",
+          "name": "Cinematic Realism",
+          "demo":true,
+          "description": "Highly stylized realism with dramatic lighting and cinematic tones",
+          "tags": ["Dramatic", "Editorial", "High-contrast"],
+          "promptDefinition": "--sref 3272474549 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/cinematicrealism/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/cinematicrealism/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/cinematicrealism/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/cinematicrealism/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/cinematicrealism/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/cinematicrealism/preview6.png"
+          ]
+        },
+        {
+          "id": "artnovel",
+          "name": "Retrovision",
+          "description": "Painterly visual style blending cinematic realism with moody, storybook aesthetics",
+          "tags": ["Painterly", "Moody", "Narrative"],
+          "promptDefinition": "--sref 95777124 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview6.png"
+          ]
+        },
+        {
+          "id": "zenrealism",
+          "name": "Zenrealism",
+          "description": "Cinematic style capturing serene Japanese aesthetics through moody lighting and contemplative composition",
+          "tags": ["Moody", "Minimal", "Cultural"],
+          "promptDefinition": "--sref 4261497348 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/zenrealism/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/zenrealism/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/zenrealism/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/zenrealism/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/zenrealism/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/zenrealism/preview6.png"
+          ]
+        },
+        {
+          "id": "blackwhite-vintage",
+          "name": "Black & White Vintage",
           "description": "Classic monochrome photography with rich contrast",
           "tags": ["Monochrome", "Classic", "Timeless"],
-          "promptDefinition": "--sref 20240813",
+          "promptDefinition": "--sref 20240813 --sw 1000",
           "previewImages": [
-            "/creation/visual-settings/shot-style/realistic/blackwhite/preview1.png",
-            "/creation/visual-settings/shot-style/realistic/blackwhite/preview2.png",
-            "/creation/visual-settings/shot-style/realistic/blackwhite/preview3.png",
-            "/creation/visual-settings/shot-style/realistic/blackwhite/preview4.png",
-            "/creation/visual-settings/shot-style/realistic/blackwhite/preview5.png",
-            "/creation/visual-settings/shot-style/realistic/blackwhite/preview6.png"
+            "/creation/visual-settings/shot-style/realistic/blackwhite-vintage/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite-vintage/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite-vintage/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite-vintage/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite-vintage/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/blackwhite-vintage/preview6.png"
           ]
         },
         {
@@ -39,7 +86,7 @@
           "name": "Vintage",
           "description": "Retro-styled photography with nostalgic color grading",
           "tags": ["Retro", "Nostalgic", "Warm"],
-          "promptDefinition": "--sref 20240806",
+          "promptDefinition": "--sref 20240806 --sw 1000",
           "previewImages": [
             "/creation/visual-settings/shot-style/realistic/vintage/preview1.png",
             "/creation/visual-settings/shot-style/realistic/vintage/preview2.png",
@@ -58,37 +105,131 @@
         {
           "id": "anime",
           "name": "Anime",
+          "demo":true,
           "description": "Japanese animation style with distinctive aesthetics",
           "tags": ["Animation", "Stylized", "Vibrant"],
-          "promptDefinition": "--sref 1872206423",
+          "promptDefinition": "--sref 3986738193 --sw 1000",
           "previewImages": [
             "/creation/visual-settings/shot-style/stylized/anime/preview1.png",
             "/creation/visual-settings/shot-style/stylized/anime/preview2.png",
-            "/creation/visual-settings/shot-style/stylized/anime/preview3.png"
-          ]
-        },
-        {
-          "id": "3d",
-          "name": "3D Rendered",
-          "description": "Modern 3D computer graphics with realistic materials",
-          "tags": ["3D", "Modern", "Polished"],
-          "promptDefinition": "--sref 1872206424",
-          "previewImages": [
-            "/creation/visual-settings/shot-style/stylized/3d/preview1.png",
-            "/creation/visual-settings/shot-style/stylized/3d/preview2.png",
-            "/creation/visual-settings/shot-style/stylized/3d/preview3.png"
+            "/creation/visual-settings/shot-style/stylized/anime/preview3.png",
+            "/creation/visual-settings/shot-style/stylized/anime/preview4.png",
+            "/creation/visual-settings/shot-style/stylized/anime/preview5.png",
+            "/creation/visual-settings/shot-style/stylized/anime/preview6.png"
           ]
         },
         {
           "id": "cartoon",
           "name": "Cartoon",
+          "demo":true,
           "description": "Playful cartoon style with bold colors and simple shapes",
           "tags": ["Cartoon", "Playful", "Colorful"],
-          "promptDefinition": "--sref 1872206425",
+          "promptDefinition": "--sref 4059834270 --sw 1000",
           "previewImages": [
             "/creation/visual-settings/shot-style/stylized/cartoon/preview1.png",
             "/creation/visual-settings/shot-style/stylized/cartoon/preview2.png",
-            "/creation/visual-settings/shot-style/stylized/cartoon/preview3.png"
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview3.png",
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview4.png",
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview5.png",
+            "/creation/visual-settings/shot-style/stylized/cartoon/preview6.png"
+          ]
+        },
+        {
+          "id": "kidcrayon",
+          "name": "Kidcrayon",
+          "description": "Playful crayon-style drawings with childlike charm and bold outlines",
+          "tags": ["Crayon", "Hand-drawn", "Childlike"],
+          "promptDefinition": "--sref 4059834270 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/stylized/kidcrayon/preview1.png",
+            "/creation/visual-settings/shot-style/stylized/kidcrayon/preview2.png",
+            "/creation/visual-settings/shot-style/stylized/kidcrayon/preview3.png",
+            "/creation/visual-settings/shot-style/stylized/kidcrayon/preview4.png",
+            "/creation/visual-settings/shot-style/stylized/kidcrayon/preview5.png",
+            "/creation/visual-settings/shot-style/stylized/kidcrayon/preview6.png"
+          ]
+        },
+        {
+          "id": "storybook",
+          "name": "Storybook",
+          "description": "Whimsical digital painting style with soft lighting and expressive childlike charm",
+          "tags": ["Cute", "Expressive", "Fantasy"],
+          "promptDefinition": "--sref 1872206425 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/stylized/storybook/preview1.png",
+            "/creation/visual-settings/shot-style/stylized/storybook/preview2.png",
+            "/creation/visual-settings/shot-style/stylized/storybook/preview3.png",
+            "/creation/visual-settings/shot-style/stylized/storybook/preview4.png",
+            "/creation/visual-settings/shot-style/stylized/storybook/preview5.png",
+            "/creation/visual-settings/shot-style/stylized/storybook/preview6.png"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conceptual",
+      "name": "Conceptual",
+      "options": [
+        {
+          "id": "folktale",
+          "name": "Folktale",
+          "demo":true,
+          "description": "Ornate, dark-accented illustration style inspired by traditional storytelling and textile patterns",
+          "tags": ["Decorative", "Cultural", "Patterned"],
+          "promptDefinition": "--sref 1872206424 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/conceptual/folktale/preview1.png",
+            "/creation/visual-settings/shot-style/conceptual/folktale/preview2.png",
+            "/creation/visual-settings/shot-style/conceptual/folktale/preview3.png",
+            "/creation/visual-settings/shot-style/conceptual/folktale/preview4.png",
+            "/creation/visual-settings/shot-style/conceptual/folktale/preview5.png",
+            "/creation/visual-settings/shot-style/conceptual/folktale/preview6.png"
+          ]
+        },
+        {
+          "id": "monoprint",
+          "name": "Monoprint",
+          "description": "Painterly print style evoking nostalgia through soft textures and limited palettes",
+          "tags": ["Minimalist", "Abstract", "Printmaking"],
+          "promptDefinition": "--sref 1872206424 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/conceptual/monoprint/preview1.png",
+            "/creation/visual-settings/shot-style/conceptual/monoprint/preview2.png",
+            "/creation/visual-settings/shot-style/conceptual/monoprint/preview3.png",
+            "/creation/visual-settings/shot-style/conceptual/monoprint/preview4.png",
+            "/creation/visual-settings/shot-style/conceptual/monoprint/preview5.png",
+            "/creation/visual-settings/shot-style/conceptual/monoprint/preview6.png"
+          ]
+        },
+        {
+          "id": "neonline",
+          "name": "Neonline",
+          "description": "Bold graphic style combining vivid neon linework with print-like textures and abstract overlays",
+          "tags": ["Line Art", "Graphic", "Abstract", "Pop"],
+          "promptDefinition": "--sref 512986670 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/conceptual/neonline/preview1.png",
+            "/creation/visual-settings/shot-style/conceptual/neonline/preview2.png",
+            "/creation/visual-settings/shot-style/conceptual/neonline/preview3.png",
+            "/creation/visual-settings/shot-style/conceptual/neonline/preview4.png",
+            "/creation/visual-settings/shot-style/conceptual/neonline/preview5.png",
+            "/creation/visual-settings/shot-style/conceptual/neonline/preview6.png"
+          ]
+        },
+        {
+          "id": "inkminimal",
+          "name": "Inkminimal",
+          "demo":true,
+          "description": "Monochrome conceptual style blending fine linework with abstract minimalism and surreal tension",
+          "tags": ["Minimalist", "Abstract", "Conceptual"],
+          "promptDefinition": "--sref 3348836972 --sw 1000",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/conceptual/inkminimal/preview1.png",
+            "/creation/visual-settings/shot-style/conceptual/inkminimal/preview2.png",
+            "/creation/visual-settings/shot-style/conceptual/inkminimal/preview3.png",
+            "/creation/visual-settings/shot-style/conceptual/inkminimal/preview4.png",
+            "/creation/visual-settings/shot-style/conceptual/inkminimal/preview5.png",
+            "/creation/visual-settings/shot-style/conceptual/inkminimal/preview6.png"
           ]
         }
       ]

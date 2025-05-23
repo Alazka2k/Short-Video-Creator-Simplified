@@ -1,5 +1,6 @@
 /**
  * Prelaunch Layout Component
+ * Needs to be overridden by the production marketing page layout
  * 
  * Root layout for the prelaunch marketing landing page.
  * Provides simplified structure focused on lead generation.

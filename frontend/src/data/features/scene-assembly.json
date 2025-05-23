@@ -1,0 +1,126 @@
+{
+  "videoExamples": [
+    {
+      "id": "realistic",
+      "label": "Realistic",
+      "description": "A realistic visualization style using photorealistic AI video.",
+      "demoContent": ["video", "image", "voice", "music"],
+      "music": "/demo/music/video-content/realistic/demo-music.mp3",
+      "scriptTitle": "Top 5 History Moments",
+      "scriptDescription": "A short video highlighting the most impactful moments in world history.",
+      "scenes": [
+        {
+          "title": "The Moon Landing",
+          "description": "Humanity's giant leap beyond Earth, sparking dreams of the cosmos.",
+          "video": "/demo/videos/video-content/realistic/scene-1.mp4",
+          "image": "/demo/images/video-content/realistic/scene-1.png",
+          "voice": "/demo/voices/video-content/realistic/scene-1.mp3"
+        },
+        {
+          "title": "The end of World War II",
+          "description": "A global sigh of relief, and the dawn of a new era.",
+          "video": "/demo/videos/video-content/realistic/scene-2.mp4",
+          "image": "/demo/images/video-content/realistic/scene-2.png",
+          "voice": "/demo/voices/video-content/realistic/scene-2.mp3"
+        },
+        {
+          "title": "The signing of the Declaration of Independence",
+          "description": "A bold step towards freedom and democracy.",
+          "video": "/demo/videos/video-content/realistic/scene-3.mp4",
+          "image": "/demo/images/video-content/realistic/scene-3.png",
+          "voice": "/demo/voices/video-content/realistic/scene-3.mp3"
+        }
+      ]
+    },
+    {
+      "id": "stylized",
+      "label": "Stylized",
+      "description": "A stylized look depending on the selected style.",
+      "demoContent": ["video", "image", "voice", "music"],
+      "music": "/demo/music/video-content/stylized/demo-music.mp3",
+      "scriptTitle": "Inspire Beyond Limits: An Call to Courage",
+      "scriptDescription": "An anime hero delivers a stirring motivational speech",
+      "scenes": [
+        {
+          "title": "Search for the Light",
+          "description": "In a world of shadows, the light of courage flickers. Will you let it guide you?",
+          "video": "/demo/videos/video-content/stylized/scene-1.mp4",
+          "image": "/demo/images/video-content/stylized/scene-1.png",
+          "voice": "/demo/voices/video-content/stylized/scene-1.mp3"
+        },
+        {
+          "title": "Fear the Darkness",
+          "description": "When fear whispers lies, let your heart roar the truth.",
+          "video": "/demo/videos/video-content/stylized/scene-2.mp4",
+          "image": "/demo/images/video-content/stylized/scene-2.png",
+          "voice": "/demo/voices/video-content/stylized/scene-2.mp3"
+        },
+        {
+          "title": "The Call to Courage",
+          "description": "Every step forward is a step toward mastery.",
+          "video": "/demo/videos/video-content/stylized/scene-3.mp4",
+          "image": "/demo/images/video-content/stylized/scene-3.png",
+          "voice": "/demo/voices/video-content/stylized/scene-3.mp3"
+        }
+      ]
+    }
+  ],
+  "animatedExamples": [
+    {
+      "id": "3d-animated",
+      "label": "3D Animated Content",
+      "demoContent": ["video", "image", "music"],
+      "music": "/demo/music/animation-content/demo-music.mp3",
+      "description": "A visually striking 3D Animation of the images style for immersive storytelling.",
+      "scriptTitle": "Time Travel: 1990s to 2000s Nostalgia",
+      "scriptDescription": "A nostalgic journey through the iconic moments and cultural shifts that defined the 1990s to the early 2000s.",
+      "scenes": [
+        {
+          "title": "Family Watching TV",
+          "description": "A family huddled around a massive tube TV, watching a popular sitcom.",
+          "video": "/demo/videos/animation-content/scene-1.mp4",
+          "image": "/demo/images/animation-content/scene-1.png"
+        },
+        {
+          "title": "Teenage Bedroom Feels",
+          "description": "A bedroom wall plastered with posters of 90s bands and movie stars, a CD player softly playing a hit song.",
+          "video": "/demo/videos/animation-content/scene-2.mp4",
+          "image": "/demo/images/animation-content/scene-2.png"
+        },
+        {
+          "title": "Bustling 90s Classroom",
+          "description": "A bustling 90s classroom with students passing notes and flipping through paper notebooks.",
+          "video": "/demo/videos/animation-content/scene-3.mp4",
+          "image": "/demo/images/animation-content/scene-3.png"
+        }
+      ]
+    }
+  ],
+  "imageExamples": [
+    {
+      "id": "classic-images",
+      "label": "Classic Images",
+      "description": "A showcase of AI-generated images for each scene.",
+      "demoContent": ["image"],
+      "scriptTitle": "Animal Antics: When Playful Pets Make Silly Mistakes",
+      "scriptDescription": "Watch as adorable animals get themselves into hilarious situations, showcasing their playful yet clumsy side.",
+      "scenes": [
+        {
+          "title": "Puppy Chases Tail",
+          "description": "A playful puppy chases its own tail, spinning in circles until it comically tumbles over.",
+          "image": "/demo/images/image-content/scene-1.png"
+        },
+        {
+          "title": "Squirrel in Bird Feeder",
+          "description": "A clumsy squirrel attempts to navigate a bird feeder but ends up dangling upside down.",
+          "image": "/demo/images/image-content/scene-2.png"
+        },
+        {
+          "title": "Raccoon in Trash Can",
+          "description": "An adventurous raccoon sneaks into a trash can, only to get stuck and pop out in surprise.",
+          "image": "/demo/images/image-content/scene-3.png"
+        }
+      ]
+    }
+  ]
+}

@@ -11,94 +11,58 @@ import { VoiceGenerationDemo } from '@/components/marketing/features/demos/Voice
 import { SceneAssemblyDemo } from '@/components/marketing/features/demos/SceneAssemblyDemo'
 import { ModularWorkflowDemo } from '@/components/marketing/features/demos/ModularWorkflowDemo'
 import { PlatformOptimizationDemo } from '@/components/marketing/features/demos/PlatformOptimizationDemo'
-import { Brain, Sparkles, Mic, Video, ChevronRight, Settings, Share2 } from 'lucide-react'
+import { Brain, Sparkles, Mic, Video, ChevronRight, Settings, Share2, LucideIcon } from 'lucide-react'
+import featureData from '@/data/features/feature.json'
 
-const features = [
-  {
-    title: "AI-Powered Content Generation",
-    description: "Transform your ideas into engaging content with our advanced AI technology. Create viral-worthy videos for any platform with flexible generation options for each component.",
-    icon: Brain,
-    gradient: "from-purple-500 to-indigo-500",
-    demoType: "content-generation",
-    component: ContentGenerationDemo,
-    benefits: [
-      "Complete video generation pipeline",
-      "Flexible service selection (use any combination)",
-      "Viral-optimized content creation",
-      "Quick iterations and refinements"
-    ]
-  },
-  {
-    title: "Visual Creation",
-    description: "Generate stunning visuals in multiple styles and formats. Choose from various artistic styles, shot types, and animation options for each scene.",
-    icon: Sparkles,
-    gradient: "from-orange-500 to-amber-500",
-    demoType: "visual-creation",
-    component: VisualCreationDemo,
-    benefits: [
-      "Multiple artist style options",
-      "Various shot styles (photorealistic, cinematic)",
-      "Flexible aspect ratios",
-      "Custom style parameters"
-    ]
-  },
-  {
-    title: "Voice Generation",
-    description: "Access state-of-the-art AI voices for professional narration. Choose from a variety of voices and styles to match your content's tone perfectly.",
-    icon: Mic,
-    gradient: "from-pink-500 to-rose-500",
-    demoType: "voice-generation",
-    component: VoiceGenerationDemo,
-    benefits: [
-      "Professional AI voices",
-      "Multiple voice options",
-      "Natural speech patterns",
-      "Voice sample preview"
-    ]
-  },
-  {
-    title: "Scene Assembly",
-    description: "Create dynamic videos with our flexible scene system. Generate and combine video segments seamlessly with smart transitions.",
-    icon: Video,
-    gradient: "from-blue-500 to-cyan-500",
-    demoType: "scene-assembly",
-    component: SceneAssemblyDemo,
-    benefits: [
-      "Flexible scene arrangement",
-      "Smart transitions",
-      "Background music integration",
-      "Voice-over synchronization"
-    ]
-  },
-  {
-    title: "Modular Workflow",
-    description: "Customize your video creation process. Enable or disable components as needed for your specific use case.",
-    icon: Settings,
-    gradient: "from-green-500 to-emerald-500",
-    demoType: "modular-workflow",
-    component: ModularWorkflowDemo,
-    benefits: [
-      "Flexible component selection",
-      "Customizable workflow",
-      "Process visualization",
-      "Efficient pipeline"
-    ]
-  },
-  {
-    title: "Platform Optimization",
-    description: "Export your videos in the perfect format for any platform. Optimize for social media, streaming, or download.",
-    icon: Share2,
-    gradient: "from-red-500 to-rose-500",
-    demoType: "platform-optimization",
-    component: PlatformOptimizationDemo,
-    benefits: [
-      "Multi-platform support",
-      "Format optimization",
-      "Quality settings",
-      "Direct sharing options"
-    ]
-  }
-]
+// Define types
+type DemoComponent = () => JSX.Element;
+type IconName = 'Brain' | 'Sparkles' | 'Mic' | 'Video' | 'Settings' | 'Share2';
+type DemoType = 'content-generation' | 'visual-creation' | 'voice-generation' | 'scene-assembly' | 'modular-workflow' | 'platform-optimization';
+
+interface FeatureItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: IconName;
+  gradient: string;
+  demoType: DemoType;
+  benefits: string[];
+}
+
+interface ProcessedFeature extends Omit<FeatureItem, 'icon'> {
+  icon: LucideIcon;
+  component: DemoComponent;
+}
+
+// Map component imports to demo types
+const demoComponents: Record<DemoType, DemoComponent> = {
+  'content-generation': ContentGenerationDemo,
+  'visual-creation': VisualCreationDemo,
+  'voice-generation': VoiceGenerationDemo,
+  'scene-assembly': SceneAssemblyDemo,
+  'modular-workflow': ModularWorkflowDemo,
+  'platform-optimization': PlatformOptimizationDemo
+}
+
+// Map icon strings to components
+const iconComponents: Record<IconName, LucideIcon> = {
+  'Brain': Brain,
+  'Sparkles': Sparkles,
+  'Mic': Mic,
+  'Video': Video,
+  'Settings': Settings,
+  'Share2': Share2
+}
+
+// Type assertion for the JSON data
+const typedFeatureData = featureData.features as unknown as FeatureItem[];
+
+// Process the features data from JSON and add the actual component references
+const features: ProcessedFeature[] = typedFeatureData.map(feature => ({
+  ...feature,
+  icon: iconComponents[feature.icon],
+  component: demoComponents[feature.demoType]
+}));
 
 export default function FeaturesPage() {
   const [activeFeature, setActiveFeature] = useState(0)
@@ -113,7 +77,7 @@ export default function FeaturesPage() {
       
       {/* Floating orbs */}
       <motion.div
-        className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl"
+        className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl -z-20 pointer-events-none"
         animate={{
           x: [0, 100, 0],
           y: [0, -50, 0],
@@ -125,7 +89,7 @@ export default function FeaturesPage() {
         }}
       />
       <motion.div
-        className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-3xl"
+        className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-3xl -z-20 pointer-events-none"
         animate={{
           x: [0, -100, 0],
           y: [0, 50, 0],
@@ -153,7 +117,7 @@ export default function FeaturesPage() {
           <div className="space-y-2">
             {features.map((feature, index) => (
               <button
-                key={feature.title}
+                key={feature.id}
                 onClick={() => setActiveFeature(index)}
                 className={cn(
                   "w-full text-left p-4 rounded-xl transition-all duration-300",
@@ -200,7 +164,10 @@ export default function FeaturesPage() {
             transition={{ duration: 0.3 }}
           >
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-semibold mb-6">{features[activeFeature].title}</h2>
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold mb-2">{features[activeFeature].title}</h2>
+                <p className="text-muted-foreground">{features[activeFeature].description}</p>
+              </div>
 
               {/* Benefits */}
               <div className="grid grid-cols-2 gap-4 mb-8">

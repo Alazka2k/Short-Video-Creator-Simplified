@@ -13,9 +13,9 @@ export function Auth0ProviderWrapper({ children }: { children: React.ReactNode }
   const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
   const audience = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE;
   const clientId = process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID;
-  console.log('domain', domain);
-  console.log('clientId', clientId);
-  console.log('audience', audience);
+  //console.log('domain', domain);
+  //console.log('clientId', clientId);
+  //console.log('audience', audience);
 
 
 
