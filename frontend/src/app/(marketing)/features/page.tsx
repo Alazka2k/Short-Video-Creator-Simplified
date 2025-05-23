@@ -24,7 +24,7 @@ interface FeatureItem {
   title: string;
   description: string;
   icon: IconName;
-  gradient: string;
+  gradient?: string; // Make gradient optional since we'll define it in the code
   demoType: DemoType;
   benefits: string[];
 }
@@ -32,6 +32,7 @@ interface FeatureItem {
 interface ProcessedFeature extends Omit<FeatureItem, 'icon'> {
   icon: LucideIcon;
   component: DemoComponent;
+  gradient: string; // Ensure gradient is required in processed features
 }
 
 // Map component imports to demo types
@@ -54,6 +55,16 @@ const iconComponents: Record<IconName, LucideIcon> = {
   'Share2': Share2
 }
 
+// Define gradient mappings for each feature type
+const featureGradients: Record<string, string> = {
+  'content-generation': 'from-purple-500 to-indigo-500',
+  'visual-creation': 'from-orange-500 to-amber-500',
+  'voice-generation': 'from-pink-500 to-rose-500',
+  'scene-assembly': 'from-blue-500 to-cyan-500',
+  'modular-workflow': 'from-green-500 to-emerald-500',
+  'platform-optimization': 'from-red-500 to-rose-500'
+}
+
 // Type assertion for the JSON data
 const typedFeatureData = featureData.features as unknown as FeatureItem[];
 
@@ -61,7 +72,8 @@ const typedFeatureData = featureData.features as unknown as FeatureItem[];
 const features: ProcessedFeature[] = typedFeatureData.map(feature => ({
   ...feature,
   icon: iconComponents[feature.icon],
-  component: demoComponents[feature.demoType]
+  component: demoComponents[feature.demoType],
+  gradient: featureGradients[feature.id] || feature.gradient || 'from-primary to-accent' // Use defined gradient or fallback
 }));
 
 export default function FeaturesPage() {
@@ -134,7 +146,7 @@ export default function FeaturesPage() {
                     <feature.icon className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate flex items-center gap-2">
+                    <h3 className="font-semibold truncate flex items-center gap-2 text-foreground">
                       {feature.title}
                       <ChevronRight className={cn(
                         "w-4 h-4 transition-transform",
@@ -165,7 +177,7 @@ export default function FeaturesPage() {
           >
             <div className="max-w-4xl mx-auto">
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-2">{features[activeFeature].title}</h2>
+                <h2 className="text-2xl font-semibold mb-2 text-foreground">{features[activeFeature].title}</h2>
                 <p className="text-muted-foreground">{features[activeFeature].description}</p>
               </div>
 
@@ -185,7 +197,7 @@ export default function FeaturesPage() {
                     )}>
                       <Sparkles className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-sm">{benefit}</span>
+                    <span className="text-sm text-foreground">{benefit}</span>
                   </motion.div>
                 ))}
               </div>

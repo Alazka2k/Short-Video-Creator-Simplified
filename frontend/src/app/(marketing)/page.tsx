@@ -335,7 +335,7 @@ export default function Home() {
               >
                 <h3 className="text-xl font-semibold mb-3">When Will It Launch?</h3>
                 <p className="text-muted-foreground">
-                  Our official launch is planned for Q3 2025. Early access users will get priority and discounted access starting in Q2 2025.
+                  Our official launch is planned for end of Q3 2025. Early access users will get priority and discounted access starting in beginning of Q3 2025.
                 </p>
               </motion.div>
               

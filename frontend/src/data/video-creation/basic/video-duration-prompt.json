@@ -1,20 +1,12 @@
 {
   "options": [
     {
-        "sceneAmount": 1,
-        "description": "This option is a test option.",
-        "lengthDescription": "Maximum 5-10 seconds video for testing purposes",
-        "name": "Test Option",
-        "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
-        "icon": "/creation/duration-icons/test.png"
-    },
-    {
         "sceneAmount": 3,
         "description": "Three slides of content material.",
         "lengthDescription": "15 seconds of video material or three consistent images",
         "name": "Video Clip",
         "serviceRestrictions": ["image", "voice", "video", "music", "animation"],
-        "icon": "/creation/duration-icons/video-teaser.png",
+        "icon": "/creation/duration-icons/slideshow.png",
         "planId": "1"
     },
     {
