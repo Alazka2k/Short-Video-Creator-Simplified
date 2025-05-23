@@ -20,8 +20,9 @@ const ALLOWED_ROUTES = [
   '/privacy-policy',
   '/cookie-policy',
   '/terms-of-service',
-  '/support',
+  '/contact',
   '/features',
+  '/thank-you',
 ]
 
 // Routes that should be explicitly blocked
@@ -58,9 +59,14 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/branding') || 
     pathname.startsWith('/images') ||
     pathname.startsWith('/static') ||
+    pathname.startsWith('/prelaunch') ||  // Allow access to prelaunch assets
     pathname.endsWith('.ico') ||
     pathname.endsWith('.png') ||
-    pathname.endsWith('.svg')
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.mp4') ||  // Allow access to video files
+    pathname.endsWith('.webm') || // Allow access to webm videos
+    pathname.endsWith('.m4v') || // Allow access to m4v videos
+    pathname.endsWith('.mp3') // Allow access to mp3 files
   ) {
     console.log(`Allowing static resource: ${pathname}`)
     return NextResponse.next()

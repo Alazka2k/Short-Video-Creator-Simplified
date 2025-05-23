@@ -211,7 +211,7 @@ export default function ContactForm() {
               <Button 
                 type="submit" 
                 className="w-full h-12 mt-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-md flex items-center justify-center gap-2 transition-all"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !acceptedPrivacy}
               >
                 {isSubmitting ? "Submitting..." : "Submit Form"}
                 {!isSubmitting && <ArrowRight className="w-4 h-4" />}

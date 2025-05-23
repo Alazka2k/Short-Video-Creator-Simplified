@@ -7,6 +7,7 @@
         {
           "id": "documentaryfilm",
           "name": "Documentary Film",
+          "demo":true,
           "description": "Cinematic documentary look with analog textures and historical depth",
           "tags": ["Analog", "Cinematic", "Photojournalism"],
           "promptDefinition": "--sref 3326977824 --sw 1000",
@@ -22,6 +23,7 @@
         {
           "id": "cinematicrealism",
           "name": "Cinematic Realism",
+          "demo":true,
           "description": "Highly stylized realism with dramatic lighting and cinematic tones",
           "tags": ["Dramatic", "Editorial", "High-contrast"],
           "promptDefinition": "--sref 3272474549 --sw 1000",
@@ -35,18 +37,18 @@
           ]
         },
         {
-          "id": "retrovision",
+          "id": "artnovel",
           "name": "Retrovision",
-          "description": "A hyper-stylized blend of retro futurism and surreal realism with fashion editorial flair",
-          "tags": ["Stylized", "Editorial", "Cinematic"],
-          "promptDefinition": "--sref 3272474549 --sw 1000",
+          "description": "Painterly visual style blending cinematic realism with moody, storybook aesthetics",
+          "tags": ["Painterly", "Moody", "Narrative"],
+          "promptDefinition": "--sref 95777124 --sw 1000",
           "previewImages": [
-            "/creation/visual-settings/shot-style/realistic/retrovision/preview1.png",
-            "/creation/visual-settings/shot-style/realistic/retrovision/preview2.png",
-            "/creation/visual-settings/shot-style/realistic/retrovision/preview3.png",
-            "/creation/visual-settings/shot-style/realistic/retrovision/preview4.png",
-            "/creation/visual-settings/shot-style/realistic/retrovision/preview5.png",
-            "/creation/visual-settings/shot-style/realistic/retrovision/preview6.png"
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/artnovel/preview6.png"
           ]
         },
         {
@@ -103,6 +105,7 @@
         {
           "id": "anime",
           "name": "Anime",
+          "demo":true,
           "description": "Japanese animation style with distinctive aesthetics",
           "tags": ["Animation", "Stylized", "Vibrant"],
           "promptDefinition": "--sref 3986738193 --sw 1000",
@@ -118,6 +121,7 @@
         {
           "id": "cartoon",
           "name": "Cartoon",
+          "demo":true,
           "description": "Playful cartoon style with bold colors and simple shapes",
           "tags": ["Cartoon", "Playful", "Colorful"],
           "promptDefinition": "--sref 4059834270 --sw 1000",
@@ -169,6 +173,7 @@
         {
           "id": "folktale",
           "name": "Folktale",
+          "demo":true,
           "description": "Ornate, dark-accented illustration style inspired by traditional storytelling and textile patterns",
           "tags": ["Decorative", "Cultural", "Patterned"],
           "promptDefinition": "--sref 1872206424 --sw 1000",
@@ -214,6 +219,7 @@
         {
           "id": "inkminimal",
           "name": "Inkminimal",
+          "demo":true,
           "description": "Monochrome conceptual style blending fine linework with abstract minimalism and surreal tension",
           "tags": ["Minimalist", "Abstract", "Conceptual"],
           "promptDefinition": "--sref 3348836972 --sw 1000",

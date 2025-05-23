@@ -1,3 +1,5 @@
+//ToDo: Merge this file with the other config.ts file from root folder
+
 const getEnvironmentConfig = () => {
   const env = process.env.NODE_ENV;
   
@@ -13,6 +15,20 @@ const getEnvironmentConfig = () => {
     // M2M Application Config
     m2mClientId: process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID!,
     m2mClientSecret: process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET!,
+
+    // Beehiiv Newsletter Integration
+    beehiivPublicationId: process.env.NEXT_PUBLIC_BEEHIIV_PUBLICATION_ID!,
+    beehiivApiKey: process.env.NEXT_PUBLIC_BEEHIIV_API_KEY!,
+
+    // EmailJS Newsletter Integration
+    emailJsHost: process.env.SMTP_HOST!,
+    emailJsPort: process.env.SMTP_PORT!,
+    emailJsSecure: process.env.SMTP_SECURE!,
+    emailJsUser: process.env.SMTP_USER!,
+    emailJsPassword: process.env.SMTP_PASSWORD!,
+    emailJsFromEmail: process.env.CONTACT_FROM_EMAIL!,
+    emailJsToEmail: process.env.CONTACT_TO_EMAIL!,
+    emailJsReplyTo: process.env.CONTACT_REPLY_TO!
   };
 };
 
@@ -25,7 +41,6 @@ export const auth0Config = {
   authorizationParams: {
     redirect_uri: `${envConfig.appUrl}/dashboard`,
     audience: envConfig.audience,
-    scope: "openid profile email offline_access"
   },
   onRedirectCallback: (appState: any) => {
     window.location.href = appState?.returnTo || '/dashboard';
@@ -44,14 +59,20 @@ export const auth0M2MConfig = {
 // Validation
 if (process.env.NODE_ENV !== 'production') {
   // Required for all environments
-  const requiredConfigs = ['domain', 'spaClientId', 'm2mClientId', 'm2mClientSecret', 'audience', 'appUrl'];
+  const requiredConfigs = [
+    'domain', 'audience', 'appUrl',
+    'spaClientId', 
+    'm2mClientId', 'm2mClientSecret',
+    'beehiivPublicationId', 'beehiivApiKey',
+    'emailJsHost', 'emailJsPort', 'emailJsSecure', 'emailJsUser', 'emailJsPassword', 'emailJsFromEmail', 'emailJsToEmail', 'emailJsReplyTo'
+  ];
   
   const missingRequiredConfigs = requiredConfigs
     .filter(key => !envConfig[key as keyof typeof envConfig])
     .map(key => key);
 
   if (missingRequiredConfigs.length > 0) {
-    console.error('Missing required Auth0 configuration:', {
+    console.error('Missing required variables in configuration:', {
       environment: process.env.NODE_ENV,
       missingFields: missingRequiredConfigs,
     });

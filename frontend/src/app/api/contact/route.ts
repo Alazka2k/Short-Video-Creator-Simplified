@@ -11,6 +11,30 @@ const contactFormSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Debug environment loading
+    console.log("API Route Environment Check:");
+    console.log("NODE_ENV:", process.env.NODE_ENV);
+    
+    // Check if required SMTP variables are available
+    const requiredVars = [
+      'SMTP_HOST',
+      'SMTP_PORT',
+      'SMTP_SECURE',
+      'SMTP_USER', 
+      'SMTP_PASSWORD', 
+      'CONTACT_FROM_EMAIL', 
+      'CONTACT_TO_EMAIL'
+    ];
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      console.error("Missing required environment variables:", missingVars);
+      return NextResponse.json(
+        { error: "SMTP configuration incomplete", details: `Missing: ${missingVars.join(', ')}` },
+        { status: 500 }
+      );
+    }
+    
     // Parse request body
     const body = await req.json();
     
@@ -24,6 +48,8 @@ export async function POST(req: Request) {
     }
     
     const { name, email, message } = result.data;
+
+    //Add mailhog later as a development tool for testing emails
     
     // In a production environment, you would use real SMTP credentials
     // This is a basic example using a transporter that logs to console
@@ -32,15 +58,15 @@ export async function POST(req: Request) {
       port: parseInt(process.env.SMTP_PORT || "587"),
       secure: process.env.SMTP_SECURE === "true",
       auth: {
-        user: process.env.SMTP_USER || "user",
-        pass: process.env.SMTP_PASSWORD || "password",
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
       },
     });
     
     // Prepare email content
     const mailOptions = {
-      from: `"Narravid Contact Form" <${process.env.CONTACT_FROM_EMAIL || "noreply@narravid.io"}>`,
-      to: process.env.CONTACT_TO_EMAIL || "contact@narravid.io",
+      from: `"Narravid Contact Form" <${process.env.CONTACT_FROM_EMAIL}>`,
+      to: process.env.CONTACT_TO_EMAIL,
       replyTo: email,
       subject: `Contact Form Submission from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
@@ -57,16 +83,41 @@ export async function POST(req: Request) {
       `,
     };
     
-    // For development, log instead of sending
+    // For development, log the email details but still send it
     if (process.env.NODE_ENV === "development") {
-      console.log("Email would be sent:", mailOptions);
-      return NextResponse.json({ success: true, message: "Form submitted successfully (development mode)" });
+      console.log("========= EMAIL DETAILS (DEVELOPMENT MODE) =========");
+      console.log("Email configuration:", {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_SECURE === "true",
+        user: process.env.SMTP_USER,
+        fromEmail: process.env.CONTACT_FROM_EMAIL,
+        toEmail: process.env.CONTACT_TO_EMAIL
+      });
+      console.log("Email content:", {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+        replyTo: mailOptions.replyTo,
+        message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+      });
+      console.log("=================================================");
+      
+      // No early return - continue to send the email
     }
     
-    // Send email in production
-    await transporter.sendMail(mailOptions);
-    
-    return NextResponse.json({ success: true, message: "Message sent successfully" });
+    // Send email in both development and production
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log("Email sent successfully!");
+      return NextResponse.json({ success: true, message: "Message sent successfully" });
+    } catch (emailError) {
+      console.error("Failed to send email:", emailError);
+      return NextResponse.json(
+        { error: "Failed to send email", details: emailError instanceof Error ? emailError.message : "Unknown error" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Error processing contact form:", error);
     return NextResponse.json(

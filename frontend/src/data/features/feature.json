@@ -1,0 +1,88 @@
+{
+  "features": [
+    {
+      "id": "content-generation",
+      "title": "Content Generation",
+      "description": "Transform your ideas into engaging content with our advanced AI technology. Create viral-worthy videos for any platform with flexible generation options for each component.",
+      "icon": "Brain",
+      "gradient": "from-purple-500 to-indigo-500",
+      "demoType": "content-generation",
+      "benefits": [
+        "Complete video generation pipeline",
+        "Flexible service selection",
+        "Viral-optimized content creation",
+        "Different content styles for every need"
+      ]
+    },
+    {
+      "id": "visual-creation",
+      "title": "Visual Creation",
+      "description": "Generate stunning visuals in multiple styles and formats. Choose from various artistic styles, shot types, and animation options for each scene.",
+      "icon": "Sparkles",
+      "gradient": "from-orange-500 to-amber-500",
+      "demoType": "visual-creation",
+      "benefits": [
+        "Multiple artist style options",
+        "Various shot styles (photorealistic, cinematic)",
+        "Flexible aspect ratios",
+        "Custom style parameters"
+      ]
+    },
+    {
+      "id": "voice-generation",
+      "title": "Voice Generation",
+      "description": "Access state-of-the-art AI voices for professional narration. Choose from a variety of voices and styles to match your content's tone perfectly.",
+      "icon": "Mic",
+      "gradient": "from-pink-500 to-rose-500",
+      "demoType": "voice-generation",
+      "benefits": [
+        "Professional AI voices",
+        "Multiple voice options",
+        "Natural speech patterns",
+        "Voice sample preview"
+      ]
+    },
+    {
+      "id": "scene-assembly",
+      "title": "Scene Assembly",
+      "description": "Create dynamic videos with our flexible scene system. Generate and combine video segments seamlessly with smart transitions.",
+      "icon": "Video",
+      "gradient": "from-blue-500 to-cyan-500",
+      "demoType": "scene-assembly",
+      "benefits": [
+        "Flexible scene arrangement",
+        "Smart transitions",
+        "Background music integration",
+        "Voice-over synchronization"
+      ]
+    },
+    {
+      "id": "modular-workflow",
+      "title": "Modular Workflow",
+      "description": "Customize your video creation process. Enable or disable components as needed for your specific use case.",
+      "icon": "Settings",
+      "gradient": "from-green-500 to-emerald-500",
+      "demoType": "modular-workflow",
+      "benefits": [
+        "Flexible component selection",
+        "Customizable workflow",
+        "Process visualization",
+        "Efficient pipeline"
+      ]
+    },
+    {
+      "id": "platform-optimization",
+      "title": "Platform Optimization",
+      "description": "Export your videos in the perfect format for any platform. Optimize for social media, streaming, or download.",
+      "icon": "Share2",
+      "gradient": "from-red-500 to-rose-500",
+      "demoType": "platform-optimization",
+      "benefits": [
+        "Multi-platform support",
+        "Format optimization",
+        "Quality settings",
+        "Direct sharing options"
+      ]
+    }
+  ]
+}

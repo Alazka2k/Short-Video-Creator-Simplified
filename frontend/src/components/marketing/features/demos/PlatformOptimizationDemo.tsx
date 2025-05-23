@@ -15,13 +15,13 @@ export function PlatformOptimizationDemo() {
     <div className="space-y-6 min-h-[400px]">
       <div className="p-6 rounded-lg bg-accent/5 space-y-4">
         <div className="flex items-center justify-center gap-4">
-          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 text-primary text-sm hover:bg-primary/30 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-muted-foreground text-sm">
             <Download className="w-4 h-4" />
             <span>Download Video</span>
           </button>
           <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-muted-foreground text-sm">
             <Share2 className="w-4 h-4" />
-            <span>Direct social media sharing coming soon</span>
+            <span>Direct social media sharing</span>
           </div>
         </div>
 
@@ -41,9 +41,6 @@ export function PlatformOptimizationDemo() {
                   <platform.icon className="w-8 h-8" />
                   <div className="text-center">
                     <div className="font-medium">{platform.name}</div>
-                    <div className="text-xs opacity-80 mt-1">
-                      Optimized Format
-                    </div>
                   </div>
                 </div>
               </div>
