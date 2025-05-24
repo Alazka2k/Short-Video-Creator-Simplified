@@ -9,6 +9,11 @@ const nextConfig = {
   experimental: {
     externalDir: true,
   },
+  // Specific settings to handle routes with client components during static build
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Config to exclude problematic routes from static generation
+  skipMiddlewareUrlNormalize: true,
+  skipTrailingSlashRedirect: true,
   // Enable Vercel Analytics
   analytics: {
     // This setting requires user consent
