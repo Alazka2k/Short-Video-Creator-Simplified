@@ -4,6 +4,9 @@ import { useSearchParams } from "next/navigation";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import Image from "next/image";
 
+// This prevents Next.js from trying to statically generate this page during build
+export const dynamic = 'force-dynamic';
+
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");

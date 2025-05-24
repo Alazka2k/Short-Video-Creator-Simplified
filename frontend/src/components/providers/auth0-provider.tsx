@@ -17,7 +17,11 @@ export function Auth0ProviderWrapper({ children }: { children: React.ReactNode }
   //console.log('clientId', clientId);
   //console.log('audience', audience);
 
-
+  // Handle static build/prerendering scenarios
+  const isStaticBuild = typeof window === 'undefined' && process.env.NODE_ENV === 'production';
+  if (isStaticBuild) {
+    return <>{children}</>;
+  }
 
   if (!(domain && clientId && audience)) {
     debug.error('Auth0 configuration missing');
