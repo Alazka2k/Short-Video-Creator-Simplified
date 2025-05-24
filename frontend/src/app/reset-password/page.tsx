@@ -4,8 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import Image from "next/image";
 
-// Import route configuration directly from the main config
-export { dynamic, fetchCache, revalidate } from '@/lib/config';
+// Dynamic page configuration
+export const dynamic = "force-dynamic";
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
