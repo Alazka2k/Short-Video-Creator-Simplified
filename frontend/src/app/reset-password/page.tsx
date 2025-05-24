@@ -4,10 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import Image from "next/image";
 
-// These settings prevent Next.js from trying to statically generate this page during build
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
-export const revalidate = 0;
+// Import route configuration directly from the main config
+export { dynamic, fetchCache, revalidate } from '@/lib/config';
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();

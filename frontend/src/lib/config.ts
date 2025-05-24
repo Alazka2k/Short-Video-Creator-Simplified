@@ -10,6 +10,20 @@ if (env === 'development') {
   });
 }
 
+/**
+ * Route configuration for dynamic/authenticated pages
+ * Export these directly in any page that should not be statically generated:
+ * 
+ * Example: 
+ * ```
+ * export { dynamic, fetchCache, revalidate } from '@/lib/config';
+ * ```
+ */
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
+
+// Main application configuration
 export const config = {
   auth: {
     auth0: auth0Config
