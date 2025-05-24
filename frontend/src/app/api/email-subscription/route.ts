@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 // Load environment variables
-const publicationId = process.env.NEXT_PUBLIC_BEEHIIV_PUBLICATION_ID
-const apiKey = process.env.NEXT_PUBLIC_BEEHIIV_API_KEY
+const publicationId = process.env.BEEHIIV_PUBLICATION_ID
+const apiKey = process.env.BEEHIIV_API_KEY
 
 // Schema to validate incoming subscription data
 const subscriptionSchema = z.object({
