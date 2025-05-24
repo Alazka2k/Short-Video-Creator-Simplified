@@ -4,9 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import Image from "next/image";
 
-// Dynamic page configuration
-export const dynamic = "force-dynamic";
-
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
