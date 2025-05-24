@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm cache clean --force && npm config set registry https://registry.npmjs.org/ && npm install --no-audit --no-fund --no-package-lock && npm run build",
+  "installCommand": "echo 'Skipping default install'",
+  "framework": "nextjs"
+} 

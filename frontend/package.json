@@ -11,7 +11,7 @@
     "lint": "next lint"
   },
   "overrides": {
-    "dashjs": "npm:@dash-industry-forum/dash.js@4.6.0"
+    "dashjs": "npm:dashjs@4.6.0"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
