@@ -18,7 +18,7 @@ export function PrelaunchFooter() {
       </div>
       
       <div className="container px-4 md:px-6 py-12 relative">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-base font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">About</h3>
             <div className="mt-4 text-sm text-muted-foreground max-w-xs">
@@ -33,6 +33,12 @@ export function PrelaunchFooter() {
             <h3 className="text-base font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Product</h3>
             <ul className="mt-4 space-y-3">
               <FooterLink href="/features">Features</FooterLink>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-base font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">Information</h3>
+            <ul className="mt-4 space-y-3">
               <FooterLink href="/contact">Contact</FooterLink>
             </ul>
           </div>

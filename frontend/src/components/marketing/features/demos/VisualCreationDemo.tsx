@@ -7,10 +7,13 @@ import aspectRatioData from '@/data/video-creation/image/aspect-ratio_select-opt
 import { Card, CardContent } from '@/components/ui/card'
 import { VisualStyleCarousel } from '@/components/video-creation/sections/VisualStyleCarousel'
 import Image from 'next/image'
-import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
+import { useTheme } from 'next-themes'
 
 export function VisualCreationDemo() {
+  const { resolvedTheme } = useTheme()
+  const isDarkMode = resolvedTheme === 'dark'
+  
   // Shot style selection
   const [selectedShotStyle, setSelectedShotStyle] = useState(shotStyleData.categories[0].options[0].id)
   // Aspect ratio selection
@@ -31,52 +34,80 @@ export function VisualCreationDemo() {
       <div className="space-y-8 min-h-[400px]">
         {/* Style Selection */}
         <div className="space-y-4">
-          <h4 className="font-medium mb-2">Style</h4>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <h4 className="font-medium mb-2 text-foreground">Style</h4>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredCategories.map(category => (
-              <div key={category.id} className="min-w-0">
-                <div className="text-base font-semibold text-muted-foreground mb-3 border-b pb-1 border-border/40 uppercase tracking-wide">{category.name}</div>
-                <div className="flex flex-col gap-4">
+              <div key={category.id} className="mb-4">
+                <h3 className="text-base font-semibold text-primary mb-3 border-b pb-1 border-border/40 uppercase tracking-wide">
+                  {category.name}
+                </h3>
+                <div className="space-y-3">
                   {category.options.map(option => (
                     <Card
                       key={option.id}
                       className={cn(
-                        'cursor-pointer transition-colors',
-                        selectedShotStyle === option.id ? 'border-primary' : 'hover:border-primary/50'
+                        'cursor-pointer hover:border-primary/50 transition-all',
+                        selectedShotStyle === option.id && 'border-primary bg-primary/5'
                       )}
-                      style={{ minHeight: 120 }}
                       onClick={() => setSelectedShotStyle(option.id)}
                     >
-                      <CardContent className="p-5 flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
+                      <CardContent className="p-3">
+                        <div className="flex gap-3">
+                          {/* Image thumbnail */}
                           <div className={cn(
-                            'rounded-lg overflow-hidden bg-muted flex-shrink-0',
-                            selectedShotStyle === option.id ? 'ring-2 ring-primary' : ''
-                          )} style={{ width: 56, height: 56 }}>
+                            'w-12 h-12 rounded overflow-hidden flex-shrink-0',
+                            selectedShotStyle === option.id && 'ring-2 ring-primary'
+                          )}>
                             <Image
                               src={option.previewImages[0]}
                               alt={option.name}
-                              width={56}
-                              height={56}
-                              className="object-cover w-full h-full"
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover"
                             />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-base truncate">{option.name}</div>
+                          
+                          {/* Content */}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-sm text-foreground truncate">{option.name}</h4>
+                            
                             <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="text-xs text-muted-foreground line-clamp-2 cursor-help">
+                              <TooltipTrigger className="w-full text-left">
+                                <p className="text-xs text-muted-foreground truncate mt-1 cursor-help">
                                   {option.description}
-                                </div>
+                                </p>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <span className="text-xs">{option.description}</span>
+                              <TooltipContent side="right" className="p-2 bg-card border border-border">
+                                <p className="text-xs text-foreground max-w-[250px]">{option.description}</p>
                               </TooltipContent>
                             </Tooltip>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {option.tags.map(tag => (
-                                <span key={tag} className="bg-secondary text-secondary-foreground px-2 py-0.5 rounded text-xs">{tag}</span>
+                            
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {option.tags.slice(0, 2).map(tag => (
+                                <span key={tag} className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-sm">
+                                  {tag}
+                                </span>
                               ))}
+                              {option.tags.length > 2 && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-sm cursor-help">
+                                      +{option.tags.length - 2}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="p-2 bg-card border border-border">
+                                    <p className="text-xs font-medium mb-1 text-foreground">All tags:</p>
+                                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                      {option.tags.map(tag => (
+                                        <span key={tag} className="bg-background border border-muted-foreground/20 text-foreground text-[10px] px-1.5 py-0.5 rounded-sm">
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -87,9 +118,11 @@ export function VisualCreationDemo() {
               </div>
             ))}
           </div>
+          
           {/* Carousel for selected style */}
           {selectedStyle && (
-            <div className="pt-4">
+            <div className="rounded-lg border bg-card/50 p-4 mt-6">
+              <h3 className="text-sm font-medium mb-3 text-foreground">Preview: {selectedStyle.name}</h3>
               <VisualStyleCarousel previewImages={selectedStyle.previewImages} selectedStyle={selectedStyle.id} />
             </div>
           )}
@@ -97,22 +130,20 @@ export function VisualCreationDemo() {
 
         {/* Aspect Ratio Selection */}
         <div className="space-y-4">
-          <h4 className="font-medium mb-2">Aspect Ratio</h4>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <h4 className="font-medium mb-2 text-foreground">Aspect Ratio</h4>
+          <div className="grid gap-3 sm:grid-cols-3">
             {aspectRatioData.options.map(ratio => (
               <Card
                 key={ratio.id}
                 className={cn(
-                  'cursor-pointer transition-colors flex flex-col h-[110px] p-0 border',
-                  selectedAspectRatio === ratio.id ? 'border-primary' : 'hover:border-primary/50'
+                  'cursor-pointer transition-all hover:border-primary/50',
+                  selectedAspectRatio === ratio.id && 'border-primary bg-primary/5'
                 )}
                 onClick={() => setSelectedAspectRatio(ratio.id)}
               >
-                <CardContent className="flex flex-col items-center px-3 py-2 h-full justify-center">
-                  <div className="font-medium text-base mb-2">{ratio.name}</div>
-                  <div className="flex items-center justify-center mt-1">
-                    <div className="text-xs text-muted-foreground text-center px-1">{ratio.description}</div>
-                  </div>
+                <CardContent className="p-3 text-center">
+                  <h3 className="font-medium text-foreground">{ratio.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{ratio.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -121,4 +152,4 @@ export function VisualCreationDemo() {
       </div>
     </TooltipProvider>
   )
-} 
+}

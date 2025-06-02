@@ -10,6 +10,7 @@ if (env === 'development') {
   });
 }
 
+// Main application configuration
 export const config = {
   auth: {
     auth0: auth0Config

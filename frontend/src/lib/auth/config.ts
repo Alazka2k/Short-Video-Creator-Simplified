@@ -4,21 +4,23 @@ const getEnvironmentConfig = () => {
   const env = process.env.NODE_ENV;
   
   return {
+    // App URL
+    appUrl: process.env.NEXT_PUBLIC_APP_URL!,
+
     // General auth0 Config
     domain: process.env.NEXT_PUBLIC_AUTH0_DOMAIN!,
     audience: process.env.NEXT_PUBLIC_AUTH0_AUDIENCE!,
-    appUrl: process.env.NEXT_PUBLIC_APP_URL!,
 
     // Single Page Application Config
     spaClientId: process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID!,
     
     // M2M Application Config
-    m2mClientId: process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID!,
-    m2mClientSecret: process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET!,
+    m2mClientId: process.env.AUTH0_M2M_CLIENT_ID!,
+    m2mClientSecret: process.env.AUTH0_M2M_CLIENT_SECRET!,
 
     // Beehiiv Newsletter Integration
-    beehiivPublicationId: process.env.NEXT_PUBLIC_BEEHIIV_PUBLICATION_ID!,
-    beehiivApiKey: process.env.NEXT_PUBLIC_BEEHIIV_API_KEY!,
+    beehiivPublicationId: process.env.BEEHIIV_PUBLICATION_ID!,
+    beehiivApiKey: process.env.BEEHIIV_API_KEY!,
 
     // EmailJS Newsletter Integration
     emailJsHost: process.env.SMTP_HOST!,

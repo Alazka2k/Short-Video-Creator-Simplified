@@ -1,4 +1,13 @@
 export function logEnvironmentConfig() {
+  // Only log environment details in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    // In production, just log a minimal message if needed
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Application running in production mode');
+    }
+    return;
+  }
+
   console.log('\n=== Frontend Environment Configuration ===');
   console.log('Environment:', process.env.NODE_ENV);
   
@@ -10,47 +19,26 @@ export function logEnvironmentConfig() {
   console.log('- Domain:', process.env.NEXT_PUBLIC_AUTH0_DOMAIN);
   console.log('- Audience:', process.env.NEXT_PUBLIC_AUTH0_AUDIENCE);
 
-  console.log('\n SPA application variables:');  
-  console.log('- Client ID:', process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID);
+  // Log only existence of credentials in development, never the actual values
+  const hasClientId = !!process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID;
+  const hasM2MClient = !!process.env.AUTH0_M2M_CLIENT_ID && !!process.env.AUTH0_M2M_CLIENT_SECRET;
+  const hasBeehiiv = !!process.env.BEEHIIV_PUBLICATION_ID && !!process.env.BEEHIIV_API_KEY;
+  const hasEmailConfig = !!process.env.SMTP_HOST && !!process.env.SMTP_USER && !!process.env.SMTP_PASSWORD;
 
-  console.log('\n M2M application variables:');  
-  console.log('- Client ID:', process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID);
-  console.log('- Client Secret:', process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET);
-
-  console.log('\n Beehiiv Newsletter Integration:');
-  console.log('- Publication ID:', process.env.NEXT_PUBLIC_BEEHIIV_PUBLICATION_ID);
-  console.log('- API Key:', process.env.NEXT_PUBLIC_BEEHIIV_API_KEY);
-  
-  console.log('\n EmailJS Credentials:');
-  console.log('- Host:', process.env.SMTP_HOST);
-  console.log('- Port:', process.env.SMTP_PORT);
-  console.log('- Secure:', process.env.SMTP_SECURE);
-  console.log('- User:', process.env.SMTP_USER);
-  console.log('- Password:', process.env.SMTP_PASSWORD);
-  console.log('- From Email:', process.env.CONTACT_FROM_EMAIL);
-  console.log('- To Email:', process.env.CONTACT_TO_EMAIL);
-  console.log('- Reply To:', process.env.CONTACT_REPLY_TO);
+  console.log('\n Credential Status:');
+  console.log('- SPA Client ID:', hasClientId ? '✓ Configured' : '✗ Missing');
+  console.log('- M2M Credentials:', hasM2MClient ? '✓ Configured' : '✗ Missing');
+  console.log('- Beehiiv Newsletter:', hasBeehiiv ? '✓ Configured' : '✗ Missing');
+  console.log('- Email Integration:', hasEmailConfig ? '✓ Configured' : '✗ Missing');
 
   // Add validation warnings
   console.log('\nConfiguration Status:');
   const requiredVars = {
     'NEXT_PUBLIC_APP_URL': process.env.NEXT_PUBLIC_APP_URL,
+    'NEXT_PUBLIC_API_URL': process.env.NEXT_PUBLIC_API_URL,
     'NEXT_PUBLIC_AUTH0_DOMAIN': process.env.NEXT_PUBLIC_AUTH0_DOMAIN,
     'NEXT_PUBLIC_AUTH0_AUDIENCE': process.env.NEXT_PUBLIC_AUTH0_AUDIENCE,
-    'NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID': process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID,
-    'NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID': process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID,
-    'NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET': process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET,
-    'NEXT_PUBLIC_BEEHIIV_PUBLICATION_ID': process.env.NEXT_PUBLIC_BEEHIIV_PUBLICATION_ID,
-    'NEXT_PUBLIC_BEEHIIV_API_KEY': process.env.NEXT_PUBLIC_BEEHIIV_API_KEY,
-    'SMTP_HOST': process.env.SMTP_HOST,
-    'SMTP_PORT': process.env.SMTP_PORT,
-    'SMTP_SECURE': process.env.SMTP_SECURE,
-    'SMTP_USER': process.env.SMTP_USER,
-    'SMTP_PASSWORD': process.env.SMTP_PASSWORD,
-    'CONTACT_FROM_EMAIL': process.env.CONTACT_FROM_EMAIL,
-    'CONTACT_TO_EMAIL': process.env.CONTACT_TO_EMAIL,
-    'CONTACT_REPLY_TO': process.env.CONTACT_REPLY_TO
-
+    'NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID': process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID
   };
 
   let allConfigured = true;

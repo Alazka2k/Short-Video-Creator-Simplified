@@ -10,6 +10,9 @@
     "start": "cross-env NODE_ENV=production next start -p 4000",
     "lint": "next lint"
   },
+  "overrides": {
+    "dashjs": "npm:dashjs@4.6.0"
+  },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
     "@auth0/nextjs-auth0": "^3.5.0",
@@ -40,6 +43,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
+    "date-fns": "^2.30.0",
     "framer-motion": "^11.18.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.468.0",
