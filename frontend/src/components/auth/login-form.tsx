@@ -66,8 +66,18 @@ export function LoginForm() {
         throw new Error(getAuthError(errorKey, 'login'));
       }
 
+      // Tokens are now in httpOnly cookies, so we don't handle them here
+      // Just pass the minimal user data
       AuthLogger.log('Email login successful', { userId: data.user.user_id, redirectingTo: returnPath });
-      await login(data.user, data.tokens);
+      
+      // Create a simplified tokens object for the login function (tokens are in cookies)
+      const dummyTokens = {
+        access_token: 'stored_in_cookie',
+        refresh_token: 'stored_in_cookie', 
+        expires_in: 3600
+      };
+      
+      await login(data.user, dummyTokens);
       
       // Redirect to the originally requested path or default to dashboard
       router.push(returnPath);

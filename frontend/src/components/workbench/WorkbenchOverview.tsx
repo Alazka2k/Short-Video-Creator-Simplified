@@ -5,6 +5,8 @@ import { FilterBar } from '@/components/shared/filters/FilterBar'
 import { Pagination } from '@/components/shared/pagination/Pagination'
 import { DownloadButton } from '@/components/shared/buttons/DownloadButton'
 import { ImagePreview } from '@/components/shared/media/ImagePreview'
+import { WorkbenchEmpty } from './sections/WorkbenchEmpty'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Scene {
   image?: { publicUrl: string }
@@ -67,11 +69,27 @@ export function WorkbenchOverview() {
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-6">
+        <div className="h-16 bg-card border rounded-lg animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="aspect-square bg-card border rounded-lg animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Check if we have any jobs at all
+  if (!jobs || jobs.length === 0) {
+    return <WorkbenchEmpty />
   }
 
   if (error) {
-    return <div>Error: {error}</div>
+    console.error('Workbench error:', error)
+    // Even if there's an error, show empty state instead of breaking
+    return <WorkbenchEmpty />
   }
 
   return (
@@ -82,11 +100,13 @@ export function WorkbenchOverview() {
       
       <BentoGrid items={getBentoItems()} />
       
-      <Pagination
-        currentPage={pagination.page}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-      />
+      {pagination && pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   )
 } 

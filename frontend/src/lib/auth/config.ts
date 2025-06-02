@@ -41,7 +41,7 @@ export const auth0Config = {
   domain: envConfig.domain,
   spaClientId: envConfig.spaClientId,
   authorizationParams: {
-    redirect_uri: `${envConfig.appUrl}/dashboard`,
+    redirect_uri: `${envConfig.appUrl}/api/auth/callback`,
     audience: envConfig.audience,
   },
   onRedirectCallback: (appState: any) => {

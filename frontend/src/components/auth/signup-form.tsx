@@ -86,7 +86,18 @@ export function SignupForm() {
         throw new Error(getAuthError(errorKey, 'signup'));
       }
 
-      await login(data.user, data.tokens);
+      // Tokens are now in httpOnly cookies, so we don't handle them here
+      // Just pass the minimal user data
+      console.log('Registration successful', { userId: data.user.user_id });
+      
+      // Create a simplified tokens object for the login function (tokens are in cookies)
+      const dummyTokens = {
+        access_token: 'stored_in_cookie',
+        refresh_token: 'stored_in_cookie', 
+        expires_in: 3600
+      };
+      
+      await login(data.user, dummyTokens);
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Signup error:", error);

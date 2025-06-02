@@ -55,69 +55,103 @@ export function useWorkbench() {
   } = useQuery({
     queryKey: ['jobs', state.pagination, state.filters],
     queryFn: async () => {
-      const m2mToken = await getM2MToken()
-      const userToken = localStorage.getItem("access_token")
-      
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`
-      }
-      
-      if (userToken) {
-        headers['x-user-token'] = userToken
-      }
-
-      const queryParams = new URLSearchParams({
-        page: state.pagination.page.toString(),
-        limit: state.pagination.limit.toString(),
-        sortBy: state.filters.sortBy,
-        sortOrder: state.filters.sortOrder
-      })
-
-      if (state.filters.status) {
-        queryParams.append('status', state.filters.status)
-      }
-
-      if (state.filters.services?.length) {
-        queryParams.append('services', state.filters.services.join(','))
-      }
-
-      // Get fresh data from API
-      const response = await apiClient.get<JobsResponse>(
-        `/api/job/jobs?${queryParams.toString()}`,
-        { headers }
-      )
-
-      // Get cached jobs
-      const cachedData = localStore.get<JobsResponse>(WORKBENCH_CACHE_KEY)
-      
-      if (cachedData) {
-        // Create a map of existing jobs by ID for quick lookup
-        const existingJobs = new Map(
-          cachedData.data.map(job => [job.job_id, job])
-        )
+      try {
+        const m2mToken = await getM2MToken()
+        const userToken = localStorage.getItem("access_token")
         
-        // Filter out jobs that are already cached
-        const newJobs = response.data.filter(job => 
-          !existingJobs.has(job.job_id)
-        )
-        
-        // If we found new jobs, update the cache
-        if (newJobs.length > 0) {
-          const updatedCache = {
-            ...cachedData,
-            data: [...cachedData.data, ...newJobs]
-          }
-          localStore.set(WORKBENCH_CACHE_KEY, updatedCache)
+        const headers: Record<string, string> = {
+          'Authorization': `Bearer ${m2mToken}`
         }
-      } else {
-        // If no cache exists, create it
-        localStore.set(WORKBENCH_CACHE_KEY, response)
+        
+        if (userToken) {
+          headers['x-user-token'] = userToken
+        }
+
+        const queryParams = new URLSearchParams({
+          page: state.pagination.page.toString(),
+          limit: state.pagination.limit.toString(),
+          sortBy: state.filters.sortBy,
+          sortOrder: state.filters.sortOrder
+        })
+
+        if (state.filters.status) {
+          queryParams.append('status', state.filters.status)
+        }
+
+        if (state.filters.services?.length) {
+          queryParams.append('services', state.filters.services.join(','))
+        }
+
+        // Get fresh data from API
+        const response = await apiClient.get<JobsResponse>(
+          `/api/job/jobs?${queryParams.toString()}`,
+          { headers }
+        )
+
+        // Handle empty response gracefully
+        if (!response.data) {
+          return {
+            data: [],
+            pagination: {
+              total: 0,
+              totalPages: 0
+            }
+          }
+        }
+
+        // Get cached jobs
+        const cachedData = localStore.get<JobsResponse>(WORKBENCH_CACHE_KEY)
+        
+        if (cachedData && response.data.length > 0) {
+          // Create a map of existing jobs by ID for quick lookup
+          const existingJobs = new Map(
+            cachedData.data.map(job => [job.job_id, job])
+          )
+          
+          // Filter out jobs that are already cached
+          const newJobs = response.data.filter(job => 
+            !existingJobs.has(job.job_id)
+          )
+          
+          // If we found new jobs, update the cache
+          if (newJobs.length > 0) {
+            const updatedCache = {
+              ...cachedData,
+              data: [...cachedData.data, ...newJobs]
+            }
+            localStore.set(WORKBENCH_CACHE_KEY, updatedCache)
+          }
+        } else if (response.data.length > 0) {
+          // If no cache exists and we have data, create it
+          localStore.set(WORKBENCH_CACHE_KEY, response)
+        }
+        
+        return response
+      } catch (error) {
+        console.error('Error fetching workbench jobs:', error)
+        // Return empty state instead of throwing
+        return {
+          data: [],
+          pagination: {
+            total: 0,
+            totalPages: 0
+          }
+        }
       }
-      
-      return response
     },
     staleTime: 30000, // Consider data stale after 30 seconds
-    gcTime: Infinity  // Never garbage collect the data
+    gcTime: Infinity,  // Never garbage collect the data
+    retry: (failureCount, error) => {
+      // Don't retry if it's a 404 (no jobs) or similar expected errors
+      if (error && typeof error === 'object' && 'status' in error) {
+        const status = (error as any).status
+        if (status === 404 || status === 204) {
+          return false
+        }
+      }
+      // Only retry up to 2 times for other errors
+      return failureCount < 2
+    }
   })
 
   // Extract preview storage keys from jobs

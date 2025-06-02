@@ -102,69 +102,107 @@ export function useVideos() {
   } = useQuery({
     queryKey: ['assembled-videos', state],
     queryFn: async () => {
-      const m2mToken = await getM2MToken()
-      const userToken = localStorage.getItem("access_token")
-      
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`
-      }
-      
-      if (userToken) {
-        headers['x-user-token'] = userToken
-      }
-
-      const queryParams = new URLSearchParams({
-        page: state.pagination.page.toString(),
-        limit: state.pagination.limit.toString(),
-        sortBy: state.filters.sortBy,
-        sortOrder: state.filters.sortOrder
-      })
-
-      if (state.filters.platform) {
-        queryParams.append('platform', state.filters.platform)
-      }
-
-      // Get fresh data from API
-      const response = await apiClient.get<VideosResponse>(
-        `/api/assembly/videos?${queryParams.toString()}`,
-        { headers }
-      )
-
-      // Get cached completed videos
-      const cachedData = localStore.get<VideosResponse>(VIDEOS_CACHE_KEY)
-      
-      if (cachedData) {
-        // Create a map of existing videos by ID for quick lookup
-        const existingVideos = new Map(
-          cachedData.data.map(video => [video.assembly_id, video])
-        )
+      try {
+        const m2mToken = await getM2MToken()
+        const userToken = localStorage.getItem("access_token")
         
-        // Filter out completed videos that are already cached
-        const newCompletedVideos = response.data.filter(video => 
-          video.status === 'completed' && !existingVideos.has(video.assembly_id)
-        )
+        const headers: Record<string, string> = {
+          'Authorization': `Bearer ${m2mToken}`
+        }
         
-        // If we found new completed videos, update the cache
-        if (newCompletedVideos.length > 0) {
-          const updatedCache = {
-            ...cachedData,
-            data: [...cachedData.data, ...newCompletedVideos]
+        if (userToken) {
+          headers['x-user-token'] = userToken
+        }
+
+        const queryParams = new URLSearchParams({
+          page: state.pagination.page.toString(),
+          limit: state.pagination.limit.toString(),
+          sortBy: state.filters.sortBy,
+          sortOrder: state.filters.sortOrder
+        })
+
+        if (state.filters.platform) {
+          queryParams.append('platform', state.filters.platform)
+        }
+
+        // Get fresh data from API
+        const response = await apiClient.get<VideosResponse>(
+          `/api/assembly/videos?${queryParams.toString()}`,
+          { headers }
+        )
+
+        // Handle empty response gracefully
+        if (!response.data) {
+          return {
+            data: [],
+            pagination: {
+              total: 0,
+              page: 1,
+              limit: 20,
+              totalPages: 0
+            }
           }
-          localStore.set(VIDEOS_CACHE_KEY, updatedCache)
         }
-      } else {
-        // If no cache exists, create it with completed videos
-        const completedVideos = {
-          ...response,
-          data: response.data.filter(video => video.status === 'completed')
+
+        // Get cached completed videos
+        const cachedData = localStore.get<VideosResponse>(VIDEOS_CACHE_KEY)
+        
+        if (cachedData && response.data.length > 0) {
+          // Create a map of existing videos by ID for quick lookup
+          const existingVideos = new Map(
+            cachedData.data.map(video => [video.assembly_id, video])
+          )
+          
+          // Filter out completed videos that are already cached
+          const newCompletedVideos = response.data.filter(video => 
+            video.status === 'completed' && !existingVideos.has(video.assembly_id)
+          )
+          
+          // If we found new completed videos, update the cache
+          if (newCompletedVideos.length > 0) {
+            const updatedCache = {
+              ...cachedData,
+              data: [...cachedData.data, ...newCompletedVideos]
+            }
+            localStore.set(VIDEOS_CACHE_KEY, updatedCache)
+          }
+        } else if (response.data.some(video => video.status === 'completed')) {
+          // If no cache exists and we have completed videos, create it
+          const completedVideos = {
+            ...response,
+            data: response.data.filter(video => video.status === 'completed')
+          }
+          localStore.set(VIDEOS_CACHE_KEY, completedVideos)
         }
-        localStore.set(VIDEOS_CACHE_KEY, completedVideos)
+        
+        return response
+      } catch (error) {
+        console.error('Error fetching videos:', error)
+        // Return empty state instead of throwing
+        return {
+          data: [],
+          pagination: {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0
+          }
+        }
       }
-      
-      return response
     },
     staleTime: 30000, // Consider data stale after 30 seconds
-    gcTime: Infinity  // Never garbage collect the data
+    gcTime: Infinity,  // Never garbage collect the data
+    retry: (failureCount, error) => {
+      // Don't retry if it's a 404 (no videos) or similar expected errors
+      if (error && typeof error === 'object' && 'status' in error) {
+        const status = (error as any).status
+        if (status === 404 || status === 204) {
+          return false
+        }
+      }
+      // Only retry up to 2 times for other errors
+      return failureCount < 2
+    }
   })
 
   // Extract storage keys from videos

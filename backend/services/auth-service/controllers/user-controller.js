@@ -46,14 +46,49 @@ const getProfile = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
-    const refreshToken = req.body.refresh_token || req.body.refreshToken;
+    // Get refresh token from cookies first, then fall back to request body
+    const refreshToken = req.cookies?.refresh_token || req.body.refresh_token || req.body.refreshToken;
     
     if (!refreshToken) {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
     const { user, tokens } = await authService.refreshToken(refreshToken);
-    res.json({ user, tokens });
+    
+    // Set new tokens as secure httpOnly cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    };
+
+    // Set access token cookie (shorter expiry)
+    res.cookie('access_token', tokens.access_token, {
+      ...cookieOptions,
+      maxAge: tokens.expires_in * 1000 // Convert to milliseconds
+    });
+
+    // Set refresh token cookie (longer expiry)
+    res.cookie('refresh_token', tokens.refresh_token, {
+      ...cookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    // Return only minimal user data
+    const safeUserData = {
+      user_id: user.user_id,
+      email: user.email,
+      name: user.full_name || user.name,
+      picture: user.picture,
+      provider: user.provider
+    };
+
+    res.json({ 
+      success: true,
+      user: safeUserData,
+      message: 'Token refreshed successfully'
+    });
   } catch (error) {
     logger.error('Token refresh error:', error);
     res.status(401).json({ error: 'Invalid refresh token' });
@@ -62,7 +97,8 @@ const refreshToken = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    const refreshToken = req.body.refresh_token || req.body.refreshToken;
+    // Get refresh token from cookies first, then fall back to request body
+    const refreshToken = req.cookies?.refresh_token || req.body.refresh_token || req.body.refreshToken;
     const allDevices = req.body.all_devices || req.body.allDevices;
 
     if (!refreshToken) {
@@ -76,6 +112,17 @@ const logout = async (req, res) => {
     const result = await authService.logout(refreshToken, allDevices);
     logger.info('Logout result:', JSON.stringify(result, null, 2));
     
+    // Clear the httpOnly cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    };
+
+    res.clearCookie('access_token', cookieOptions);
+    res.clearCookie('refresh_token', cookieOptions);
+
     // Handle case where result is undefined
     if (!result) {
       logger.warn('Logout result is undefined');

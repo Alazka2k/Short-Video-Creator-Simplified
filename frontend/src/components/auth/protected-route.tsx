@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useAuth0 } from '@auth0/auth0-react';
 import { LoadingScreen } from '@/components/ui/loading';
 import { AuthLogger } from '@/lib/debug/auth-logger';
 
@@ -43,9 +44,11 @@ const isPostAuthRedirect = () => {
 
 // Maximum time we'll wait for authentication before forcing a decision
 const MAX_AUTH_WAIT_TIME = 2000; // 2 seconds
+const POST_AUTH_WAIT_TIME = 8000; // 8 seconds for post-auth redirects
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated: auth0IsAuthenticated, isLoading: auth0IsLoading, user: auth0User } = useAuth0();
   const router = useRouter();
   const pathname = usePathname();
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -64,20 +67,24 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       isLoading,
       hasToken: hasToken.current,
       isNewTab: isNewTab.current,
-      isPostRedirect: isPostRedirect.current
+      isPostRedirect: isPostRedirect.current,
+      url: typeof window !== 'undefined' ? window.location.href : 'undefined'
     });
     
     // Check critical auth state every 500ms for debugging
     const interval = setInterval(() => {
-      if (isLoading) {
-        AuthLogger.log('Auth still loading...', {
+      if (isLoading || !isAuthenticated) {
+        AuthLogger.log('Auth state check...', {
           pathname,
           isAuthenticated,
+          isLoading,
           hasToken: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
-          elapsedTime: Date.now() - performance.now()
+          hasAuth0Transaction: typeof window !== 'undefined' && !!localStorage.getItem('a0.spajs.txs'),
+          isPostRedirect: isPostRedirect.current,
+          url: typeof window !== 'undefined' ? window.location.href : 'undefined'
         });
       }
-    }, 500);
+    }, 1000);
     
     return () => clearInterval(interval);
   }, [isAuthenticated, isLoading, pathname]);
@@ -95,11 +102,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       return;
     }
     
+    // Determine wait time based on context
+    const waitTime = isPostRedirect.current ? POST_AUTH_WAIT_TIME : MAX_AUTH_WAIT_TIME;
+    
     AuthLogger.log('Setting auth wait timer', { 
       pathname,
       isNewTab: isNewTab.current,
       isPostRedirect: isPostRedirect.current,
-      hasToken: hasToken.current
+      hasToken: hasToken.current,
+      waitTime: waitTime / 1000 + 's'
     });
     
     // Always set the timer to avoid getting stuck in loading
@@ -107,14 +118,25 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       AuthLogger.log('Auth wait timer completed', { 
         isAuthenticated,
         isLoading,
-        hasToken: hasToken.current
+        hasToken: hasToken.current,
+        waitTime: waitTime / 1000 + 's'
       });
       
       setExtraWaitComplete(true);
       
       // If we have a token but Auth0 isn't showing authenticated,
-      // force a reload as a last resort
-      if (hasToken.current && !isAuthenticated && !isLoading) {
+      // and we're in a post-redirect scenario, be extra patient
+      if (hasToken.current && !isAuthenticated && !isLoading && isPostRedirect.current) {
+        AuthLogger.warning('Post-redirect with token but not authenticated - giving more time');
+        
+        // Set up one more timer for post-redirect scenarios
+        setTimeout(() => {
+          if (!isAuthenticated) {
+            AuthLogger.warning('Final timeout - forcing reload as last resort');
+            window.location.reload();
+          }
+        }, 3000);
+      } else if (hasToken.current && !isAuthenticated && !isLoading) {
         AuthLogger.warning('Inconsistent auth state - forcing reload', {
           hasToken: hasToken.current,
           isAuthenticated,
@@ -122,7 +144,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         });
         window.location.reload();
       }
-    }, MAX_AUTH_WAIT_TIME);
+    }, waitTime);
     
     return () => {
       if (authWaitTimerRef.current) {
@@ -134,20 +156,31 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Authentication check effect
   useEffect(() => {
     // Perform this check only once auth state is settled or timer expired
-    if (isLoading && !extraWaitComplete) {
+    if ((isLoading || auth0IsLoading) && !extraWaitComplete) {
       return;
     }
     
+    // Check both our AuthContext and Auth0 direct state
+    const isContextAuthenticated = isAuthenticated;
+    const isAuth0Authenticated = auth0IsAuthenticated && auth0User;
+    const isEitherAuthenticated = isContextAuthenticated || isAuth0Authenticated;
+    
     AuthLogger.log('Checking authentication state', { 
-      isAuthenticated, 
+      isContextAuthenticated, 
+      isAuth0Authenticated,
+      isEitherAuthenticated,
       isLoading,
+      auth0IsLoading,
       hasToken: hasToken.current,
-      extraWaitComplete
+      extraWaitComplete,
+      isPostRedirect: isPostRedirect.current
     });
 
-    // If we're authenticated or have a token but wait completed, render content
-    if (isAuthenticated || (hasToken.current && extraWaitComplete)) {
-      AuthLogger.log('User is authenticated or has token, rendering content');
+    // If we're authenticated via either method, or have a token during post-redirect, render content
+    if (isEitherAuthenticated || (hasToken.current && extraWaitComplete && isPostRedirect.current)) {
+      AuthLogger.log('User is authenticated or has token, rendering content', {
+        method: isContextAuthenticated ? 'AuthContext' : isAuth0Authenticated ? 'Auth0Direct' : 'Token'
+      });
       setAuthChecked(true);
       return;
     }
@@ -165,15 +198,18 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         router.push(`/login?returnTo=${returnPath}`);
       }, 100);
     }
-  }, [isAuthenticated, isLoading, extraWaitComplete, pathname, router, isRedirecting]);
+  }, [isAuthenticated, auth0IsAuthenticated, auth0User, isLoading, auth0IsLoading, extraWaitComplete, pathname, router, isRedirecting]);
 
   // Show loading until either authenticated or extra wait completed
-  if (isLoading && !extraWaitComplete) {
+  if ((isLoading || auth0IsLoading) && !extraWaitComplete) {
     return <LoadingScreen />;
   }
   
+  // Check if authenticated via either method
+  const isEitherAuthenticated = isAuthenticated || (auth0IsAuthenticated && auth0User);
+  
   // Authenticated, render content
-  if (isAuthenticated || (hasToken.current && extraWaitComplete)) {
+  if (isEitherAuthenticated || (hasToken.current && extraWaitComplete && isPostRedirect.current)) {
     return <>{children}</>;
   }
   

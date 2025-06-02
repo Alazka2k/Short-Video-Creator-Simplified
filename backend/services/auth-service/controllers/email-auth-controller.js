@@ -20,7 +20,50 @@ const registerWithEmail = async (req, res) => {
       name: name || email.split('@')[0], // Use email username if no name provided
     });
 
-    res.json({ user, tokens });
+    // Set tokens as secure httpOnly cookies (same as login)
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict',
+      path: '/'
+    };
+
+    // Set access token cookie (shorter expiry)
+    res.cookie('access_token', tokens.access_token, {
+      ...cookieOptions,
+      maxAge: tokens.expires_in * 1000 // Convert to milliseconds
+    });
+
+    // Set refresh token cookie (longer expiry)
+    res.cookie('refresh_token', tokens.refresh_token, {
+      ...cookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    // Return only minimal user data needed by frontend (no sensitive info)
+    const safeUserData = {
+      user_id: user.user_id,
+      email: user.email,
+      name: user.full_name || user.name,
+      picture: user.picture,
+      provider: user.provider,
+      // Only return preferences that frontend needs
+      preferences: {
+        defaultStyle: user.video_preferences?.defaultStyle || 'modern',
+        defaultLanguage: user.video_preferences?.defaultLanguage || 'en'
+      }
+    };
+
+    logger.info('User registration successful', { 
+      userId: user.user_id, 
+      email: user.email 
+    });
+
+    res.json({ 
+      success: true,
+      user: safeUserData,
+      message: 'Registration successful'
+    });
   } catch (error) {
     logger.error('Email registration error:', {
       message: error.message,
@@ -60,7 +103,50 @@ const loginWithEmail = async (req, res) => {
     // Authenticate user and generate tokens
     const { user, tokens } = await authService.handleEmailLogin(email, password);
 
-    res.json({ user, tokens });
+    // Set tokens as secure httpOnly cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict',
+      path: '/'
+    };
+
+    // Set access token cookie (shorter expiry)
+    res.cookie('access_token', tokens.access_token, {
+      ...cookieOptions,
+      maxAge: tokens.expires_in * 1000 // Convert to milliseconds
+    });
+
+    // Set refresh token cookie (longer expiry)
+    res.cookie('refresh_token', tokens.refresh_token, {
+      ...cookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    // Return only minimal user data needed by frontend (no sensitive info)
+    const safeUserData = {
+      user_id: user.user_id,
+      email: user.email,
+      name: user.full_name || user.name,
+      picture: user.picture,
+      provider: user.provider,
+      // Only return preferences that frontend needs
+      preferences: {
+        defaultStyle: user.video_preferences?.defaultStyle || 'modern',
+        defaultLanguage: user.video_preferences?.defaultLanguage || 'en'
+      }
+    };
+
+    logger.info('User login successful', { 
+      userId: user.user_id, 
+      email: user.email 
+    });
+
+    res.json({ 
+      success: true,
+      user: safeUserData,
+      message: 'Login successful'
+    });
   } catch (error) {
     logger.error('Email login error:', error);
     

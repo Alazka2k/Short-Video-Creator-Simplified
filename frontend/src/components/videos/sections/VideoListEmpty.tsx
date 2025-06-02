@@ -12,7 +12,7 @@ export function VideoListEmpty({ className = '' }: VideoListEmptyProps) {
       </div>
       <h3 className="text-lg font-semibold mb-2">No Videos Found</h3>
       <p className="text-sm text-muted-foreground max-w-sm">
-        Your generated videos will appear here. Start by creating content in the workbench.
+        Your generated videos from content projects will appear here. Start by creating content in the workbench.
       </p>
     </div>
   );
