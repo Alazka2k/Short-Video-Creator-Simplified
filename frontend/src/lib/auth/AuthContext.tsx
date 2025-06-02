@@ -464,11 +464,7 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
         return cachedToken;
       }
 
-      AuthLogger.log('Getting new M2M token', {
-        hasClientId: !!auth0M2MConfig.m2mClientId,
-        hasClientSecret: !!auth0M2MConfig.m2mClientSecret,
-        audience: auth0M2MConfig.audience
-      });
+      AuthLogger.log('Getting new M2M token from backend');
 
       const response = await fetch('/api/auth/proxy?endpoint=/api/auth/token', {
         method: 'POST',
@@ -476,10 +472,9 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          client_id: auth0M2MConfig.m2mClientId,
-          client_secret: auth0M2MConfig.m2mClientSecret,
           audience: auth0M2MConfig.audience,
           grant_type: 'client_credentials'
+          // Note: client_id and client_secret are handled by backend for security
         })
       });
 

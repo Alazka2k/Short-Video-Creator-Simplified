@@ -288,7 +288,7 @@ export function useVideoCreationState(defaultValues?: any) {
   // Initialize M2M token
   useEffect(() => {
     auth.getM2MToken().then(token => setM2MToken(token));
-  }, [auth]);
+  }, [auth.getM2MToken]);
 
   const findVoiceId = (selectedId: string): string => {
     if (!selectedId) return '';

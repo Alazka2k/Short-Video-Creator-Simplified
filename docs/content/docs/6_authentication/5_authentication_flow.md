@@ -113,9 +113,9 @@ Each API request:
 // M2M Application Config in frontend
 export const auth0M2MConfig = {
   domain: process.env.NEXT_PUBLIC_AUTH0_DOMAIN,
-  clientId: process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID,
-  clientSecret: process.env.NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET,
   audience: process.env.NEXT_PUBLIC_AUTH0_AUDIENCE,
+  clientId: process.env.AUTH0_M2M_CLIENT_ID,
+  clientSecret: process.env.AUTH0_M2M_CLIENT_SECRET
 };
 ```
 

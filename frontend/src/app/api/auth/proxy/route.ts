@@ -4,10 +4,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Helper function to debug headers
 function logHeaders(headers: Headers, prefix: string) {
-  console.log(`${prefix} Headers:`);
-  headers.forEach((value, key) => {
-    console.log(`  ${key}: ${key === 'authorization' ? '(hidden)' : value}`);
-  });
+  //console.log(`${prefix} Headers:`);
+  //headers.forEach((value, key) => {
+  //  console.log(`  ${key}: ${key === 'authorization' ? '(hidden)' : value}`);
+  //});
 }
 
 // Helper function to forward the request - NOT CURRENTLY USED
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // For debugging
     if (process.env.NODE_ENV === 'development') {
-      logHeaders(request.headers, 'Request');
+      //logHeaders(request.headers, 'Request');
     }
 
     // Forward the request to the backend
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     // For debugging
     if (process.env.NODE_ENV === 'development') {
-      logHeaders(response.headers, 'Response');
+      //logHeaders(response.headers, 'Response');
     }
 
     // Get the response data
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
 
     // For debugging
     if (process.env.NODE_ENV === 'development') {
-      logHeaders(request.headers, 'Request');
+      //logHeaders(request.headers, 'Request');
     }
 
     // Get the request body
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
 
     // For debugging
     if (process.env.NODE_ENV === 'development') {
-      logHeaders(response.headers, 'Response');
+      //logHeaders(response.headers, 'Response');
     }
 
     // Get the response data

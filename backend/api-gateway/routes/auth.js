@@ -64,34 +64,47 @@ router.post('/logout', userController.logout);
 // M2M Token routes
 router.post('/token', m2mTokenLimiter, async (req, res) => {
   try {
-    const { client_id, client_secret, audience, grant_type } = req.body;
+    const { audience, grant_type } = req.body;
     
     logger.info('M2M token request received:', {
-      hasClientId: !!client_id,
-      hasClientSecret: !!client_secret,
       audience,
       grantType: grant_type,
       environment: process.env.NODE_ENV
     });
 
-    // Validate required fields
-    if (!client_id || !client_secret || !audience || grant_type !== 'client_credentials') {
+    // Validate required fields (client credentials are handled by backend)
+    if (!audience || grant_type !== 'client_credentials') {
       logger.warn('Invalid M2M token request:', {
-        missingClientId: !client_id,
-        missingClientSecret: !client_secret,
         missingAudience: !audience,
         invalidGrantType: grant_type !== 'client_credentials'
       });
       return res.status(400).json({
         error: 'Invalid request',
-        message: 'Missing required fields or invalid grant type'
+        message: 'Missing audience or invalid grant type'
       });
     }
 
-    logger.info('Requesting M2M token from Auth0 service');
+    // Use backend's own M2M credentials from environment variables
+    const config = require('../../shared/utils/config');
+    const clientId = config.auth.auth0.clientId;  // This is already M2M
+    const clientSecret = config.auth.auth0.clientSecret;  // This is already M2M
+
+    if (!clientId || !clientSecret) {
+      logger.error('Backend M2M credentials not configured', {
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret,
+        environment: process.env.NODE_ENV
+      });
+      return res.status(500).json({
+        error: 'Server configuration error',
+        message: 'M2M credentials not configured on server'
+      });
+    }
+
+    logger.info('Requesting M2M token from Auth0 service using backend credentials');
     const tokenData = await authService.getM2MToken({
-      clientId: client_id,
-      clientSecret: client_secret,
+      clientId,
+      clientSecret,
       audience
     });
     

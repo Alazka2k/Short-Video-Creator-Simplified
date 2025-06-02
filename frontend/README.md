@@ -347,8 +347,15 @@ NEXT_PUBLIC_AUTH0_AUDIENCE=your-dev-audience
 # SPA Application Credentials
 NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID=your-dev-spa-client-id
 # M2M Application Credentials
-NEXT_PUBLIC_AUTH0_M2M_CLIENT_ID=your-dev-m2m-client-id
-NEXT_PUBLIC_AUTH0_M2M_CLIENT_SECRET=your-dev-m2m-client-secret
+AUTH0_M2M_CLIENT_ID=your-dev-m2m-client-id
+AUTH0_M2M_CLIENT_SECRET=your-dev-m2m-client-secret
+# Beehiiv Credentials
+BEEHIIV_PUBLICATION_ID=your-dev-publication-id
+BEEHIIV_API_KEY=your-dev-api-key
+# SMTP Credentials
+SMTP_HOST=your-dev-smtp-host
+SMTP_USER=your-dev-smtp-user
+SMTP_PASSWORD=your-dev-smtp-password
 ```
 
 ### Running Locally
