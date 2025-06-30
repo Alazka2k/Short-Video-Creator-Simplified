@@ -133,7 +133,7 @@ erDiagram
         varchar status
         timestamp created_at
         timestamp updated_at
-        varchar external_subscription_id
+        varchar stripe_subscription_id
     }
 
     tokens {
@@ -171,7 +171,7 @@ erDiagram
         int plan_id FK
         int package_id FK
         int subscription_id FK
-        varchar external_payment_id
+        varchar stripe_payment_intent_id
         date billing_period_start
         date billing_period_end
         jsonb payment_metadata

@@ -13,7 +13,7 @@ exports.up = function(knex) {
     table.integer('subscription_id').unsigned().nullable().references('subscription_id').inTable('user_subscriptions');
     
     // Add external payment ID from payment processor (e.g., Stripe)
-    table.string('external_payment_id').nullable();
+    table.string('stripe_payment_intent_id').nullable();
     
     // Add billing period for subscription payments
     table.date('billing_period_start').nullable();
@@ -31,7 +31,7 @@ exports.down = function(knex) {
     table.dropColumn('plan_id');
     table.dropColumn('package_id');
     table.dropColumn('subscription_id');
-    table.dropColumn('external_payment_id');
+    table.dropColumn('stripe_payment_intent_id');
     table.dropColumn('billing_period_start');
     table.dropColumn('billing_period_end');
     table.dropColumn('payment_metadata');

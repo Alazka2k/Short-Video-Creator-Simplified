@@ -245,7 +245,7 @@ class SubscriptionsDataAccess {
         current_period_end: subscriptionData.currentPeriodEnd || null,
         canceled_at: subscriptionData.canceledAt || null,
         ended_at: subscriptionData.endedAt || null,
-        external_subscription_id: subscriptionData.externalSubscriptionId || null
+        stripe_subscription_id: subscriptionData.stripeSubscriptionId || null
       };
       
       // Set timestamps
@@ -387,11 +387,11 @@ class SubscriptionsDataAccess {
         dbSubscriptionData.status = subscriptionData.status;
       }
       
-      // Handle external_subscription_id (both formats)
-      if (subscriptionData.externalSubscriptionId !== undefined) {
-        dbSubscriptionData.external_subscription_id = subscriptionData.externalSubscriptionId;
-      } else if (subscriptionData.external_subscription_id !== undefined) {
-        dbSubscriptionData.external_subscription_id = subscriptionData.external_subscription_id;
+      // Handle stripe_subscription_id (both formats)
+      if (subscriptionData.stripeSubscriptionId !== undefined) {
+        dbSubscriptionData.stripe_subscription_id = subscriptionData.stripeSubscriptionId;
+      } else if (subscriptionData.stripe_subscription_id !== undefined) {
+        dbSubscriptionData.stripe_subscription_id = subscriptionData.stripe_subscription_id;
       }
       
       // Handle billing_frequency (both formats)

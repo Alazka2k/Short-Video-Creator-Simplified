@@ -6,6 +6,9 @@ exports.seed = async function(knex) {
   // Delete all existing token packages first
   await knex('token_packages').del();
   
+  // Note: stripe_price_id values correspond to the Stripe Price IDs created for each token package
+  // These IDs are used for direct Stripe Checkout integration and webhook verification
+  
   // Define token packages
   const tokenPackages = [
     {
@@ -14,6 +17,7 @@ exports.seed = async function(knex) {
       token_allocation: 1000,
       price: 9.99,
       active: true,
+      stripe_price_id: 'price_1Rc1S6LNIN3RdSe9P2J8eKE0',
       marketing_description: JSON.stringify({
         features: [
           '1,000 additional tokens',
@@ -28,6 +32,7 @@ exports.seed = async function(knex) {
       token_allocation: 2500,
       price: 24.99,
       active: true,
+      stripe_price_id: 'price_1Rc1T1LNIN3RdSe9ipl3BesU',
       marketing_description: JSON.stringify({
         features: [
           '2,500 additional tokens',
@@ -43,6 +48,7 @@ exports.seed = async function(knex) {
       token_allocation: 6000,
       price: 39.99,
       active: true,
+      stripe_price_id: 'price_1Rc1ThLNIN3RdSe9Sw813QvO',
       marketing_description: JSON.stringify({
         features: [
           '6,000 additional tokens',
@@ -58,6 +64,7 @@ exports.seed = async function(knex) {
       token_allocation: 15000,
       price: 99.99,
       active: true,
+      stripe_price_id: 'price_1Rc1UYLNIN3RdSe9NTJ6wEE7',
       marketing_description: JSON.stringify({
         features: [
           '15,000 additional tokens',

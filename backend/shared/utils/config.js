@@ -80,9 +80,9 @@ function loadEnvConfig() {
       apiKey: process.env.ASSEMBLY_API_KEY,
       webhookBaseUrl: process.env.ASSEMBLY_WEBHOOK_BASE_URL
     },
-    subscription: {
+    stripe: {
       apiKey: process.env.STRIPE_API_KEY,
-      webhookBaseUrl: process.env.STRIPE_WEBHOOK_BASE_URL
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET
     },
     services: {
       llm: { 
@@ -203,7 +203,7 @@ function validateConfig(config) {
     ['animationGen.provider', 'animationGen.baseUrl', 'animationGen.authUrl', 'animationGen.clientId', 'animationGen.clientSecret'],
     ['videoGen.provider', 'videoGen.model', 'videoGen.resolution', 'videoGen.apiKey'],
     ['assembly.provider', 'assembly.apiKey', 'assembly.webhookBaseUrl'],
-    ['subscription.apiKey', 'subscription.webhookBaseUrl'],
+    ['stripe.apiKey', 'stripe.webhookSecret'],
     ['auth.auth0.domain', 'auth.auth0.clientId', 'auth.auth0.clientSecret', 'auth.auth0.audience'],
     ['auth.jwt.secret'],
     ['services.storage.config.region', 'services.storage.config.bucket', 'services.storage.config.cdnUrl'],
@@ -288,7 +288,9 @@ function logConfiguration(config) {
         audience: config.auth.auth0.audience
       }
     });
-    logger.info('Subscription configuration:', {
+    logger.info('Stripe configuration:', {
+      hasApiKey: !!config.stripe.apiKey,
+      hasWebhookSecret: !!config.stripe.webhookSecret
     });
     logger.info('Batch configuration:', {
     });

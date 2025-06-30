@@ -101,19 +101,19 @@ class TokenPackageService {
    * @param {string} userId - The user ID
    * @param {string} packageId - The token package ID
    * @param {string} paymentProvider - The payment provider
-   * @param {string} externalPaymentId - The external payment ID
+   * @param {string} stripePaymentIntentId - The external payment ID (stripe)for the payment intent
    * @returns {Promise<Object>} - The purchase result
    */
-  async purchaseTokenPackage(userId, packageId, paymentProvider, externalPaymentId) {
+  async purchaseTokenPackage(userId, packageId, paymentProvider, stripePaymentIntentId) {
     try {
-      logger.info('Purchasing token package:', { userId, packageId, paymentProvider, externalPaymentId });
+      logger.info('Purchasing token package:', { userId, packageId, paymentProvider, stripePaymentIntentId });
       
       // Delegate to payment service for handling the purchase
       return await this.paymentService.purchaseTokenPackage(
         userId,
         packageId,
         paymentProvider,
-        externalPaymentId
+        stripePaymentIntentId
       );
     } catch (error) {
       logger.error('Error in purchaseTokenPackage:', error);

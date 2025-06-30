@@ -31,13 +31,13 @@ The database schema has been successfully enhanced with all required functionali
    - Added `ended_at` timestamp for tracking when a subscription effectively ended
    - Added `cancellation_reason` for tracking standardized cancellation reasons
    - Added `upcoming_plan_id` for delayed plan changes (downgrades/frequency changes)
-   - Added `external_subscription_id` for third-party payment provider references
+   - Added `stripe_subscription_id` for third-party payment provider references
    - Enhanced status check constraint to include `pending_cancellation` status
 
 4. **Updates to payments table:**
    - Added `payment_type` for categorizing payments
    - Added relationship columns (`plan_id`, `package_id`, `subscription_id`)
-   - Added `external_payment_id` for payment processor references
+   - Added `stripe_payment_intent_id` for payment processor references
    - Added billing period tracking (`billing_period_start`, `billing_period_end`)
    - Added `payment_provider` to separate from payment method
 

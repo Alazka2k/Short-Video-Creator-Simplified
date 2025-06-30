@@ -1,185 +1,230 @@
-# Stripe Integration Plan for Short-Video-Creator-Simplified
+# Stripe Integration Plan for Short-Video-Creator-Simplified (Updated)
 
-## Current System Overview
+## Current System Analysis & Status
 
-The application currently has a subscription and payment system with the following components:
+### Existing Infrastructure ✅
+The application has a robust subscription and payment foundation:
 
-### Payment Processing:
-- Payment records are stored in the `payments` table
-- Payments can be for subscriptions or token packages
-- Payment `status` includes: 'open', 'completed', 'failed'
-- A mock Stripe service exists but is not fully integrated
+**Payment Processing:**
+- Complete `payments` table with proper status tracking ('open', 'completed', 'failed')
+- Payment records for both subscriptions and token packages
+- Comprehensive payment history and transaction tracking
 
-### Subscription Management:
-- Subscriptions are stored in the `user_subscriptions` table (`plan_id`, `status`, `start_date`, `end_date`, etc.)
-- Plans (`plans` table) define `price`, `billing_frequency` (monthly/yearly), features, and limits.
-- Payments (`payments` table) track initial and renewal payments, linked to subscriptions.
-- A local concept of `billing_period_start`/`end` exists on payments.
-- Subscription `status` includes: `active`, `pending_cancellation`, `cancelled`.
+**Subscription Management:**
+- Well-structured `user_subscriptions` table with plan associations
+- 7-tier plan system (Free, Basic Monthly/Yearly, Creator Monthly/Yearly, Professional Monthly/Yearly)
+- Complete `plans` table with pricing, billing frequency, and feature definitions
+- Subscription status tracking: `active`, `pending_cancellation`, `cancelled`
 
-### Token Packages:
-- Token packages (`token_packages` table) allow one-time token purchases.
-- Payments for packages are stored in the `payments` table.
-- Token transactions (`token_transactions`) and balances (`tokens`) are tracked.
+**Token System:**
+- Complete token allocation and transaction tracking
+- `token_packages` table for one-time purchases
+- `token_transactions` for usage history
+- `tokens` table for current balances
 
-### Batch Jobs (Current State):
-- `CreatePaymentsBatch.js`: Creates local 'open' payment records for renewals based on local subscription state.
-- `CollectPaymentsBatch.js`: Attempts to process local 'open' payments via Stripe.
-- `RetryFailedPaymentsBatch.js`: Retries failed payments via Stripe based on local state.
-- `ProcessPendingCancellationsBatch.js`: Handles local state changes for downgrades/cancellations based on `upcoming_plan_id`.
-- `SubscriptionRenewalsBatch.js`: Updates local subscription periods and allocates tokens, decoupled from payment status.
+**Batch Processing Infrastructure:**
+- Existing batch jobs that need refactoring (not elimination)
+- Strong foundation for payment processing workflows
 
-**(Note: The roles of these batch jobs will be significantly revised or eliminated with the Stripe integration, as detailed below.)**
+**API Layer:**
+- Comprehensive subscription service with all necessary endpoints
+- Proper authentication and authorization
+- Service-to-service communication infrastructure
 
-## Payment Flow with Stripe (Using Stripe Checkout)
+### What Needs Refactoring 🔄
+1. **Stripe Integration**: Currently mock/incomplete - needs proper Stripe connectivity
+2. **Payment Collection**: Batch jobs need Stripe integration
+3. **Frontend Payment Flow**: Needs Stripe Checkout integration
+4. **Webhook Handling**: Needs implementation for Stripe event processing
+5. **Customer Management**: Needs Stripe Customer creation and management
 
-The integration with Stripe will follow this secure payment flow:
+## Refined Integration Strategy
 
-### 1. Frontend Initiates Payment
-- User selects a product (subscription plan or token package).
-- Frontend calls our backend API (`POST /api/subscription/checkout/create-session`) to create a checkout session.
+### Core Principles
+1. **Preserve Existing Architecture**: Build on current robust foundation
+2. **Selective Refactoring**: Only change what's necessary for Stripe integration
+3. **Gradual Implementation**: Phase implementation to minimize disruption
+4. **Leverage Stripe MCP**: Use available MCP tools for development and testing
 
-### 2. Backend Creates Checkout Session
-- Our backend, using the `StripeService`, creates a checkout session with Stripe.
-- This requires our Stripe secret key.
-- The checkout session contains the product (`priceId`), customer info (`stripe_customer_id` if known), mode (`subscription` or `payment`), and success/cancel URLs.
+### Payment Flow with Stripe (Using Stripe Checkout)
 
-### 3. Frontend Redirects to Stripe Checkout
-- Backend returns the checkout session `url` to the frontend.
-- Frontend redirects the user to Stripe's hosted checkout page.
-- User enters their payment information directly on Stripe's secure page.
+#### 1. Frontend Initiates Payment
+- User selects product (subscription plan or token package)
+- Frontend calls backend API (`POST /api/subscription/checkout/create-session`)
 
-### 4. Stripe Processes Payment & Subscription
-- Stripe handles the actual payment processing and, if applicable, creates the Stripe Subscription object.
-- Stripe sends webhook events (e.g., `checkout.session.completed`, `customer.subscription.created`, `invoice.paid`) to our backend webhook endpoint.
+#### 2. Backend Creates Checkout Session
+- Backend uses `StripeService` to create checkout session
+- Session contains product (`priceId`), customer info, success/cancel URLs
+- Leverages existing plan/package data with added Stripe IDs
 
-### 5. Backend Updates Database via Webhooks
-- Our backend webhook handler (`WebhookController`) receives and verifies the webhook.
-- It processes the event (e.g., `invoice.paid`) and updates our local database accordingly (creates `payments` record, updates `user_subscriptions` status and billing dates, allocates tokens).
+#### 3. Stripe Processes Payment
+- User completes payment on Stripe's secure page
+- Stripe handles payment processing and subscription creation
+- Stripe sends webhook events to backend
 
-### 6. User Returns to Application
-- After payment completion, Stripe redirects the user back to our `successUrl`.
-- Frontend displays a success message and updates the UI based on the expected state change (confirmation often relies on backend updates via webhooks).
+#### 4. Backend Updates via Webhooks
+- Webhook handler processes events and updates existing database tables
+- Maintains current data structure with added Stripe references
+- Triggers existing token allocation and subscription management logic
 
-Using Stripe Checkout is preferred because:
-- It provides a secure, pre-built, and optimized payment flow.
-- It handles 3D Secure and various payment methods automatically.
-- It significantly reduces our PCI compliance burden.
+#### 5. User Returns to Application
+- Stripe redirects to success URL
+- Frontend displays confirmation
+- Existing dashboard shows updated subscription status
 
-## Stripe Customers and Storage
+## Database Schema Enhancements (Minimal Changes)
 
-Creating and storing Stripe customers is essential:
+### Required Additions (No structural changes):
 
-### Why Store Stripe Customer IDs:
-- **Recurring Payments:** Essential for Stripe Subscriptions.
-- **Payment Method Management:** Allows users to manage saved methods via Stripe Customer Portal.
-- **Subscription Management:** Links our users to their Stripe Subscriptions for updates/cancellations via API or Portal.
-- **Unified View:** Connects payments, invoices, and subscriptions within Stripe.
-- **Analytics:** Enables tracking of customer LTV within Stripe.
+1. **`users` Table:**
+   - ADD: `stripe_customer_id` (VARCHAR, Nullable, Indexed)
 
-### Database Storage Requirements (Revised):
+2. **`user_subscriptions` Table:**
+   - ADD: `stripe_subscription_id` (VARCHAR, Nullable, Indexed)
+   - ADD: `stripe_price_id` (VARCHAR, Nullable)
+   - ADD: `stripe_status` (VARCHAR, Nullable) - mirrors Stripe status
+   - ADD: `cancel_at_period_end` (BOOLEAN, Default: false)
+   - ADD: `current_period_start` (TIMESTAMP, Nullable) - synced from Stripe
+   - ADD: `current_period_end` (TIMESTAMP, Nullable) - synced from Stripe
 
-We need to store the following Stripe-related information in our database:
+3. **`payments` Table:**
+   - ADD: `stripe_payment_intent_id` (VARCHAR, Nullable, Indexed)
+   - ADD: `stripe_invoice_id` (VARCHAR, Nullable, Indexed)
+   - ADD: `stripe_charge_id` (VARCHAR, Nullable, Indexed)
+   - ADD: `payment_method_details` (JSONB, Nullable)
+   - ADD: `receipt_url` (VARCHAR, Nullable)
 
-1.  **`users` Table:**
-    *   `stripe_customer_id` (VARCHAR, Nullable, Indexed): Links to the Stripe Customer object.
-2.  **`user_subscriptions` Table:** (Represents the *local application view* of the subscription)
-    *   `stripe_subscription_id` (VARCHAR, Nullable, Indexed): Links to the active Stripe Subscription object.
-    *   `stripe_price_id` (VARCHAR): The Stripe Price ID currently active for this subscription.
-    *   `stripe_status` (VARCHAR): Mirrors Stripe's subscription status (e.g., `active`, `past_due`, `canceled`, `incomplete`, `trialing`). Updated via webhooks.
-    *   `cancel_at_period_end` (BOOLEAN): Mirrors Stripe's setting. Updated via webhooks.
-    *   `current_period_start` (TIMESTAMP): Mirrors Stripe's current billing period start. Updated via webhooks.
-    *   `current_period_end` (TIMESTAMP): Mirrors Stripe's current billing period end. Updated via webhooks.
-3.  **`payments` Table:** (Represents *payment events*)
-    *   `stripe_payment_intent_id` (VARCHAR, Nullable, Indexed): From the payment event.
-    *   `stripe_invoice_id` (VARCHAR, Nullable, Indexed): Crucial link for subscription payments.
-    *   `stripe_charge_id` (VARCHAR, Nullable, Indexed): Link to the specific charge.
-    *   `receipt_url` (VARCHAR): Link to the Stripe receipt.
-    *   `payment_method_details` (JSONB): e.g., card brand, last4.
-4.  **`plans` Table:**
-    *   `stripe_product_id` (VARCHAR): Links to the Stripe Product representing the plan/tier.
-    *   `stripe_price_id` (VARCHAR, Indexed): Links to the specific Stripe Price (e.g., monthly vs. yearly). *Crucial:* Ensure you have separate Stripe Price IDs for monthly vs. yearly options, even if they belong to the same conceptual tier.
-5.  **`token_packages` Table:**
-    *   `stripe_product_id` (VARCHAR): Links to the Stripe Product for the package.
-    *   `stripe_price_id` (VARCHAR, Indexed): Links to the specific Stripe Price for the package.
+4. **`plans` Table:**
+   - ADD: `stripe_product_id` (VARCHAR, Nullable)
+   - ADD: `stripe_price_id` (VARCHAR, Nullable, Indexed)
 
-This data links our application state to Stripe, allowing synchronization via webhooks and enabling API calls when needed (e.g., for subscription changes).
+5. **`token_packages` Table:**
+   - ADD: `stripe_product_id` (VARCHAR, Nullable)
+   - ADD: `stripe_price_id` (VARCHAR, Nullable, Indexed)
 
-## Recurring Payments & Synchronization (Revised)
+## Stripe Integration Components
 
-Stripe will manage the recurring billing cycle automatically.
+### 1. StripeService (`backend/services/subscription-service/utils/stripeService.js`)
+- Stripe client initialization and configuration
+- Customer management: `createCustomer`, `getCustomer`
+- Checkout Sessions: `createCheckoutSession`
+- Customer Portal: `createCustomerPortalSession`
+- Subscription Management: `updateSubscription`, `cancelSubscription`
+- Webhook verification: `constructWebhookEvent`
+- Payment processing: `createPaymentIntent`, `confirmPayment`
 
-1.  **Stripe Initiates Renewal:** Stripe creates an invoice and attempts payment before the period ends.
-2.  **Webhooks are Key:** Our application listens for:
-    *   `invoice.paid`: Confirms successful payment. Our webhook handler **must**:
-        *   Create/update the local `payments` record (status='completed').
-        *   Update the `user_subscriptions` record with the new `current_period_start`/`end` from the webhook data.
-        *   Trigger token allocation for the new period (likely signaling `SubscriptionRenewalsBatch`).
-    *   `invoice.payment_failed`: Logs the failure. Stripe handles retries (configure Smart Retries in Stripe).
-    *   `customer.subscription.updated`/`deleted`: Reflects status changes (e.g., `past_due`, `canceled` after final retry failure) or user actions (cancellation via Portal). Our webhook handler updates the local `user_subscriptions` status, potentially reverting the user to the free tier upon final cancellation.
+### 2. Enhanced Webhook Handler
+- Implement in existing subscription service
+- Process key events: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`
+- Update existing database tables with Stripe data
+- Trigger existing batch job logic for token allocation
 
-## Stripe Integration Plan (Revised)
+### 3. Frontend Integration
+- `CheckoutButton` component for initiating Stripe Checkout
+- `CustomerPortalButton` for subscription management
+- Integration with existing pricing page and subscription components
+- Enhanced dashboard to show Stripe-powered subscription status
 
-### 1. Stripe Service (`utils/stripeService.js`)
+### 4. Refined Batch Job Strategy
 
-Enhance/Implement to handle:
-*   Stripe client initialization.
-*   Customer management: `createCustomer`.
-*   Checkout Sessions: `createCheckoutSession` (for subscriptions and one-time payments).
-*   Customer Portal: `createCustomerPortalSession`.
-*   Subscription Management: `updateSubscription` (for plan changes), `cancelSubscription`.
-*   Webhook Handling: `constructWebhookEvent` (signature verification).
-*   Implement robust error handling and **deterministic idempotency keys**.
+**Preserve & Enhance (Don't Eliminate):**
+- `CreatePaymentsBatch`: Enhanced to work with Stripe subscription cycles
+- `CollectPaymentsBatch`: Refactored to use Stripe payment collection
+- `SubscriptionRenewalsBatch`: Enhanced with Stripe webhook triggers
+- `ProcessPendingCancellationsBatch`: Integrated with Stripe cancellation flow
 
-### 2. Database Schema Updates (Revised)
+**Key Enhancement:** Batch jobs become Stripe-aware but maintain existing business logic
 
-Implement the changes detailed in the "Database Storage Requirements (Revised)" section above, ensuring Stripe IDs are added to the correct tables (`users`, `user_subscriptions`, `payments`, `plans`, `token_packages`) and subscription state fields are primarily on `user_subscriptions`.
+## API Endpoints Strategy
 
-### 3. API Endpoints (Revised)
+### New Core Endpoints:
+1. `POST /api/subscription/checkout/create-session` - Stripe Checkout initiation
+2. `POST /api/subscription/portal/create-session` - Customer Portal access
+3. `POST /api/subscription/webhooks/stripe` - Stripe event processing
 
-Focus on these key endpoints:
-*   `POST /api/subscription/checkout/create-session`: For initiating all paid subscriptions and token package purchases.
-*   `POST /api/subscription/portal/create-session`: For redirecting users to manage their existing subscriptions.
-*   `POST /api/subscription/webhooks/stripe`: **Critical endpoint** for receiving all Stripe events. Must call `WebhookController`.
-*   `PUT /api/subscription/subscriptions/:subscriptionId`: For user-initiated plan changes (upgrades, downgrades, frequency changes). Triggers calls to `StripeService.updateSubscription`.
-*   `POST /api/subscription/subscriptions/:subscriptionId/cancel`: For user-initiated cancellations. Triggers calls to `StripeService.cancelSubscription`.
-*   Keep existing GET endpoints for listing plans, packages, checking balances, and viewing history.
-*   Remove API endpoints made redundant by Checkout/Portal/automated billing (e.g., explicit payment confirmation/cancellation, adding payment methods).
+### Enhanced Existing Endpoints:
+- All existing subscription endpoints remain functional
+- Added Stripe integration behind the scenes
+- Maintain backward compatibility
 
-### 4. Batch Job Strategy (Revised)
+### Stripe MCP Integration Benefits:
+- Use MCP tools for development testing
+- Real-time Stripe API interaction during development
+- Easy customer/subscription management for testing
+- Payment debugging and monitoring
 
-*   **Eliminate:** `CreatePaymentsBatch`, `CollectPaymentsBatch` (core logic), `RetryFailedPaymentsBatch`.
-*   **Eliminate/Re-evaluate:** `ProcessPendingCancellationsBatch`. Aim to handle downgrades/cancellations via API calls updating the *existing* Stripe subscription and reacting to webhooks, rather than creating new local subscriptions for changes.
-*   **Keep & Refine:** `SubscriptionRenewalsBatch`. Focus *only* on **token allocation**. Trigger its processing logic *after* a successful `invoice.paid` webhook has been processed for a subscription renewal. It should not manage billing dates itself.
-*   **Optional (Low Priority):** Consider a `ReconciliationBatch` to periodically compare local state with Stripe API state as a fallback for missed webhooks.
+## Implementation Phases
 
-### 5. Frontend Integration (Revised)
+### Phase 1: Foundation Setup (3 days)
+- Stripe account configuration and product setup
+- Database schema migration
+- StripeService implementation
+- Environment configuration
 
-Update frontend components:
-*   `CheckoutButton`: Calls backend `/checkout/create-session` endpoint and redirects to Stripe.
-*   `CustomerPortalButton`: Calls backend `/portal/create-session` endpoint and redirects to Stripe.
-*   `PlanSelection`, `TokenPackagePurchase`: Display options and use `CheckoutButton`.
-*   `UserDashboard`, Subscription Management UI: Display information fetched from the backend (which is kept in sync via webhooks) and include `CustomerPortalButton`. Handle user actions to trigger backend API calls for plan changes/cancellations.
+### Phase 2: Core Integration (4 days)
+- Webhook handler implementation
+- Enhanced batch job integration
+- API endpoint implementation
+- Customer management integration
 
-### 6. Webhook Implementation (`WebhookController`)
+### Phase 3: Frontend Integration (3 days)
+- Stripe Checkout components
+- Customer Portal integration
+- Enhanced subscription dashboard
+- Payment success/failure flows
 
-*   **Central Component:** Implement handlers for all relevant events (`checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted`, etc.).
-*   **Idempotency:** Crucial to check event IDs to prevent duplicate processing.
-*   **Synchronization:** Update local database tables (`users`, `user_subscriptions`, `payments`) accurately based on event data.
-*   **Trigger Actions:** Initiate token allocations upon successful payment confirmation (`invoice.paid`).
+### Phase 4: Testing & Refinement (3 days)
+- End-to-end testing with Stripe test mode
+- Webhook testing and validation
+- Payment flow testing
+- Subscription lifecycle testing
 
-## Implementation Timeline
+### Phase 5: Production Deployment (2 days)
+- Production Stripe configuration
+- Live webhook setup
+- Production deployment
+- Monitoring and validation
 
-The estimated timeline of 11 days remains a reasonable starting point, but acknowledge that robust webhook handling might require significant testing and refinement.
+**Total Timeline: ~15 days**
 
-*   **Phase 1: Setup and Configuration (2 days)**: Stripe account, products/prices, webhooks (endpoint setup), basic environment vars, DB schema migration script creation.
-*   **Phase 2: Backend Implementation (5 days)**: Implement `StripeService`, revised API endpoints, critical `WebhookController` logic (handling key events like `checkout.session.completed`, `invoice.paid`, `customer.subscription.*`), update data access layer. Implement revised `SubscriptionRenewalsBatch`.
-*   **Phase 3: Frontend Implementation (3 days)**: Implement `CheckoutButton`, `CustomerPortalButton`, integrate into existing plan/package selection flows. Update dashboard display.
-*   **Phase 4: Testing and Deployment (2+ days)**: **Crucial focus on end-to-end testing**, especially webhook scenarios, subscription lifecycle events (renewals, changes, cancellations), and error handling. Deploy to staging, UAT, then production.
+## Risk Mitigation Strategies
+
+### 1. Preserve Data Integrity
+- All existing data remains untouched
+- Additive schema changes only
+- Rollback capability maintained
+
+### 2. Gradual Rollout
+- Test mode implementation first
+- Staging environment validation
+- Feature flag for Stripe vs. mock processing
+
+### 3. Monitoring & Alerting
+- Webhook processing monitoring
+- Payment failure alerting
+- Subscription sync validation
+- Token allocation verification
+
+## Success Metrics
+
+### Technical Metrics:
+- 99.9% webhook processing success rate
+- <2 second payment processing time
+- Zero data synchronization errors
+- 100% subscription status accuracy
+
+### Business Metrics:
+- Successful payment collection rate >95%
+- Subscription churn reduction
+- Token package purchase increase
+- Customer portal usage adoption
 
 ## Security Considerations
 
-1.  **API Key Security**: Use environment variables; never expose secret keys client-side; rotate keys; use distinct keys per environment.
-2.  **Webhook Security**: **Verify signatures** using `STRIPE_WEBHOOK_SECRET`; use HTTPS; ensure **idempotent handlers**; monitor for failures.
-3.  **Data Protection**: Rely on Stripe Checkout/Portal to avoid handling raw card data; comply with PCI DSS; encrypt sensitive data.
-4.  **Error Handling**: Implement robust error handling for Stripe API calls and webhook processing; log errors thoroughly; provide user feedback where appropriate.
+1. **API Key Management**: Secure environment variable storage, key rotation
+2. **Webhook Security**: Signature verification, HTTPS enforcement, idempotency
+3. **PCI Compliance**: Leverage Stripe Checkout to minimize PCI scope
+4. **Data Protection**: Encrypt sensitive data, audit access logs
+5. **Error Handling**: Comprehensive error logging, graceful degradation
+
+This refined plan builds on the existing robust infrastructure while adding powerful Stripe integration capabilities, ensuring minimal disruption and maximum reliability.

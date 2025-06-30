@@ -35,7 +35,7 @@ Retrieves the active subscription for a user.
     "start_date": "2023-11-01T00:00:00.000Z",
     "end_date": "2023-12-01T00:00:00.000Z",
     "auto_renew": true,
-    "external_subscription_id": "sub_1234567890",
+    "stripe_subscription_id": "sub_1234567890",
     "updated_at": "2023-11-01T00:00:00.000Z",
     "created_at": "2023-11-01T00:00:00.000Z",
     "plan_details": {
@@ -114,8 +114,8 @@ When a user already has an active subscription, the system will automatically de
 - `currentPeriodEnd`: End of current billing period (calculated based on plan if not provided)
 - `paymentProvider`: Payment provider used (e.g., "stripe")
 - `paymentMethod`: Method of payment (e.g., "credit_card", "bank_transfer")
-- `externalPaymentId`: Payment ID from external payment processor
-- `externalSubscriptionId`: Subscription ID from external payment processor
+- `stripePaymentIntentId`: Payment ID from external payment processor (stripe) for the payment intent
+- `stripeSubscriptionId`: Subscription ID from external payment processor
 - `amount`: Amount charged for the subscription (if not given, it will be calculated based on the plan)
 
 **Free Tier Subscriptions**:
@@ -141,8 +141,8 @@ When a user already has an active subscription, the system will automatically de
   "planId": 2,
   "paymentProvider": "stripe",
   "paymentMethod": "credit_card",
-  "externalPaymentId": "pi_123456789",
-  "externalSubscriptionId": "sub_987654321",
+  "stripePaymentIntentId": "pi_123456789",
+  "stripeSubscriptionId": "sub_987654321",
   "amount": 24.99,
   "startDate": "2023-11-01T00:00:00.000Z"
 }
@@ -154,7 +154,7 @@ When a user already has an active subscription, the system will automatically de
   "userId": 30,
   "planId": 3,  // Higher tier plan
   "paymentProvider": "stripe",
-  "externalPaymentId": "pi_upgradePayment123",
+  "stripePaymentIntentId": "pi_upgradePayment123",
   "amount": 49.99
 }
 ```
@@ -184,7 +184,7 @@ When a user already has an active subscription, the system will automatically de
     "current_period_end": "2023-12-01T00:00:00.000Z",
     "canceled_at": null,
     "ended_at": null,
-    "external_subscription_id": "sub_987654321",
+    "stripe_subscription_id": "sub_987654321",
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-01T12:00:00.000Z",
     "plan": {
@@ -224,7 +224,7 @@ When a user already has an active subscription, the system will automatically de
     "ended_at": null,
     "upcoming_plan_id": 2,
     "cancellation_reason": "CANCEL_FOR_DOWNGRADE",
-    "external_subscription_id": "sub_987654321",
+    "stripe_subscription_id": "sub_987654321",
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-15T12:00:00.000Z",
     "message": "Subscription change scheduled for end of billing period",
@@ -266,7 +266,7 @@ Updates an existing subscription.
 {
   "planId": 3,
   "status": "active",
-  "externalSubscriptionId": "sub_stripe456",
+  "stripeSubscriptionId": "sub_stripe456",
   "startDate": "2023-11-01T00:00:00.000Z",
   "endDate": "2024-11-01T00:00:00.000Z",
   "currentPeriodStart": "2023-11-01T00:00:00.000Z",
@@ -290,7 +290,7 @@ Updates an existing subscription.
     "current_period_end": "2024-11-01T00:00:00.000Z",
     "canceled_at": "2023-11-15T00:00:00.000Z",
     "ended_at": null,
-    "external_subscription_id": "sub_stripe456",
+    "stripe_subscription_id": "sub_stripe456",
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-15T12:00:00.000Z",
     "plan": {
@@ -346,7 +346,7 @@ Cancels an active subscription.
     "canceled_at": "2023-11-20T12:00:00.000Z",
     "ended_at": null,
     "cancellation_reason": "CANCEL_FOR_UPGRADE",
-    "external_subscription_id": "sub_stripe456",
+    "stripe_subscription_id": "sub_stripe456",
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-20T12:00:00.000Z"
   }
@@ -370,7 +370,7 @@ Cancels an active subscription.
     "ended_at": null,
     "cancellation_reason": "CANCEL_PAID_PLAN",
     "upcoming_plan_id": 1,
-    "external_subscription_id": "sub_stripe456",
+    "stripe_subscription_id": "sub_stripe456",
     "created_at": "2023-11-01T12:00:00.000Z",
     "updated_at": "2023-11-20T12:00:00.000Z"
   }
@@ -405,7 +405,7 @@ Retrieves subscriptions that need to be renewed.
       "current_period_end": "2023-12-01T00:00:00.000Z",
       "canceled_at": null,
       "ended_at": null,
-      "external_subscription_id": "sub_987654321",
+      "stripe_subscription_id": "sub_987654321",
       "created_at": "2023-11-01T12:00:00.000Z",
       "updated_at": "2023-11-01T12:00:00.000Z",
       "plan": {
@@ -532,7 +532,7 @@ Retrieves subscriptions that are pending cancellation.
       "ended_at": null,
       "upcoming_plan_id": 2,
       "cancellation_reason": "CANCEL_FOR_DOWNGRADE",
-      "external_subscription_id": "sub_987654321",
+      "stripe_subscription_id": "sub_987654321",
       "created_at": "2023-11-01T12:00:00.000Z",
       "updated_at": "2023-11-15T12:00:00.000Z",
       "plan": {

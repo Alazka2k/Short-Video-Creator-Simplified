@@ -91,6 +91,40 @@ class StripeService {
       prices: {
         create: async (data) => ({ id: `price_mock_${Date.now()}`, ...data })
       },
+      checkout: {
+        sessions: {
+          create: async (data) => ({ 
+            id: `cs_mock_${Date.now()}`, 
+            url: 'https://checkout.stripe.com/mock',
+            ...data 
+          })
+        }
+      },
+      billingPortal: {
+        sessions: {
+          create: async (data) => ({ 
+            id: `bps_mock_${Date.now()}`, 
+            url: 'https://billing.stripe.com/mock',
+            ...data 
+          })
+        }
+      },
+      invoices: {
+        create: async (data) => ({ 
+          id: `in_mock_${Date.now()}`, 
+          status: 'draft',
+          ...data 
+        }),
+        retrieve: async (id) => ({ 
+          id, 
+          status: 'paid',
+          payment_intent: `pi_mock_${Date.now()}`
+        }),
+        finalizeInvoice: async (id) => ({ 
+          id, 
+          status: 'open' 
+        })
+      },
       webhooks: {
         constructEvent: (payload, signature, secret) => ({
           type: 'mock.event',
@@ -325,6 +359,248 @@ class StripeService {
       return subscription;
     } catch (error) {
       logger.error(`Error updating subscription ${subscriptionId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a Stripe Checkout session for subscriptions or one-time payments
+   * @param {Object} sessionData - The checkout session data
+   * @returns {Promise<Object>} - The created checkout session
+   */
+  async createCheckoutSession(sessionData) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const {
+        customerId,
+        priceId,
+        successUrl,
+        cancelUrl,
+        mode = 'subscription', // 'subscription' or 'payment'
+        userId,
+        planId,
+        packageId,
+        metadata = {}
+      } = sessionData;
+      
+      const sessionConfig = {
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          userId,
+          planId,
+          packageId,
+          ...metadata
+        }
+      };
+      
+      // Add subscription-specific configuration
+      if (mode === 'subscription') {
+        sessionConfig.subscription_data = {
+          metadata: {
+            userId,
+            planId
+          }
+        };
+      }
+      
+      const session = await this.stripe.checkout.sessions.create(sessionConfig);
+      
+      logger.info(`Checkout session created: ${session.id} for user ${userId}`);
+      return session;
+    } catch (error) {
+      logger.error('Error creating checkout session:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a Stripe Customer Portal session
+   * @param {string} customerId - The Stripe customer ID
+   * @param {string} returnUrl - The URL to return to after portal session
+   * @returns {Promise<Object>} - The created customer portal session
+   */
+  async createCustomerPortalSession(customerId, returnUrl) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const session = await this.stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl,
+      });
+      
+      logger.info(`Customer portal session created for customer: ${customerId}`);
+      return session;
+    } catch (error) {
+      logger.error(`Error creating customer portal session for ${customerId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a checkout session from Stripe
+   * @param {string} sessionId - The Stripe checkout session ID
+   * @returns {Promise<Object>} - The checkout session object
+   */
+  async retrieveCheckoutSession(sessionId) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['line_items', 'payment_intent', 'subscription', 'customer']
+      });
+      
+      logger.info(`Checkout session retrieved: ${sessionId}`);
+      return session;
+    } catch (error) {
+      logger.error(`Error retrieving checkout session ${sessionId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a subscription from Stripe
+   * @param {string} subscriptionId - The Stripe subscription ID
+   * @returns {Promise<Object>} - The subscription object
+   */
+  async retrieveSubscription(subscriptionId) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['latest_invoice', 'customer', 'items.data.price']
+      });
+      
+      logger.info(`Subscription retrieved: ${subscriptionId}`);
+      return subscription;
+    } catch (error) {
+      logger.error(`Error retrieving subscription ${subscriptionId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve an invoice from Stripe
+   * @param {string} invoiceId - The Stripe invoice ID
+   * @returns {Promise<Object>} - The invoice object
+   */
+  async retrieveInvoice(invoiceId) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const invoice = await this.stripe.invoices.retrieve(invoiceId, {
+        expand: ['payment_intent', 'subscription', 'customer']
+      });
+      
+      logger.info(`Invoice retrieved: ${invoiceId}`);
+      return invoice;
+    } catch (error) {
+      logger.error(`Error retrieving invoice ${invoiceId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * List customers from Stripe
+   * @param {Object} options - Query options (limit, starting_after, etc.)
+   * @returns {Promise<Object>} - The list of customers
+   */
+  async listCustomers(options = {}) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const customers = await this.stripe.customers.list({
+        limit: options.limit || 100,
+        starting_after: options.starting_after,
+        ending_before: options.ending_before,
+        email: options.email
+      });
+      
+      logger.info(`Listed ${customers.data.length} customers`);
+      return customers;
+    } catch (error) {
+      logger.error('Error listing customers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve a customer from Stripe
+   * @param {string} customerId - The Stripe customer ID
+   * @returns {Promise<Object>} - The customer object
+   */
+  async retrieveCustomer(customerId) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const customer = await this.stripe.customers.retrieve(customerId);
+      
+      logger.info(`Customer retrieved: ${customerId}`);
+      return customer;
+    } catch (error) {
+      logger.error(`Error retrieving customer ${customerId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create an invoice for a customer
+   * @param {Object} invoiceData - The invoice data
+   * @returns {Promise<Object>} - The created invoice
+   */
+  async createInvoice(invoiceData) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const {
+        customerId,
+        subscriptionId,
+        description,
+        metadata = {},
+        autoAdvance = true
+      } = invoiceData;
+      
+      const invoice = await this.stripe.invoices.create({
+        customer: customerId,
+        subscription: subscriptionId,
+        description,
+        metadata,
+        auto_advance: autoAdvance
+      });
+      
+      logger.info(`Invoice created: ${invoice.id}`);
+      return invoice;
+    } catch (error) {
+      logger.error('Error creating invoice:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Finalize an invoice (make it payable)
+   * @param {string} invoiceId - The Stripe invoice ID
+   * @returns {Promise<Object>} - The finalized invoice
+   */
+  async finalizeInvoice(invoiceId) {
+    try {
+      if (!this.initialized) await this.initialize();
+      
+      const invoice = await this.stripe.invoices.finalizeInvoice(invoiceId);
+      
+      logger.info(`Invoice finalized: ${invoiceId}`);
+      return invoice;
+    } catch (error) {
+      logger.error(`Error finalizing invoice ${invoiceId}:`, error);
       throw error;
     }
   }

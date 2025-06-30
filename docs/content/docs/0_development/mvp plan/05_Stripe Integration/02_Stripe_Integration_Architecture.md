@@ -1,8 +1,8 @@
-# Stripe Integration Architecture
+# Stripe Integration Architecture (Updated)
 
-## Integration Architecture (Revised)
+## Integration Architecture 
 
-Our Stripe integration architecture leverages Stripe's hosted solutions (Checkout, Customer Portal) and automated subscription engine, minimizing custom logic for payment collection and retries. Synchronization is primarily driven by Stripe Webhooks.
+Our Stripe integration architecture builds upon the existing robust subscription system, leveraging Stripe's hosted solutions while preserving current business logic and data structures. The integration enhances rather than replaces the current comprehensive payment infrastructure.
 
 ### 1. Frontend Integration
 
@@ -44,16 +44,31 @@ Our Stripe integration architecture leverages Stripe's hosted solutions (Checkou
     *   `user_subscriptions` table stores mirrored Stripe subscription state (`stripe_status`, `stripe_price_id`, `cancel_at_period_end`, `current_period_start`/`end`).
     *   `payments` table records payment *events* linked via `stripe_invoice_id` or `stripe_payment_intent_id`.
 
-### 3. Batch Processing (Revised Roles)
+### 3. Enhanced Batch Processing (Preserving Current Architecture)
 
-1.  **`SubscriptionRenewalsBatch` (Token Allocation)**:
-    *   **Primary Role**: Allocates tokens based on the user's active plan.
-    *   **Trigger**: Runs periodically but acts based on successful renewals confirmed by `invoice.paid` webhooks (e.g., processes subscriptions whose token allocation period corresponds to the just-paid-for billing period). Does *not* manage billing cycles or initiate payments.
-2.  **Eliminated/Repurposed Batches**:
-    *   Payment creation (`CreatePaymentsBatch`), collection (`CollectPaymentsBatch`), and retry (`RetryFailedPaymentsBatch`) logic is handled by Stripe's automated subscription engine and webhook events.
-    *   Pending cancellation processing (`ProcessPendingCancellationsBatch`) is largely replaced by direct Stripe API calls for cancellations/updates triggered by user actions and subsequent webhook handling.
-3.  **Optional Batch**:
-    *   `ReconciliationBatch`: Could be implemented later to periodically compare local DB state against Stripe API data to catch any synchronization discrepancies (lower priority).
+1.  **`SubscriptionRenewalsBatch` (Enhanced)**:
+    *   **Enhanced Role**: Token allocation triggered by Stripe webhook events
+    *   **Integration**: Works with Stripe billing cycles via webhook triggers
+    *   **Preservation**: Maintains current token allocation business logic
+
+2.  **`CreatePaymentsBatch` (Enhanced)**:
+    *   **Enhanced Role**: Creates payment records synchronized with Stripe subscription cycles
+    *   **Integration**: Coordinates with Stripe billing schedule
+    *   **Preservation**: Maintains current payment creation workflows
+
+3.  **`CollectPaymentsBatch` (Refactored)**:
+    *   **Enhanced Role**: Uses Stripe payment collection APIs
+    *   **Integration**: Processes payments through Stripe payment methods
+    *   **Preservation**: Maintains current collection business logic and retry mechanisms
+
+4.  **`ProcessPendingCancellationsBatch` (Enhanced)**:
+    *   **Enhanced Role**: Coordinates local cancellations with Stripe subscription updates
+    *   **Integration**: Synchronizes with Stripe cancellation workflows
+    *   **Preservation**: Maintains current plan change and cancellation logic
+
+5.  **New: `StripeWebhookProcessingBatch` (Optional)**:
+    *   **Role**: Handles failed webhook processing retries
+    *   **Purpose**: Ensures no Stripe events are missed due to temporary failures
 
 ## Component Interactions (Revised Flows)
 

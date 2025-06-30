@@ -17,6 +17,7 @@ const tokenPackageRoutes = require('./routes/tokenPackageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const checkoutRoutes = require('./routes/checkoutRoutes');
 
 /**
  * Create and configure an Express server with all routes
@@ -26,10 +27,6 @@ const transactionRoutes = require('./routes/transactionRoutes');
 function createServer(controllers) {
   const app = express();
 
-  // Basic middleware
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
-  
   // CORS configuration
   app.use(cors());
   
@@ -44,14 +41,22 @@ function createServer(controllers) {
     res.json({ status: 'Subscription service is healthy' });
   });
 
-  // Mount API routes
+  // Mount webhook routes first (before JSON parsing middleware)
+  // Webhooks need raw body for signature verification
+  app.use('/webhooks', express.raw({ type: 'application/json' }), webhookRoutes(controllers.webhookController));
+
+  // Basic middleware for all other routes
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true }));
+
+  // Mount other API routes
   app.use('/plans', planRoutes(controllers.planController));
   app.use('/subscriptions', subscriptionRoutes(controllers.subscriptionController));
   app.use('/tokens', tokenRoutes(controllers.tokenController));
   app.use('/token-packages', tokenPackageRoutes(controllers.tokenPackageController));
   app.use('/payments', paymentRoutes(controllers.paymentController));
-  app.use('/webhooks', webhookRoutes(controllers.webhookController));
   app.use('/transactions', transactionRoutes(controllers.transactionController));
+  app.use('/checkout', checkoutRoutes);
   
   // Error handler middleware - must be defined last
   app.use(errorHandler);

@@ -27,7 +27,7 @@ export interface Subscription {
   start_date: string;
   end_date: string;
   auto_renew: boolean;
-  external_subscription_id: string;
+  stripe_subscription_id: string;
   updated_at: string;
   created_at: string;
   plan_details: SubscriptionPlan;

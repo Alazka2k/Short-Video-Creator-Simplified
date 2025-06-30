@@ -94,7 +94,7 @@ Purchase a new package of tokens for a user independently of a subscription.
   "userId": 30,
   "packageId": 2,
   "paymentProvider": "stripe",
-  "externalPaymentId": "pi_3NvZN2Iuyt123456"
+  "stripePaymentIntentId": "pi_3NvZN2Iuyt123456"
 }
 ```
 
@@ -110,7 +110,7 @@ Purchase a new package of tokens for a user independently of a subscription.
       "payment_provider": "stripe",
       "payment_method": "credit_card",
       "currency": "eur",
-      "external_payment_id": "pi_3NvZN2Iuyt123456",
+      "stripe_payment_intent_id": "pi_3NvZN2Iuyt123456",
       "payment_type": "token_package",
       "status": "completed",
       "package_id": 2,
@@ -142,7 +142,7 @@ Purchase a new package of tokens for a user independently of a subscription.
 
 **Notes**:
 - This endpoint must be called after the payment has been successfully processed by the payment provider
-- The `externalPaymentId` should be the ID returned by the payment provider (e.g., Stripe) upon successful payment
+- The `stripePaymentIntentId` should be the ID returned by the payment provider (e.g., Stripe) upon successful payment
 - The endpoint will automatically:
   1. Create a payment record in the database
   2. Allocate the tokens from the package to the user's balance

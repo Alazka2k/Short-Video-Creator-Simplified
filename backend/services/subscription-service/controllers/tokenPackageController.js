@@ -102,7 +102,7 @@ class TokenPackageController {
    */
   async purchaseTokenPackage(req, res) {
     try {
-      const { userId, packageId, paymentProvider, externalPaymentId } = req.body;
+      const { userId, packageId, paymentProvider, stripePaymentIntentId } = req.body;
       
       if (!userId) {
         return res.status(400).json({ error: 'userId is required' });
@@ -116,15 +116,15 @@ class TokenPackageController {
         return res.status(400).json({ error: 'paymentProvider is required' });
       }
       
-      if (!externalPaymentId) {
-        return res.status(400).json({ error: 'externalPaymentId is required' });
+      if (!stripePaymentIntentId) {
+        return res.status(400).json({ error: 'stripePaymentIntentId is required' });
       }
       
       const result = await this.tokenPackageService.purchaseTokenPackage(
         userId,
         packageId,
         paymentProvider,
-        externalPaymentId
+        stripePaymentIntentId
       );
       
       res.status(201).json(result);

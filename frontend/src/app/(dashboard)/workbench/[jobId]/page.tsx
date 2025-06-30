@@ -101,7 +101,7 @@ const findOptionNameByPrompt = (data: any, prompt: string): string | undefined =
   return undefined
 }
 
-// Helper function to find shot style name by promptDefinition
+// Helper function to find, import and use (shot) style by promptDefinition in json shot-style_select-option.json
 const findShotStyleName = (promptDefinition: string): string | undefined => {
   for (const category of shotStyleData.categories) {
     for (const option of category.options) {

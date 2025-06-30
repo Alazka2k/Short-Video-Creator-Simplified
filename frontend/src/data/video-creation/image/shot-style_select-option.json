@@ -5,6 +5,22 @@
       "name": "Realistic",
       "options": [
         {
+          "id": "realistic-no-style",
+          "name": "Realistic-No-Style",
+          "demo":true,
+          "description": "Realistic style with no additional style",
+          "tags": ["Realistic", "No-Style"],
+          "promptDefinition": "--stylize 200 --style raw",
+          "previewImages": [
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview1.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview2.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview3.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview4.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview5.png",
+            "/creation/visual-settings/shot-style/realistic/documentaryfilm/preview6.png"
+          ]
+        },
+        {
           "id": "documentaryfilm",
           "name": "Documentary Film",
           "demo":true,

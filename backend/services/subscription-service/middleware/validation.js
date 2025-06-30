@@ -112,7 +112,7 @@ function validatePaymentData(req, res, next) {
  * Validate token package purchase data
  */
 function validateTokenPackagePurchase(req, res, next) {
-  const { userId, packageId, paymentProvider, externalPaymentId } = req.body;
+  const { userId, packageId, paymentProvider, stripePaymentIntentId } = req.body;
   
   if (!userId) {
     return res.status(400).json({
@@ -141,12 +141,12 @@ function validateTokenPackagePurchase(req, res, next) {
     });
   }
   
-  if (!externalPaymentId) {
+  if (!stripePaymentIntentId) {
     return res.status(400).json({
       success: false,
       error: 'Validation Error',
-      details: 'External payment ID is required',
-      code: 'MISSING_EXTERNAL_PAYMENT_ID'
+      details: 'Stripe payment ID is required',
+      code: 'MISSING_STRIPE_PAYMENT_ID'
     });
   }
   

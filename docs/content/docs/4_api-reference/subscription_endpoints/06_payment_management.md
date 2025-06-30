@@ -38,7 +38,7 @@ Retrieves payment history for a user.
         "payment_date": "2023-11-15T14:25:00.000Z",
         "payment_type": "token_package",
         "package_id": 2,
-        "external_payment_id": "pi_3NvZN2Iuyt123456"
+        "stripe_payment_intent_id": "pi_3NvZN2Iuyt123456"
       },
       {
         "payment_id": 788,
@@ -51,7 +51,7 @@ Retrieves payment history for a user.
         "payment_type": "subscription_initial",
         "plan_id": 2,
         "subscription_id": 123,
-        "external_payment_id": "pi_3NvZN1Iuyt123456",
+        "stripe_payment_intent_id": "pi_3NvZN1Iuyt123456",
         "billing_period_start": "2023-11-01",
         "billing_period_end": "2023-12-01"
       }
@@ -146,7 +146,7 @@ Creates a new payment record for subscription renewals or token package purchase
 - `planId`: Can be automatically determined from the subscription if not provided
 - `amount`: Can be automatically determined from the plan or package if not provided
 - `paymentProvider`: Optional for subscription renewals, required for other payment types
-- `externalPaymentId`: Optional for subscription renewals, required for other payment types
+- `stripePaymentIntentId`: Optional for subscription renewals, required for other payment types
 - `billing_period_start`: Can be automatically calculated based on subscription dates
 - `billing_period_end`: Can be automatically calculated based on subscription dates
 
@@ -166,7 +166,7 @@ Creates a new payment record for subscription renewals or token package purchase
         "plan_id": 2,
         "package_id": null,
         "subscription_id": 73,
-        "external_payment_id": null,
+        "stripe_payment_intent_id": null,
         "billing_period_start": "2025-05-03T22:00:00.000Z",
         "billing_period_end": "2025-06-03T22:00:00.000Z",
         "payment_metadata": null,
@@ -197,7 +197,7 @@ Updates an existing payment with payment provider details and status update. E.g
   "paymentId": 790,
   "status": "completed",
   "paymentProvider": "stripe",
-  "externalPaymentId": "pi_3NvZN2Iuyt123456"
+  "stripePaymentIntentId": "pi_3NvZN2Iuyt123456"
 }
 ```
 
@@ -207,7 +207,7 @@ Updates an existing payment with payment provider details and status update. E.g
 
 **Conditionally Required Fields**:
 - `paymentProvider`: Required when updating to "completed" status
-- `externalPaymentId`: Required when updating to "completed" status
+- `stripePaymentIntentId`: Required when updating to "completed" status
 
 **Optional Fields**:
 - Any other payment fields that can be updated (amount, billing periods, etc.)
@@ -221,7 +221,7 @@ Updates an existing payment with payment provider details and status update. E.g
     "user_id": 30,
     "amount": 24.99,
     "payment_provider": "stripe",
-    "external_payment_id": "pi_3NvZN2Iuyt123456",
+    "stripe_payment_intent_id": "pi_3NvZN2Iuyt123456",
     "payment_type": "subscription_renewal",
     "plan_id": 2,
     "subscription_id": 123,
@@ -242,7 +242,7 @@ Updates an existing payment with payment provider details and status update. E.g
 
 **Special Behavior**:
 - When a token package payment is updated to "completed" status, the system automatically allocates the corresponding tokens to the user
-- When updating a payment to "completed" status, both `paymentProvider` and `externalPaymentId` must be provided
+- When updating a payment to "completed" status, both `paymentProvider` and `stripePaymentIntentId` must be provided
 - This endpoint does NOT interact with any payment provider - it only updates the database record
 
 ### 5. ✅ Get Payments for Renewal
@@ -310,7 +310,7 @@ Retrieves payments that need to be collected.
       "plan_id": 2,
       "package_id": null,
       "subscription_id": 73,
-      "external_payment_id": null,
+      "stripe_payment_intent_id": null,
       "billing_period_start": "2025-05-03T22:00:00.000Z",
       "billing_period_end": "2025-06-03T22:00:00.000Z",
       "payment_metadata": null,
@@ -351,7 +351,7 @@ Collects a specific payment by ID. This endpoint actively processes the payment 
     "plan_id": 2,
     "package_id": null,
     "subscription_id": 73,
-    "external_payment_id": "pi_3NvZN2Iuyt123456",
+    "stripe_payment_intent_id": "pi_3NvZN2Iuyt123456",
     "billing_period_start": "2025-05-03T22:00:00.000Z",
     "billing_period_end": "2025-06-03T22:00:00.000Z",
     "payment_metadata": null,
@@ -429,7 +429,7 @@ Retrieves failed payments.
       "plan_id": 2,
       "package_id": null,
       "subscription_id": 73,
-      "external_payment_id": null,
+      "stripe_payment_intent_id": null,
       "billing_period_start": "2025-05-03T22:00:00.000Z",
       "billing_period_end": "2025-06-03T22:00:00.000Z",
       "payment_metadata": null,

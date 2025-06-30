@@ -2,7 +2,7 @@
 
 ## Vision
 
-Narravid will democratize video creation by combining the efficiency of AI with the control of professional tools, enabling anyone to tell their story visually without compromise.
+Narravid will democratize video creation by combining the efficiency of AI with the control of professional tools, enabling anyone to tell and create their content vision without compromise.
 
 ## Problem
 

@@ -132,14 +132,14 @@ class PaymentsDataAccess {
    * @param {number} planId - The plan ID
    * @param {number} amount - The payment amount
    * @param {string} paymentProvider - The payment provider (e.g., 'stripe', 'paypal')
-   * @param {string} externalPaymentId - The external payment ID from the provider
+   * @param {string} stripePaymentIntentId - The external (stripe) payment ID for the payment intent
    * @param {string} paymentType - The payment type ('subscription_initial', 'subscription_renewal')
    * @param {Object} billingPeriod - The billing period { billing_period_start, billing_period_end } or { start, end }
    * @param {Object} trx - Optional Knex transaction object
    * @param {string} status - The payment status ('completed', 'open', 'failed'), defaults to 'completed'
    * @returns {Promise<Object>} - The created payment record
    */
-  async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, externalPaymentId, paymentType = 'subscription_initial', billingPeriod = {}, trx, status = 'completed') {
+  async createSubscriptionPayment(userId, subscriptionId, planId, amount, paymentProvider, stripePaymentIntentId, paymentType = 'subscription_initial', billingPeriod = {}, trx, status = 'completed') {
     try {
       this.logger.info('Creating subscription payment record:', {
         userId, subscriptionId, planId, amount, status, billingPeriod
@@ -161,7 +161,7 @@ class PaymentsDataAccess {
         payment_provider: paymentProvider,
         payment_method: 'credit_card',
         currency: 'eur',
-        external_payment_id: externalPaymentId,
+        stripe_payment_intent_id: stripePaymentIntentId,
         payment_type: paymentType,
         status: status,
         plan_id: planId,
@@ -184,11 +184,11 @@ class PaymentsDataAccess {
    * @param {number} packageId - The token package ID
    * @param {number} amount - The payment amount
    * @param {string} paymentProvider - The payment provider (e.g., 'stripe', 'paypal')
-   * @param {string} externalPaymentId - The external payment ID from the provider
+   * @param {string} stripePaymentIntentId - The external payment ID from the provider
    * @param {string} status - The payment status ('completed', 'open', 'failed'), defaults to 'completed'
    * @returns {Promise<Object>} - The created payment record
    */
-  async createTokenPackagePayment(userId, packageId, amount, paymentProvider, externalPaymentId, status = 'completed') {
+  async createTokenPackagePayment(userId, packageId, amount, paymentProvider, stripePaymentIntentId, status = 'completed') {
     try {
       this.logger.info('Creating token package payment record:', {
         userId, packageId, amount, status
@@ -200,7 +200,7 @@ class PaymentsDataAccess {
         payment_provider: paymentProvider,
         payment_method: 'credit_card',
         currency: 'eur',
-        external_payment_id: externalPaymentId,
+        stripe_payment_intent_id: stripePaymentIntentId,
         payment_type: 'token_package',
         status: status,
         package_id: packageId

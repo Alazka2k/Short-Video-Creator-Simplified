@@ -103,7 +103,7 @@ class SubscriptionController {
       logger.info('Subscription creation/change request received:', {
         userId: subscriptionData.userId,
         planId: subscriptionData.planId,
-        hasPaymentDetails: !!(subscriptionData.paymentProvider && subscriptionData.externalPaymentId)
+        hasPaymentDetails: !!(subscriptionData.paymentProvider && subscriptionData.stripePaymentIntentId)
       });
       
       const newSubscription = await this.subscriptionService.createSubscription(subscriptionData);

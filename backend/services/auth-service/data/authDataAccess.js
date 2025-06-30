@@ -14,6 +14,17 @@ class AuthDataAccess {
     }
   }
 
+  async findUserById(userId) {
+    try {
+      return await knex('users')
+        .where('user_id', userId)
+        .first();
+    } catch (error) {
+      logger.error('Error finding user by user_id:', error);
+      throw error;
+    }
+  }
+
   async updateUser(auth0Id, userData) {
     try {
       await knex('users')
@@ -29,6 +40,22 @@ class AuthDataAccess {
       return this.findUserByAuth0Id(auth0Id);
     } catch (error) {
       logger.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  async updateUserById(userId, userData) {
+    try {
+      await knex('users')
+        .where('user_id', userId)
+        .update({
+          ...userData,
+          updated_at: new Date()
+        });
+
+      return this.findUserById(userId);
+    } catch (error) {
+      logger.error('Error updating user by user_id:', error);
       throw error;
     }
   }

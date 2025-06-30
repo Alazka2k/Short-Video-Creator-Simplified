@@ -104,7 +104,7 @@ class PaymentController {
    */
   async updatePayment(req, res) {
     try {
-      const { paymentId, status, paymentProvider, externalPaymentId } = req.body;
+      const { paymentId, status, paymentProvider, stripePaymentIntentId } = req.body;
       
       if (!paymentId) {
         return res.status(400).json({ error: 'paymentId is required' });
@@ -118,20 +118,20 @@ class PaymentController {
         return res.status(400).json({ error: 'status must be one of: pending, completed, failed, open' });
       }
       
-      // Require paymentProvider and externalPaymentId when updating to completed status
+      // Require paymentProvider and stripePaymentIntentId when updating to completed status
       if (status === 'completed') {
         if (!paymentProvider) {
           return res.status(400).json({ error: 'paymentProvider is required when updating to completed status' });
         }
-        if (!externalPaymentId) {
-          return res.status(400).json({ error: 'externalPaymentId is required when updating to completed status' });
+        if (!stripePaymentIntentId) {
+          return res.status(400).json({ error: 'stripePaymentIntentId is required when updating to completed status' });
         }
       }
       
       const payment = await this.paymentService.updatePayment(paymentId, {
         status,
         paymentProvider,
-        externalPaymentId
+        stripePaymentIntentId
       });
       
       if (!payment) {
@@ -155,7 +155,7 @@ class PaymentController {
    */
   async purchaseTokenPackage(req, res) {
     try {
-      const { userId, packageId, paymentProvider, externalPaymentId } = req.body;
+      const { userId, packageId, paymentProvider, stripePaymentIntentId } = req.body;
       
       if (!userId) {
         return res.status(400).json({ error: 'userId is required' });
@@ -169,15 +169,15 @@ class PaymentController {
         return res.status(400).json({ error: 'paymentProvider is required' });
       }
       
-      if (!externalPaymentId) {
-        return res.status(400).json({ error: 'externalPaymentId is required' });
+      if (!stripePaymentIntentId) {
+        return res.status(400).json({ error: 'stripePaymentIntentId is required' });
       }
       
       const result = await this.paymentService.purchaseTokenPackage(
         userId,
         packageId,
         paymentProvider,
-        externalPaymentId
+        stripePaymentIntentId
       );
       
       res.status(201).json(result);

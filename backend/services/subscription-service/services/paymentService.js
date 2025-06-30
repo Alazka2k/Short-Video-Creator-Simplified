@@ -160,7 +160,7 @@ class PaymentService {
         status: paymentData.status,
         amount: paymentData.amount,
         payment_provider: paymentData.paymentProvider,
-        external_payment_id: paymentData.externalPaymentId,
+        stripe_payment_intent_id: paymentData.stripePaymentIntentId,
         payment_method: paymentData.paymentMethod || 'credit_card',
         currency: paymentData.currency || 'eur',
         plan_id: paymentData.planId,
@@ -214,13 +214,13 @@ class PaymentService {
         throw new Error(`Payment not found: ${paymentId}`);
       }
       
-      // If updating to completed status, require paymentProvider and externalPaymentId
+      // If updating to completed status, require paymentProvider and stripePaymentIntentId
       if (updateData.status === 'completed') {
         if (!updateData.paymentProvider) {
           throw new Error('paymentProvider is required when updating to completed status');
         }
-        if (!updateData.externalPaymentId) {
-          throw new Error('externalPaymentId is required when updating to completed status');
+        if (!updateData.stripePaymentIntentId) {
+          throw new Error('stripePaymentIntentId is required when updating to completed status');
         }
         
         // Set payment_date to now when completing the payment
@@ -259,7 +259,7 @@ class PaymentService {
       // Map camelCase properties to snake_case
       if (updateData.status !== undefined) dbUpdateData.status = updateData.status;
       if (updateData.paymentProvider !== undefined) dbUpdateData.payment_provider = updateData.paymentProvider;
-      if (updateData.externalPaymentId !== undefined) dbUpdateData.external_payment_id = updateData.externalPaymentId;
+      if (updateData.stripePaymentIntentId !== undefined) dbUpdateData.stripe_payment_intent_id = updateData.stripePaymentIntentId;
       if (updateData.paymentMethod !== undefined) dbUpdateData.payment_method = updateData.paymentMethod;
       if (updateData.payment_date !== undefined) dbUpdateData.payment_date = updateData.payment_date;
       if (updateData.amount !== undefined) dbUpdateData.amount = updateData.amount;
@@ -284,12 +284,12 @@ class PaymentService {
    * @param {string} userId - The user ID
    * @param {string} packageId - The token package ID
    * @param {string} paymentProvider - The payment provider
-   * @param {string} externalPaymentId - The external payment ID
+   * @param {string} stripePaymentIntentId - The external payment ID
    * @returns {Promise<Object>} - The payment record
    */
-  async purchaseTokenPackage(userId, packageId, paymentProvider, externalPaymentId) {
+  async purchaseTokenPackage(userId, packageId, paymentProvider, stripePaymentIntentId) {
     try {
-      logger.info('Purchasing token package:', { userId, packageId, paymentProvider, externalPaymentId });
+      logger.info('Purchasing token package:', { userId, packageId, paymentProvider, stripePaymentIntentId });
       
       if (!userId) {
         throw new Error('User ID is required');
@@ -303,7 +303,7 @@ class PaymentService {
         throw new Error('Payment provider is required');
       }
       
-      if (!externalPaymentId) {
+      if (!stripePaymentIntentId) {
         throw new Error('External payment ID is required');
       }
       
@@ -325,7 +325,7 @@ class PaymentService {
         packageId,
         tokenPackage.price,
         paymentProvider,
-        externalPaymentId
+        stripePaymentIntentId
       );
       
       logger.info('Payment record created for token package purchase:', {
@@ -380,6 +380,9 @@ class PaymentService {
       
       // Handle the event based on its type
       switch (event.type) {
+        case 'checkout.session.completed':
+          await this.handleCheckoutSessionCompleted(event.data.object);
+          break;
         case 'payment_intent.succeeded':
           await this.handlePaymentIntentSucceeded(event.data.object);
           break;
@@ -410,12 +413,138 @@ class PaymentService {
   }
 
   /**
-   * Handle Payment Intent Succeeded event
+   * Handle Checkout Session Completed event (initial subscription creation or token purchase)
+   * @param {Object} session - The checkout session object
+   */
+  async handleCheckoutSessionCompleted(session) {
+    try {
+      logger.info('Processing checkout session completed:', session.id);
+      
+      const userId = session.metadata?.userId;
+      const planId = session.metadata?.planId;
+      const packageId = session.metadata?.packageId;
+      
+      if (!userId) {
+        logger.warn('No userId found in checkout session metadata:', session.id);
+        return;
+      }
+      
+      if (session.mode === 'subscription' && planId) {
+        // Handle subscription creation
+        const subscriptionId = session.subscription;
+        if (subscriptionId) {
+          // Get full subscription details from Stripe
+          const subscription = await this.stripeService.retrieveSubscription(subscriptionId);
+          
+          // Create or update local subscription record
+          await this.dataAccess.subscriptions.createOrUpdateSubscription({
+            userId,
+            planId,
+            status: 'active',
+            stripe_subscription_id: subscriptionId,
+            stripe_status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000),
+            current_period_end: new Date(subscription.current_period_end * 1000),
+            cancel_at_period_end: subscription.cancel_at_period_end
+          });
+          
+          // Allocate initial tokens for the subscription
+          const plan = await this.dataAccess.plans.getPlanById(planId);
+          if (plan && plan.monthly_tokens > 0) {
+            await this.dataAccess.tokens.allocateTokens(userId, plan.monthly_tokens, 'subscription_activation', {
+              planId,
+              subscriptionId,
+              checkoutSessionId: session.id
+            });
+            
+            logger.info(`Allocated ${plan.monthly_tokens} initial tokens to user ${userId} for new subscription`);
+          }
+          
+          logger.info(`Created subscription for user ${userId}, plan ${planId}, Stripe subscription ${subscriptionId}`);
+        }
+      } else if (session.mode === 'payment' && packageId) {
+        // Handle token package purchase
+        const paymentIntentId = session.payment_intent;
+        
+        // Create payment record for token package purchase
+        const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(packageId);
+        if (tokenPackage) {
+          await this.createPaymentRecord({
+            userId,
+            amount: tokenPackage.price,
+            currency: 'eur',
+            status: 'completed',
+            payment_type: 'token_package',
+            stripe_payment_intent_id: paymentIntentId,
+            metadata: {
+              packageId,
+              checkoutSessionId: session.id
+            }
+          });
+          
+          // Allocate tokens
+          await this.dataAccess.tokens.allocateTokens(userId, tokenPackage.token_amount, 'token_package_purchase', {
+            packageId,
+            paymentIntentId,
+            checkoutSessionId: session.id
+          });
+          
+          logger.info(`Processed token package purchase for user ${userId}, package ${packageId}, ${tokenPackage.token_amount} tokens`);
+        }
+      }
+      
+    } catch (error) {
+      logger.error('Error handling checkout session completed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle Payment Intent Succeeded event (for one-time payments like token packages)
    * @param {Object} paymentIntent - The payment intent object
    */
   async handlePaymentIntentSucceeded(paymentIntent) {
-    // Implementation to be added
-    logger.info('Payment intent succeeded:', paymentIntent.id);
+    try {
+      logger.info('Processing payment intent succeeded:', paymentIntent.id);
+      
+      const userId = paymentIntent.metadata?.userId;
+      const packageId = paymentIntent.metadata?.packageId;
+      
+      if (!userId) {
+        logger.warn('No userId found in payment intent metadata:', paymentIntent.id);
+        return;
+      }
+      
+      // Update payment record with Stripe payment intent ID
+      const payment = await this.dataAccess.payments.findByStripePaymentIntentId(paymentIntent.id);
+      if (payment) {
+        await this.updatePayment(payment.payment_id, {
+          status: 'completed',
+          stripe_payment_intent_id: paymentIntent.id,
+          stripe_charge_id: paymentIntent.latest_charge,
+          receipt_url: paymentIntent.charges?.data?.[0]?.receipt_url
+        });
+        
+        logger.info(`Updated payment ${payment.payment_id} with successful payment intent`);
+      }
+      
+      // If this is a token package purchase, allocate tokens
+      if (packageId) {
+        const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(packageId);
+        if (tokenPackage) {
+          await this.dataAccess.tokens.allocateTokens(userId, tokenPackage.token_amount, 'token_package_purchase', {
+            packageId,
+            paymentIntentId: paymentIntent.id
+          });
+          
+          logger.info(`Allocated ${tokenPackage.token_amount} tokens to user ${userId} for package purchase`);
+        }
+      }
+      
+    } catch (error) {
+      logger.error('Error handling payment intent succeeded:', error);
+      throw error;
+    }
   }
 
   /**
@@ -423,17 +552,94 @@ class PaymentService {
    * @param {Object} paymentIntent - The payment intent object
    */
   async handlePaymentIntentFailed(paymentIntent) {
-    // Implementation to be added
-    logger.info('Payment intent failed:', paymentIntent.id);
+    try {
+      logger.info('Processing payment intent failed:', paymentIntent.id);
+      
+      // Update payment record to failed status
+      const payment = await this.dataAccess.payments.findByStripePaymentIntentId(paymentIntent.id);
+      if (payment) {
+        await this.updatePayment(payment.payment_id, {
+          status: 'failed',
+          stripe_payment_intent_id: paymentIntent.id,
+          failure_reason: paymentIntent.last_payment_error?.message || 'Payment failed'
+        });
+        
+        logger.info(`Updated payment ${payment.payment_id} to failed status`);
+      }
+      
+    } catch (error) {
+      logger.error('Error handling payment intent failed:', error);
+      throw error;
+    }
   }
 
   /**
-   * Handle Invoice Payment Succeeded event
+   * Handle Invoice Payment Succeeded event (for subscription payments)
    * @param {Object} invoice - The invoice object
    */
   async handleInvoicePaymentSucceeded(invoice) {
-    // Implementation to be added
-    logger.info('Invoice payment succeeded:', invoice.id);
+    try {
+      logger.info('Processing invoice payment succeeded:', invoice.id);
+      
+      const subscriptionId = invoice.subscription;
+      const customerId = invoice.customer;
+      
+      if (!subscriptionId) {
+        logger.warn('No subscription ID found in invoice:', invoice.id);
+        return;
+      }
+      
+      // Get subscription details from Stripe
+      const subscription = await this.stripeService.retrieveSubscription(subscriptionId);
+      const userId = subscription.metadata?.userId;
+      
+      if (!userId) {
+        logger.warn('No userId found in subscription metadata:', subscriptionId);
+        return;
+      }
+      
+      // Update payment record
+      const payment = await this.dataAccess.payments.findByStripeInvoiceId(invoice.id);
+      if (payment) {
+        await this.updatePayment(payment.payment_id, {
+          status: 'completed',
+          stripe_invoice_id: invoice.id,
+          stripe_payment_intent_id: invoice.payment_intent,
+          stripe_charge_id: invoice.charge,
+          receipt_url: invoice.hosted_invoice_url
+        });
+      }
+      
+      // Update subscription with Stripe data
+      await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
+        stripe_subscription_id: subscriptionId,
+        stripe_status: subscription.status,
+        current_period_start: new Date(subscription.current_period_start * 1000),
+        current_period_end: new Date(subscription.current_period_end * 1000),
+        cancel_at_period_end: subscription.cancel_at_period_end
+      });
+      
+      // Allocate monthly tokens for the subscription
+      const planId = subscription.metadata?.planId;
+      if (planId) {
+        const plan = await this.dataAccess.plans.getPlanById(planId);
+        if (plan && plan.monthly_tokens > 0) {
+          await this.dataAccess.tokens.allocateTokens(userId, plan.monthly_tokens, 'subscription_renewal', {
+            planId,
+            subscriptionId,
+            invoiceId: invoice.id
+          });
+          
+          logger.info(`Allocated ${plan.monthly_tokens} tokens to user ${userId} for subscription renewal`);
+        }
+      }
+      
+      logger.info(`Successfully processed invoice payment for user ${userId}, subscription ${subscriptionId}`);
+      
+    } catch (error) {
+      logger.error('Error handling invoice payment succeeded:', error);
+      throw error;
+    }
   }
 
   /**
@@ -441,8 +647,41 @@ class PaymentService {
    * @param {Object} invoice - The invoice object
    */
   async handleInvoicePaymentFailed(invoice) {
-    // Implementation to be added
-    logger.info('Invoice payment failed:', invoice.id);
+    try {
+      logger.info('Processing invoice payment failed:', invoice.id);
+      
+      const subscriptionId = invoice.subscription;
+      
+      if (subscriptionId) {
+        // Get subscription details to find user
+        const subscription = await this.stripeService.retrieveSubscription(subscriptionId);
+        const userId = subscription.metadata?.userId;
+        
+        if (userId) {
+          // Update subscription status to reflect payment failure
+          await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
+            stripe_subscription_id: subscriptionId,
+            stripe_status: subscription.status // Will be 'past_due' or 'unpaid'
+          });
+          
+          logger.info(`Updated subscription status for user ${userId} due to failed payment`);
+        }
+      }
+      
+      // Update payment record if it exists
+      const payment = await this.dataAccess.payments.findByStripeInvoiceId(invoice.id);
+      if (payment) {
+        await this.updatePayment(payment.payment_id, {
+          status: 'failed',
+          stripe_invoice_id: invoice.id,
+          failure_reason: 'Invoice payment failed'
+        });
+      }
+      
+    } catch (error) {
+      logger.error('Error handling invoice payment failed:', error);
+      throw error;
+    }
   }
 
   /**
@@ -450,8 +689,37 @@ class PaymentService {
    * @param {Object} subscription - The subscription object
    */
   async handleSubscriptionUpdated(subscription) {
-    // Implementation to be added
-    logger.info('Subscription updated:', subscription.id);
+    try {
+      logger.info('Processing subscription updated:', subscription.id);
+      
+      const userId = subscription.metadata?.userId;
+      
+      if (!userId) {
+        logger.warn('No userId found in subscription metadata:', subscription.id);
+        return;
+      }
+      
+      // Update local subscription with Stripe data
+      await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
+        stripe_subscription_id: subscription.id,
+        stripe_status: subscription.status,
+        current_period_start: new Date(subscription.current_period_start * 1000),
+        current_period_end: new Date(subscription.current_period_end * 1000),
+        cancel_at_period_end: subscription.cancel_at_period_end
+      });
+      
+      // If subscription was canceled, update status
+      if (subscription.status === 'canceled') {
+        await this.dataAccess.subscriptions.updateSubscriptionStatus(userId, 'canceled');
+        logger.info(`Subscription canceled for user ${userId}`);
+      }
+      
+      logger.info(`Updated subscription for user ${userId} with Stripe data`);
+      
+    } catch (error) {
+      logger.error('Error handling subscription updated:', error);
+      throw error;
+    }
   }
 
   /**
@@ -459,8 +727,32 @@ class PaymentService {
    * @param {Object} subscription - The subscription object
    */
   async handleSubscriptionDeleted(subscription) {
-    // Implementation to be added
-    logger.info('Subscription deleted:', subscription.id);
+    try {
+      logger.info('Processing subscription deleted:', subscription.id);
+      
+      const userId = subscription.metadata?.userId;
+      
+      if (!userId) {
+        logger.warn('No userId found in subscription metadata:', subscription.id);
+        return;
+      }
+      
+      // Update local subscription status to canceled
+      await this.dataAccess.subscriptions.updateSubscriptionStatus(userId, 'canceled');
+      
+      // Clear Stripe subscription data
+      await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
+        stripe_subscription_id: null,
+        stripe_status: null,
+        cancel_at_period_end: false
+      });
+      
+      logger.info(`Subscription deleted for user ${userId}, updated local status to canceled`);
+      
+    } catch (error) {
+      logger.error('Error handling subscription deleted:', error);
+      throw error;
+    }
   }
 
   /**
@@ -619,7 +911,7 @@ class PaymentService {
       const updatedPayment = await this.dataAccess.payments.updatePayment(paymentId, {
         status: paymentResult.success ? 'completed' : 'failed',
         payment_provider: paymentResult.provider,
-        external_payment_id: paymentResult.externalId,
+        stripe_payment_intent_id: paymentResult.externalId,
         payment_date: paymentResult.success ? new Date() : null
       });
       

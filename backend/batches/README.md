@@ -131,7 +131,7 @@ Runs every day at 3:00 PM EST.
 3. Updates the payment status to `completed` if the payment was successful
 4. Sets the payment information in the payment entry:
   "paymentProvider": :paymentProvider,
-  "externalPaymentId": :externalPaymentId,
+  "stripePaymentIntentId": :stripePaymentIntentId,
 5. Updates the payment status to `failed` if the payment was not successful
 
 **Parameters:**

@@ -1120,6 +1120,83 @@ router.post('/token-packages/buy',
 });
 
 /**
+ * @route POST /api/subscription/checkout/create-subscription-session
+ * @description Create a Stripe Checkout session for subscription plans
+ * @access Protected - requires user authentication
+ */
+router.post('/checkout/create-subscription-session', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/subscriptions'), 
+  async (req, res) => {
+    await forwardToSubscriptionService(req, res, '/checkout/create-subscription-session');
+  });
+
+/**
+ * @route POST /api/subscription/checkout/create-token-package-session
+ * @description Create a Stripe Checkout session for token package purchases
+ * @access Protected - requires user authentication
+ */
+router.post('/checkout/create-token-package-session', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/tokens'), 
+  async (req, res) => {
+    await forwardToSubscriptionService(req, res, '/checkout/create-token-package-session');
+  });
+
+/**
+ * @route POST /api/subscription/checkout/create-customer-portal-session
+ * @description Create a Stripe Customer Portal session for subscription management
+ * @access Protected - requires user authentication
+ */
+router.post('/checkout/create-customer-portal-session', 
+  verifyAuth0Token,
+  checkPermission('/api/subscription/subscriptions'), 
+  async (req, res) => {
+    await forwardToSubscriptionService(req, res, '/checkout/create-customer-portal-session');
+  });
+
+/**
+ * @route GET /api/subscription/checkout/verify-session/:sessionId
+ * @description Verify a Stripe Checkout session and return session details
+ * @access Public - no authentication required for session verification
+ */
+router.get('/checkout/verify-session/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const url = `${SUBSCRIPTION_SERVICE_URL}/checkout/verify-session/${sessionId}`;
+    
+    logger.info(`Verifying checkout session: ${sessionId}`);
+    
+    const response = await axios.get(url, {
+      headers: {
+        'x-service-auth': process.env.SERVICE_AUTH_TOKEN
+      }
+    });
+    
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    logger.error('Error verifying checkout session:', {
+      error: error.message,
+      stack: error.stack,
+      sessionId: req.params.sessionId,
+      response: {
+        status: error.response?.status,
+        data: error.response?.data
+      }
+    });
+    
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(500).json({ 
+        error: 'Error communicating with subscription service',
+        details: error.message
+      });
+    }
+  }
+});
+
+/**
  * @route POST /api/subscription/webhooks/stripe
  * @description Receive and process Stripe webhook events
  * @access Public - verification happens with Stripe signature
@@ -1129,15 +1206,19 @@ router.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async
     const url = `${SUBSCRIPTION_SERVICE_URL}/webhooks/stripe`;
     logger.info(`Forwarding Stripe webhook to subscription service: ${url}`);
     
-    const response = await axios({
-      method: 'POST',
-      url,
-      data: req.body,
+    const response = await axios.post(url, req.body, {
       headers: {
         'Content-Type': 'application/json',
         'Stripe-Signature': req.headers['stripe-signature'],
         'x-service-auth': process.env.SERVICE_AUTH_TOKEN
-      }
+      },
+      // Ensure we don't transform the raw buffer data
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      // Don't transform the request body - let axios handle the Buffer
+      transformRequest: [],
+      // Tell axios to not parse the response
+      responseType: 'json'
     });
     
     res.status(response.status).json(response.data);

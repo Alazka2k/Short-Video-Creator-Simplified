@@ -228,7 +228,7 @@ class SubscriptionService {
         status: 'active',
         startDate: subscriptionData.startDate || new Date(),
         billingFrequency: subscriptionData.billingFrequency || 'monthly',
-        externalSubscriptionId: subscriptionData.externalSubscriptionId || null
+        stripeSubscriptionId: subscriptionData.stripeSubscriptionId || null
       };
       
       // If end date is explicitly provided, use it
@@ -277,7 +277,7 @@ class SubscriptionService {
         }
         
         // If payment details provided, create payment record
-        if (subscriptionData.paymentProvider && subscriptionData.externalPaymentId) {
+        if (subscriptionData.paymentProvider && subscriptionData.stripePaymentIntentId) {
           try {
             // Get plan for correct billing period calculation
             const plan = await this.dataAccess.plans.getPlanById(subscriptionData.planId);
@@ -336,7 +336,7 @@ class SubscriptionService {
               subscriptionData.planId,
               paymentAmount,
               subscriptionData.paymentProvider,
-              subscriptionData.externalPaymentId,
+              subscriptionData.stripePaymentIntentId,
               'subscription_initial',
               billingPeriod,
               trx
@@ -411,7 +411,7 @@ class SubscriptionService {
               planId: subscriptionData.planId,
               billingFrequency: subscriptionData.billingFrequency || existingSubscription.billing_frequency,
               status: subscriptionData.status,
-              externalSubscriptionId: subscriptionData.externalSubscriptionId,
+              stripeSubscriptionId: subscriptionData.stripeSubscriptionId,
               
               // Date fields - only pass dates that were explicitly provided
               ...(subscriptionData.startDate && { startDate: new Date(subscriptionData.startDate) }),
@@ -427,7 +427,7 @@ class SubscriptionService {
           );
           
           // If payment provider details provided, create a payment record for the plan change
-          if (subscriptionData.paymentProvider && subscriptionData.externalPaymentId) {
+          if (subscriptionData.paymentProvider && subscriptionData.stripePaymentIntentId) {
             try {
               // Determine payment amount
               let paymentAmount = subscriptionData.amount;
@@ -469,7 +469,7 @@ class SubscriptionService {
                 subscriptionData.planId,
                 paymentAmount,
                 subscriptionData.paymentProvider,
-                subscriptionData.externalPaymentId,
+                subscriptionData.stripePaymentIntentId,
                 'subscription_renewal',
                 billingPeriod,
                 trx
@@ -500,7 +500,7 @@ class SubscriptionService {
         return await this.dataAccess.subscriptions.updateSubscription(subscriptionId, {
           // Status and core fields
           ...(subscriptionData.status && { status: subscriptionData.status }),
-          ...(subscriptionData.externalSubscriptionId && { externalSubscriptionId: subscriptionData.externalSubscriptionId }),
+          ...(subscriptionData.stripeSubscriptionId && { stripeSubscriptionId: subscriptionData.stripeSubscriptionId }),
           ...(subscriptionData.billingFrequency && { billingFrequency: subscriptionData.billingFrequency }),
           
           // Date fields - only pass dates that were explicitly provided
@@ -841,13 +841,13 @@ class SubscriptionService {
           planId: newPlanId,
           status: 'active',
           startDate: new Date(), // Start immediately
-          externalSubscriptionId: options.externalSubscriptionId || currentSubscription.external_subscription_id
+          stripeSubscriptionId: options.stripeSubscriptionId || currentSubscription.external_subscription_id
         };
         
         // If payment details provided, include them
-        if (options.paymentProvider && options.externalPaymentId) {
+        if (options.paymentProvider && options.stripePaymentIntentId) {
           subscriptionData.paymentProvider = options.paymentProvider;
-          subscriptionData.externalPaymentId = options.externalPaymentId;
+          subscriptionData.stripePaymentIntentId = options.stripePaymentIntentId;
         }
         
         const newSubscription = await this.createSubscription(subscriptionData);
