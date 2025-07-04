@@ -87,7 +87,7 @@
  * - Token issues: Verify both Auth0 and backend token refresh mechanisms
  * - Cross-tab issues: Check localStorage AUTH_STATE_KEY synchronization
  * 
- * Last Updated: 2024-01-23
+ * Last Updated: 2025-06-30
  * Architecture: Hybrid Auth0 SPA + Backend
  */
 
@@ -273,6 +273,35 @@ export function AuthProvider({ children, onInit }: AuthProviderProps) {
       if (auth0Loading) {
         AuthLogger.log('Auth0 still loading, waiting...');
         return;
+      }
+
+      // First, try to load persisted auth state from localStorage
+      if (!user && !auth0IsAuthenticated) {
+        try {
+          const savedAuthState = localStorage.getItem(AUTH_STATE_KEY);
+          if (savedAuthState) {
+            const { user: savedUser, timestamp } = JSON.parse(savedAuthState);
+            const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+            
+            if (savedUser && (Date.now() - timestamp < maxAge)) {
+              AuthLogger.log('Loading persisted auth state', {
+                userId: savedUser.user_id,
+                email: savedUser.email,
+                age: Date.now() - timestamp
+              });
+              
+              setUser(savedUser);
+              setIsLoading(false);
+              return; // Exit early, we have valid user data
+            } else {
+              AuthLogger.log('Persisted auth state expired, removing');
+              localStorage.removeItem(AUTH_STATE_KEY);
+            }
+          }
+        } catch (error) {
+          AuthLogger.error('Error loading persisted auth state:', error);
+          localStorage.removeItem(AUTH_STATE_KEY);
+        }
       }
 
       // If Auth0 is authenticated and we have a user but haven't processed social auth yet

@@ -3,10 +3,10 @@ const router = express.Router();
 const axios = require('axios');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const { authMiddleware, checkPermission } = require('../middleware/auth0');
+const jwtAuth = require('../middleware/jwtAuth');
 
 // Get all available batch jobs
-router.get('/batches', authMiddleware, checkPermission('read:batch'), async (req, res) => {
+router.get('/batches', jwtAuth({ requireAdmin: true }), async (req, res) => {
   try {
     const batchServiceUrl = config.services.batch.url;
     const response = await axios.get(`${batchServiceUrl}/api/batch/batches`);
@@ -18,7 +18,7 @@ router.get('/batches', authMiddleware, checkPermission('read:batch'), async (req
 });
 
 // Run a specific batch
-router.post('/batches/:batchId/run', authMiddleware, checkPermission('start:batch'), async (req, res) => {
+router.post('/batches/:batchId/run', jwtAuth({ requireAdmin: true }), async (req, res) => {
   try {
     const { batchId } = req.params;
     const parameters = req.body || {};
@@ -34,7 +34,7 @@ router.post('/batches/:batchId/run', authMiddleware, checkPermission('start:batc
 });
 
 // Get batch status
-router.get('/batches/:batchId/status', authMiddleware, checkPermission('read:batch'), async (req, res) => {
+router.get('/batches/:batchId/status', jwtAuth({ requireAdmin: true }), async (req, res) => {
   try {
     const { batchId } = req.params;
     
@@ -49,7 +49,7 @@ router.get('/batches/:batchId/status', authMiddleware, checkPermission('read:bat
 });
 
 // Get batch history
-router.get('/batches/:batchId/history', authMiddleware, checkPermission('read:batch'), async (req, res) => {
+router.get('/batches/:batchId/history', jwtAuth({ requireAdmin: true }), async (req, res) => {
   try {
     const { batchId } = req.params;
     
@@ -64,7 +64,7 @@ router.get('/batches/:batchId/history', authMiddleware, checkPermission('read:ba
 });
 
 // Get batch logs
-router.get('/batches/:batchId/logs', authMiddleware, checkPermission('read:batch'), async (req, res) => {
+router.get('/batches/:batchId/logs', jwtAuth({ requireAdmin: true }), async (req, res) => {
   try {
     const { batchId } = req.params;
     

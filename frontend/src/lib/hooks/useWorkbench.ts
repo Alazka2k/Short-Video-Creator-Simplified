@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/apiClient'
-import { useAuth } from '@/lib/auth/AuthContext'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { useState } from 'react'
 import { useStorageUrls } from './useStorageUrls'
 import { handleBulkDownload } from '@/lib/utils/download'
@@ -31,9 +31,7 @@ interface JobsResponse {
 }
 
 export function useWorkbench() {
-  const auth = useAuth()
-  if (!auth) throw new Error('useWorkbench must be used within an AuthProvider')
-  const { getM2MToken } = auth
+  const { getToken } = useAuth()
   const [state, setState] = useState<WorkbenchState>({
     filters: {
       sortBy: 'created_at',
@@ -56,15 +54,15 @@ export function useWorkbench() {
     queryKey: ['jobs', state.pagination, state.filters],
     queryFn: async () => {
       try {
-        const m2mToken = await getM2MToken()
-        const userToken = localStorage.getItem("access_token")
+        // Use the user's access token directly for authorization
+        const userToken = await getToken()
         
-        const headers: Record<string, string> = {
-          'Authorization': `Bearer ${m2mToken}`
+        if (!userToken) {
+          throw new Error('No access token available')
         }
-        
-        if (userToken) {
-          headers['x-user-token'] = userToken
+
+        const headers: Record<string, string> = {
+          'Authorization': `Bearer ${userToken}`
         }
 
         const queryParams = new URLSearchParams({

@@ -3,32 +3,29 @@ const router = express.Router();
 const axios = require('axios');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const { verifyAuth0Token, checkPermission } = require('../../services/auth-service/middleware/auth0-verify.middleware');
-const serviceAuthMiddleware = require('../middleware/serviceAuth');
+const jwtAuth = require('../middleware/jwtAuth');
 
 /**
  * @route POST /api/image/generate
  * @description Generate images using image service
- * @access Protected - requires create:image permission
+ * @access User
  */
-router.post('/generate',
-  verifyAuth0Token,
-  checkPermission('/api/image/generate'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.post('/generate', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
       logger.info('Forwarding request to Image service');
       const { prompt, sceneIndex, jobId } = req.body;
+      const { user_id: userId } = req.user;
 
       // Basic validation
       if (!prompt) {
-        throw new Error('Missing required parameter: prompt');
+        return res.status(400).json({ error: 'Missing required parameter: prompt' });
       }
 
       const response = await axios.post(`${config.services.image.url}/generate`, {
         prompt,
         sceneIndex,
-        jobId
+        jobId,
+        userId // Pass user context
       }, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 300000  // 5 minutes timeout
@@ -58,21 +55,23 @@ router.post('/generate',
 /**
  * @route GET /api/image/status/:jobId
  * @description Get status of an image generation job
- * @access Protected - requires read:image permission
+ * @access User
  */
-router.get('/status/:jobId',
-  verifyAuth0Token,
-  checkPermission('/api/image/status'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.get('/status/:jobId', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
-      const response = await axios.get(`${config.services.image.url}/status/${req.params.jobId}`, {
+      const { jobId } = req.params;
+      const { user_id: userId } = req.user;
+      
+      // TODO: Add ownership check here as well.
+      logger.info('Image status check for job', { jobId, userId });
+
+      const response = await axios.get(`${config.services.image.url}/status/${jobId}`, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000  // 30 seconds timeout
       });
 
-      logger.info('Image status check:', {
-        jobId: req.params.jobId,
+      logger.info('Image status check complete:', {
+        jobId: jobId,
         status: response.status,
         hasData: !!response.data
       });

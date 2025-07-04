@@ -1,3 +1,125 @@
+/**
+ * ============================================================================
+ * AUTHENTICATION PROXY ROUTE - FRONTEND TO BACKEND COMMUNICATION BRIDGE
+ * ============================================================================
+ * 
+ * This Next.js API route serves as a critical communication bridge between
+ * the frontend application and backend authentication services. It handles
+ * CORS issues, security headers, and token management for the hybrid
+ * Auth0 + backend authentication architecture.
+ * 
+ * KEY RESPONSIBILITIES:
+ * 
+ * 1. CORS RESOLUTION
+ *    - Eliminates cross-origin issues between frontend and backend
+ *    - Enables seamless API communication in development and production
+ *    - Handles complex authentication flows without browser restrictions
+ * 
+ * 2. SECURITY ENHANCEMENT
+ *    - Adds comprehensive security headers to all responses
+ *    - Implements Content Security Policy and XSS protection
+ *    - Enforces HTTPS with Strict Transport Security
+ *    - Prevents clickjacking with frame options
+ * 
+ * 3. TOKEN MANAGEMENT
+ *    - Forwards Authorization headers from frontend to backend
+ *    - Implements intelligent token fallback mechanisms
+ *    - Handles token extraction from cookies when headers are missing
+ *    - Supports both user tokens and M2M tokens
+ * 
+ * 4. REQUEST FORWARDING
+ *    - Dynamic endpoint routing via query parameters
+ *    - Preserves request methods (GET, POST, PUT, DELETE)
+ *    - Forwards request bodies and headers appropriately
+ *    - Maintains response status codes and data integrity
+ * 
+ * SUPPORTED AUTHENTICATION ENDPOINTS:
+ * 
+ * - /api/auth/token - M2M token generation for service-to-service calls
+ * - /api/auth/refresh - User token refresh for session management
+ * - /api/auth/social - Social login processing (Google OAuth via Auth0)
+ * - /api/auth/profile - User profile retrieval and validation
+ * - /api/auth/login - Email/password authentication
+ * - /api/auth/register - User registration and account creation
+ * 
+ * USAGE PATTERN:
+ * ```
+ * Frontend Request:
+ * GET/POST /api/auth/proxy?endpoint=/api/auth/profile
+ * 
+ * Proxied to Backend:
+ * GET/POST {BACKEND_URL}/api/auth/profile
+ * ```
+ * 
+ * AUTHENTICATION FLOW INTEGRATION:
+ * 
+ * 1. AuthContext calls proxy for backend synchronization
+ * 2. Login/Signup forms use proxy for authentication
+ * 3. Token refresh mechanisms rely on proxy routing
+ * 4. M2M token generation for API client initialization
+ * 5. User profile fetching for session validation
+ * 
+ * SECURITY FEATURES:
+ * 
+ * - Request ID generation for tracing and debugging
+ * - Security token validation for internal requests
+ * - IP forwarding for proper request attribution
+ * - Cookie forwarding for session management
+ * - Header sanitization and validation
+ * 
+ * TOKEN FALLBACK MECHANISMS:
+ * 
+ * 1. Primary: Authorization header from request
+ * 2. Fallback 1: Token from request body (auth endpoints)
+ * 3. Fallback 2: Token from cookies (stored sessions)
+ * 4. Fallback 3: Query parameter tokens (specific cases)
+ * 
+ * ERROR HANDLING:
+ * 
+ * - Comprehensive error logging with context
+ * - Proper HTTP status code forwarding
+ * - Graceful fallback for network failures
+ * - Detailed error messages for debugging
+ * 
+ * ENVIRONMENT INTEGRATION:
+ * 
+ * - Uses NEXT_PUBLIC_API_URL for backend communication
+ * - Supports API_SECURITY_TOKEN for internal authentication
+ * - Development vs production logging configuration
+ * - Flexible header and cookie handling
+ * 
+ * DEBUGGING FEATURES:
+ * 
+ * - Request/response header logging (development)
+ * - Token presence and fallback logging
+ * - Endpoint routing and method tracking
+ * - Error context and stack trace capture
+ * 
+ * DEPENDENCIES:
+ * 
+ * - Next.js API Route framework
+ * - Backend authentication service endpoints
+ * - Environment variable configuration
+ * - Cookie and header management utilities
+ * 
+ * CRITICAL NOTES:
+ * 
+ * - This proxy is ESSENTIAL for the authentication flow
+ * - Removing it would break Auth0 + backend integration
+ * - Security headers protect against common web vulnerabilities
+ * - Token fallback ensures robust authentication handling
+ * 
+ * FUTURE ENHANCEMENTS:
+ * 
+ * - Rate limiting for authentication endpoints
+ * - Request caching for performance optimization
+ * - Advanced security token validation
+ * - Webhook support for real-time updates
+ * 
+ * Last Updated: 2025-06-30
+ * Architecture: Next.js API Proxy for Authentication Services
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;

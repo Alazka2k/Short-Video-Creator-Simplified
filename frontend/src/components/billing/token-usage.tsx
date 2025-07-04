@@ -1,3 +1,66 @@
+/**
+ * ============================================================================
+ * TOKEN USAGE COMPONENT - SUBSCRIPTION AND BILLING DISPLAY
+ * ============================================================================
+ * 
+ * This component displays token usage information, billing details, and
+ * subscription limits for users. It provides visual feedback on token
+ * consumption and easy access to subscription management.
+ * 
+ * KEY FEATURES:
+ * - Token usage progress visualization
+ * - Service-specific usage breakdown
+ * - Plan limits and restrictions display
+ * - Quick access to token purchases
+ * - Subscription management navigation
+ * 
+ * USAGE TRACKING:
+ * - Total tokens vs used tokens
+ * - Expiration date tracking
+ * - Service-specific consumption (video, image, voice, music)
+ * - Visual progress indicators
+ * 
+ * PLAN INTEGRATION:
+ * - Monthly token limits
+ * - Video count restrictions
+ * - Duration limitations
+ * - Feature availability by plan
+ * 
+ * USER EXPERIENCE:
+ * - Clear visual feedback on usage
+ * - Easy access to purchase options
+ * - Warning states for low balances
+ * - Attractive card-based layout
+ * - Responsive design for all devices
+ * 
+ * NAVIGATION:
+ * - Buy More Tokens: Direct to subscription page
+ * - View Plans: Comparison and upgrade options
+ * - Usage history and details
+ * 
+ * DATA SOURCE:
+ * Currently uses dummy data - should be replaced with:
+ * - Real-time token balance from backend
+ * - Actual usage statistics
+ * - Current plan information
+ * - Billing cycle details
+ * 
+ * DEPENDENCIES:
+ * - UI components for consistent design
+ * - Router for navigation
+ * - Icons for visual enhancement
+ * - Utility functions for styling
+ * 
+ * FUTURE ENHANCEMENTS:
+ * - Real-time usage updates
+ * - Usage predictions and warnings
+ * - Historical usage charts
+ * - Token purchase integration
+ * 
+ * Last Updated: 2025-06-30
+ * Architecture: Token Usage Display Component
+ */
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +70,11 @@ import { Coins, Zap, Video, Image, Music, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-// Dummy data
+/**
+ * DUMMY DATA FOR DEVELOPMENT
+ * TODO: Replace with real API calls to fetch user's actual token usage,
+ * subscription plan details, and billing information.
+ */
 const dummyUsage = {
   tokens: {
     total: 10000,
@@ -28,6 +95,10 @@ const dummyUsage = {
   },
 };
 
+/**
+ * Configuration for usage breakdown display.
+ * Defines visual styling and icons for each service type.
+ */
 const usageConfig = [
   {
     label: 'Video Generation',
@@ -59,6 +130,12 @@ const usageConfig = [
   },
 ] as const;
 
+/**
+ * Token usage component that displays current usage, limits, and subscription details.
+ * Provides visual feedback and navigation to subscription management.
+ * 
+ * @returns {JSX.Element} Token usage display with progress bars and action buttons
+ */
 export function TokenUsage() {
   const router = useRouter();
   const percentageUsed = (dummyUsage.tokens.used / dummyUsage.tokens.total) * 100;

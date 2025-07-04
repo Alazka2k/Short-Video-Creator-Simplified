@@ -157,6 +157,10 @@ function loadEnvConfig() {
         clientSecret: process.env.AUTH0_CLIENT_SECRET,
         audience: process.env.AUTH0_AUDIENCE
       },
+      auth0CustomClaims: {
+        serviceAuthToken: process.env.SERVICE_AUTH_TOKEN,
+        customClaimsNamespace: process.env.CUSTOM_CLAIMS_NAMESPACE
+      },
       jwt: {
         secret: process.env.JWT_SECRET,
         accessExpirationMinutes: 60,
@@ -205,6 +209,7 @@ function validateConfig(config) {
     ['assembly.provider', 'assembly.apiKey', 'assembly.webhookBaseUrl'],
     ['stripe.apiKey', 'stripe.webhookSecret'],
     ['auth.auth0.domain', 'auth.auth0.clientId', 'auth.auth0.clientSecret', 'auth.auth0.audience'],
+    ['auth.auth0CustomClaims.serviceAuthToken', 'auth.auth0CustomClaims.customClaimsNamespace'],
     ['auth.jwt.secret'],
     ['services.storage.config.region', 'services.storage.config.bucket', 'services.storage.config.cdnUrl'],
     ['services.llm.port', 'services.llm.url'],

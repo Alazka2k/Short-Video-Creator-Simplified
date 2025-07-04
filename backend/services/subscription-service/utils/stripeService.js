@@ -3,6 +3,8 @@
  * 
  * This module provides methods for interacting with the Stripe API for payment processing.
  * It handles customer management, payment processing, subscription management, and webhook handling.
+ * 
+ * Is this files used for the subscription service or only mock prototype?
  */
 
 const logger = require('../../../shared/utils/logger');

@@ -3,35 +3,30 @@ const router = express.Router();
 const axios = require('axios');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const { verifyAuth0Token, checkPermission } = require('../../services/auth-service/middleware/auth0-verify.middleware');
-const serviceAuthMiddleware = require('../middleware/serviceAuth');
+const jwtAuth = require('../middleware/jwtAuth');
 
 /**
  * @route POST /api/animation/generate
  * @description Generate animation using animation service
- * @access Protected - requires create:animation permission
+ * @access User
  */
-router.post('/generate',
-  verifyAuth0Token,
-  checkPermission('/api/animation/generate'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.post('/generate', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
       logger.info('Forwarding request to Animation service');
       const { imageUrl, videoPrompt, sceneIndex, jobId, parameters = {}, animationLength } = req.body;
 
       // Basic validation
       if (!imageUrl) {
-        throw new Error('Missing required parameter: imageUrl');
+        return res.status(400).json({ error: 'Missing required parameter: imageUrl' });
       }
       if (sceneIndex === undefined) {
-        throw new Error('Missing required parameter: sceneIndex');
+        return res.status(400).json({ error: 'Missing required parameter: sceneIndex' });
       }
       if (!jobId) {
-        throw new Error('Missing required parameter: jobId');
+        return res.status(400).json({ error: 'Missing required parameter: jobId' });
       }
       if (!videoPrompt) {
-        throw new Error('Missing required parameter: videoPrompt');
+        return res.status(400).json({ error: 'Missing required parameter: videoPrompt' });
       }
 
       // Structure parameters properly
@@ -40,6 +35,7 @@ router.post('/generate',
         videoPrompt,
         sceneIndex,
         jobId,
+        userId: req.user.user_id, // Pass user context
         parameters: {
           ...parameters,
           animationLength: animationLength || parameters.animationLength || 5
@@ -75,21 +71,25 @@ router.post('/generate',
 /**
  * @route GET /api/animation/status/:jobId
  * @description Get status of an animation generation job
- * @access Protected - requires read:animation permission
+ * @access User
  */
-router.get('/status/:jobId',
-  verifyAuth0Token,
-  checkPermission('/api/animation/status'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.get('/status/:jobId', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
-      const response = await axios.get(`${config.services.animation.url}/status/${req.params.jobId}`, {
+      const { user_id: userId } = req.user;
+      const { jobId } = req.params;
+
+      // TODO: Add ownership check to ensure user can only check their own job status.
+      // This would require a call to the job-service to get job owner.
+      // For now, any authenticated user can check any job's animation status.
+      logger.info('Animation status check for job', { jobId, userId });
+
+      const response = await axios.get(`${config.services.animation.url}/status/${jobId}`, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000  // 30 seconds timeout
       });
 
-      logger.info('Animation status check:', {
-        jobId: req.params.jobId,
+      logger.info('Animation status check complete:', {
+        jobId: jobId,
         status: response.status,
         hasData: !!response.data
       });

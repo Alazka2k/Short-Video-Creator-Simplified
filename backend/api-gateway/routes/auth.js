@@ -1,151 +1,41 @@
 const express = require('express');
 const router = express.Router();
-const rateLimit = require('express-rate-limit');
-const socialAuthController = require('../../services/auth-service/controllers/social-auth-controller');
-const emailAuthController = require('../../services/auth-service/controllers/email-auth-controller');
-const userController = require('../../services/auth-service/controllers/user-controller');
-const { verifyJwtToken } = require('../../services/auth-service/middleware/jwt-verify.middleware');
-const { verifyAuth0Token, checkPermission } = require('../../services/auth-service/middleware/auth0-verify.middleware');
 const logger = require('../../shared/utils/logger');
-const authService = require('../../services/auth-service/auth-service');
+const userLookupController = require('../../services/auth-service/controllers/userLookupController');
+const serviceAuth = require('../middleware/serviceAuth');
+const jwtAuth = require('../middleware/jwtAuth');
 
-// Rate limiting configuration
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 failed attempts
-  message: {
-    error: 'Too many login attempts, please try again later',
-    retryAfter: '15 minutes'
-  }
+/**
+ * @route GET /api/auth/profile
+ * @description Get the profile of the currently authenticated user from their JWT.
+ * @access User
+ */
+router.get('/profile', jwtAuth({ requireUser: true }), (req, res) => {
+  // The user object is attached to the request by the jwtAuth middleware
+  res.json(req.user);
 });
 
-const refreshLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 100, // 100 refresh attempts per hour
-  message: {
-    error: 'Too many token refresh attempts',
-    retryAfter: '1 hour'
-  }
+
+/**
+ * @route POST /api/auth/logout
+ * @description Log a user's logout action.
+ * @access User
+ */
+router.post('/logout', jwtAuth({ requireUser: true }), (req, res) => {
+  // The frontend handles the actual session logout. This is for tracking/logging.
+  logger.info('User logged out successfully.', { userId: req.user.user_id });
+  res.status(200).json({ message: 'Logout successful.' });
 });
 
-const m2mTokenLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 100, // 100 token requests per hour
-  message: {
-    error: 'Too many M2M token requests',
-    retryAfter: '1 hour'
-  }
-});
 
-const m2mVerifyLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 1000, // 1000 verify requests per hour
-  message: {
-    error: 'Too many M2M token verify requests',
-    retryAfter: '1 hour'
-  }
-});
-
-// Social auth routes
-router.post('/social', loginLimiter, socialAuthController.loginWithSocial);
-router.post('/register-callback', loginLimiter, socialAuthController.handleRegisterCallback);
-
-// Email auth routes
-router.post('/register', loginLimiter, emailAuthController.registerWithEmail);
-router.post('/login', loginLimiter, emailAuthController.loginWithEmail);
-router.post('/forgot-password', loginLimiter, emailAuthController.forgotPassword);
-router.post('/reset-password', loginLimiter, emailAuthController.resetPassword);
-
-// User management routes
-router.get('/profile', verifyJwtToken, userController.getProfile);
-router.post('/refresh', refreshLimiter, userController.refreshToken);
-router.post('/logout', userController.logout);
-
-// M2M Token routes
-router.post('/token', m2mTokenLimiter, async (req, res) => {
-  try {
-    const { audience, grant_type } = req.body;
-    
-    logger.info('M2M token request received:', {
-      audience,
-      grantType: grant_type,
-      environment: process.env.NODE_ENV
-    });
-
-    // Validate required fields (client credentials are handled by backend)
-    if (!audience || grant_type !== 'client_credentials') {
-      logger.warn('Invalid M2M token request:', {
-        missingAudience: !audience,
-        invalidGrantType: grant_type !== 'client_credentials'
-      });
-      return res.status(400).json({
-        error: 'Invalid request',
-        message: 'Missing audience or invalid grant type'
-      });
-    }
-
-    // Use backend's own M2M credentials from environment variables
-    const config = require('../../shared/utils/config');
-    const clientId = config.auth.auth0.clientId;  // This is already M2M
-    const clientSecret = config.auth.auth0.clientSecret;  // This is already M2M
-
-    if (!clientId || !clientSecret) {
-      logger.error('Backend M2M credentials not configured', {
-        hasClientId: !!clientId,
-        hasClientSecret: !!clientSecret,
-        environment: process.env.NODE_ENV
-      });
-      return res.status(500).json({
-        error: 'Server configuration error',
-        message: 'M2M credentials not configured on server'
-      });
-    }
-
-    logger.info('Requesting M2M token from Auth0 service using backend credentials');
-    const tokenData = await authService.getM2MToken({
-      clientId,
-      clientSecret,
-      audience
-    });
-    
-    logger.info('M2M token obtained successfully', {
-      hasAccessToken: !!tokenData.access_token,
-      tokenType: tokenData.token_type,
-      expiresIn: tokenData.expires_in
-    });
-
-    res.json(tokenData);
-  } catch (error) {
-    logger.error('Error getting M2M token:', {
-      error: error.message,
-      stack: error.stack,
-      environment: process.env.NODE_ENV
-    });
-    res.status(500).json({ 
-      error: 'Failed to get M2M token',
-      message: error.message
-    });
-  }
-});
-
-router.post('/m2m/verify', m2mVerifyLimiter, verifyAuth0Token, async (req, res) => {
-  try {
-    // Token is already verified by verifyAuth0Token middleware
-    // and user info is attached to req.user
-    const scopes = (req.user.scope || '').split(' ');
-    
-    res.json({
-      valid: true,
-      token: {
-        sub: req.user.sub,
-        scope: scopes,
-        gty: req.user.gty
-      }
-    });
-  } catch (error) {
-    logger.error('Error in M2M token verification:', error);
-    res.status(401).json({ error: 'Invalid token' });
-  }
+/**
+ * @route POST /api/auth/user-lookup
+ * @description Endpoint called by the Auth0 Post-Login Action to get or create a user.
+ * @access Service-to-service (protected by serviceAuth middleware)
+ */
+router.post('/user-lookup', serviceAuth, async (req, res) => {
+    logger.info('User lookup request received from Auth0 Action.');
+    await userLookupController.lookupUser(req, res);
 });
 
 // Error handling middleware

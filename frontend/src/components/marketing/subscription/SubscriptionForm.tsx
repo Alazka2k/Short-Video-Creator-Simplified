@@ -1,6 +1,71 @@
+/**
+ * ============================================================================
+ * SUBSCRIPTION FORM COMPONENT - EMAIL NEWSLETTER SIGNUP
+ * ============================================================================
+ * 
+ * This component provides an email subscription form for newsletter signups
+ * and waitlist registration. It handles UTM parameter tracking and integrates
+ * with email marketing services.
+ * 
+ * KEY FEATURES:
+ * - Email validation and submission
+ * - UTM parameter capture for marketing attribution
+ * - Success/error state management
+ * - Loading states during submission
+ * - Optional success callback for parent components
+ * 
+ * UTM TRACKING:
+ * - Captures utm_source, utm_medium, utm_campaign from URL
+ * - Tracks referring_site for attribution
+ * - Passes tracking data to backend for analytics
+ * 
+ * FORM STATES:
+ * - Initial: Ready for email input
+ * - Loading: Submitting email to backend
+ * - Success: Confirmation message displayed
+ * - Error: Error message with retry option
+ * 
+ * API INTEGRATION:
+ * - POST /api/email-subscription
+ * - Sends email and UTM parameters
+ * - Handles success/error responses
+ * 
+ * USER EXPERIENCE:
+ * - Simple, single-field form
+ * - Clear call-to-action button
+ * - Immediate feedback on submission
+ * - Professional success confirmation
+ * 
+ * MARKETING INTEGRATION:
+ * - UTM parameter tracking for campaign attribution
+ * - Referring site capture for source tracking
+ * - Integration with email marketing platforms
+ * 
+ * DEPENDENCIES:
+ * - React hooks for state management
+ * - UI button component for consistent styling
+ * - Backend email subscription API endpoint
+ * 
+ * USAGE:
+ * ```tsx
+ * <SubscriptionForm onSubscriptionSuccess={() => console.log('Subscribed!')} />
+ * ```
+ * 
+ * Last Updated: 2025-06-30
+ * Architecture: Marketing Email Subscription Component
+ */
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 
+/**
+ * Email subscription form component for newsletter signups and waitlist registration.
+ * Captures UTM parameters and provides success/error handling.
+ * 
+ * @param {Object} props - Component props
+ * @param {Function} props.onSubscriptionSuccess - Optional callback fired on successful subscription
+ * @returns {JSX.Element} Subscription form with email input and submit button
+ */
 export default function SubscriptionForm({ onSubscriptionSuccess }: { onSubscriptionSuccess?: () => void }) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
@@ -8,7 +73,10 @@ export default function SubscriptionForm({ onSubscriptionSuccess }: { onSubscrip
   const [success, setSuccess] = useState(false)
   const [utmParams, setUtmParams] = useState<{ utm_source?: string; utm_medium?: string; utm_campaign?: string; referring_site?: string }>({})
 
-  // Capture UTM and referring site on mount
+  /**
+   * Capture UTM parameters and referring site information on component mount.
+   * This data is used for marketing attribution and analytics.
+   */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setUtmParams({
@@ -19,12 +87,19 @@ export default function SubscriptionForm({ onSubscriptionSuccess }: { onSubscrip
     })
   }, [])
 
+  /**
+   * Handle form submission and email subscription.
+   * Includes UTM parameters for marketing attribution.
+   * 
+   * @param {React.FormEvent<HTMLFormElement>} e - Form submission event
+   */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     try {
+      // Submit email with UTM parameters to backend
       const res = await fetch("/api/email-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,6 +110,7 @@ export default function SubscriptionForm({ onSubscriptionSuccess }: { onSubscrip
         throw new Error(json.error || "Failed to subscribe")
       }
       setSuccess(true)
+      // Notify parent component of successful subscription
       if (onSubscriptionSuccess) {
         onSubscriptionSuccess()
       }

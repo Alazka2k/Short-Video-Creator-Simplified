@@ -3,29 +3,25 @@ const router = express.Router();
 const axios = require('axios');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const { verifyAuth0Token, checkPermission } = require('../../services/auth-service/middleware/auth0-verify.middleware');
-const serviceAuthMiddleware = require('../middleware/serviceAuth');
+const jwtAuth = require('../middleware/jwtAuth');
 
 /**
  * @route POST /api/music/generate
  * @description Generate music using music service
- * @access Protected - requires create:music permission
+ * @access User
  */
-router.post('/generate',
-  verifyAuth0Token,
-  checkPermission('/api/music/generate'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.post('/generate', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
       logger.info('Forwarding request to Music service');
       const { jobId, title, prompt, style, instrumental } = req.body;
+      const { user_id: userId } = req.user;
 
       // Basic validation
       if (!jobId) {
-        throw new Error('Missing required parameter: jobId');
+        return res.status(400).json({ error: 'Missing required parameter: jobId' });
       }
       if (!prompt) {
-        throw new Error('Missing required parameter: prompt');
+        return res.status(400).json({ error: 'Missing required parameter: prompt' });
       }
 
       const response = await axios.post(`${config.services.music.url}/generate`, {
@@ -33,7 +29,8 @@ router.post('/generate',
         title,
         prompt,
         style,
-        instrumental
+        instrumental,
+        userId // Pass user context
       }, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 600000  // 10 minutes timeout
@@ -63,21 +60,23 @@ router.post('/generate',
 /**
  * @route GET /api/music/status/:jobId
  * @description Get status of a music generation job
- * @access Protected - requires read:music permission
+ * @access User
  */
-router.get('/status/:jobId',
-  verifyAuth0Token,
-  checkPermission('/api/music/status'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.get('/status/:jobId', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
-      const response = await axios.get(`${config.services.music.url}/status/${req.params.jobId}`, {
+      const { jobId } = req.params;
+      const { user_id: userId } = req.user;
+
+      // TODO: Add ownership check
+      logger.info('Music status check for job', { jobId, userId });
+
+      const response = await axios.get(`${config.services.music.url}/status/${jobId}`, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000  // 30 seconds timeout
       });
 
-      logger.info('Music status check:', {
-        jobId: req.params.jobId,
+      logger.info('Music status check complete:', {
+        jobId: jobId,
         status: response.status,
         hasData: !!response.data
       });

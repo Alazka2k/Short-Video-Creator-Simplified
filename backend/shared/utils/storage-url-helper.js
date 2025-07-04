@@ -40,7 +40,7 @@ class StorageUrlHelper {
     
     // If URL is not in cache or is expiring soon, log the reason
     if (!cached) {
-      logger.info('URL not in cache, needs refresh:', { storageKey });
+      //logger.info('URL not in cache, needs refresh:', { storageKey });
     } else {
       const expiresIn = Math.round((cached.expiresAt - Date.now()) / 1000);
       logger.info('URL expiring soon, needs refresh:', { 

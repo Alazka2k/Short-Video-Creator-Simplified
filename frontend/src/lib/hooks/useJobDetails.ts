@@ -37,11 +37,7 @@ interface JobDetails {
 }
 
 export function useJobDetails(jobId: string) {
-  const auth = useAuth();
-  if (!auth) {
-    throw new Error('useJobDetails must be used within an AuthProvider');
-  }
-  const { getM2MToken, user } = auth;
+  const { getToken, user } = useAuth();
 
   // Query for job details
   const { 
@@ -52,22 +48,20 @@ export function useJobDetails(jobId: string) {
   } = useQuery({
     queryKey: ['job', jobId],
     queryFn: async () => {
-      const m2mToken = await getM2MToken()
-      const userToken = localStorage.getItem("access_token")
+      const userToken = await getToken()
+      
+      if (!userToken) {
+        throw new Error('No access token available')
+      }
 
-      AuthLogger.log('Loading job with tokens:', {
-        hasM2MToken: !!m2mToken,
+      AuthLogger.log('Loading job with user token:', {
         hasUserToken: !!userToken,
         jobId,
         userId: user?.user_id
       })
       
       const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`
-      }
-
-      if (userToken) {
-        headers['x-user-token'] = userToken
+        'Authorization': `Bearer ${userToken}`
       }
 
       const response = await apiClient.get<JobDetails>(

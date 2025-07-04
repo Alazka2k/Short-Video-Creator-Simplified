@@ -3,51 +3,32 @@ const router = express.Router();
 const axios = require('axios');
 const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
-const { verifyAuth0Token, checkPermission } = require('../../services/auth-service/middleware/auth0-verify.middleware');
-const serviceAuthMiddleware = require('../middleware/serviceAuth');
+const jwtAuth = require('../middleware/jwtAuth');
 
 /**
  * @route POST /api/llm/generate
- * @description Generate content using LLM service
- * @access Protected - requires create:llm permission
+ * @description Generate text using LLM service
+ * @access User
  */
-router.post('/generate',
-  verifyAuth0Token,
-  checkPermission('/api/llm/generate'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.post('/generate', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
       logger.info('Forwarding request to LLM service');
-      const { inputPrompt, llmGenParams } = req.body;
+      const { prompt, jobId, sceneIndex } = req.body;
+      const { user_id: userId } = req.user;
 
       // Basic validation
-      if (!inputPrompt) {
-        throw new Error('Missing required parameter: inputPrompt');
+      if (!prompt) {
+        return res.status(400).json({ error: 'Missing required parameter: prompt' });
       }
-
-      if (!llmGenParams || !llmGenParams.general) {
-        throw new Error('Missing required llmGenParams structure: must include general section');
-      }
-
-      // Validate only the truly required general parameters
-      const requiredGeneralParams = ['sceneAmount', 'lengthDescription'];
-      for (const param of requiredGeneralParams) {
-        if (!llmGenParams.general[param]) {
-          throw new Error(`Missing required parameter: general.${param}`);
-        }
-      }
-
-      // Ensure all optional objects exist even if empty
-      llmGenParams.script = llmGenParams.script || {};
-      llmGenParams.image = llmGenParams.image || {};
-      llmGenParams.general.generalDescription = llmGenParams.general.generalDescription || '';
 
       const response = await axios.post(`${config.services.llm.url}/generate`, {
-        inputPrompt,
-        llmGenParams,
+        prompt,
+        jobId,
+        sceneIndex,
+        userId // Pass user context
       }, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 300000  // 5 minutes timeout
+        timeout: 600000  // 10 minutes timeout
       });
 
       logger.info('Received response from LLM service:', {
@@ -57,14 +38,14 @@ router.post('/generate',
 
       res.json(response.data);
     } catch (error) {
-      logger.error('LLM request error:', {
+      logger.error('LLM generation error:', {
         error: error.message,
         stack: error.stack,
         status: error.response?.status
       });
 
       res.status(error.response?.status || 500).json({
-        error: 'LLM request failed',
+        error: 'LLM generation failed',
         details: error.response?.data?.details || error.message
       });
     }
@@ -74,21 +55,23 @@ router.post('/generate',
 /**
  * @route GET /api/llm/status/:jobId
  * @description Get status of an LLM generation job
- * @access Protected - requires read:llm permission
+ * @access User
  */
-router.get('/status/:jobId',
-  verifyAuth0Token,
-  checkPermission('/api/llm/status'),
-  serviceAuthMiddleware,
-  async (req, res) => {
+router.get('/status/:jobId', jwtAuth({ requireUser: true }), async (req, res) => {
     try {
-      const response = await axios.get(`${config.services.llm.url}/status/${req.params.jobId}`, {
+      const { jobId } = req.params;
+      const { user_id: userId } = req.user;
+
+      // TODO: Add ownership check
+      logger.info('LLM status check for job', { jobId, userId });
+
+      const response = await axios.get(`${config.services.llm.url}/status/${jobId}`, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 30000  // 30 seconds timeout
       });
 
-      logger.info('LLM status check:', {
-        jobId: req.params.jobId,
+      logger.info('LLM status check complete:', {
+        jobId,
         status: response.status,
         hasData: !!response.data
       });

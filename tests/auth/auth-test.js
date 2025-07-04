@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../../backend/api-gateway/middleware/auth0');
+const jwtAuth = require('../../backend/api-gateway/middleware/jwtAuth');
 const logger = require('../../backend/shared/utils/logger');
 
 // Test endpoint that doesn't require authentication
@@ -10,30 +10,37 @@ router.get('/public', (req, res) => {
 
 // Test endpoint that requires authentication
 router.get('/protected', 
-  authMiddleware, 
+  jwtAuth({ requireUser: true }),
   (req, res) => {
     res.json({ 
       message: 'Protected endpoint - auth required',
-      user: req.auth
+      user: {
+        userId: req.user?.userId,
+        email: req.user?.email,
+        isAdmin: req.user?.isAdmin
+      }
     });
   }
 );
 
-// Test endpoint that requires specific permission
+// Test endpoint that requires admin privileges
 router.get('/admin', 
-  authMiddleware,
+  jwtAuth({ requireUser: true, requireAdmin: true }),
   (req, res) => {
-    // This is just for testing - in production use checkPermission middleware
     res.json({ 
       message: 'Admin endpoint - auth and admin permission required',
-      user: req.auth
+      user: {
+        userId: req.user?.userId,
+        email: req.user?.email,
+        isAdmin: req.user?.isAdmin
+      }
     });
   }
 );
 
 // Error test endpoint
 router.get('/error', 
-  authMiddleware, 
+  jwtAuth({ requireUser: true }),
   (req, res) => {
     throw new Error('Test error handling');
   }

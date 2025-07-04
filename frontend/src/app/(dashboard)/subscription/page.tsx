@@ -1,3 +1,73 @@
+/**
+ * ============================================================================
+ * SUBSCRIPTION MANAGEMENT PAGE - USER SUBSCRIPTION DASHBOARD
+ * ============================================================================
+ * 
+ * This page provides a comprehensive dashboard for users to manage their
+ * subscription, view token usage, and access billing information.
+ * 
+ * KEY FEATURES:
+ * - Current subscription plan display
+ * - Token usage visualization and tracking
+ * - Payment and billing information
+ * - Subscription modification options
+ * - Usage history and analytics
+ * 
+ * SUBSCRIPTION MANAGEMENT:
+ * - Current plan details and features
+ * - Renewal date and billing cycle
+ * - Plan change and upgrade options
+ * - Cancellation functionality
+ * - Payment method management
+ * 
+ * TOKEN TRACKING:
+ * - Real-time token balance display
+ * - Usage progress visualization
+ * - Plan vs additional token breakdown
+ * - Expiration and renewal tracking
+ * - Low balance warnings
+ * 
+ * USER EXPERIENCE:
+ * - Clear subscription status display
+ * - Visual progress indicators
+ * - Intuitive action buttons
+ * - Warning states for important actions
+ * - Responsive design for all devices
+ * 
+ * DATA INTEGRATION:
+ * Currently uses dummy data - should be replaced with:
+ * - Real subscription data from backend
+ * - Actual token usage and balance
+ * - Payment history and status
+ * - Plan features and limitations
+ * 
+ * NAVIGATION:
+ * - Change Plan: Subscription plan comparison
+ * - Purchase Tokens: Additional token packages
+ * - View History: Usage and payment history
+ * - Cancel Subscription: Cancellation flow
+ * 
+ * SECURITY CONSIDERATIONS:
+ * - User can only access their own subscription data
+ * - Secure payment information display
+ * - Safe cancellation processes
+ * - Proper authentication checks
+ * 
+ * DEPENDENCIES:
+ * - UI components for consistent design
+ * - Icons for visual enhancement
+ * - Navigation for subscription management
+ * 
+ * FUTURE ENHANCEMENTS:
+ * - Real-time usage updates
+ * - Usage predictions and recommendations
+ * - Billing history charts
+ * - Automated upgrade suggestions
+ * 
+ * Last Updated: 2025-06-30
+ * Architecture: Subscription Management Dashboard
+ */
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +83,11 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-// Dummy data
+/**
+ * DUMMY SUBSCRIPTION DATA FOR DEVELOPMENT
+ * TODO: Replace with real API calls to fetch user's actual subscription
+ * information, billing details, and token usage.
+ */
 const subscriptionData = {
   currentPlan: 'Professional',
   status: 'active',
@@ -35,6 +109,12 @@ const subscriptionData = {
   },
 };
 
+/**
+ * Subscription management page component that displays current subscription
+ * details, token usage, and provides subscription management options.
+ * 
+ * @returns {JSX.Element} Subscription dashboard with plan details and management options
+ */
 export default function SubscriptionPage() {
   const totalTokens = subscriptionData.tokens.included + subscriptionData.tokens.purchased;
   const usedPercentage = (subscriptionData.tokens.used / totalTokens) * 100;

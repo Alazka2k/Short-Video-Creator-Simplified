@@ -1,3 +1,57 @@
+/**
+ * ============================================================================
+ * SUBSCRIPTION CANCEL PAGE - STRIPE PAYMENT CANCELLATION
+ * ============================================================================
+ * 
+ * This page handles cancelled Stripe payment flows and provides users with
+ * helpful information and options after cancelling a subscription purchase.
+ * 
+ * STRIPE INTEGRATION FLOW:
+ * 1. User cancels payment in Stripe Checkout
+ * 2. Stripe redirects to this page (cancel_url)
+ * 3. Page displays cancellation information
+ * 4. Provides options to retry payment or return to subscription management
+ * 
+ * KEY FEATURES:
+ * - Clear cancellation messaging
+ * - No charges confirmation
+ * - Helpful next steps for users
+ * - Navigation options to retry or return
+ * - Professional, non-punitive design
+ * 
+ * USER EXPERIENCE:
+ * - Reassuring message that no charges were made
+ * - Clear explanation of what happened
+ * - Multiple paths forward (retry, return, support)
+ * - Non-aggressive retry encouragement
+ * 
+ * NAVIGATION OPTIONS:
+ * - Try Again: Return to pricing page
+ * - Back to Subscription: Return to subscription management
+ * - Implicit: Contact support if needed
+ * 
+ * DESIGN PRINCIPLES:
+ * - Non-punitive messaging
+ * - Clear and helpful information
+ * - Multiple recovery paths
+ * - Professional appearance
+ * - Consistent with overall design system
+ * 
+ * DEPENDENCIES:
+ * - Next.js App Router
+ * - UI components for consistent design
+ * - Navigation links for routing
+ * 
+ * USE CASES:
+ * - User changes mind during checkout
+ * - Payment method issues
+ * - Browser/connection problems
+ * - Price comparison needs
+ * 
+ * Last Updated: 2025-06-30
+ * Architecture: Stripe Payment Cancellation Handler
+ */
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +59,12 @@ import { Button } from '@/components/ui/button';
 import { XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * Subscription cancel page component that handles cancelled Stripe payments.
+ * Provides reassuring messaging and helpful next steps for users.
+ * 
+ * @returns {JSX.Element} Cancel page with helpful information and navigation options
+ */
 export default function SubscriptionCancelPage() {
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">

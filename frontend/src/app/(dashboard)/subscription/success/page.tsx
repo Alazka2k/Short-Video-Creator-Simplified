@@ -1,3 +1,60 @@
+/**
+ * ============================================================================
+ * SUBSCRIPTION SUCCESS PAGE - STRIPE PAYMENT CONFIRMATION
+ * ============================================================================
+ * 
+ * This page handles successful Stripe payment confirmations and displays
+ * payment details to users after completing a subscription purchase.
+ * 
+ * STRIPE INTEGRATION FLOW:
+ * 1. User completes payment in Stripe Checkout
+ * 2. Stripe redirects to this page with session_id parameter
+ * 3. Page calls /api/subscription/checkout/verify-session to get details
+ * 4. Displays payment confirmation and subscription information
+ * 5. Provides navigation options to continue using the platform
+ * 
+ * KEY FEATURES:
+ * - Session verification with Stripe backend
+ * - Payment details display (plan, amount, billing frequency)
+ * - Loading states during verification
+ * - Error handling for invalid sessions
+ * - Clear next steps for users
+ * - Navigation to workbench and subscription management
+ * 
+ * URL PARAMETERS:
+ * - session_id: Stripe Checkout session ID for verification
+ * 
+ * API INTEGRATION:
+ * - GET /api/subscription/checkout/verify-session/{sessionId}
+ * - Returns session details, payment status, and plan information
+ * 
+ * USER EXPERIENCE:
+ * - Immediate confirmation of successful payment
+ * - Clear display of what was purchased
+ * - Helpful next steps and navigation options
+ * - Professional, reassuring design
+ * 
+ * ERROR HANDLING:
+ * - Invalid session IDs
+ * - Network errors during verification
+ * - Missing session parameters
+ * - Fallback navigation options
+ * 
+ * DEPENDENCIES:
+ * - Next.js App Router with search params
+ * - Stripe session verification API
+ * - UI components for consistent design
+ * - Navigation hooks for routing
+ * 
+ * SECURITY CONSIDERATIONS:
+ * - Session verification prevents tampering
+ * - Server-side validation of payment status
+ * - Safe handling of payment information
+ * 
+ * Last Updated: 2025-06-30
+ * Architecture: Stripe Payment Success Confirmation
+ */
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,6 +64,12 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * Subscription success page component that verifies and displays payment confirmation.
+ * Handles Stripe session verification and provides post-payment user experience.
+ * 
+ * @returns {JSX.Element} Success page with payment details and navigation options
+ */
 export default function SubscriptionSuccessPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -14,6 +77,10 @@ export default function SubscriptionSuccessPage() {
   const [sessionData, setSessionData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Verify the Stripe session and fetch payment details.
+   * This ensures the payment was successful and gets confirmation data.
+   */
   useEffect(() => {
     const verifySession = async () => {
       if (!sessionId) {
@@ -23,6 +90,7 @@ export default function SubscriptionSuccessPage() {
       }
 
       try {
+        // Call our backend to verify the Stripe session
         const response = await fetch(`/api/subscription/checkout/verify-session/${sessionId}`);
         const data = await response.json();
         
@@ -50,9 +118,9 @@ export default function SubscriptionSuccessPage() {
         } else {
           setError('Session verification failed');
         }
-              } catch (error) {
-          console.error('Error verifying session:', error);
-          setError(error instanceof Error ? error.message : 'Failed to verify payment session');
+      } catch (error) {
+        console.error('Error verifying session:', error);
+        setError(error instanceof Error ? error.message : 'Failed to verify payment session');
       } finally {
         setLoading(false);
       }

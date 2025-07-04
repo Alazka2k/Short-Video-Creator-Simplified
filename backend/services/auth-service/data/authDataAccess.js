@@ -25,6 +25,17 @@ class AuthDataAccess {
     }
   }
 
+  async findUserByEmail(email) {
+    try {
+      return await knex('users')
+        .where('email', email)
+        .first();
+    } catch (error) {
+      logger.error('Error finding user by email:', error);
+      throw error;
+    }
+  }
+
   async updateUser(auth0Id, userData) {
     try {
       await knex('users')
@@ -119,7 +130,7 @@ class AuthDataAccess {
         // Assign default role
         await trx('user_roles').insert({
           user_id: newUser.user_id,
-          role_id: 1  // User role (not admin)
+          role_id: 2  // User role for new users (not admin)
         });
 
         // Create free trial subscription
@@ -198,276 +209,6 @@ class AuthDataAccess {
         .select('permissions.*');
     } catch (error) {
       logger.error('Error getting user permissions:', error);
-      throw error;
-    }
-  }
-
-  async trackVideoCreation(auth0Id) {
-    const user = await this.getUserWithRoleAndSubscription(auth0Id);
-    
-    // Check subscription status
-    if (!user.status || user.status !== 'active') {
-      throw new Error('No active subscription');
-    }
-
-    // Check if subscription has expired
-    if (new Date(user.current_period_end) < new Date()) {
-      throw new Error('Subscription has expired');
-    }
-    
-    // Get subscription limits from plan
-    const plan = await knex('subscription_plans')
-      .where('id', user.plan_id)
-      .first();
-    
-    // Check monthly usage
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-    
-    const videoCount = await knex('jobs')
-      .where('user_id', user.user_id)
-      .where('created_at', '>=', monthStart)
-      .count('user_id as count')
-      .first();
-      
-    if (videoCount.count >= plan.monthly_video_limit) {
-      throw new Error('Monthly video quota exceeded');
-    }
-    
-    // Track usage
-    await knex('usage_logs').insert({
-      user_id: user.user_id,
-      action: 'video_creation',
-      subscription_plan_id: plan.id,
-      created_at: new Date()
-    });
-  }
-
-  async getUserUsage(auth0Id) {
-    const user = await this.findUserByAuth0Id(auth0Id);
-    return await knex('jobs')
-      .where('user_id', user.user_id)
-      .select(
-        knex.raw('DATE_TRUNC(\'month\', created_at) as month'),
-        knex.raw('COUNT(*) as video_count'),
-        knex.raw('SUM(duration) as total_duration')
-      )
-      .groupBy(knex.raw('DATE_TRUNC(\'month\', created_at)'))
-      .orderBy('month', 'desc')
-      .limit(12);
-  }
-
-  async createSession(userId) {
-    try {
-      const [sessionId] = await knex('user_sessions')
-        .insert({
-          user_id: userId,
-          is_valid: true,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-          created_at: new Date()
-        })
-        .returning('session_id');
-
-      await this.logAuthEvent(userId, 'session_created');
-      return typeof sessionId === 'object' ? sessionId.session_id : sessionId;
-    } catch (error) {
-      logger.error('Error creating session:', error);
-      throw error;
-    }
-  }
-
-  async invalidateSession(sessionId, reason = 'user_logout') {
-    try {
-      logger.info('Attempting to invalidate session:', { sessionId, reason });
-      
-      const session = await knex('user_sessions')
-        .where('session_id', sessionId)
-        .first();
-
-      if (session) {
-        logger.info('Found session to invalidate:', {
-          sessionId: session.session_id,
-          userId: session.user_id,
-          currentlyValid: session.is_valid
-        });
-
-        await knex('user_sessions')
-          .where('session_id', sessionId)
-          .update({
-            is_valid: false,
-            invalidated_at: new Date(),
-            invalidation_reason: reason
-          });
-
-        logger.info('Session marked as invalid');
-        await this.logAuthEvent(session.user_id, 'session_invalidated', { reason });
-        
-        // Return the updated session
-        const updatedSession = await knex('user_sessions')
-          .where('session_id', sessionId)
-          .first();
-          
-        logger.info('Retrieved updated session:', {
-          sessionId: updatedSession.session_id,
-          isValid: updatedSession.is_valid,
-          invalidatedAt: updatedSession.invalidated_at
-        });
-        
-        return updatedSession;
-      }
-      
-      logger.warn('No session found to invalidate:', { sessionId });
-      return null;
-    } catch (error) {
-      logger.error('Error invalidating session:', error);
-      throw error;
-    }
-  }
-
-  async createVerificationToken(userId, type) {
-    try {
-      const [tokenId] = await knex('verification_tokens').insert({
-        user_id: userId,
-        type,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-        created_at: new Date()
-      }).returning('token_id');
-
-      await this.logAuthEvent(userId, 'verification_token_created', { type });
-      return tokenId;
-    } catch (error) {
-      logger.error('Error creating verification token:', error);
-      throw error;
-    }
-  }
-
-  async verifyToken(tokenHash, type) {
-    try {
-      const token = await knex('verification_tokens')
-        .where('token_hash', tokenHash)
-        .where('type', type)
-        .where('is_valid', true)
-        .where('expires_at', '>', new Date())
-        .first();
-
-      if (token) {
-        await knex('verification_tokens')
-          .where('token_id', token.token_id)
-          .update({
-            is_valid: false,
-            used_at: new Date()
-          });
-
-        await this.logAuthEvent(token.user_id, 'token_verified', { type });
-      }
-
-      return token;
-    } catch (error) {
-      logger.error('Error verifying token:', error);
-      throw error;
-    }
-  }
-
-  async logAuthEvent(userId, eventType, details = {}) {
-    try {
-      await knex('auth_logs').insert({
-        user_id: userId,
-        event_type: eventType,
-        details,
-        ip_address: details.ip_address,
-        user_agent: details.user_agent,
-        created_at: new Date()
-      });
-    } catch (error) {
-      logger.error('Error logging auth event:', error);
-      // Don't throw - logging shouldn't break the flow
-    }
-  }
-
-  async findValidSession(tokenHash) {
-    try {
-      logger.info('Looking for session with token hash:', tokenHash);
-      
-      const session = await knex('user_sessions')
-        .join('users', 'user_sessions.user_id', 'users.user_id')
-        .where({
-          'user_sessions.refresh_token_hash': tokenHash,
-          'user_sessions.is_valid': true
-        })
-        .where('user_sessions.expires_at', '>', new Date())
-        .select('user_sessions.*', 'users.*')
-        .first();
-
-      if (!session) {
-        logger.info('No valid session found for token hash');
-      } else {
-        logger.info('Found valid session:', { 
-          session_id: session.session_id,
-          user_id: session.user_id,
-          expires_at: session.expires_at
-        });
-      }
-
-      return session;
-    } catch (error) {
-      logger.error('Error finding valid session:', error);
-      throw error;
-    }
-  }
-
-  async findSessionById(sessionId) {
-    try {
-      return await knex('user_sessions')
-        .where('session_id', sessionId)
-        .first();
-    } catch (error) {
-      logger.error('Error finding session:', error);
-      throw error;
-    }
-  }
-
-  async updateSession(sessionId, data) {
-    try {
-      const actualSessionId = typeof sessionId === 'object' ? sessionId.session_id : sessionId;
-      
-      await knex('user_sessions')
-        .where('session_id', actualSessionId)
-        .update({
-          ...data,
-          updated_at: new Date()
-        });
-
-      return this.findSessionById(actualSessionId);
-    } catch (error) {
-      logger.error('Error updating session:', error);
-      throw error;
-    }
-  }
-
-  async invalidateAllUserSessions(userId) {
-    try {
-      await knex('user_sessions')
-        .where({
-          user_id: userId,
-          is_valid: true
-        })
-        .update({
-          is_valid: false,
-          invalidated_at: new Date(),
-          invalidation_reason: 'user_logout_all',
-          updated_at: new Date()
-        });
-
-      await this.logAuthEvent(userId, 'all_sessions_invalidated');
-
-      // Return all invalidated sessions
-      return await knex('user_sessions')
-        .where('user_id', userId)
-        .where('invalidation_reason', 'user_logout_all')
-        .orderBy('invalidated_at', 'desc');
-    } catch (error) {
-      logger.error('Error invalidating all sessions:', error);
       throw error;
     }
   }

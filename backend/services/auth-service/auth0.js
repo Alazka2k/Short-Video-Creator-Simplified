@@ -59,9 +59,47 @@ const authenticationClient = new AuthenticationClient({
   clientId: auth0Config.clientId
 });
 
+/**
+ * Auth0 Service Helper Object
+ * Provides convenient methods for common Auth0 operations
+ */
+const auth0 = {
+  // Get user info from access token
+  async getUserInfo(accessToken) {
+    try {
+      return await authenticationClient.getProfile(accessToken);
+    } catch (error) {
+      logger.error('Error getting user info from Auth0:', error);
+      throw error;
+    }
+  },
+
+  // Get user by ID using Management API
+  async getUser(userId) {
+    try {
+      const user = await managementClient.users.get({ id: userId });
+      return user.data || user;
+    } catch (error) {
+      logger.error('Error getting user from Auth0:', error);
+      throw error;
+    }
+  },
+
+  // Direct access to management client
+  get managementClient() {
+    return managementClient;
+  },
+
+  // Direct access to authentication client  
+  get authenticationClient() {
+    return authenticationClient;
+  }
+};
+
 module.exports = {
   managementClient,
   authenticationClient,
+  auth0,
   domain: auth0Config.domain,
   audience: auth0Config.audience
 };

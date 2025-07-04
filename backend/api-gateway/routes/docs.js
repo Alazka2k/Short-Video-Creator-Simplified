@@ -2,26 +2,21 @@ const express = require('express');
 const axios = require('axios');
 const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
-const { verifyAuth0Token } = require('../../services/auth-service/middleware/auth0-verify.middleware');
+const jwtAuth = require('../middleware/jwtAuth');
 
 const router = express.Router();
 
-// Middleware to protect developer and API documentation
-const protectDocs = (req, res, next) => {
-  if (req.path.includes('/developer') || req.path.includes('/api')) {
-    return verifyAuth0Token(req, res, next);
-  }
-  next();
-};
-
 // Proxy requests to documentation service
-router.use('/', protectDocs, async (req, res) => {
+const proxyToDocs = async (req, res) => {
   try {
     const response = await axios({
       method: req.method,
-      url: `${config.services.docs.url}${req.path}`,
+      url: `${config.services.docs.url}${req.originalUrl}`, // Use originalUrl to get the full path
       data: req.body,
-      headers: req.headers,
+      // Do not forward auth headers to the downstream service
+      headers: {
+        'Content-Type': req.headers['content-type']
+      },
       responseType: 'stream'
     });
 
@@ -33,6 +28,21 @@ router.use('/', protectDocs, async (req, res) => {
       message: error.message
     });
   }
+};
+
+// Protect specific documentation sections
+router.use('/developer', jwtAuth({ requireUser: true }), proxyToDocs);
+router.use('/api', jwtAuth({ requireUser: true }), proxyToDocs);
+
+// Allow public access to other documentation paths
+router.use('/', (req, res, next) => {
+  // Check if the path has already been handled by the protected routes
+  if (req.originalUrl.startsWith('/api/') || req.originalUrl.startsWith('/developer/')) {
+    // Already handled, do nothing
+    return next();
+  }
+  // For all other paths, proxy publicly
+  proxyToDocs(req, res);
 });
 
 module.exports = router; 

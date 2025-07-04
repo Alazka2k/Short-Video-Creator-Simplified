@@ -23,7 +23,6 @@
 
 const { auth0 } = require('../auth0');
 const authDataAccess = require('../data/authDataAccess');
-const { TokenService, generateToken, hashToken } = require('../utils/token');
 const logger = require('../../../shared/utils/logger');
 
 class UserService {
@@ -45,36 +44,36 @@ class UserService {
         });
       }
 
-      // Ensure we return a consistent user object structure
-      return {
-        id: user.user_id,
-        email: user.email,
-        name: user.full_name || user.name,
-        picture: user.picture,
-        provider: user.provider,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        last_login: user.last_login,
-        video_preferences: user.video_preferences || {
-          defaultStyle: "modern",
-          defaultVoice: "neural-1",
-          defaultLanguage: "en",
-          defaultResolution: "1080p",
-          defaultAspectRatio: "16:9"
-        },
-        notification_settings: user.notification_settings || {
-          emailNotifications: true,
-          errorNotifications: true,
-          videoCompletionAlert: true
-        },
-        api_settings: user.api_settings || {
-          apiKeys: [],
-          allowedIps: [],
-          webhookUrl: null
-        }
-      };
+      return user;
     } catch (error) {
       logger.error('Error getting user profile:', error);
+      throw error;
+    }
+  }
+
+  async getUserById(userId) {
+    try {
+      logger.info('Getting user by ID:', userId);
+      const user = await authDataAccess.findUserById(userId);
+      
+      if (!user) {
+        logger.warn('User not found by ID:', userId);
+        return null;
+      }
+      
+      logger.info('User found by ID:', {
+        userId: user.user_id,
+        auth0Id: user.auth0_id,
+        email: user.email
+      });
+      
+      return user;
+    } catch (error) {
+      logger.error('Error getting user by ID:', {
+        error: error.message,
+        stack: error.stack,
+        userId
+      });
       throw error;
     }
   }
@@ -94,20 +93,11 @@ class UserService {
         });
       }
 
-      // Create new session
-      const sessionId = await authDataAccess.createSession(user.user_id);
-      const refreshToken = generateToken();
-      
-      await authDataAccess.updateSession(sessionId, {
-        refresh_token_hash: hashToken(refreshToken)
-      });
-
-      // Get full user details
+      // Get full user details to ensure role and subscription are included
       const userWithDetails = await authDataAccess.getUserWithRoleAndSubscription(userData.auth0_id);
 
       return {
-        user: userWithDetails,
-        refreshToken
+        user: userWithDetails
       };
     } catch (error) {
       logger.error('Error handling new user:', error);

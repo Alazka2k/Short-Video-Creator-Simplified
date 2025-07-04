@@ -171,7 +171,7 @@ export class ApiClient {
       AuthLogger.log('Making API request', { 
         url, 
         method: finalConfig.method,
-        hasBody: !!finalConfig.body 
+        hasBody: !!finalConfig.body
       });
 
       const response = await fetch(url, {

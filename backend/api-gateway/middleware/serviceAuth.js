@@ -1,28 +1,21 @@
-const { authMiddleware } = require('./auth0');
+const config = require('../../shared/utils/config');
 const logger = require('../../shared/utils/logger');
 
-const serviceAuthMiddleware = [
-  authMiddleware,
-  // Add user context if needed
-  (req, res, next) => {
-    /*logger.info('Authenticated request:', {
-      user: req.auth,
-      endpoint: req.originalUrl,
-      environment: process.env.NODE_ENV
-    });*/
-    next();
-  },
-  // Error handler
-  (err, req, res, next) => {
-    if (err.name === 'UnauthorizedError') {
-      logger.error('Service auth error:', err);
-      return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid or expired token'
-      });
-    }
-    next(err);
-  }
-];
+const serviceAuth = (req, res, next) => {
+  const serviceToken = req.headers['x-service-auth'];
+  const expectedToken = config.auth.auth0CustomClaims.serviceAuthToken;
 
-module.exports = serviceAuthMiddleware; 
+  if (!serviceToken) {
+    logger.warn('Service authentication failed: Missing x-service-auth header.');
+    return res.status(401).json({ error: 'Unauthorized: Missing service token.' });
+  }
+
+  if (serviceToken !== expectedToken) {
+    logger.warn('Service authentication failed: Invalid service token provided.');
+    return res.status(403).json({ error: 'Forbidden: Invalid service token.' });
+  }
+
+  next();
+};
+
+module.exports = serviceAuth; 

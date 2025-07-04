@@ -5,8 +5,7 @@ const logger = require('../shared/utils/logger');
 const config = require('../shared/utils/config');
 const path = require('path');
 const authTestRoutes = require('../../tests/auth/auth-test');
-const serviceAuthMiddleware = require('./middleware/serviceAuth');
-const { verifyAuth0Token, checkPermission } = require('../services/auth-service/middleware/auth0-verify.middleware');
+const serviceAuth = require('./middleware/serviceAuth');
 
 // Import route files
 const authRoutes = require('./routes/auth');
@@ -33,6 +32,10 @@ logger.info('Environment Configuration:', {
 const app = express();
 const PORT = process.env.API_GATEWAY_PORT;
 
+// Trust proxy configuration for proper IP detection behind reverse proxies
+// This fixes X-Forwarded-For header validation errors in rate limiting
+app.set('trust proxy', true);
+
 // CORS configuration
 const getFrontendUrl = () => {
   return config.services.frontend?.url;
@@ -49,13 +52,13 @@ logger.info('CORS Configuration:', {
 const corsOptions = {
   origin: (origin, callback) => {
     // Log the incoming origin for debugging
-    logger.info('Incoming request origin:', { origin });
+    //logger.info('Incoming request origin:', { origin });
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (origin === frontendUrl) {
-      logger.info('CORS: Origin allowed:', { origin });
+      // logger.info('CORS: Origin allowed:', { origin });
       callback(null, true);
     } else {
       logger.warn('CORS: Origin rejected:', { 
@@ -80,7 +83,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -98,18 +101,20 @@ app.get('/health', (req, res) => {
 // Docs routes
 app.use('/api/docs', docsRoutes);
 
-// Service routes
+// Service routes with user authentication handled in the route files
+app.use('/api/job', jobRoutes);
 app.use('/api/llm', llmRoutes);
 app.use('/api/image', imageRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api/music', musicRoutes);
 app.use('/api/animation', animationRoutes);
 app.use('/api/video', videoRoutes);
-app.use('/api/job', jobRoutes);
 app.use('/api/assembly', assemblyRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+
+// Admin and batch routes with admin permissions handled in the route files
 app.use('/api/batch', batchRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -117,26 +122,30 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 
 // Add media serving endpoint
-app.use('/media', serviceAuthMiddleware, express.static(path.join(__dirname, '../../data/output')));
+app.use('/media', serviceAuth, express.static(path.join(__dirname, '../../data/output')));
 
 // Add test routes
 app.use('/api/auth-test', authTestRoutes);
 
 // Protected routes with permission checks
 app.get('/api/templates', 
-  verifyAuth0Token, 
-  checkPermission('/api/templates'), 
   async (req, res) => {
     // Template access code
     res.json({ templates: [] }); // Placeholder
 });
 
 app.post('/api/v1/*', 
-  verifyAuth0Token, 
-  checkPermission('/api/v1'), 
   async (req, res) => {
     // API access code
     res.json({ message: 'API access granted' }); // Placeholder
+});
+
+// Auth route for Auth0 Action
+const userLookupController = require('../services/auth-service/controllers/userLookupController');
+app.post('/api/auth/user-lookup', serviceAuth, async (req, res) => {
+    const logger = require('../shared/utils/logger');
+    logger.info('User lookup request received from Auth0 Action.');
+    await userLookupController.lookupUser(req, res);
 });
 
 // Catch-all route for unhandled requests
