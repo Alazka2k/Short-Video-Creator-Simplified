@@ -201,14 +201,14 @@ export function VideoCreationFlow({
     try {
       const jobId = await handleCreateProject()
       toast({
-        title: "Content Creation Started",
-        description: `Job ID: ${jobId}. You can check the status in the Content Workbench.`,
+        title: "Content Creation Started and Progressing",
+        description: `You can check the status in the Content Workbench.`,
         duration: 5000,
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create content",
+        description: error instanceof Error ? error.message : "Failed to create content. If the error persists, please contact support.",
         variant: "destructive",
         duration: 5000,
       })
@@ -220,7 +220,7 @@ export function VideoCreationFlow({
       const jobId = await handleGenerateVideo()
       toast({
         title: "Content Creation Started",
-        description: `Job ID: ${jobId}. You can check the status in the Content Workbench.`,
+        description: `You can check the status in the Content Workbench.`,
         duration: 5000,
       })
     } catch (error) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 
 export function DashboardHeader() {
-  const { user, logout } = useAuth(); // TODO check the history of useAuth() why it is missing?
+  const { user, logout } = useAuth();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
 

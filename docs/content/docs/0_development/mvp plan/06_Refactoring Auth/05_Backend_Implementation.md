@@ -1,5 +1,7 @@
 # Backend Implementation Guide
 
+### Note: This documentation is deprecated.
+
 ## Overview
 
 This document provides step-by-step instructions for updating backend services to support JWT tokens with custom claims. This includes middleware updates, endpoint creation, and authentication logic modifications.

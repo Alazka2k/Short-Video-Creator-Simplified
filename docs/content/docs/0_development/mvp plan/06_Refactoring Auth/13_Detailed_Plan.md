@@ -172,9 +172,11 @@ This phase simplifies the backend services to handle the new single-token authen
    - **ToDo:**
       - Do a  happy path API testing (postman) and login / logout flow testing with auth0 jwt logger
       - Prerequisites:
-         - Start ngrok and get the public url (local testing) and add it to the custom claims
-      - Create users in auth0 and login with custom address: 
+         - Start ngrok and get the public url (local testing) and add it to the custom claims as variable API_GATEWAY_SERVICE_URL in auth0
+      - Create regular user (bob@example.com) in auth0 and login with custom address: 
             `https://dev-5e34magdrr8ridcc.eu.auth0.com/authorize?audience=https://api.dev-5e34magdr8rdcc.com&scope=openid%20profile%20email&response_type=token&client_id=K6CCXpPhnlzAPBcf09dAJIQLC4mGn7Db&redirect_uri=https://jwt.io`
+      - Create admin user (alicen@example.com) in auth0 and login with custom address:
+            - #How is the URL looking for admin?
       - Use the JWT access token to test the endpoint in postman
       - Use custom address for logout
          - `https://dev-5e34magdrr8ridcc.eu.auth0.com/v2/logout?client_id=K6CCXpPhnlzAPBcf09dAJIQLC4mGn7Db&returnTo=https://jwt.io`
@@ -182,28 +184,11 @@ This phase simplifies the backend services to handle the new single-token authen
 
 ---
 
-## Phase 3: Frontend Refactoring **STATUS: ❌ Not Started**
+## Phase 3: Frontend Refactoring **STATUS: ✅ Finished**
 
 This phase will refactor the entire frontend authentication flow to align with the new, simplified backend architecture. We will eliminate redundant and complex legacy code, create a single source of truth for authentication state, and ensure all components use the new JWT-based flow.
 
-### **1. Code Cleanup: Removing Obsolete Auth Systems**
-   - **Purpose:** Before writing new code, we will delete all legacy and redundant authentication files. This will prevent confusion and ensure we are building on a clean foundation.
-   - **Files to Delete:**
-     - **NextAuth remnants:**
-       - `frontend/src/app/api/auth/[...nextauth]/route.ts`
-     - **Custom Backend-for-Frontend (BFF) Proxy (No longer needed):**
-       - `frontend/src/app/api/auth/proxy/route.ts`
-     - **Inactive OAuth Callback Handler:**
-       - `frontend/src/app/api/auth/callback/route.ts`
-     - **Redundant/Complex Providers & Contexts:**
-       - `frontend/src/lib/auth/AuthContext.tsx` (This will be replaced with a much simpler version)
-       - `frontend/src/components/providers/api-provider.tsx`
-     - **Legacy State Management & Helpers:**
-       - `frontend/src/lib/auth.ts` (Zustand store)
-       - `frontend/src/lib/auth/refresh.ts` (Custom token refresh logic)
-       - `frontend/src/lib/hoc/withAuth.tsx` (Replaced by `protected-route.tsx`)
-
-### **2. Create a Central, Simplified `AuthProvider`**
+### **1. Create a Central, Simplified `AuthProvider`**
    - **File to Create/Refactor:** `frontend/src/components/providers/auth0-provider.tsx`
    - **Purpose:** This will become the single source of truth for authentication.
      - It will wrap the official `@auth0/auth0-react` provider.
@@ -212,19 +197,19 @@ This phase will refactor the entire frontend authentication flow to align with t
    - **Change:** Ensure the main layout wraps all children with this single, refactored `Auth0ProviderWrapper`.
    - **File to Delete:** The old, complex `frontend/src/app/providers.tsx` will be removed, its functionality consolidated into `auth0-provider.tsx` and `layout.tsx`.
 
-### **3. Simplify the `useAuth` Hook**
+### **2. Simplify the `useAuth` Hook**
    - **File to Refactor:** `frontend/src/lib/hooks/useAuth.ts`
    - **Change:** The hook will be drastically simplified. It will no longer need to switch between different contexts. It will simply be a `useContext` call to our new, simplified `AuthContext` to provide auth state and functions to any component that needs them.
 
-### **4. Simplify the API Client**
+### **3. Simplify the API Client**
    - **File to Refactor:** `frontend/src/lib/api/apiClient.ts`
    - **Change:** Remove all the complex, defensive initialization logic (retries, timeouts). The client will be initialized once and will get the `getToken` function directly from the `Auth0Provider`. It will now make direct calls to the API gateway, not the proxy.
 
-### **5. Refactor the `ProtectedRoute` Component**
+### **4. Refactor the `ProtectedRoute` Component**
    - **File to Refactor:** `frontend/src/components/auth/protected-route.tsx`
    - **Change:** Remove all complex timers, `useEffect` hooks, and manual state synchronization. The component will become a clean, simple wrapper that checks `isAuthenticated` and `isLoading` from the new `useAuth` hook and either renders children or redirects to the login page.
 
-### **6. Refactor Login and Signup Forms**
+### **5. Refactor Login and Signup Forms**
    - **Files to Refactor:**
      - `frontend/src/components/auth/login-form.tsx`
      - `frontend/src/components/auth/signup-form.tsx`
@@ -233,7 +218,7 @@ This phase will refactor the entire frontend authentication flow to align with t
      - The email/password forms will be updated to use the `loginWithRedirect` function from the `useAuth0` hook, just like the `social-auth.tsx` component already does.
      - All `fetch` calls to the obsolete `/api/auth/proxy` will be removed. This standardizes all login/signup methods through the central Auth0 flow.
 
-### **7. Review Dependent Hooks and Components**
+### **6. Review Dependent Hooks and Components**
    - **Purpose:** Ensure that other parts of the application that rely on authentication are updated to use the new, simplified `useAuth` hook.
    - **Hook Files to Review:**
      - `frontend/src/lib/hooks/useAssembly.ts`
@@ -248,7 +233,39 @@ This phase will refactor the entire frontend authentication flow to align with t
      - `frontend/src/components/layout/site-header.tsx`
      - `frontend/src/components/layout/dashboard-header.tsx`
      - `frontend/src/components/layout/nav-bar.tsx`
-     - Any other component that currently imports and uses `useAuth` or `AuthContext`.
+   - **Other Components to Review:**
+     - `frontend/src/components/marketing/hero/HeroCTA.tsx`
+     - `frontend/src/components/dashboard/overview.tsx`
+     - `frontend/src/components/job-details/sections/TemplateSelector.tsx`
+   - **Other pages to review:**
+      - `frontend\src\app\(dashboard)\workbench\[jobId]\page.tsx`
+   - Any other component that currently imports and uses `useAuth` or `AuthContext`.
+
+### **7. Code Cleanup: Removing Obsolete Auth Systems**
+   - **Purpose:** Before writing new code, we will delete all legacy and redundant authentication files. This will prevent confusion and ensure we are building on a clean foundation.
+   - **Files to Delete:**
+     - **NextAuth remnants:**
+       - `frontend/src/app/api/auth/[...nextauth]/route.ts`
+     - **Custom Backend-for-Frontend (BFF) Proxy:**
+       - `frontend/src/app/api/auth/proxy/route.ts`
+     - **Inactive OAuth Callback Handler:**
+       - `frontend/src/app/api/auth/callback/route.ts`
+     - **Redundant/Complex Providers & Contexts:**
+       - `frontend/src/lib/auth/AuthContext.tsx` (This will be replaced with a much simpler version)
+       - `frontend/src/components/providers/api-provider.tsx`
+       - `frontend/src/app/providers.tsx`
+     - **Legacy State Management & Helpers:**
+       - `frontend/src/lib/auth.ts` (Zustand store)
+       - `frontend/src/lib/auth/refresh.ts` (Custom token refresh logic)
+       - `frontend/src/lib/hoc/withAuth.tsx` (Replaced by `protected-route.tsx`)
+      - **Password Components:**
+         - `frontend/src/components/auth/password-validation.tsx`
+         - `frontend/src/components/auth/reset-password-form.tsx`
+      - **Error Components:**
+         - `frontend/src/lib/errors/auth.ts`
+      - **Pages to Delete:**
+         - `frontend/src/app/reset-password/page.tsx`
+
 
 ### **8. Final Cleanup**
    - **Purpose:** After the refactor is complete and tested, perform a final sweep to remove any other orphaned files, unused variables, or dead code related to the old authentication system.
@@ -261,7 +278,7 @@ This phase will refactor the entire frontend authentication flow to align with t
 
 ---
 
-## Phase 4: Final Testing & Validation **STATUS: ❌ Not Started**
+## Phase 4: Final Testing & Validation **STATUS: In progress**
 
 1.  **Backend:** Use a tool like Postman or Insomnia to get a test JWT from Auth0. Use this token to hit your protected backend endpoints directly and verify they work as expected.
 2.  **Frontend:**
@@ -270,7 +287,28 @@ This phase will refactor the entire frontend authentication flow to align with t
     - Navigate away and back to the protected route to ensure the session persists.
     - Open a new tab and navigate to a protected route to confirm authentication is shared.
     - Test components that fetch data, like the jobs workbench, to ensure the `apiClient` is making successful authenticated calls.
-
+3. **Test different scenarios E2E:**
+    - Create different jobs with different content requirements (script only, image only, image and voice, video, music etc.)
+    - Test and verify the creation, the workbench UX, the job details UX
+    - Download content from the job details
+    - Assemble a video and check the video result
+4. **Issues to fix:**
+   - No differentation in the workbench and job details between in progress, failed and completed jobs **STATUS: ✅ Fixed**
+      -> Fixed with new labels and progress bar in workbench **STATUS: ✅ Fixed**
+      -> Fixed with differenation in job details between in progress, failed and completed jobs *STATUS: ✅ Fixed**
+   - UI Issues **STATUS: ✅ Fixed**:
+      - No differentation for llm (script) / voice only jobs **STATUS: ✅ Fixed**
+      - Music player is rendered in the job details even if there is no music **STATUS: ✅ Skipped (because of old data)**
+   - Subscription service error and frontend error when calling the backend for selection of template for video assembly **STATUS: ✅ Fixed**
+      -> Issue was that the subscription service was not running.
+   - Download of content (e.g. image) is failing **STATUS: ✅ Fixed**
+      - Error: Seems like the download is making a backend call to `http://localhost:4000/api/auth/proxy?endpoint=/api/auth/token` and in the UI we get a `<div class="text-sm font-semibold">Download failed</div> <div class="text-sm opacity-90">Authentication failed: Unable to obtain M2M token for download</div>`
+      - Seems here the old auth flow is still being used. Check classes `useVideos.ts` and `useWorkbench.ts` and `download.ts`
+   - Image generation endless for one scene when selected in a job, no error and no progress to other scenes **STATUS: In progress and under analysis**
+   - After session is expired (not doing anything on the page) and being in the job details, I´m not automatically logged out, but we get a 403 error when calling the job details **STATUS: No high priority**
+      (error Request URL http://localhost:3000/api/job/jobs/1bc9d210-7486-494c-90fc-e24b92eb5e4c
+      Request Method GET Status Code 403 Forbidden)  
+    
 ## Success Criteria
 
 - The application is fully authenticated using a single JWT from Auth0.

@@ -98,7 +98,8 @@ function loadEnvConfig() {
       },
       animation: { 
         port: process.env.ANIMATION_SERVICE_PORT,
-        url: process.env.ANIMATION_SERVICE_URL },
+        url: process.env.ANIMATION_SERVICE_URL 
+      },
       video: { 
         port: process.env.VIDEO_SERVICE_PORT,
         url: process.env.VIDEO_SERVICE_URL 
@@ -116,8 +117,8 @@ function loadEnvConfig() {
         url: process.env.JOB_SERVICE_URL 
       },
       gateway: {
-        port: process.env.API_GATEWAY_PORT,
-        url: process.env.API_GATEWAY_URL
+        port: process.env.API_GATEWAY_SERVICE_PORT,
+        url: process.env.API_GATEWAY_SERVICE_URL
       },
       auth: { 
         port: process.env.AUTH_SERVICE_PORT,

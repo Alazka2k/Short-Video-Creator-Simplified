@@ -1,13 +1,18 @@
+/**
+ * @file useWorkbench.ts
+ * @description A React hook for fetching and managing jobs displayed in the user's workbench.
+ *
+ * This hook handles the state for filters (status, services) and pagination. It fetches
+ * the user's jobs from the backend, integrates with `useStorageUrls` to get fresh
+ * preview URLs, and provides utility functions for downloading job assets.
+ */
 import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api/apiClient'
+import { useApiClient } from '@/lib/api/apiClient'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useState } from 'react'
 import { useStorageUrls } from './useStorageUrls'
 import { handleBulkDownload } from '@/lib/utils/download'
 import { toast } from '@/components/ui/use-toast'
-import { localStore } from '@/lib/utils/storage-manager'
-
-const WORKBENCH_CACHE_KEY = 'workbench_jobs'
 
 interface WorkbenchState {
   filters: {
@@ -30,8 +35,15 @@ interface JobsResponse {
   }
 }
 
+/**
+ * Custom hook for fetching and managing workbench jobs.
+ *
+ * @returns An object containing the jobs data, loading and error states,
+ * and functions for filtering, pagination, and downloading.
+ */
 export function useWorkbench() {
-  const { getToken } = useAuth()
+  const { isAuthenticated } = useAuth()
+  const api = useApiClient()
   const [state, setState] = useState<WorkbenchState>({
     filters: {
       sortBy: 'created_at',
@@ -44,7 +56,6 @@ export function useWorkbench() {
   })
   const [downloadingJobs, setDownloadingJobs] = useState<Record<string, boolean>>({})
 
-  // Query for jobs
   const { 
     data: jobsResponse,
     isLoading,
@@ -53,125 +64,54 @@ export function useWorkbench() {
   } = useQuery({
     queryKey: ['jobs', state.pagination, state.filters],
     queryFn: async () => {
-      try {
-        // Use the user's access token directly for authorization
-        const userToken = await getToken()
-        
-        if (!userToken) {
-          throw new Error('No access token available')
-        }
+      const queryParams = new URLSearchParams({
+        page: state.pagination.page.toString(),
+        limit: state.pagination.limit.toString(),
+        sortBy: state.filters.sortBy,
+        sortOrder: state.filters.sortOrder,
+      })
 
-        const headers: Record<string, string> = {
-          'Authorization': `Bearer ${userToken}`
-        }
-
-        const queryParams = new URLSearchParams({
-          page: state.pagination.page.toString(),
-          limit: state.pagination.limit.toString(),
-          sortBy: state.filters.sortBy,
-          sortOrder: state.filters.sortOrder
-        })
-
-        if (state.filters.status) {
-          queryParams.append('status', state.filters.status)
-        }
-
-        if (state.filters.services?.length) {
-          queryParams.append('services', state.filters.services.join(','))
-        }
-
-        // Get fresh data from API
-        const response = await apiClient.get<JobsResponse>(
-          `/api/job/jobs?${queryParams.toString()}`,
-          { headers }
-        )
-
-        // Handle empty response gracefully
-        if (!response.data) {
-          return {
-            data: [],
-            pagination: {
-              total: 0,
-              totalPages: 0
-            }
-          }
-        }
-
-        // Get cached jobs
-        const cachedData = localStore.get<JobsResponse>(WORKBENCH_CACHE_KEY)
-        
-        if (cachedData && response.data.length > 0) {
-          // Create a map of existing jobs by ID for quick lookup
-          const existingJobs = new Map(
-            cachedData.data.map(job => [job.job_id, job])
-          )
-          
-          // Filter out jobs that are already cached
-          const newJobs = response.data.filter(job => 
-            !existingJobs.has(job.job_id)
-          )
-          
-          // If we found new jobs, update the cache
-          if (newJobs.length > 0) {
-            const updatedCache = {
-              ...cachedData,
-              data: [...cachedData.data, ...newJobs]
-            }
-            localStore.set(WORKBENCH_CACHE_KEY, updatedCache)
-          }
-        } else if (response.data.length > 0) {
-          // If no cache exists and we have data, create it
-          localStore.set(WORKBENCH_CACHE_KEY, response)
-        }
-        
-        return response
-      } catch (error) {
-        console.error('Error fetching workbench jobs:', error)
-        // Return empty state instead of throwing
-        return {
-          data: [],
-          pagination: {
-            total: 0,
-            totalPages: 0
-          }
-        }
+      if (state.filters.status) {
+        queryParams.append('status', state.filters.status)
       }
+
+      if (state.filters.services?.length) {
+        queryParams.append('services', state.filters.services.join(','))
+      }
+
+      const response = await api.get<JobsResponse>(
+        `/api/job/jobs?${queryParams.toString()}`
+      )
+      return response.data
     },
-    staleTime: 30000, // Consider data stale after 30 seconds
-    gcTime: Infinity,  // Never garbage collect the data
-    retry: (failureCount, error) => {
-      // Don't retry if it's a 404 (no jobs) or similar expected errors
-      if (error && typeof error === 'object' && 'status' in error) {
-        const status = (error as any).status
-        if (status === 404 || status === 204) {
-          return false
-        }
+    enabled: isAuthenticated,
+    staleTime: 5000, // Refresh every 5 seconds for progress updates
+    placeholderData: previousData => previousData,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404 || error?.response?.status === 204) {
+        return false
       }
-      // Only retry up to 2 times for other errors
       return failureCount < 2
     }
   })
 
-  // Extract preview storage keys from jobs
   const previewStorageKeys = jobsResponse?.data?.flatMap(job => {
     if (!job.metadata?.scenes?.[0]) return []
     
     const scene = job.metadata.scenes[0]
-    // Prefer image for preview
     if (scene.image?.storageKey) {
       return [scene.image.storageKey]
     }
     return []
   }) || []
 
-  // Use our storage URLs hook
   const { urls: previewUrls } = useStorageUrls(previewStorageKeys)
 
   const handleFilterChange = (newFilters: Partial<WorkbenchState['filters']>) => {
     setState(prev => ({
       ...prev,
       filters: { ...prev.filters, ...newFilters },
-      pagination: { ...prev.pagination, page: 1 } // Reset to first page on filter change
+      pagination: { ...prev.pagination, page: 1 }
     }))
   }
 
@@ -182,20 +122,18 @@ export function useWorkbench() {
     }))
   }
 
-  // Helper function to get aspect ratio from metadata
   const getAspectRatio = (job: any) => {
     return job.metadata?.parameters?.llmGenParams?.image?.aspectRatio || '1:1'
   }
 
-  // Helper function to calculate grid span based on aspect ratio
   const calculateGridSpan = (aspectRatio: string) => {
     switch (aspectRatio) {
       case '16:9':
-        return 2 // Wider images span 2 columns
+        return 2
       case '1:1':
-        return 1 // Square images span 1 column
+        return 1
       case '9:16':
-        return 1 // Vertical images span 1 column
+        return 1
       default:
         return 1
     }
@@ -214,6 +152,7 @@ export function useWorkbench() {
     setDownloadingJobs(prev => ({ ...prev, [job.job_id]: true }))
     try {
       await handleBulkDownload(
+        api,
         job.metadata.scenes,
         job.job_id,
         job.metadata.llmResult?.title || `content_${job.job_id}`
@@ -223,7 +162,6 @@ export function useWorkbench() {
     }
   }
 
-  // Transform jobs data to include fresh URLs and aspect ratio information
   const jobs = jobsResponse?.data?.map(job => {
     if (!job.metadata?.scenes?.[0]) return job
     
@@ -231,7 +169,6 @@ export function useWorkbench() {
     const aspectRatio = getAspectRatio(job)
     const gridSpan = calculateGridSpan(aspectRatio)
     
-    // Always use image for preview if available
     const previewUrl = scene.image?.storageKey ? 
       previewUrls[scene.image.storageKey] || scene.image.publicUrl :
       undefined
@@ -248,15 +185,15 @@ export function useWorkbench() {
     jobs,
     loading: isLoading,
     error: error ? (error as Error).message : null,
+    pagination: jobsResponse?.pagination ? {
+      ...jobsResponse.pagination,
+      currentPage: state.pagination.page
+    } : undefined,
+    refetch,
     filters: state.filters,
-    pagination: {
-      ...state.pagination,
-      total: jobsResponse?.pagination.total || 0,
-      totalPages: jobsResponse?.pagination.totalPages || 0
-    },
     handleFilterChange,
     handlePageChange,
+    downloadingJobs,
     handleJobDownload,
-    downloadingJobs
   }
 } 

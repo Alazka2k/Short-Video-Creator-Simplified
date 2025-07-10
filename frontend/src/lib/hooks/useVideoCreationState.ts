@@ -1,3 +1,14 @@
+/**
+ * @file useVideoCreationState.ts
+ * @description A comprehensive state management hook for the multi-step video creation form.
+ *
+ * This hook encapsulates all the logic for the video creation process, including:
+ * - Managing state for each step of the form (prompt, duration, voice, visuals, etc.).
+ * - Persisting form state to localStorage to prevent data loss on refresh.
+ * - Constructing the final job request body to send to the backend.
+ * - Handling the API calls to initiate video generation.
+ * - Polling for job progress and updating the UI accordingly.
+ */
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { ContentState, ScriptParams, VisualizationType, RequestParams } from '@/components/video-creation/types'
 import { durationOptions } from '@/components/video-creation/steps/BasicInformationStep'
@@ -8,18 +19,12 @@ import scriptToneData from '@/data/video-creation/script/script-tone_select-opti
 import vocabularyData from '@/data/video-creation/script/vocabulary_select-option.json'
 import pacingStructureData from '@/data/video-creation/script/pacing-structure_select-option.json'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
-import { useAuth } from '@/lib/auth/AuthContext'
-import { apiClient } from '@/lib/api/apiClient'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { useApiClient } from '@/lib/api/apiClient'
 
 const STORAGE_KEY = 'video_creation_state'
 const IMAGE_CACHE_KEY = 'video_creation_image_cache'
 const VISUAL_SETTINGS_KEY = 'video_creation_visual_settings'
-const M2M_TOKEN_KEY = 'video_creation_m2m_token'
-
-interface TokenResponse {
-  access_token: string;
-  expires_at: number;
-}
 
 // Define the job progress state interface
 interface JobProgressState {
@@ -47,14 +52,11 @@ interface VideoCreationState {
 }
 
 export function useVideoCreationState(defaultValues?: any) {
-  const auth = useAuth();
-  if (!auth) {
-    throw new Error('useVideoCreationState must be used within an AuthProvider');
-  }
+  const { isAuthenticated } = useAuth();
+  const api = useApiClient();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [m2mToken, setM2MToken] = useState<string | null>(null);
   
   // Add job progress state
   const [jobProgress, setJobProgress] = useState<JobProgressState>({
@@ -69,7 +71,7 @@ export function useVideoCreationState(defaultValues?: any) {
   
   // Track consecutive errors for backoff
   const consecutiveErrorsRef = useRef<number>(0);
-  const basePollingIntervalRef = useRef<number>(2000); // Start with 2 seconds
+  const basePollingIntervalRef = useRef<number>(5000); // Start with 5 seconds
 
   // Function to stop polling
   const stopPolling = useCallback(() => {
@@ -79,25 +81,18 @@ export function useVideoCreationState(defaultValues?: any) {
     }
     // Reset error count and polling interval when stopping
     consecutiveErrorsRef.current = 0;
-    basePollingIntervalRef.current = 5000; // 2 seconds
+    basePollingIntervalRef.current = 5000; // 5 seconds
   }, []);
 
   // Function to fetch job progress
   const fetchJobProgress = useCallback(async (jobId: string) => {
+    if (!isAuthenticated) {
+      console.error('Cannot fetch job progress, user not authenticated.');
+      return null;
+    }
     try {
-      // Get tokens for authentication
-      const userToken = localStorage.getItem("access_token");
-      const m2mToken = await auth.getM2MToken();
-      
-      // Set up headers with both tokens
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`,
-      };
-      if (userToken) {
-        headers['x-user-token'] = userToken;
-      }
-      
-      const response = await apiClient.get<{
+      // The new useAuth hook automatically adds the auth header.
+      const response = await api.get<{
         status: string;
         overallProgress: number;
         jobId: string;
@@ -105,30 +100,28 @@ export function useVideoCreationState(defaultValues?: any) {
         serviceProgress: Record<string, any>;
         sceneProgress: Record<string, any>;
         errorMessage?: string | null;
-      }>(
-        `/api/job/jobs/${jobId}/progress`, 
-        { headers }
-      );
+      }>(`/api/job/jobs/${jobId}/progress`);
       
       // Reset consecutive errors on success
       consecutiveErrorsRef.current = 0;
       
       // Update job progress state
+      const jobData = response.data;
       setJobProgress(prev => ({
         ...prev,
-        status: response.status === 'in_progress' ? 'polling' : response.status as any,
-        progress: response.overallProgress || 0,
-        details: response,
-        errorMessage: response.errorMessage || null
+        status: jobData.status === 'in_progress' ? 'polling' : jobData.status as any,
+        progress: jobData.overallProgress || 0,
+        details: jobData,
+        errorMessage: jobData.errorMessage || null
       }));
       
       // If job is complete or failed, stop polling and reset generating state
-      if (response.status === 'completed' || response.status === 'failed') {
+      if (jobData.status === 'completed' || jobData.status === 'failed') {
         setIsGenerating(false);
         stopPolling();
       }
       
-      return response;
+      return jobData;
     } catch (error) {
       console.error('Error fetching job progress:', error);
       
@@ -146,7 +139,7 @@ export function useVideoCreationState(defaultValues?: any) {
       }
       return null;
     }
-  }, [auth, jobProgress.status, stopPolling]);
+  }, [isAuthenticated, api, stopPolling]);
   
   // Function to start polling for job progress
   const startPolling = useCallback((jobId: string) => {
@@ -167,7 +160,7 @@ export function useVideoCreationState(defaultValues?: any) {
     // Calculate polling interval with exponential backoff based on consecutive errors
     const getPollingInterval = () => {
       if (consecutiveErrorsRef.current === 0) return basePollingIntervalRef.current;
-      // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
+      // Exponential backoff: 5s, 10s, 20s, 40s, max 30s
       return Math.min(basePollingIntervalRef.current * Math.pow(2, consecutiveErrorsRef.current), 30000);
     };
     
@@ -285,17 +278,12 @@ export function useVideoCreationState(defaultValues?: any) {
     })
   }, [])
 
-  // Initialize M2M token
-  useEffect(() => {
-    auth.getM2MToken().then(token => setM2MToken(token));
-  }, [auth.getM2MToken]);
-
   const findVoiceId = (selectedId: string): string => {
     if (!selectedId) return '';
     const voice = voiceData.categories
-      ?.flatMap(category => category.options)
-      .find(option => option.id === selectedId);
-    return voice?.elevenlabsVoiceId || '';
+      .flatMap(category => category.options)
+      .find(v => v.id === selectedId);
+    return voice ? voice.elevenlabsVoiceId : '';
   }
 
   const constructRequestBody = useCallback((): RequestParams => {
@@ -369,78 +357,39 @@ export function useVideoCreationState(defaultValues?: any) {
     state.visualSettings
   ])
 
-  const handleCreateProject = useCallback(async () => {
-    setError(null);
-    try {
-      const requestBody = constructRequestBody();
-      
-      // Get both tokens
-      const userToken = localStorage.getItem("access_token");
-      const m2mToken = await auth.getM2MToken();
-      
-      // Set up headers with both tokens
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`,
-      };
-      if (userToken) {
-        headers['x-user-token'] = userToken;
-      }
-      
-      const response = await apiClient.post<{ jobId: string }>(
-        '/api/job/generate', 
-        requestBody,
-        { headers }
-      );
-
-      // Start polling for job progress
-      startPolling(response.jobId);
-      
-      // Return the jobId from the updated API response format
-      return response.jobId;
-    } catch (error) {
-      console.error('Error creating project:', error);
-      setError(error instanceof Error ? error.message : 'An error occurred while creating the project');
-      throw error;
+  const createJob = async (): Promise<string | null> => {
+    if (!isAuthenticated) {
+      setError('You must be logged in to create a video.');
+      return null;
     }
-  }, [constructRequestBody, auth.getM2MToken, startPolling]);
 
-  const handleGenerateVideo = useCallback(async () => {
     setIsGenerating(true);
     setError(null);
+    
     try {
       const requestBody = constructRequestBody();
-      
-      // Get both tokens
-      const userToken = localStorage.getItem("access_token");
-      const m2mToken = await auth.getM2MToken();
-      
-      // Set up headers with both tokens
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`,
-      };
-      if (userToken) {
-        headers['x-user-token'] = userToken;
-      }
-      
-      const response = await apiClient.post<{ jobId: string, status: string }>(
-        '/api/job/generate', 
-        requestBody,
-        { headers }
+      // The API client interceptor now handles the auth token automatically.
+      const response = await api.post<{ jobId: string }>(
+        '/api/job/generate',
+        requestBody
       );
-
-      // Start polling for job progress
-      startPolling(response.jobId);
       
-      // Return the jobId from the updated API response format
-      return response.jobId;
-    } catch (error) {
-      console.error('Error generating video:', error);
-      setError(error instanceof Error ? error.message : 'An error occurred while generating the video');
+      const { jobId } = response.data;
+      
+      if (jobId) {
+        startPolling(jobId);
+        return jobId;
+      } else {
+        throw new Error('No job ID returned from the server.');
+      }
+    } catch (err: any) {
+      console.error('Error creating job:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'An unknown error occurred';
+      setError(errorMessage);
       setIsGenerating(false);
-      stopPolling();
-      throw error;
+      return null;
     }
-  }, [constructRequestBody, auth.getM2MToken, startPolling, stopPolling]);
+  };
 
   // Add cleanup effect
   useEffect(() => {
@@ -465,8 +414,8 @@ export function useVideoCreationState(defaultValues?: any) {
     },
     isGenerating,
     error,
-    handleGenerateVideo,
-    handleCreateProject,
+    handleGenerateVideo: createJob,
+    handleCreateProject: createJob,
     jobProgress,
     startPolling,
     stopPolling

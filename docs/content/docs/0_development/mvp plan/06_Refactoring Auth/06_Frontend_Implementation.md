@@ -1,5 +1,7 @@
 # Frontend Implementation Guide
 
+### Note: This documentation is deprecated.
+
 ## Overview
 
 This document provides step-by-step instructions for updating the frontend to use JWT tokens with custom claims instead of the current M2M + x-user-token approach.

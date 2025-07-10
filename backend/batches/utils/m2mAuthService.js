@@ -3,6 +3,9 @@
  * 
  * This service provides M2M authentication tokens for batch jobs to use when making API calls.
  * It uses the existing auth service to get M2M tokens.
+ * 
+ * Note: This service is not used in the new auth flow. But we need to review the whole batch implementation. Then this file can be removed.
+ * 
  */
 
 const authService = require('../../services/auth-service/auth-service');

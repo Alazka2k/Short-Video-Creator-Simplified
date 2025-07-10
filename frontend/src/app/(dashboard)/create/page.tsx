@@ -204,7 +204,7 @@ export default function CreatePage() {
             {/* Header section */}
             <div className="text-center space-y-2">
               <h1 className="text-4xl font-bold tracking-tight gradient-primary-text">
-                Create Your Video
+                Create Your Content
               </h1>
               <p className="text-muted-foreground text-lg">
                 {mode === 'quick' ? 

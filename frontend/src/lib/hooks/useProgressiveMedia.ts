@@ -1,3 +1,12 @@
+/**
+ * @file useProgressiveMedia.ts
+ * @description A React hook for progressively loading media (images, videos, audio) with caching support.
+ *
+ * This hook is designed to improve user experience by providing immediate feedback on media loading status.
+ * It intelligently detects the media type from the URL, uses browser APIs for loading, and can cache
+ * the results in localStorage to avoid re-fetching on subsequent loads.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface MediaState {
@@ -63,6 +72,19 @@ function getMediaType(url: string): 'image' | 'video' | 'audio' | 'unknown' {
   return 'unknown'
 }
 
+/**
+ * A custom hook to progressively load media assets like images and videos.
+ * It provides loading and error states, and supports caching.
+ *
+ * @param {string | null} src - The source URL of the media to load.
+ * @param {UseProgressiveMediaOptions} [options={}] - Configuration options for loading behavior.
+ * @param {string} [options.cacheKey] - An optional key for caching the loaded URL in localStorage.
+ * @param {boolean} [options.preload] - If true, starts loading the media immediately.
+ * @param {(progress: number) => void} [options.onProgress] - Callback for loading progress updates. (Currently only 0 or 100).
+ * @param {(url: string) => void} [options.onLoad] - Callback when the media has successfully loaded.
+ * @param {(error: string) => void} [options.onError] - Callback when an error occurs during loading.
+ * @returns {MediaState} An object containing the loading state, error, final URL, and progress.
+ */
 export function useProgressiveMedia(src: string | null, options: UseProgressiveMediaOptions = {}) {
   const [state, setState] = useState<MediaState>({
     isLoading: true,

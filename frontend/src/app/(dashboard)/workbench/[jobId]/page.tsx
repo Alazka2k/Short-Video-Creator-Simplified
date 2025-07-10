@@ -8,8 +8,6 @@ import { useJobDetails } from '@/lib/hooks/useJobDetails'
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient'
 import { ScenePreview } from '@/components/job-details/ScenePreview'
 import { AudioPlayer } from '@/components/shared/media/AudioPlayer'
-import { apiClient } from '@/lib/api/apiClient'
-import { AuthLogger } from '@/lib/debug/auth-logger'
 import { JobHeader } from '@/components/job-details/sections/JobHeader'
 import { JobActions } from '@/components/job-details/JobActions'
 import shotStyleData from '@/data/video-creation/image/shot-style_select-option.json'
@@ -34,6 +32,7 @@ import {
 import { toast } from '@/components/ui/use-toast'
 import { TemplateSelector } from '@/components/job-details/sections/TemplateSelector'
 import { useAssembly } from '@/lib/hooks/useAssembly'
+import { JobStatusView } from '@/components/job-details/sections/JobStatusView'
 
 interface MediaContent {
   publicUrl: string
@@ -57,21 +56,25 @@ interface JobDetails {
   status: string
   service_sequence: string[]
   metadata: {
-    jobId: string
+    jobId?: string
     music?: MediaContent
-    scenes: JobScene[]
-    llmResult: {
+    scenes?: JobScene[]
+    llmResult?: {
       title?: string
       description?: string
       hashtags?: string
       scenes?: Array<{
         description?: string
       }>
+      music?: {
+        title?: string
+      }
     }
-    parameters: {
+    parameters?: {
       llmGenParams?: {
         image?: {
           aspectRatio?: string
+          shotStyle?: string
         }
         script?: {
           scriptTone?: string
@@ -79,18 +82,25 @@ interface JobDetails {
           pacingStructure?: string
           characterPerspective?: string
         }
+        general?: {
+          generalDescription?: string
+        }
       }
       voiceGenParams?: {
         elevenlabsVoiceId?: string
       }
     }
+    progress?: Record<string, { progress: number }>
+    error?: string | { message?: string; details?: any }
+    failedComponents?: string[]
   }
   prompt: string
   error: string | null
 }
 
 // Helper function to find option name by prompt
-const findOptionNameByPrompt = (data: any, prompt: string): string | undefined => {
+const findOptionNameByPrompt = (data: any, prompt: string | undefined): string | undefined => {
+  if (!prompt) return undefined;
   for (const category of data.categories) {
     for (const option of category.options) {
       if (option.promptDefinition === prompt) {
@@ -102,7 +112,8 @@ const findOptionNameByPrompt = (data: any, prompt: string): string | undefined =
 }
 
 // Helper function to find, import and use (shot) style by promptDefinition in json shot-style_select-option.json
-const findShotStyleName = (promptDefinition: string): string | undefined => {
+const findShotStyleName = (promptDefinition: string | undefined): string | undefined => {
+  if (!promptDefinition) return undefined;
   for (const category of shotStyleData.categories) {
     for (const option of category.options) {
       if (option.promptDefinition === promptDefinition) {
@@ -135,6 +146,15 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
   // Add music storage key if present
   if (job?.metadata?.music?.storageKey) {
     storageKeys.push(job.metadata.music.storageKey)
+  }
+
+  const availableContent = job?.service_sequence ? [...job.service_sequence] : []
+  if (job?.metadata?.music) {
+    availableContent.push('music')
+  }
+  // "text" is always available from the llmResult
+  if (!availableContent.includes('text') && job?.metadata?.llmResult) {
+    availableContent.push('text')
   }
 
   // Get fresh URLs for all media content
@@ -197,7 +217,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
       ...job,
       metadata: {
         ...job.metadata,
-        scenes: job.metadata.scenes.map(scene => ({
+        scenes: (job.metadata.scenes || []).map(scene => ({
           ...scene,
           image: scene.image ? {
             ...scene.image,
@@ -224,9 +244,19 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
         <JobActions 
           jobId={resolvedParams.jobId}
           selectedTemplateId={selectedTemplateId}
-          scenes={jobWithFreshUrls.metadata.scenes}
+          scenes={jobWithFreshUrls.metadata.scenes || []}
           title={jobWithFreshUrls.metadata.llmResult?.title || 'Untitled Content'}
+          status={job.status}
         />
+
+        {/* Job Status View for In-Progress or Failed Jobs */}
+        {job.status !== 'completed' && (
+          <JobStatusView 
+            status={job.status} 
+            jobId={job.job_id}
+            metadata={job.metadata} 
+          />
+        )}
 
         {/* Job Header */}
         <JobHeader
@@ -238,6 +268,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           shotStyle={shotStyle}
           service_sequence={jobWithFreshUrls.service_sequence}
           prompt={jobWithFreshUrls.prompt}
+          status={jobWithFreshUrls.status}
           metadata={{
             parameters: {
               voiceGenParams: {
@@ -247,7 +278,7 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
                 script: scriptInfo
               }
             },
-            scenes: jobWithFreshUrls.metadata.scenes.map(scene => ({
+            scenes: (jobWithFreshUrls.metadata.scenes || []).map(scene => ({
               voice: scene.voice ? {
                 elevenlabsVoiceId: scene.voice.metadata?.elevenlabsVoiceId
               } : undefined
@@ -256,58 +287,52 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           focus={focus}
         />
 
-        {/* Template Selector Section */}
-        <div className="mt-8">
-          <TemplateSelector
-            aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio || '16:9'}
-            sceneCount={jobWithFreshUrls.metadata.scenes.length}
-            onSelectTemplate={setSelectedTemplateId}
-            selectedTemplateId={selectedTemplateId}
-          />
-        </div>
+        
+        {/* Template Selector - Only show if job is complete */}
+        {job.status === 'completed' && (
+            <TemplateSelector
+              aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio || '16:9'}
+              sceneCount={jobWithFreshUrls.metadata.scenes?.length || 0}
+              onSelectTemplate={setSelectedTemplateId}
+              selectedTemplateId={selectedTemplateId}
+              availableContent={availableContent}
+            />
+        )}
 
-        {/* Content Preview Section */}
-        <div className="rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 p-[1px] mb-6">
-          <div className="bg-card rounded-xl p-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Scene Previews</h2>
-              <p className="text-sm text-muted-foreground">
-                Preview all generated scenes with their content. Each scene includes images, videos, and audio that can be downloaded individually.
-              </p>
+        {/* Scene Previews - Only show if job is complete */}
+        {job.status === 'completed' && jobWithFreshUrls.metadata.scenes && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Scenes</h2>
+            {jobWithFreshUrls.metadata.scenes.map((scene: JobScene, index: number) => (
+              <ScenePreview
+                key={scene.sceneId}
+                sceneId={scene.sceneId}
+                image={scene.image}
+                video={scene.video}
+                animation={scene.animation}
+                voice={scene.voice}
+                description={jobWithFreshUrls.metadata.llmResult?.scenes?.[index]?.description}
+                aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Music Player */}
+        {jobWithFreshUrls.metadata.music && (
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="p-4 border-b border-border bg-muted/10">
+              <h3 className="font-medium">Background Music</h3>
             </div>
-            
-            <div className="grid gap-6">
-              {jobWithFreshUrls.metadata.scenes.map((scene, index) => (
-                <React.Fragment key={scene.sceneId}>
-                  <ScenePreview
-                    sceneId={scene.sceneId}
-                    image={scene.image}
-                    video={scene.video}
-                    animation={scene.animation}
-                    voice={scene.voice}
-                    description={jobWithFreshUrls.metadata.llmResult?.scenes?.[index]?.description}
-                    aspectRatio={jobWithFreshUrls.metadata.parameters?.llmGenParams?.image?.aspectRatio}
-                  />
-                </React.Fragment>
-              ))}
-
-              {/* Music Section (if exists and has valid URL) */}
-              {jobWithFreshUrls.metadata.music?.publicUrl && (
-                <div className="rounded-lg border border-border bg-card overflow-hidden">
-                  <div className="p-4 border-b border-border bg-muted/10">
-                    <h3 className="font-medium">Background Music</h3>
-                  </div>
-                  <div className="p-6">
-                    <AudioPlayer
-                      url={jobWithFreshUrls.metadata.music.publicUrl}
-                      title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
-                    />
-                  </div>
-                </div>
-              )}
+            <div className="p-6">
+              <AudioPlayer
+                url={jobWithFreshUrls.metadata.music.publicUrl}
+                title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
+              />
             </div>
           </div>
-        </div>
+        )}        
+
       </div>
     )
   }

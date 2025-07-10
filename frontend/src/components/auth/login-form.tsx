@@ -5,92 +5,43 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
-import { AuthLogger } from "@/lib/debug/auth-logger";
+import { useSearchParams } from "next/navigation";
+import { useAuth0 } from "@auth0/auth0-react";
+import { Logger } from "@/lib/debug/logger";
 import { SocialAuth } from "./social-auth";
+
+const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
+const authLogger = new Logger('Auth');
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [returnPath, setReturnPath] = useState("/dashboard");
   const { toast } = useToast();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { loginWithRedirect, isLoading } = useAuth0();
 
   // Extract and save the returnTo parameter when component mounts
   useEffect(() => {
     const returnTo = searchParams.get("returnTo");
     if (returnTo) {
-      // Decode the URL parameter
       const decodedPath = decodeURIComponent(returnTo);
-      AuthLogger.log('Found returnTo path:', { path: decodedPath });
+      authLogger.log('Found returnTo path:', { path: decodedPath });
       setReturnPath(decodedPath);
     }
   }, [searchParams]);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    AuthLogger.log('Starting email login attempt', { email, returnPath });
-
-    try {
-      const response = await fetch(`/api/auth/proxy?endpoint=/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        let errorKey = AuthErrorKeys.login.DEFAULT;
-        switch (response.status) {
-          case 401:
-            errorKey = AuthErrorKeys.login.INVALID_CREDENTIALS;
-            break;
-          case 404:
-            errorKey = AuthErrorKeys.login.USER_NOT_FOUND;
-            break;
-          case 403:
-            errorKey = AuthErrorKeys.login.ACCOUNT_LOCKED;
-            break;
-          case 429:
-            errorKey = AuthErrorKeys.login.RATE_LIMIT_EXCEEDED;
-            break;
-        }
-        AuthLogger.error('Email login failed', { status: response.status, error: data.error });
-        throw new Error(getAuthError(errorKey, 'login'));
+    authLogger.log('Starting universal login redirect', { email, returnPath });
+    
+    await loginWithRedirect({
+      appState: {
+        returnTo: returnPath,
+      },
+      authorizationParams: {
+        login_hint: email, // Pre-fill the email address on the Auth0 page
       }
-
-      // Tokens are now in httpOnly cookies, so we don't handle them here
-      // Just pass the minimal user data
-      AuthLogger.log('Email login successful', { userId: data.user.user_id, redirectingTo: returnPath });
-      
-      // Create a simplified tokens object for the login function (tokens are in cookies)
-      const dummyTokens = {
-        access_token: 'stored_in_cookie',
-        refresh_token: 'stored_in_cookie', 
-        expires_in: 3600
-      };
-      
-      await login(data.user, dummyTokens);
-      
-      // Redirect to the originally requested path or default to dashboard
-      router.push(returnPath);
-    } catch (error: any) {
-      AuthLogger.error('Login error:', error);
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: error.message || getAuthError(AuthErrorKeys.login.DEFAULT, 'login'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -103,7 +54,7 @@ export function LoginForm() {
           </p>
         </div>
 
-        <form onSubmit={handleEmailLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-foreground">Email address</label>
             <Input
@@ -119,25 +70,17 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
+            {/* Password input is no longer needed here as Auth0 handles it */}
+            <div className="flex items-center justify-end">
               <Link 
-                href="/reset-password" 
+                href={`https://${domain}/u/reset-password`} // Direct link to Auth0 password reset
                 className="text-sm text-primary hover:text-primary/90 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Forgot password?
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              disabled={isLoading}
-              className="bg-background border-foreground/20"
-            />
           </div>
 
           <Button 
@@ -145,11 +88,11 @@ export function LoginForm() {
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? "Redirecting..." : "Sign in"}
           </Button>
         </form>
 
-        <SocialAuth isLoading={isLoading} setIsLoading={setIsLoading} mode="login" returnPath={returnPath} />
+        <SocialAuth isLoading={isLoading} setIsLoading={() => {}} mode="login" returnPath={returnPath} />
 
         <p className="text-center text-sm text-muted-foreground">
           Don't have an account?{" "}

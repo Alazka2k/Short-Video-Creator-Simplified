@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useAuth } from "@/lib/auth/AuthContext"
+import { useAuth } from "@/lib/hooks/useAuth"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -21,7 +21,7 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 
 export function SiteHeader() {
-  const auth = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
   const router = useRouter()
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -31,10 +31,8 @@ export function SiteHeader() {
   }, [])
 
   const handleLogout = async () => {
-    if (auth?.logout) {
-      await auth.logout()
-      router.push("/")
-    }
+    await logout()
+    router.push("/")
   }
 
   const brandSrc = mounted && resolvedTheme === "dark" 
@@ -90,7 +88,7 @@ export function SiteHeader() {
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          {auth?.isAuthenticated ? (
+          {isAuthenticated ? (
             <div className="flex items-center gap-4">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button variant="outline" size="sm" asChild>
@@ -101,8 +99,8 @@ export function SiteHeader() {
                 <DropdownMenuTrigger asChild>
                   <motion.div whileHover={{ scale: 1.05 }} className="cursor-pointer">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={auth.user?.picture || ""} alt={auth.user?.name || ""} />
-                      <AvatarFallback>{auth.user?.name?.[0] || "U"}</AvatarFallback>
+                      <AvatarImage src={user?.picture || ""} alt={user?.name || ""} />
+                      <AvatarFallback>{user?.name?.[0] || "U"}</AvatarFallback>
                     </Avatar>
                   </motion.div>
                 </DropdownMenuTrigger>

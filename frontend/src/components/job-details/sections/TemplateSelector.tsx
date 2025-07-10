@@ -9,9 +9,46 @@ import { useToast } from "@/components/ui/use-toast"
 import templateTypeOptions from "@/data/video-creation/assembly/template-type-select-option.json"
 import Image from "next/image"
 import { useSubscription } from '@/lib/hooks/useSubscription'
-import { useAuth } from '@/lib/auth/AuthContext'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { LoadingScreen } from '@/components/ui/loading'
 
+/**
+ * TemplateSelector Component
+ * 
+ * @description
+ * This component is responsible for displaying a list of available video assembly templates
+ * to the user. It allows users to browse and select a template that will be used to
+ * combine the generated assets (images, voice, etc.) into a final video.
+ * 
+ * @props
+ * - aspectRatio {string}: The aspect ratio of the generated content (e.g., "16:9").
+ * - sceneCount {number}: The number of scenes in the job.
+ * - onSelectTemplate {(templateId: string) => void}: Callback function to execute when a template is selected.
+ * - selectedTemplateId {string | null}: The ID of the currently selected template.
+ * - availableContent {string[]}: An array of content types available in the job (e.g., ['image', 'voice', 'text']).
+ * 
+ * @functionality
+ * The component fetches a list of templates from a static JSON file 
+ * (`/data/video-creation/assembly/template-select-option.json`) and then applies
+ * a series of filters to ensure only compatible and accessible templates are shown.
+ * 
+ * @filteringCriteria
+ * A template is only displayed if it meets all of the following conditions:
+ * 1. Aspect Ratio Match: The template's `aspectRatio` must match the job's aspect ratio.
+ * 2. Scene Count Match: The template's `sceneAmount` must match the job's scene count.
+ * 3. Subscription Plan Access: The user's current subscription plan (`planId`) must grant
+ *    access to the template. Templates without a `planId` are considered accessible to all.
+ * 4. Available Content Match: All content types listed in the template's `templateContent`
+ *    array (e.g., ["image", "text"]) must be present in the `availableContent` prop passed
+ *    from the job. This is the crucial filter that prevents showing, for example, an image-based
+ *    template for a job that only has audio content.
+ * 
+ * @dependencies
+ * - `useSubscription`: To get the user's current plan for filtering.
+ * - `useAuth`: To get the current user context.
+ * - `template-select-option.json`: For the master list of all templates.
+ * - `template-type-select-option.json`: For grouping templates by type.
+ */
 interface Template {
   id?: string
   name?: string
@@ -34,13 +71,15 @@ interface TemplateSelectorProps {
   sceneCount: number
   onSelectTemplate: (templateId: string) => void
   selectedTemplateId: string | null
+  availableContent: string[]
 }
 
 export function TemplateSelector({
   aspectRatio,
   sceneCount,
   onSelectTemplate,
-  selectedTemplateId
+  selectedTemplateId,
+  availableContent
 }: TemplateSelectorProps) {
   const [templates, setTemplates] = useState<Template[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,7 +92,7 @@ export function TemplateSelector({
     isLoading: isLoadingSubscription,
     error: subscriptionError,
     isError: isSubscriptionError
-  } = useSubscription(user?.user_id?.toString())
+  } = useSubscription()
 
   // Get the user's plan ID from the subscription data
   const userPlanId = subscriptionData?.data?.plan_id?.toString() || ''
@@ -99,8 +138,11 @@ export function TemplateSelector({
           const aspectRatioMatch = !aspectRatio || template.aspectRatio === aspectRatio;
           const sceneCountMatch = !sceneCount || template.sceneAmount === sceneCount;
           const planMatch = !userPlanId || !template.planId || template.planId === userPlanId;
+          const contentMatch = template.templateContent
+            ? template.templateContent.every(content => availableContent.includes(content))
+            : true;
           
-          return aspectRatioMatch && sceneCountMatch && planMatch;
+          return aspectRatioMatch && sceneCountMatch && planMatch && contentMatch;
         });
         
         setTemplates(templates);
@@ -121,7 +163,7 @@ export function TemplateSelector({
     };
     
     fetchTemplates();
-  }, [aspectRatio, sceneCount, userPlanId, selectedTemplateId, selectedTemplateType, isLoadingSubscription, isSubscriptionError]);
+  }, [aspectRatio, sceneCount, userPlanId, selectedTemplateId, selectedTemplateType, isLoadingSubscription, isSubscriptionError, availableContent]);
 
   // Handle template type selection
   const handleTemplateTypeChange = (value: string | null) => {
@@ -165,7 +207,7 @@ export function TemplateSelector({
         <div className="text-center">
           <p className="text-muted-foreground">No compatible templates found for your content.</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Templates are filtered based on aspect ratio ({aspectRatio}), scene count ({sceneCount}), and your subscription plan.
+            Templates are filtered based on aspect ratio ({aspectRatio}), available content, scene count ({sceneCount}), and your subscription plan.
           </p>
         </div>
       </div>

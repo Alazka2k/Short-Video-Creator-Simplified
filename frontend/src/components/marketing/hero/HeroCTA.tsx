@@ -4,7 +4,10 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Play } from 'lucide-react'
-import { useAuth } from "@/lib/auth/AuthContext"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { LoginForm } from "@/components/auth/login-form"
+import { SignupForm } from "@/components/auth/signup-form"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 /**
  * Hero Call-to-Action Component

@@ -30,7 +30,8 @@ logger.info('Environment Configuration:', {
 });
 
 const app = express();
-const PORT = process.env.API_GATEWAY_PORT;
+const PORT = process.env.API_GATEWAY_SERVICE_PORT;
+//TODO: Load from config as variable
 
 // Trust proxy configuration for proper IP detection behind reverse proxies
 // This fixes X-Forwarded-For header validation errors in rate limiting

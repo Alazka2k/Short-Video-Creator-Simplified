@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Marketing Landing Page
  * 
@@ -35,9 +37,6 @@ import { HeroSection } from '@/components/marketing/hero/HeroSection'
 import { ProcessSection } from '@/components/marketing/hero/ProcessSection'
 import { LandingFeatures } from '@/components/marketing/hero/LandingFeatures'
 import { TestimonialsSection } from '@/components/marketing/hero/TestimonialsSection'
-
-export const dynamic = 'force-static'
-export const revalidate = 3600 // Revalidate every hour
 
 export default function Home() {
   return (

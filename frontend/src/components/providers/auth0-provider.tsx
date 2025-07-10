@@ -1,184 +1,161 @@
-/**
- * ============================================================================
- * AUTH0 PROVIDER WRAPPER - CLIENT-SIDE AUTHENTICATION INITIALIZATION
- * ============================================================================
- * 
- * This component configures and provides the Auth0 authentication context
- * for the entire application. It wraps the Auth0Provider with our application's
- * specific configuration and handles client-side authentication setup.
- * 
- * CONFIGURATION DETAILS:
- * 
- * 1. DOMAIN & CLIENT_ID
- *    - Retrieved from environment variables
- *    - Points to your Auth0 tenant and application
- * 
- * 2. REDIRECT_URI
- *    - Set to '/api/auth/callback' for server-side callback handling
- *    - Enables proper integration with our backend authentication flow
- * 
- * 3. AUDIENCE
- *    - Defines the API audience for access tokens
- *    - Required for API authorization and M2M token generation
- * 
- * 4. SCOPE
- *    - 'openid profile email offline_access' for user info and refresh tokens
- *    - offline_access enables refresh token rotation
- * 
- * 5. USE_REFRESH_TOKENS
- *    - Enables refresh token rotation for enhanced security
- *    - Allows long-term authentication without re-login
- * 
- * 6. CACHE_LOCATION
- *    - 'localstorage' for persistent authentication across tabs
- *    - Alternative: 'memory' for session-only authentication
- * 
- * RETURN-TO FUNCTIONALITY:
- * - Captures intended destination from URL parameters or current path
- * - Preserves user's intended navigation after authentication
- * - Excludes auth-related pages from return-to logic
- * 
- * AUTHENTICATION FLOW:
- * 1. User clicks login → Auth0 loginWithRedirect()
- * 2. Auth0 handles OAuth flow with configured providers
- * 3. Auth0 redirects to /api/auth/callback with authorization code
- * 4. Our backend processes the callback and handles user creation/login
- * 5. onRedirectCallback() routes user to intended destination
- * 
- * INTEGRATION WITH AUTHCONTEXT:
- * - This provider enables useAuth0() hook in AuthContext
- * - AuthContext detects Auth0 authentication and syncs with backend
- * - Provides seamless hybrid authentication experience
- * 
- * DEPENDENCIES:
- * - @auth0/auth0-react: Official Auth0 React SDK
- * - Environment variables: AUTH0_DOMAIN, AUTH0_SPA_CLIENT_ID, AUTH0_AUDIENCE
- * - Next.js navigation hooks for redirect handling
- * 
- * USAGE:
- * This component should wrap your entire application at the root level,
- * typically in layout.tsx.
- * 
- * ```tsx
- * <Auth0ProviderWrapper>
- *   <YourApp />
- * </Auth0ProviderWrapper>
- * ```
- * 
- * TROUBLESHOOTING:
- * - 'Invalid state' errors: Check redirect_uri configuration
- * - Token issues: Verify audience and scope settings
- * - Login loops: Check domain and client_id environment variables
- * - CORS errors: Verify Auth0 application URLs and callback settings
- * - Redirect issues: Check onRedirectCallback logic and returnTo handling
- * 
- * Last Updated: 2025-06-30
- * Architecture: Auth0 React SDK Wrapper with Custom Navigation
- */
-
 "use client";
 
-import { Auth0Provider } from "@auth0/auth0-react";
-import { createDebugger } from '@/lib/debug';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { AuthProvider } from '@/lib/auth/AuthContext';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { Auth0Provider as Auth0ProviderBase, useAuth0, AppState, LogoutOptions } from '@auth0/auth0-react';
+import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation';
 
-const debug = createDebugger('Auth0Provider');
+// Define the structure of our custom user object based on JWT claims
+interface User {
+  userId: number;
+  email: string;
+  name?: string;
+  picture?: string;
+  isAdmin: boolean;
+  permissions: string[];
+  subscriptionPlanId: number;
+  auth0Id?: string; // For debugging or specific Auth0 interactions
+}
 
-/**
- * Auth0 Provider wrapper component that configures authentication for the entire application.
- * Handles return-to URL preservation and Auth0 redirect callback processing.
- * 
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components to wrap with Auth0 context
- * @returns {JSX.Element} Auth0Provider configured with app-specific settings
- */
-export function Auth0ProviderWrapper({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [returnTo, setReturnTo] = useState<string | null>(null);
-  
-  /**
-   * Capture returnTo parameter from URL or use current path.
-   * This preserves the user's intended destination after authentication.
-   * Excludes auth-related pages to prevent redirect loops.
-   */
-  useEffect(() => {
-    const queryReturnTo = searchParams.get('returnTo');
-    
-    if (queryReturnTo) {
-      const decodedReturnTo = decodeURIComponent(queryReturnTo);
-      debug.log('Found returnTo in query params', { returnTo: decodedReturnTo });
-      setReturnTo(decodedReturnTo);
-    } else if (pathname !== '/login' && pathname !== '/signup' && !pathname.includes('/reset-password')) {
-      debug.log('Using current path as returnTo', { pathname });
-      setReturnTo(pathname);
-    }
-  }, [pathname, searchParams]);
+// Define the shape of our new, simplified AuthContext
+interface AuthContextType {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: User | null;
+  getAccessToken: () => Promise<string>;
+  logout: (options?: LogoutOptions) => Promise<void>;
+}
 
-  // Load Auth0 configuration from environment variables
-  const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
-  const audience = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE;
-  const clientId = process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID;
+// Create the context
+const AuthContext = createContext<AuthContextType | null>(null);
 
-  // Verify required configuration is present
-  if (!(domain && clientId && audience)) {
-    debug.error('Auth0 configuration missing - check environment variables');
-    return null;
+// Custom hook for components to access the authentication context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
+  return context;
+};
 
-  /**
-   * Handle Auth0 redirect callback after successful authentication.
-   * Routes the user to their intended destination or dashboard fallback.
-   * 
-   * @param {any} appState - Auth0 app state containing returnTo information
-   */
-  const onRedirectCallback = (appState: any) => {
-    try {
-      debug.log('Auth0 redirect callback', { 
-        appState, 
-        pathname,
-        currentUrl: typeof window !== 'undefined' ? window.location.href : 'undefined'
-      });
-      
-      // If appState has a returnTo, use that, otherwise default to dashboard
-      let returnUrl = appState?.returnTo || '/dashboard';
-      
-      // Ensure the URL starts with a slash for proper routing
-      if (!returnUrl.startsWith('/')) {
-        returnUrl = '/' + returnUrl;
+// Internal provider component that performs the authentication logic
+const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const {
+    isAuthenticated: auth0IsAuthenticated,
+    isLoading: auth0IsLoading,
+    user: auth0User,
+    getAccessTokenSilently,
+    logout: auth0Logout,
+  } = useAuth0();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const processAuthentication = async () => {
+      if (auth0IsLoading) {
+        setIsLoading(true);
+        return;
       }
-      
-      debug.log(`Redirecting to ${returnUrl}`);
-      router.push(returnUrl);
+
+      if (!auth0IsAuthenticated) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getAccessTokenSilently();
+        const decodedToken: any = jwtDecode(token);
+        const namespace = process.env.NEXT_PUBLIC_AUTH0_CUSTOM_CLAIMS_NAMESPACE || 'https://short-video-creator.com/';
+
+        const customClaims: User = {
+          userId: decodedToken[`${namespace}user_id`],
+          email: decodedToken[`${namespace}email`],
+          name: decodedToken[`${namespace}name`] || auth0User?.name,
+          picture: auth0User?.picture,
+          isAdmin: decodedToken[`${namespace}is_admin`] || false,
+          permissions: decodedToken[`${namespace}permissions`] || [],
+          subscriptionPlanId: decodedToken[`${namespace}subscription_plan_id`] || 1,
+          auth0Id: auth0User?.sub,
+        };
+
+        if (!customClaims.userId || !customClaims.email) {
+          console.error("JWT is missing essential custom claims (userId, email). Logging out.");
+          setUser(null);
+          auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+        } else {
+          setUser(customClaims);
+        }
+      } catch (error) {
+        console.error("Failed to process authentication token:", error);
+        setUser(null);
+        auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    processAuthentication();
+  }, [auth0IsAuthenticated, auth0IsLoading, auth0User, getAccessTokenSilently, auth0Logout]);
+
+  const getAccessToken = async (): Promise<string> => {
+    try {
+      return await getAccessTokenSilently();
     } catch (error) {
-      debug.error('Redirect error:', error);
-      // Fallback to dashboard if redirect fails
-      router.push('/dashboard');
+      console.error("Failed to get access token:", error);
+      throw new Error('Failed to get access token');
     }
   };
 
   return (
-    <Auth0Provider
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !isLoading && !!user,
+        isLoading,
+        user,
+        getAccessToken,
+        logout: auth0Logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Main wrapper component that configures and provides the official Auth0 context
+export function Auth0ProviderWrapper({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
+  const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
+  const clientId = process.env.NEXT_PUBLIC_AUTH0_SPA_CLIENT_ID;
+  const audience = process.env.NEXT_PUBLIC_AUTH0_AUDIENCE;
+
+  if (!domain || !clientId || !audience) {
+    console.error('Auth0 configuration missing. Check environment variables.');
+    return <div>Auth0 Configuration Error. Please check the console.</div>;
+  }
+
+  const onRedirectCallback = (appState?: AppState) => {
+    router.push(appState?.returnTo || '/dashboard');
+  };
+
+  return (
+    <Auth0ProviderBase
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: typeof window !== 'undefined' ? `${window.location.origin}/api/auth/callback` : undefined,
+        redirect_uri: typeof window !== 'undefined' ? `${window.location.origin}/callback` : undefined,
         audience: audience,
-        scope: "openid profile email offline_access",
-        // Include return path in appState for return after login
-        ...(returnTo && { appState: { returnTo } })
+        scope: "openid profile email"
       }}
       onRedirectCallback={onRedirectCallback}
       useRefreshTokens={true}
       cacheLocation="localstorage"
-      useRefreshTokensFallback={true}
     >
       <AuthProvider>
         {children}
       </AuthProvider>
-    </Auth0Provider>
+    </Auth0ProviderBase>
   );
-} 
+}

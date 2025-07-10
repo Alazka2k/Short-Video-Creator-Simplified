@@ -3,13 +3,14 @@ import { AudioPlayer } from '@/components/shared/media/AudioPlayer'
 import { ImagePreview } from '@/components/shared/media/ImagePreview'
 import { VideoPreview } from '@/components/shared/media/VideoPreview'
 import { cn } from '@/lib/utils'
-import { AuthLogger } from '@/lib/debug/auth-logger'
+import { Logger } from '@/lib/debug/logger'
 import { ChevronDown, SquareLibrary, Download, RefreshCw, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, Video as VideoIcon, Play as AnimationIcon, Mic as VoiceIcon } from 'lucide-react'
 import { useStorageUrls } from '@/lib/hooks/useStorageUrls'
 import { Separator } from '@/components/ui/separator'
 import { handleMediaDownload } from '@/lib/utils/download'
+import { useApiClient } from '@/lib/api/apiClient'
 
 interface MediaContent {
   publicUrl: string
@@ -48,6 +49,8 @@ export function ScenePreview({
   const [showOriginalImage, setShowOriginalImage] = useState(false)
   const [mediaErrors, setMediaErrors] = useState<{[key: string]: string}>({})
   const [isDownloading, setIsDownloading] = useState<{[key: string]: boolean}>({})
+  const logger = new Logger('ScenePreview')
+  const api = useApiClient();
   
   // Initialize with a function to check sessionStorage first
   const [isExpanded, setIsExpanded] = useState(() => {
@@ -108,7 +111,7 @@ export function ScenePreview({
   }, [isExpanded, sceneId])
 
   const handleMediaError = (type: string) => {
-    AuthLogger.error(`Error loading ${type} for scene ${sceneId}:`, {
+    logger.error(`Error loading ${type} for scene ${sceneId}:`, {
       errorType: type,
       originalUrl: type === 'image' ? image?.publicUrl : 
                   type === 'video' ? video?.publicUrl : 
@@ -214,7 +217,7 @@ export function ScenePreview({
 
     setIsDownloading(prev => ({ ...prev, [type]: true }));
     try {
-      await handleMediaDownload(type, {
+      await handleMediaDownload(api, type, {
         ...content,
         publicUrl: freshUrl // Use the fresh URL instead of the original publicUrl
       });
@@ -246,8 +249,9 @@ export function ScenePreview({
 
         {/* Collapsible content */}
         {isExpanded && (
-          <div className="grid grid-cols-[1.5fr_1fr] gap-6">
+          <div className={cn("grid gap-6", (image || video || animation) ? "grid-cols-[1.5fr_1fr]" : "grid-cols-1")}>
             {/* Left Side - Media Content Section */}
+            {(image || video || animation) && (
             <div className="flex items-center justify-center p-6 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
               {/* Main Media Container */}
               <div className={cn(
@@ -268,6 +272,7 @@ export function ScenePreview({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Right Side - Controls and Info */}
             <div className="space-y-4 p-6">
@@ -322,6 +327,7 @@ export function ScenePreview({
               )}
 
               {/* Visualization Controls */}
+              {(image || video || animation) && (
               <div className="rounded-lg border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-purple-500/5 p-4 transition-all duration-200 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] hover:border-violet-500/40">
                 <div className="flex items-center gap-2 mb-2">
                   {video ? <VideoIcon className="h-4 w-4 text-violet-500" /> : 
@@ -443,6 +449,7 @@ export function ScenePreview({
                   )}
                 </div>
               </div>
+              )}
             </div>
           </div>
         )}

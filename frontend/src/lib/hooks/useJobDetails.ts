@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api/apiClient'
-import { useAuth } from '@/lib/auth/AuthContext'
-import { AuthLogger } from '@/lib/debug/auth-logger'
+import { useApiClient } from '@/lib/api/apiClient'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { Logger } from '@/lib/debug/logger'
 import { useStorageUrls } from './useStorageUrls'
 
 interface MediaContent {
@@ -26,18 +26,52 @@ interface JobDetails {
   status: string
   service_sequence: string[]
   metadata: {
-    jobId: string
+    jobId?: string
     music?: MediaContent
-    scenes: JobScene[]
-    llmResult: any
-    parameters: any
+    scenes?: JobScene[]
+    llmResult?: {
+      title?: string
+      description?: string
+      hashtags?: string
+      scenes?: Array<{
+        description?: string
+      }>
+      music?: {
+        title?: string
+      }
+    }
+    parameters?: {
+      llmGenParams?: {
+        image?: {
+          aspectRatio?: string
+          shotStyle?: string
+        }
+        script?: {
+          scriptTone?: string
+          vocabulary?: string
+          pacingStructure?: string
+          characterPerspective?: string
+        }
+        general?: {
+          generalDescription?: string
+        }
+      }
+      voiceGenParams?: {
+        elevenlabsVoiceId?: string
+      }
+    }
+    progress?: Record<string, { progress: number }>
+    error?: string | { message?: string; details?: any }
+    failedComponents?: string[]
   }
   prompt: string
   error: string | null
 }
 
 export function useJobDetails(jobId: string) {
-  const { getToken, user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const api = useApiClient();
+  const logger = new Logger('useJobDetails');
 
   // Query for job details
   const { 
@@ -48,48 +82,23 @@ export function useJobDetails(jobId: string) {
   } = useQuery({
     queryKey: ['job', jobId],
     queryFn: async () => {
-      const userToken = await getToken()
-      
-      if (!userToken) {
-        throw new Error('No access token available')
-      }
+      // The apiClient interceptor will automatically add the auth token.
+      const response = await api.get<JobDetails>(`/api/job/jobs/${jobId}`);
 
-      AuthLogger.log('Loading job with user token:', {
-        hasUserToken: !!userToken,
-        jobId,
-        userId: user?.user_id
-      })
-      
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${userToken}`
-      }
+      // The backend now enforces that a user can only see their own jobs,
+      // so this frontend check is no longer strictly necessary but can be
+      // kept as a secondary defense layer if desired. For simplicity in this
+      // refactor, we rely on the backend's 403 Forbidden response.
+      logger.log('Job details fetched', {
+        jobId: response.data.job_id,
+        userId: response.data.user_id,
+      });
 
-      const response = await apiClient.get<JobDetails>(
-        `/api/job/jobs/${jobId}`,
-        { headers }
-      )
-
-      // Verify user has access to this job
-      if (response.user_id && user?.user_id) {
-        const jobUserId = response.user_id.toString()
-        const currentUserId = user.user_id.toString()
-        
-        AuthLogger.log('Checking job access:', {
-          jobUserId,
-          currentUserId,
-          responseUserId: response.user_id
-        })
-        
-        if (jobUserId !== currentUserId) {
-          throw new Error('You do not have permission to access this job')
-        }
-      }
-
-      return response
+      return response.data;
     },
-    enabled: !!user,
+    enabled: !!jobId && isAuthenticated, // Only run query if we have a job ID and user is authenticated
     staleTime: 45 * 60 * 1000, // Consider data fresh for 45 minutes
-    gcTime: 60 * 60 * 1000 // Keep in cache for 1 hour
+    gcTime: 60 * 60 * 1000, // Keep in cache for 1 hour
   })
 
   // Extract storage keys from job data
@@ -115,7 +124,7 @@ export function useJobDetails(jobId: string) {
     ...job,
     metadata: {
       ...job.metadata,
-      scenes: job.metadata.scenes.map(scene => ({
+      scenes: (job.metadata.scenes || []).map(scene => ({
         ...scene,
         image: scene.image?.storageKey ? {
           ...scene.image,

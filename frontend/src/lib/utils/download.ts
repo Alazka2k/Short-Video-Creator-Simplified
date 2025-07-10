@@ -1,7 +1,17 @@
 import { toast } from '@/components/ui/use-toast'
-import { apiClient } from '@/lib/api/apiClient'
 import JSZip from 'jszip'
-import { auth0M2MConfig } from '@/lib/auth/config';
+import { AxiosInstance } from 'axios';
+
+// Custom Error class to pass structured error information
+export class DownloadError extends Error {
+  public details?: string;
+
+  constructor(message: string, details?: string) {
+    super(message);
+    this.name = 'DownloadError';
+    this.details = details;
+  }
+}
 
 // These interfaces are kept for backward compatibility
 export interface DownloadFileOptions {
@@ -50,54 +60,12 @@ function getTimestamp(): string {
   return `${year}${month}${day}_${hours}${minutes}${seconds}`;
 }
 
-// Helper function to get a fresh M2M token
-async function getFreshM2MToken(): Promise<string> {
-  try {
-    // Force clear any cached tokens
-    localStorage.removeItem('auth_m2m_token');
-    localStorage.removeItem('auth_m2m_token_expiry');
-    
-    // Make direct API call to get M2M token with client credentials
-    console.log('Requesting fresh M2M token for download');
-    const response = await fetch('/api/auth/proxy?endpoint=/api/auth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        client_id: auth0M2MConfig.m2mClientId,
-        client_secret: auth0M2MConfig.m2mClientSecret,
-        audience: auth0M2MConfig.audience,
-        grant_type: 'client_credentials'
-      })
-    });
-    
-    if (!response.ok) {
-      console.error('Error getting M2M token:', response.status, response.statusText);
-      throw new Error(`Failed to obtain M2M token: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Successfully obtained fresh M2M token');
-    
-    if (!data.access_token) {
-      throw new Error('M2M token response did not include access_token');
-    }
-    
-    // Store token in localStorage for potential reuse
-    localStorage.setItem('auth_m2m_token', data.access_token);
-    if (data.expires_in) {
-      localStorage.setItem('auth_m2m_token_expiry', (Date.now() + (data.expires_in * 1000)).toString());
-    }
-    
-    return data.access_token;
-  } catch (error) {
-    console.error('Error getting fresh M2M token:', error);
-    throw new Error('Authentication failed: Unable to obtain M2M token for download');
-  }
-}
-
-export async function handleMediaDownload(type: 'image' | 'video' | 'voice' | 'animation' | 'music', content?: MediaContent, title?: string) {
+export async function handleMediaDownload(
+    api: AxiosInstance,
+    type: 'image' | 'video' | 'voice' | 'animation' | 'music', 
+    content?: MediaContent, 
+    title?: string
+) {
   if (!content?.storageKey || !content.publicUrl) {
     const message = !content ? 'No content available' :
                    !content.storageKey ? 'No storage key available' :
@@ -132,6 +100,7 @@ export async function handleMediaDownload(type: 'image' | 'video' | 'voice' | 'a
   console.log(`Downloading ${type}:`, { fileName, url: content.publicUrl })
   
   return await downloadFile({
+    api,
     url: content.publicUrl,
     fileName,
     type,
@@ -148,7 +117,12 @@ function sanitizeFileName(name: string): string {
     .substring(0, 255); // Limit length to 255 characters
 }
 
-export async function handleBulkDownload(scenes: SceneContent[], jobId: string, title?: string) {
+export async function handleBulkDownload(
+    api: AxiosInstance,
+    scenes: SceneContent[], 
+    jobId: string, 
+    title?: string
+) {
   try {
     const zip = new JSZip()
     let downloadCount = 0
@@ -172,10 +146,6 @@ export async function handleBulkDownload(scenes: SceneContent[], jobId: string, 
       voice: null
     }
 
-    // Get a fresh M2M token once for all downloads to avoid rate limiting
-    const m2mToken = await getFreshM2MToken();
-    console.log('Using M2M token for bulk downloads', { tokenLength: m2mToken.length });
-
     // Helper function to download and add to zip
     const addToZip = async (
       content: MediaContent | undefined, 
@@ -186,24 +156,19 @@ export async function handleBulkDownload(scenes: SceneContent[], jobId: string, 
       if (!content?.storageKey || !content.publicUrl) return
 
       try {
-        // Only proceed with files that need S3 download
-        if (content.publicUrl.includes('s3.eu-central-1.amazonaws.com') && content.storageKey) {
-          const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/${encodeURIComponent(content.storageKey)}`
-          console.log(`Downloading S3 file using API: ${apiUrl} with M2M token`);
+          const apiUrl = `/api/download/${encodeURIComponent(content.storageKey)}`
+          console.log(`Downloading S3 file using API: ${apiUrl}`);
           
-          const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${m2mToken}`
-            }
-          })
+          const response = await api.get(apiUrl, {
+            responseType: 'blob'
+          });
 
-          if (!response.ok) {
-            console.error(`Failed to download: Status ${response.status}`, await response.text());
+          if (response.status !== 200) {
+            console.error(`Failed to download: Status ${response.status}`);
             throw new Error(`Failed to download ${type} (Status: ${response.status})`)
           }
 
-          const blob = await response.blob()
+          const blob = response.data;
           
           // Get file extension
           const origFileName = content.fileName || getFileNameFromStorageKey(content.storageKey);
@@ -220,39 +185,7 @@ export async function handleBulkDownload(scenes: SceneContent[], jobId: string, 
           }
           
           folders[folderKey]?.file(zipFileName, blob)
-        } else {
-          // For non-S3 URLs, use direct fetch
-          const directResponse = await fetch(content.publicUrl, {
-            method: 'GET',
-            headers: {
-              'Accept': type === 'voice' ? 'audio/mpeg, audio/*' : '*/*',
-            }
-          })
-          
-          if (!directResponse.ok) throw new Error(`Failed to download ${type} (Status: ${directResponse.status})`)
-          
-          const directBlob = await directResponse.blob()
-          const finalBlob = type === 'voice' 
-            ? new Blob([directBlob], { type: 'audio/mpeg' })
-            : directBlob
-          
-          // Get file extension  
-          const origFileName = content.fileName || getFileNameFromStorageKey(content.storageKey);
-          const extension = origFileName.includes('.') ? 
-            origFileName.substring(origFileName.lastIndexOf('.')) : '';
-            
-          // Create a consistent naming scheme
-          const zipFileName = `${type}_scene_${sceneNum}${extension}`;
-          
-          // Create folder only when first file of this type is added
-          const folderKey = `${type}s` === 'voices' ? 'voice' : `${type}s`
-          if (!folders[folderKey]) {
-            folders[folderKey] = zip.folder(folderKey)
-          }
-          
-          folders[folderKey]?.file(zipFileName, finalBlob)
-        }
-
+        
         downloadCount++
         toast({
           title: "Download progress",
@@ -265,19 +198,38 @@ export async function handleBulkDownload(scenes: SceneContent[], jobId: string, 
           title: "Download error",
           description: `Failed to download ${type} for scene ${sceneNum}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         })
+        throw error; // Re-throw the error to be caught by Promise.all
       }
     }
 
     // Download all media types for each scene
     for (const [index, scene] of scenes.entries()) {
       const sceneNum = index + 1
-      await Promise.all([
-        scene.image && addToZip(scene.image, 'image', sceneNum, totalFiles),
-        scene.video && addToZip(scene.video, 'video', sceneNum, totalFiles),
-        scene.animation && addToZip(scene.animation, 'animation', sceneNum, totalFiles),
-        scene.voice && addToZip(scene.voice, 'voice', sceneNum, totalFiles)
-      ])
+      try {
+        await Promise.all([
+          scene.image && addToZip(scene.image, 'image', sceneNum, totalFiles),
+          scene.video && addToZip(scene.video, 'video', sceneNum, totalFiles),
+          scene.animation && addToZip(scene.animation, 'animation', sceneNum, totalFiles),
+          scene.voice && addToZip(scene.voice, 'voice', sceneNum, totalFiles)
+        ])
+      } catch (error) {
+        // If any promise in Promise.all rejects, we'll catch it here.
+        // The individual error is already toasted inside addToZip.
+        // We can stop the whole process.
+        console.error(`Bulk download process halted due to an error in scene ${sceneNum}.`);
+        return false; // Stop processing further scenes
+      }
     }
+
+    if (downloadCount === 0 && totalFiles > 0) {
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Could not download any files. Please check the console for errors.",
+      })
+      return false;
+    }
+
 
     // Generate and download zip file
     const zipContent = await zip.generateAsync({ type: 'blob' })
@@ -316,43 +268,29 @@ export async function handleBulkDownload(scenes: SceneContent[], jobId: string, 
   }
 }
 
-export async function downloadFile({ url, fileName, contentType, type, storageKey, title }: DownloadFileOptions) {
+export async function downloadFile({ api, url, fileName, contentType, type, storageKey, title }: DownloadFileOptions & { api: AxiosInstance }) {
   try {
     if (!url) throw new Error('No URL provided')
     
     console.log('Attempting to download:', { type, fileName, url })
 
-    // If it's an S3 URL, use our API proxy with M2M token
+    // If it's an S3 URL, use our API with the user's token via apiClient
     if (url.includes('s3.eu-central-1.amazonaws.com') && storageKey) {
-      // Use API endpoint for S3 downloads
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/download/${encodeURIComponent(storageKey)}`
+      const apiUrl = `/api/download/${encodeURIComponent(storageKey)}`
       
-      // Get a fresh M2M token
-      const m2mToken = await getFreshM2MToken();
-      console.log('Using M2M token for download', { 
-        tokenFirstChars: m2mToken.substring(0, 20) + '...',
-        tokenLength: m2mToken.length
-      });
-
-      // Set up headers with M2M token only
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`
-      }
-
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers
+      const response = await api.get(apiUrl, {
+        responseType: 'blob'
       })
       
-      if (!response.ok) {
-        console.error(`Download failed with status: ${response.status}`, await response.text());
+      // Note: non-2xx statuses will throw and be caught by the catch block
+      // due to the axios interceptor. This check is an extra safeguard.
+      if (response.status !== 200) {
         throw new Error(`Download failed with status: ${response.status}`)
       }
       
-      const blob = await response.blob()
+      const blob = response.data;
       const blobUrl = window.URL.createObjectURL(blob)
       
-      // We already have timestamp in the filename from handleMediaDownload, don't add another one
       const link = document.createElement('a')
       link.href = blobUrl
       link.download = fileName
@@ -370,12 +308,7 @@ export async function downloadFile({ url, fileName, contentType, type, storageKe
     }
 
     // For non-S3 URLs, use direct fetch
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': type === 'voice' || type === 'music' ? 'audio/mpeg, audio/*' : '*/*',
-      }
-    })
+    const response = await fetch(url)
     
     if (!response.ok) {
       throw new Error(`Download failed with status: ${response.status}`)
@@ -403,13 +336,36 @@ export async function downloadFile({ url, fileName, contentType, type, storageKe
     })
     
     return true
-  } catch (error) {
+  } catch (error: any) {
     console.error('Download failed:', error)
-    toast({
-      variant: "destructive",
-      title: "Download failed",
-      description: error instanceof Error ? error.message : "There was an error downloading the file. Please try again.",
-    })
-    return false
+    
+    // Extract details for the new error
+    const defaultMessage = "There was an error downloading the file. Our team has been notified. If you need immediate assistance, please contact support at https://www.narravid.io/contact.";
+    let message = defaultMessage;
+    let details = error instanceof Error ? error.message : 'An unknown error occurred.';
+
+    if (error.response && error.response.data instanceof Blob) {
+      try {
+        const errorText = await error.response.data.text();
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error) {
+          // Use specific message for user-actionable errors
+          if (error.response.status === 403 || error.response.status === 404) {
+             message = errorJson.error;
+          }
+          // Always pass the backend error as technical details
+          if(errorJson.details) {
+            details = `API Error: ${errorJson.error}\nDetails: ${errorJson.details}`;
+          } else {
+            details = `API Error: ${errorJson.error}`;
+          }
+        }
+      } catch (parseError) {
+        console.error('Could not parse download error response:', parseError);
+      }
+    }
+    
+    // Instead of toasting, throw a structured error to be handled by the UI component
+    throw new DownloadError(message, details);
   }
 } 

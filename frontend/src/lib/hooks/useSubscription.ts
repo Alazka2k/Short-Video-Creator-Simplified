@@ -1,7 +1,15 @@
+/**
+ * @file useSubscription.ts
+ * @description A React hook to fetch the current user's subscription details.
+ *
+ * This hook uses tanstack-query to fetch and cache the user's active subscription
+ * information from the backend. It relies on the centralized API client for
+ * authentication.
+ */
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/apiClient';
-import { useAuth } from '@/lib/auth/AuthContext';
-import { AuthLogger } from '@/lib/debug/auth-logger';
+import { useApiClient } from '@/lib/api/apiClient';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { Logger } from '@/lib/debug/logger';
 
 export interface SubscriptionPlan {
   plan_name: string;
@@ -38,43 +46,35 @@ export interface SubscriptionResponse {
   data: Subscription;
 }
 
-export function useSubscription(userId?: string) {
-  const auth = useAuth();
-  if (!auth) {
-    throw new Error('useSubscription must be used within an AuthProvider');
-  }
-  const { getM2MToken, user } = auth;
+/**
+ * Custom hook to fetch the current user's subscription data.
+ *
+ * @returns {import('@tanstack/react-query').UseQueryResult<SubscriptionResponse, Error>}
+ * The result object from tanstack-query, containing subscription data, loading state, and error state.
+ */
+export function useSubscription() {
+  const { user, isAuthenticated } = useAuth();
+  const api = useApiClient();
+  const logger = new Logger('useSubscription');
+
+  const userId = user?.userId;
 
   return useQuery<SubscriptionResponse>({
     queryKey: ['subscription', userId],
     queryFn: async () => {
       if (!userId) {
-        throw new Error('User ID is required to fetch subscription');
+        throw new Error('User ID is not available for fetching subscription.');
       }
 
-      const m2mToken = await getM2MToken();
-      const userToken = localStorage.getItem("access_token");
-
-      AuthLogger.log('Loading subscription with tokens:', {
-        hasM2MToken: !!m2mToken,
-        hasUserToken: !!userToken,
-        userId
-      });
-
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${m2mToken}`
-      };
-
-      if (userToken) {
-        headers['x-user-token'] = userToken;
-      }
-
-      return apiClient.get<SubscriptionResponse>(
-        `/api/subscription/subscriptions/user/${userId}?status=active`,
-        { headers }
+      logger.log('Fetching user subscription', { userId });
+      
+      // The apiClient interceptor will automatically add the auth token.
+      const response = await api.get<SubscriptionResponse>(
+        `/api/subscription/subscriptions/user/${userId}?status=active`
       );
+      return response.data;
     },
-    enabled: !!userId && !!user,
+    enabled: isAuthenticated && !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

@@ -10,7 +10,7 @@
             "preview":"/assembly/preview/free/16-9/slideshow-16-9.mp4",
             "templateContent": ["image", "text"],
             "aspectRatio": "16:9",
-            "sceneAmount": 3,
+            "sceneAmount": 1,
             "subtitle": "false",
             "modificationProperties":{
                 "Text-Scene-1.source":{

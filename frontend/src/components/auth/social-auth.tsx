@@ -4,8 +4,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { useToast } from "@/components/ui/use-toast";
-import { AuthErrorKeys, getAuthError } from "@/lib/errors/auth";
-import { AuthLogger } from "@/lib/debug/auth-logger";
+import { Logger } from "@/lib/debug/logger";
 
 interface SocialAuthProps {
   isLoading: boolean;
@@ -17,10 +16,11 @@ interface SocialAuthProps {
 export function SocialAuth({ isLoading, setIsLoading, mode = 'login', returnPath = '/dashboard' }: SocialAuthProps) {
   const { loginWithRedirect } = useAuth0();
   const { toast } = useToast();
+  const authLogger = new Logger('Auth');
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
-    AuthLogger.log(`Starting Google ${mode}`, { returnPath });
+    authLogger.log(`Starting Google ${mode}`, { returnPath });
     
     try {
       // Authenticate with Google through Auth0 SPA SDK
@@ -37,22 +37,15 @@ export function SocialAuth({ isLoading, setIsLoading, mode = 'login', returnPath
       });
 
       // Note: Code after loginWithRedirect() won't execute because the page redirects immediately
-      AuthLogger.log('Google OAuth redirect initiated via Auth0 SPA SDK');
+      authLogger.log('Google OAuth redirect initiated via Auth0 SPA SDK');
 
     } catch (error: any) {
-      AuthLogger.error('Google auth redirect error:', error);
-      let errorKey = AuthErrorKeys.google.DEFAULT;
+      authLogger.error('Google auth redirect error:', error);
       
-      if (error.error === "login_required") {
-        errorKey = AuthErrorKeys.google.LOGIN_INTERRUPTED;
-      } else if (error.error === "consent_required") {
-        errorKey = AuthErrorKeys.google.PERMISSION_REQUIRED;
-      }
-
       toast({
         variant: "destructive",
         title: `Google ${mode} failed`,
-        description: error.message || getAuthError(errorKey, 'google'),
+        description: "An unexpected error occurred. Please try again.",
       });
       
       setIsLoading(false);
