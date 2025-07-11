@@ -52,7 +52,9 @@ function loadEnvConfig() {
       channelId: process.env.IMAGE_CHANNEL_ID,
       salaiToken: process.env.IMAGE_SALAI_TOKEN,
       debug: process.env.IMAGE_DEBUG === 'true',
-      ws: process.env.IMAGE_WS === 'true'
+      ws: process.env.IMAGE_WS === 'true',
+      acedataMidjourneyApiToken: process.env.ACEDATA_MIDJOURNEY_API_TOKEN,
+      webhookBaseUrl: process.env.IMAGE_WEBHOOK_BASE_URL
     },
     musicGen: {
       provider: process.env.MUSIC_PROVIDER,
@@ -202,8 +204,8 @@ function validateConfig(config) {
   const requiredConfigs = [
     ['db.host', 'db.user', 'db.password', 'db.name', 'db.port'],
     ['llm.provider', 'llm.model', 'llm.apiKey'],
+    ['imageGen.provider', 'imageGen.acedataMidjourneyApiToken', 'imageGen.webhookBaseUrl'],
     ['voiceGen.provider', 'voiceGen.apiKey', 'voiceGen.outputDirectory'],
-    ['imageGen.provider', 'imageGen.serverId', 'imageGen.channelId', 'imageGen.salaiToken'],
     ['musicGen.provider', 'musicGen.apiKey', 'musicGen.modelId'],
     ['animationGen.provider', 'animationGen.baseUrl', 'animationGen.authUrl', 'animationGen.clientId', 'animationGen.clientSecret'],
     ['videoGen.provider', 'videoGen.model', 'videoGen.resolution', 'videoGen.apiKey'],

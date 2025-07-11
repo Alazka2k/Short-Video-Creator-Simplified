@@ -67,6 +67,26 @@ function createServer(imageServiceInterface) {
     }
   });
 
+  // Webhook endpoint for receiving progress updates
+  app.post('/webhook/:jobId/:sceneId', async (req, res) => {
+    const { jobId, sceneId } = req.params;
+    const payload = req.body;
+    logger.info(`Image Service: Handling webhook for jobId: ${jobId}, sceneId: ${sceneId}`);
+
+    try {
+      // Pass the data to the service to handle the async logic
+      await imageServiceInterface.service.handleWebhook(jobId, sceneId, payload);
+      res.status(200).json({ message: 'Webhook processed' });
+    } catch (error) {
+      logger.error('Image Service: Error processing webhook:', {
+        jobId,
+        sceneId,
+        error: error.message
+      });
+      res.status(500).json({ error: 'Failed to process webhook' });
+    }
+  });
+
   // Catch-all route for unhandled requests
   app.use('*', (req, res) => {
     logger.warn(`Image Service: Received unhandled request: ${req.method} ${req.originalUrl}`);

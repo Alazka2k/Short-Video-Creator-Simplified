@@ -230,7 +230,12 @@ class ProgressTracker {
     const jobProgress = this.progressData.get(jobId);
     
     if (!jobProgress) {
-      return null;
+      return {
+        jobId: jobId,
+        status: 'not_found',
+        overallProgress: 0,
+        message: 'Job progress not initiated or job completed and cleaned up.'
+      };
     }
     
     // Calculate duration

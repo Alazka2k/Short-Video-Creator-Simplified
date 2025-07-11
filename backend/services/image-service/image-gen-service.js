@@ -1,10 +1,14 @@
 const logger = require('../../shared/utils/logger');
+const axios = require('axios');
+const sharp = require('sharp');
+const fs = require('fs').promises;
 const MidjourneyClient = require('./clients/midjourney-client');
 const ImageDownloader = require('./utils/image-downloader');
 const FileManager = require('./utils/file-manager');
 const ImageDataAccess = require('./data/imageDataAccess');
 const storageService = require('../../shared/utils/storage');
 const path = require('path');
+const config = require('../../shared/utils/config');
 
 class ImageGenService {
   constructor() {
@@ -13,10 +17,7 @@ class ImageGenService {
     this.downloader = new ImageDownloader();
     this.fileManager = new FileManager();
     this.imageDataAccess = ImageDataAccess;
-  }
-
-  async init() {
-    await this.client.init();
+    this.pendingJobs = new Map();
   }
 
   async isHealthy() {
@@ -24,68 +25,144 @@ class ImageGenService {
   }
 
   async generateImage(prompt, sceneIndex = null, jobId = null, userId = null) {
+    if (!jobId) throw new Error('jobId is required for asynchronous image generation');
+    if (!prompt) throw new Error('Prompt is required for image generation');
+
+    const jobKey = `${jobId}_${sceneIndex}`;
+    logger.info(`Queueing image generation for: ${jobKey}`);
+
+    return new Promise(async (resolve, reject) => {
+      this.pendingJobs.set(jobKey, { resolve, reject, sceneIndex, jobId });
+
+      try {
+        await this.client.generateImage(prompt, jobId, sceneIndex);
+      } catch (error) {
+        logger.error(`[ImageGenService] Error starting image generation for ${jobKey}:`, error);
+        this.pendingJobs.delete(jobKey);
+        reject(error);
+      }
+    });
+  }
+
+  async handleWebhook(jobId, sceneId, payload) {
+    const jobKey = `${jobId}_${sceneId}`;
+    const jobPromise = this.pendingJobs.get(jobKey);
+
+    if (!jobPromise) {
+      logger.warn(`Received webhook for an unknown or completed job: ${jobKey}`);
+      return;
+    }
+
     try {
-      /*logger.info(`Generating image for prompt: "${prompt}"`, {
-        sceneIndex,
+      // Forward progress to job-service
+      await axios.post(`${config.services.job.url}/progress/update`, {
         jobId,
-        userId
-      });*/
-      
-      // Validate required parameters
-      if (!prompt) {
-        throw new Error('Prompt is required for image generation');
+        sceneId,
+        service: 'image',
+        status: payload.progress < 100 ? 'in_progress' : 'completed',
+        progress: payload.progress,
+        metadata: { imageUrl: payload.image_url }
+      });
+
+      if (payload.success === false) {
+        throw new Error(payload.error?.message || 'Image generation failed in webhook.');
       }
 
-      if (!sceneIndex) {
-        sceneIndex = 1; // Default to scene 1 if not provided
-      }
+      if (payload.progress === 100) {
+        logger.info(`Generation complete for ${jobKey}. Processing final image.`);
+        logger.info(`[DEBUG] Received full payload from AceData for ${jobKey}:`, payload);
+        
+        // With split_images: false, we use image_url for the grid.
+        const gridImageUrl = payload.image_url;
 
-      if (!jobId) {
-        jobId = Date.now().toString(); // Generate a timestamp-based ID if not provided
-      }
-      
-      const result = await this.client.generateImage(prompt, (uri, progress) => {
-        logger.info(`Image generation progress: ${progress}%`);
-      }, userId);
+        if (!gridImageUrl) {
+          throw new Error('Could not determine a valid grid image URL from the webhook payload.');
+        }
 
-      if (!result) {
-        throw new Error('No image generated');
+        logger.info(`Grid image URL '${gridImageUrl}' will be used for download and cropping.`);
+        
+        const result = {
+          uri: gridImageUrl,
+          id: payload.image_id,
+          actions: payload.actions,
+          prompt: payload.prompt, 
+        };
+        
+        const finalResult = await this.processGeneratedImage(result, sceneId, jobId);
+        jobPromise.resolve(finalResult);
+        this.pendingJobs.delete(jobKey);
       }
-
-      return await this.processGeneratedImage(result, prompt, sceneIndex, jobId);
     } catch (error) {
-      logger.error('Error generating image:', error);
-      throw error;
+      logger.error(`[ImageGenService] Error processing webhook for ${jobKey}:`, error);
+      await axios.post(`${config.services.job.url}/progress/update`, {
+        jobId,
+        sceneId,
+        service: 'image',
+        status: 'failed',
+        progress: 100,
+        metadata: { error: error.message }
+      }).catch(e => logger.error(`Failed to report failure to job service for ${jobKey}`, e));
+      
+      jobPromise.reject(error);
+      this.pendingJobs.delete(jobKey);
     }
   }
 
-  async processGeneratedImage(result, prompt, sceneIndex, jobId) {
-    const originalImageUrl = result.uri;
-    const selectedVariationUrl = this.downloader.getRandomVariationUrl(originalImageUrl);
-    
+  async processGeneratedImage(result, sceneIndex, jobId) {
+    const gridImageUrl = result.uri;
+    const prompt = result.prompt;
+    const gridId = result.id;
+
     const { imageFilePath, metadataPath } = this.fileManager.getOutputPaths(sceneIndex, jobId);
     
-    await this.downloader.downloadImage(selectedVariationUrl, imageFilePath);
+    // Download grid to a temporary path to avoid overwriting issues
+    const tempGridPath = `${imageFilePath}.grid.png`;
+    await this.downloader.downloadImage(gridImageUrl, tempGridPath);
+
+    // --- Start Cropping Logic ---
+    logger.info(`Cropping grid image for job ${jobId}, scene ${sceneIndex}`);
+    const image = sharp(tempGridPath);
+    const metadata = await image.metadata();
+    const { width, height } = metadata;
+
+    const quadrantWidth = Math.floor(width / 2);
+    const quadrantHeight = Math.floor(height / 2);
+
+    const quadrants = [
+        { left: 0,               top: 0,                width: quadrantWidth, height: quadrantHeight }, // Top-left
+        { left: quadrantWidth,   top: 0,                width: quadrantWidth, height: quadrantHeight }, // Top-right
+        { left: 0,               top: quadrantHeight,   width: quadrantWidth, height: quadrantHeight }, // Bottom-left
+        { left: quadrantWidth,   top: quadrantHeight,   width: quadrantWidth, height: quadrantHeight }  // Bottom-right
+    ];
+
+    const quadrantIndex = Math.floor(Math.random() * 4);
+    const selectedQuadrant = quadrants[quadrantIndex];
+    logger.info(`Selected quadrant ${quadrantIndex + 1}/4 for cropping.`);
+
+    await image.extract(selectedQuadrant).toFile(imageFilePath);
+    await fs.unlink(tempGridPath);
+    logger.info(`Cropped image saved to ${imageFilePath}`);
+    // --- End Cropping Logic ---
     
     const storageResult = await storageService.uploadFile(imageFilePath, 'image');
     
     await this.fileManager.saveMetadata(metadataPath, sceneIndex, {
       prompt,
-      originalUrl: originalImageUrl,
-      selectedUrl: selectedVariationUrl,
+      gridId,
+      gridImageUrl: gridImageUrl,
+      croppedImageUrl: storageResult.url,
       generatedAt: new Date().toISOString()
     });
 
-    const imageData = this.prepareImageData(imageFilePath, originalImageUrl, selectedVariationUrl, storageResult, prompt);
+    const imageData = this.prepareImageData(imageFilePath, storageResult.url, storageResult, prompt);
     const imageRecord = await this.imageDataAccess.createImageOutput(jobId, sceneIndex, imageData);
 
-    return this.prepareResponse(imageFilePath, originalImageUrl, selectedVariationUrl, storageResult, imageRecord);
+    return this.prepareResponse(imageFilePath, storageResult.url, storageResult, imageRecord);
   }
 
-  prepareImageData(imageFilePath, originalUrl, imageUrl, storageResult, prompt) {
+  prepareImageData(imageFilePath, imageUrl, storageResult, prompt) {
     return {
       tempFilePath: imageFilePath,
-      originalUrl,
       imageUrl,
       storageKey: storageResult.storageKey,
       publicUrl: storageResult.url,
@@ -96,12 +173,11 @@ class ImageGenService {
     };
   }
 
-  prepareResponse(imageFilePath, originalUrl, imageUrl, storageResult, imageRecord) {
+  prepareResponse(imageFilePath, imageUrl, storageResult, imageRecord) {
     return {
       filePath: imageFilePath,
       fileName: path.basename(imageFilePath),
-      originalUrl,
-      imageUrl,
+      imageUrl: imageUrl, // Pass the cropped image URL
       storageKey: storageResult.storageKey,
       publicUrl: storageResult.url,
       status: 'completed',

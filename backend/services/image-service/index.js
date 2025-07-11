@@ -19,7 +19,6 @@ class ImageServiceInterface {
   async initialize() {
     logger.info('Initializing ImageServiceInterface');
     this.service = new ImageGenService();
-    await this.service.init();
     logger.info('ImageServiceInterface initialized');
   }
 

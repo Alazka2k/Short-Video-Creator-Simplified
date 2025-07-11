@@ -1,198 +1,133 @@
-const { Midjourney } = require('midjourney');
+const https = require('https');
 const logger = require('../../../shared/utils/logger');
 const config = require('../../../shared/utils/config');
 
 class MidjourneyClient {
+  /**
+   * This client is refactored to use the AceData Midjourney API.
+   * It moves away from a direct WebSocket connection to a more scalable and reliable
+   * stateless HTTP-based integration. It handles image generation via a single API call
+   * and supports streaming progress updates.
+   */
   constructor() {
-    this.client = null;
-    this.initialized = false;
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 5000;
-    this.checkConnectionInterval = null;
+    if (config.imageGen.provider !== 'acedata') {
+      throw new Error('MidjourneyClient (AceData) is initialized, but a different image provider is configured.');
+    }
+
+    if (!config.imageGen.acedataMidjourneyApiToken) {
+      throw new Error('AceData API token is not configured.');
+    }
+    if (!config.imageGen.webhookBaseUrl) {
+      throw new Error('Image service webhook base URL is not configured.');
+    }
     
-    // Enhanced queue system
-    this.requestQueues = new Map(); // Multiple queues by userId
-    this.isProcessing = false;
-    this.minRequestInterval = 1000; // 1 second intervall between calls
-    this.lastRequestTime = 0;
-    this.maxConcurrentRequests = 3; // Allow 3 concurrent requests
-    this.activeRequests = 0;
-    this.globalQueue = []; // For requests without userId
+    this.initialized = true;
   }
 
-  createClient() {
-    return new Midjourney({
-      ServerId: config.imageGen.serverId,
-      ChannelId: config.imageGen.channelId,
-      SalaiToken: config.imageGen.salaiToken,
-      Debug: false,
-      Ws: config.imageGen.ws || true
+  /**
+   * How to implement upscaling in the future:
+   * 
+   * The current `generateImage` method is designed for a single-call workflow to get one
+   * of the four initial grid images. To implement upscaling, you would need a two-call workflow.
+   * 
+   * 1. First Call (Generate Grid):
+   *    - Call the `/imagine` endpoint with `action: 'generate'` and the prompt.
+   *    - Crucially, set `"split_images": false` (or omit it) to get back the single grid image.
+   *    - The response at `progress: 100` will contain the `image_id` of the grid and the `actions`
+   *      array (e.g., ["upscale1", "upscale2", "variation1", ...]).
+   * 
+   * 2. Second Call (Upscale):
+   *    - Once you have the grid `image_id`, you can make a second call to the `/imagine` endpoint.
+   *    - In this call, set the `action` to one of the upscale actions (e.g., "upscale1").
+   *    - Provide the `image_id` from the first call in the request body.
+   *    - This call will then return the URL of the final, single, upscaled image.
+   * 
+   * This would typically be orchestrated in the `image-gen-service.js`, where the service would
+   * first call `generateImageGrid()`, then `upscaleImage(imageId, upscaleAction)`.
+   */
+
+  /**
+   * Generates a single image from a prompt by creating a 2x2 grid and randomly selecting one.
+   * @param {string} prompt - The text prompt for image generation.
+   * @param {function(string, number): void} progressCallback - A function to call with progress updates.
+   * @returns {Promise<object>} A promise that resolves with the final generation result.
+   */
+  async generateImage(prompt, jobId, sceneId) {
+    const callbackUrl = `${config.imageGen.webhookBaseUrl}/api/image/webhook/${jobId}/${sceneId}`;
+    logger.info(`[AceData Client] Starting image generation for job ${jobId}, scene ${sceneId}. Callback: ${callbackUrl}`);
+
+    const requestBody = JSON.stringify({
+      action: 'generate',
+      prompt: prompt,
+      mode: 'fast',
+      split_images: false,
+      translation: false,
+      callback_url: callbackUrl,
     });
-  }
 
-  async init() {
-    try {
-      logger.info('Initializing Midjourney client...');
-      this.client = this.createClient();
-      await this.client.init();
-      this.initialized = true;
-      this.reconnectAttempts = 0;
-      logger.info('Midjourney client initialized successfully');
-      
-      // Start connection monitoring
-      this.startConnectionMonitoring();
-    } catch (error) {
-      logger.error('Failed to initialize Midjourney client:', error);
-      await this.handleConnectionError();
-    }
-  }
-
-  startConnectionMonitoring() {
-    // Clear any existing interval
-    if (this.checkConnectionInterval) {
-      clearInterval(this.checkConnectionInterval);
-    }
-
-    // Check connection every 30 seconds
-    this.checkConnectionInterval = setInterval(async () => {
-      try {
-        if (!this.client || !this.initialized) {
-          await this.handleConnectionError();
-        }
-      } catch (error) {
-        logger.error('Connection monitoring error:', error);
-      }
-    }, 30000);
-  }
-
-  async handleConnectionError() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error(`Max reconnection attempts (${this.maxReconnectAttempts}) reached`);
-      return;
-    }
-
-    this.reconnectAttempts++;
-    this.initialized = false;
-
-    logger.info(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, this.reconnectDelay));
-      await this.init();
-    } catch (error) {
-      logger.error('Reconnection attempt failed:', error);
-    }
-  }
-
-  async generateImage(prompt, progressCallback, userId = null) {
-    if (!this.initialized || !this.client) {
-      throw new Error('Client not initialized');
-    }
+    const options = {
+      hostname: 'api.acedata.cloud',
+      path: '/midjourney/imagine',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.imageGen.acedataMidjourneyApiToken}`,
+        'Content-Type': 'application/json',
+        'accept': 'application/json', // We expect a simple JSON response with a task_id now
+        'Content-Length': Buffer.byteLength(requestBody)
+      },
+      timeout: 30000, // 30-second timeout for the initial request
+    };
 
     return new Promise((resolve, reject) => {
-      const request = { prompt, progressCallback, resolve, reject, timestamp: Date.now() };
-      
-      if (userId) {
-        // Add to user-specific queue
-        if (!this.requestQueues.has(userId)) {
-          this.requestQueues.set(userId, []);
-        }
-        this.requestQueues.get(userId).push(request);
-      } else {
-        // Add to global queue
-        this.globalQueue.push(request);
-      }
+      const req = https.request(options, (res) => {
+        let responseBody = '';
+        res.on('data', chunk => responseBody += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              const responseData = JSON.parse(responseBody);
+              logger.info(`[AceData Client] Successfully submitted job to API. Task ID: ${responseData.task_id}`);
+              resolve(responseData);
+            } catch (error) {
+              logger.error('[AceData Client] Failed to parse success response from API:', responseBody);
+              reject(new Error('Failed to parse API response.'));
+            }
+          } else {
+            logger.error(`[AceData Client] API request failed with status ${res.statusCode}:`, responseBody);
+            reject(new Error(`API request failed with status code: ${res.statusCode}`));
+          }
+        });
+      });
 
-      this.processQueues();
+      req.on('error', (error) => {
+        logger.error('[AceData Client] Request error:', error);
+        reject(error);
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Request timed out after 30 seconds.'));
+      });
+
+      req.write(requestBody);
+      req.end();
     });
   }
 
-  async processQueues() {
-    if (this.isProcessing || this.activeRequests >= this.maxConcurrentRequests) return;
-
-    this.isProcessing = true;
-    
-    try {
-      // Process both user queues and global queue fairly
-      const allQueues = [...this.requestQueues.values(), this.globalQueue];
-      let processedRequest = false;
-
-      for (const queue of allQueues) {
-        if (queue.length > 0) {
-          const request = queue[0];
-          const now = Date.now();
-          const timeSinceLastRequest = now - this.lastRequestTime;
-
-          if (timeSinceLastRequest < this.minRequestInterval) {
-            await new Promise(resolve => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest));
-          }
-
-          this.activeRequests++;
-          try {
-            const result = await this.client.Imagine(request.prompt, request.progressCallback);
-            this.lastRequestTime = Date.now();
-            request.resolve(result);
-          } catch (error) {
-            if (error.message.includes('429')) {
-              logger.info('Rate limited by Midjourney, waiting 5 seconds before retry...');
-              await new Promise(resolve => setTimeout(resolve, 5000));
-              // Don't remove the request, it will be retried
-              this.isProcessing = false;
-              this.activeRequests--;
-              this.processQueues();
-              return;
-            }
-            
-            if (error.message.includes('WebSocket') || error.code === 'ENOTFOUND') {
-              await this.handleConnectionError();
-            }
-            request.reject(error);
-          }
-
-          // Remove processed request
-          queue.shift();
-          this.activeRequests--;
-          processedRequest = true;
-        }
-      }
-
-      // Clean up empty queues
-      for (const [userId, queue] of this.requestQueues.entries()) {
-        if (queue.length === 0) {
-          this.requestQueues.delete(userId);
-        }
-      }
-
-      // If we processed any requests and there are more, continue processing
-      if (processedRequest && (this.globalQueue.length > 0 || this.requestQueues.size > 0)) {
-        setImmediate(() => this.processQueues());
-      }
-    } finally {
-      this.isProcessing = false;
-    }
-  }
-
+  /**
+   * Checks if the client is initialized.
+   * @returns {Promise<boolean>}
+   */
   async isConnected() {
-    return this.initialized && this.client;
+    return this.initialized;
   }
 
+  /**
+   * Closes the client (no-op for this stateless client).
+   */
   async close() {
-    if (this.checkConnectionInterval) {
-      clearInterval(this.checkConnectionInterval);
-      this.checkConnectionInterval = null;
-    }
-
-    if (this.initialized && this.client) {
-      try {
-        await this.client.Close();
-      } catch (error) {
-        logger.error('Error closing Midjourney client:', error);
-      } finally {
-        this.initialized = false;
-        this.client = null;
-      }
-    }
+    this.initialized = false;
+    logger.info('[AceData Client] Client closed.');
   }
 }
 

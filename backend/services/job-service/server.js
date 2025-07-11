@@ -2,6 +2,7 @@
 
 const express = require('express');
 const logger = require('../../shared/utils/logger');
+const progressTracker = require('./utils/progress-tracker');
 
 function createServer(jobService) {
   const app = express();
@@ -157,6 +158,23 @@ function createServer(jobService) {
     } catch (error) {
       logger.error('Error fetching jobs:', error);
       res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // New endpoint for receiving real-time progress updates from other services
+  app.post('/progress/update', (req, res) => {
+    const { jobId, sceneId, service, status, progress, metadata } = req.body;
+    logger.info(`Job Service: Received progress update for ${jobId}/${service}`, { sceneId, status, progress });
+    try {
+      if (sceneId !== undefined && sceneId !== null) {
+        progressTracker.updateSceneProgress(jobId, sceneId, service, progress, status, metadata);
+      } else {
+        progressTracker.updateServiceProgress(jobId, service, progress, status, metadata);
+      }
+      res.status(200).json({ message: 'Progress updated' });
+    } catch (error) {
+      logger.error('Job Service: Failed to update progress', { jobId, error: error.message });
+      res.status(500).json({ error: 'Failed to update progress' });
     }
   });
 
