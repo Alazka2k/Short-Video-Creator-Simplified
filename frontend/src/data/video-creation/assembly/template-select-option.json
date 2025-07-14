@@ -146,7 +146,7 @@
             "templateContent": ["image", "text"],
             "planId": "1",
             "aspectRatio": "9:16",
-            "sceneAmount": 3,
+            "sceneAmount": 2,
             "subtitle": "false",
             "modificationProperties":{
                 "Text-Scene-1.source":{

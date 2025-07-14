@@ -10,6 +10,11 @@ const storageService = require('../../shared/utils/storage');
 const path = require('path');
 const config = require('../../shared/utils/config');
 
+// By moving pendingJobs to the module scope, its state is no longer tied to
+// a specific instance of ImageGenService. This prevents a re-initialization
+// from one request wiping out the state of other in-flight requests.
+const pendingJobs = new Map();
+
 class ImageGenService {
   constructor() {
     logger.info('Constructing ImageGenService');
@@ -17,7 +22,6 @@ class ImageGenService {
     this.downloader = new ImageDownloader();
     this.fileManager = new FileManager();
     this.imageDataAccess = ImageDataAccess;
-    this.pendingJobs = new Map();
   }
 
   async isHealthy() {
@@ -32,13 +36,13 @@ class ImageGenService {
     logger.info(`Queueing image generation for: ${jobKey}`);
 
     return new Promise(async (resolve, reject) => {
-      this.pendingJobs.set(jobKey, { resolve, reject, sceneIndex, jobId });
+      pendingJobs.set(jobKey, { resolve, reject, sceneIndex, jobId });
 
       try {
         await this.client.generateImage(prompt, jobId, sceneIndex);
       } catch (error) {
         logger.error(`[ImageGenService] Error starting image generation for ${jobKey}:`, error);
-        this.pendingJobs.delete(jobKey);
+        pendingJobs.delete(jobKey);
         reject(error);
       }
     });
@@ -46,7 +50,7 @@ class ImageGenService {
 
   async handleWebhook(jobId, sceneId, payload) {
     const jobKey = `${jobId}_${sceneId}`;
-    const jobPromise = this.pendingJobs.get(jobKey);
+    const jobPromise = pendingJobs.get(jobKey);
 
     if (!jobPromise) {
       logger.warn(`Received webhook for an unknown or completed job: ${jobKey}`);
@@ -70,7 +74,7 @@ class ImageGenService {
 
       if (payload.progress === 100) {
         logger.info(`Generation complete for ${jobKey}. Processing final image.`);
-        logger.info(`[DEBUG] Received full payload from AceData for ${jobKey}:`, payload);
+        //logger.info(`[DEBUG] Received full payload from AceData for ${jobKey}:`, payload);
         
         // With split_images: false, we use image_url for the grid.
         const gridImageUrl = payload.image_url;
@@ -90,7 +94,7 @@ class ImageGenService {
         
         const finalResult = await this.processGeneratedImage(result, sceneId, jobId);
         jobPromise.resolve(finalResult);
-        this.pendingJobs.delete(jobKey);
+        pendingJobs.delete(jobKey);
       }
     } catch (error) {
       logger.error(`[ImageGenService] Error processing webhook for ${jobKey}:`, error);
@@ -104,7 +108,7 @@ class ImageGenService {
       }).catch(e => logger.error(`Failed to report failure to job service for ${jobKey}`, e));
       
       jobPromise.reject(error);
-      this.pendingJobs.delete(jobKey);
+      pendingJobs.delete(jobKey);
     }
   }
 

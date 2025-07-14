@@ -1,3 +1,74 @@
+/**
+ * Scene Preview Component
+ *
+ * Renders a single scene from a generated video job, displaying all its media
+ * components (visuals and audio) and providing user controls for interaction.
+ *
+ * Features:
+ * 1.  **Media Display**: Intelligently shows the primary visual (video, animation, or image)
+ *     in the correct, dynamically calculated aspect ratio.
+ * 2.  **Audio Playback**: Integrates a dedicated audio player for the scene's voice narration.
+ * 3.  **Dynamic URLs**: Uses a custom hook (`useStorageUrls`) to fetch and refresh signed S3
+ *     URLs on demand, preventing issues with expired media links.
+ * 4.  **User Controls**: Provides buttons for downloading individual media assets (image, video,
+ *     voice) and includes disabled placeholders for future "Recreate" functionality.
+ * 5.  **Collapsible UI**: Allows users to expand and collapse scenes to manage screen space.
+ *     The expanded/collapsed state is persisted in `sessionStorage` for a consistent
+ *     user experience across page reloads.
+ * 6.  **Error Handling**: Gracefully handles and displays a message if any media asset fails to load.
+ *
+ * @module components/job-details/ScenePreview
+ */
+
+/**
+ * TODO: Implement "Recreate" Functionality
+ *
+ * This component is set up to support recreating media (images, voice), but the
+ * functionality is currently disabled. The backend architecture now fully supports this.
+ *
+ * ---
+ *
+ * ### Frontend Implementation Steps:
+ *
+ * 1.  **Enable the Button:** Remove the `disabled` prop from the "Recreate" button.
+ *
+ * 2.  **State Management:**
+ *     - Create a new state variable, e.g., `isRecreating: { [type: string]: boolean }`,
+ *       to track the loading state for each media type (e.g., `isRecreating.image`).
+ *     - When the button is clicked, set the corresponding state to `true` to show a spinner.
+ *
+ * 3.  **API Call:**
+ *     - Create an `onClick` handler, e.g., `handleRecreate(type)`.
+ *     - This handler should call a new method in the `apiClient`. The method will
+ *       make a `POST` request to the existing `/api/image/generate` endpoint
+ *       (or a similar new one for voice).
+ *     - The request body must include the `jobId` and `sceneId`.
+ *
+ * 4.  **Data Handling & Refresh:**
+ *     - The API call will be a long-polling request and will only resolve when the
+ *       new media is fully generated.
+ *     - Upon successful response, the component needs to be updated with the new
+ *       media URL. The best approach is to re-fetch the entire job data from the
+ *       `useJobDetails` hook to ensure all state is consistent.
+ *
+ * ---
+ *
+ * ### Backend & Architectural Considerations (User Suggestion):
+ *
+ * - **Versioning:** Instead of simply replacing the old media
+ *   record in the database, the backend should implement versioning.
+ *   - The `image_outputs` (or `voice_outputs`) table should be updated to include a
+ *     `version` number and perhaps an `isActive` flag.
+ *   - A "recreate" call would INSERT a new record with an incremented version number.
+ *
+ * - **Frontend Version Switching:** The frontend would then need UI controls
+ *   (e.g., a dropdown next to the "Recreate" button) to allow the user to
+ *   switch between different versions of the generated media for that scene.
+ *
+ * This approach is non-destructive and provides a much better user experience.
+ * The current backend architecture (long-polling to a stateless service) is
+ * perfectly suited to handle this.
+ */
 import { useState, useEffect } from 'react'
 import { AudioPlayer } from '@/components/shared/media/AudioPlayer'
 import { ImagePreview } from '@/components/shared/media/ImagePreview'

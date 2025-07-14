@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../../../shared/utils/logger');
 const MetadataManager = require('../utils/metadata-manager');
+const axios = require('axios');
+const config = require('../../../shared/utils/config');
 
 class SceneProcessor {
   constructor(services, jobDataAccess) {
@@ -263,131 +265,69 @@ class SceneProcessor {
   }
 
   async generateImage(scene, sceneIndex, jobId) {
-    const maxRetries = 3;
-    let lastError = null;
+    // This function is refactored to make a direct HTTP call to the image-service,
+    // treating it as a proper microservice. This solves the cross-process state
+    // issue where the job was queued in one process and the webhook was received in another.
+    const imagePrompt = scene.visual_prompt || scene.description;
 
-    // Use the visual_prompt property consistently
-    const imagePrompt = scene.visual_prompt;
-    
-    // The image service now handles its own progress updates via webhook.
-    // The calls to updateJobProgress from here are no longer needed for 'image'.
-    
-    // Log the scene properties for debugging
-    /*logger.info(`Scene properties for image generation:`, {
-      sceneIndex,
-      hasVisualPrompt: !!scene.visual_prompt,
-      hasVisualPromptProperty: scene.hasOwnProperty('visual_prompt'),
-      propertyNames: Object.keys(scene)
-    });*/
-    
     if (!imagePrompt) {
-      // Fallback to description only if needed
-      if (scene.description) {
-        logger.warn(`No visual_prompt found for scene ${sceneIndex}, using description as fallback`, { jobId });
-        const fallbackPrompt = scene.description;
-        
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            logger.info(`Generating image with fallback prompt for scene ${sceneIndex}, attempt ${attempt}/${maxRetries}`);
-            
-            if (!await this.services.image.service.isHealthy()) {
-              await this.services.image.initialize();
-            }
-
-            const result = await this.services.image.process(
-              fallbackPrompt,
-              sceneIndex,
-              jobId
-            );
-
-            return result;
-          } catch (error) {
-            lastError = error;
-            logger.error(`Image generation attempt ${attempt} failed:`, error);
-            
-            if (attempt < maxRetries && (
-                error.message.includes('WebSocket') || 
-                error.message.includes('ENOTFOUND') || 
-                error.message.includes('not initialized'))) {
-              const delay = attempt * 5000;
-              await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-              this.jobDataAccess.updateJobProgress(jobId, 'image', 'failed', { 
-                sceneId: sceneIndex,
-                error: error.message
-              });
-              break;
-            }
-          }
-        }
-        
-        throw new Error(`Failed to generate image with fallback prompt after ${maxRetries} attempts: ${lastError?.message}`);
-      } else {
-        logger.error(`No visual_prompt or fallback found for scene ${sceneIndex}`, { jobId });
-        throw new Error('No visual_prompt found for scene');
-      }
+      logger.error(`No visual_prompt or description found for scene ${sceneIndex}`, { jobId });
+      throw new Error('No visual_prompt or description found for scene');
     }
-    
-    logger.info(`Using image prompt for scene ${sceneIndex}: ${imagePrompt.substring(0, 100)}...`);
 
+    logger.info(`Calling Image Service endpoint for scene ${sceneIndex} of job ${jobId}`);
+
+    // Immediately update progress to indicate that image generation has started.
+    // This ensures its weight is included in the overall progress calculation from the beginning.
+    this.jobDataAccess.updateJobProgress(jobId, 'image', 'started', {
+      sceneId: sceneIndex,
+      progress: 0,
+      status: 'in_progress'
+    });
+
+    const maxRetries = 3;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        logger.info(`Generating image for scene ${sceneIndex}, attempt ${attempt}/${maxRetries}`);
-        
-        // Check if service needs initialization
-        if (!await this.services.image.service.isHealthy()) {
-          logger.info('Image service unhealthy, attempting to reinitialize...');
-          await this.services.image.initialize();
-          logger.info('Image service reinitialized');
-        }
-
-        const result = await this.services.image.process(
-          imagePrompt,
+        const response = await axios.post(`${config.services.image.url}/generate`, {
+          prompt: imagePrompt,
           sceneIndex,
-          jobId
-        );
-        
-        // Ensure result has status field
-        if (result && !result.status) {
-          result.status = 'completed';
-        }
+          jobId,
+        }, {
+          timeout: 300000 // 5 minute timeout, to allow for image generation
+        });
 
-        return result;
-      } catch (error) {
-        lastError = error;
-        logger.error(`Image generation attempt ${attempt} failed:`, error);
-
-        // Check if it's a connection-related error
-        if (error.message.includes('WebSocket') || 
-            error.message.includes('ENOTFOUND') || 
-            error.message.includes('not initialized')) {
-          if (attempt < maxRetries) {
-            logger.info('Attempting to reinitialize image service...');
-            try {
-              await this.services.image.initialize();
-              logger.info('Successfully reinitialized image service');
-            } catch (initError) {
-              logger.error('Failed to reinitialize image service:', initError);
-            }
-            
-            const delay = attempt * 5000;
-            logger.info(`Waiting ${delay}ms before next attempt...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-          }
+        if (response.data && response.data.result) {
+          logger.info(`Image service successfully returned result for scene ${sceneIndex} on attempt ${attempt}`);
+          return response.data.result;
         } else {
-          // Update progress to failed with error
-          this.jobDataAccess.updateJobProgress(jobId, 'image', 'failed', { 
+          throw new Error('Invalid response structure from image service');
+        }
+      } catch (error) {
+        logger.error(`Error calling image service for scene ${sceneIndex} (attempt ${attempt}/${maxRetries}):`, {
+          message: error.message,
+          url: `${config.services.image.url}/generate`,
+          response: error.response?.data
+        });
+
+        // Check for retryable errors
+        const isRetryable =
+          error.response?.status >= 500 ||
+          (error.message && error.message.includes('please try again later'));
+
+        if (isRetryable && attempt < maxRetries) {
+          const delay = attempt * 2000; // 2s, 4s
+          logger.info(`Retryable error detected. Waiting ${delay}ms before next attempt.`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          // If not retryable or max retries reached, update progress and throw
+          this.jobDataAccess.updateJobProgress(jobId, 'image', 'failed', {
             sceneId: sceneIndex,
-            error: error.message
+            error: error.response?.data?.details || error.message
           });
-          // If it's not a connection error, don't retry
-          break;
+          throw error; // Re-throw to be caught by the main scene processing loop
         }
       }
     }
-
-    // If we get here, all attempts failed
-    throw new Error(`Failed to generate image after ${maxRetries} attempts: ${lastError?.message}`);
   }
 
   async processVoice(scene, sceneId, jobId, serviceConfig, parameters) {

@@ -39,31 +39,32 @@ function createServer(imageServiceInterface) {
   // Generate image endpoint
   app.post('/generate', async (req, res) => {
     logger.info('Image Service: Handling /generate request');
-    const requestTimeout = setTimeout(() => {
-      logger.error('Image Service: Request timed out');
-      res.status(504).json({ error: 'Request timed out' });
-    }, 300000); // 5 minutes timeout
-
+    // The timeout is now handled by the calling service (e.g., scene-processor)
     try {
-      const { prompt, sceneIndex, jobId } = req.body;
-      //logger.info(`Image Service: Request body: ${JSON.stringify(req.body)}`);
+      const { prompt, sceneIndex, jobId, userId } = req.body;
+      logger.info(`Image Service: Received image generation request for job ${jobId}, scene ${sceneIndex}`);
 
-      if (!prompt) {
-        throw new Error('prompt is missing or undefined');
+      if (!prompt || !jobId || sceneIndex === undefined) {
+        logger.error('Image Service: Invalid request to /generate. Missing prompt, jobId, or sceneIndex.');
+        return res.status(400).json({ error: 'Invalid request', details: 'Missing prompt, jobId, or sceneIndex.' });
       }
 
-      logger.info(`Image Service: Generating image with prompt: ${prompt}`);
-      const result = await imageServiceInterface.generateContent(prompt, sceneIndex, jobId);
-      clearTimeout(requestTimeout);
-      logger.info('Image Service: Image generated successfully');
+      logger.info(`Image Service: Generating image with prompt: ${prompt.substring(0, 100)}...`);
+      // This now waits for the entire async flow (including webhook) to complete
+      const result = await imageServiceInterface.generateContent(prompt, sceneIndex, jobId, userId);
+      
+      logger.info('Image Service: Image generated successfully, returning result.');
       res.json({
         message: 'Image generated successfully',
         result: result
       });
     } catch (error) {
-      clearTimeout(requestTimeout);
-      logger.error('Image Service: Error generating image:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      logger.error('Image Service: Error generating image:', {
+        message: error.message,
+        jobId: req.body.jobId,
+        sceneId: req.body.sceneIndex,
+      });
+      res.status(500).json({ error: 'Image generation failed', details: error.message });
     }
   });
 
