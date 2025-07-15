@@ -13,20 +13,51 @@ class MusicProcessor {
       return { status: 'skipped' };
     }
 
+    const musicData = {
+      title: llmResult.content.music.title,
+      prompt: llmResult.content.music.prompt,
+      style: llmResult.content.music.style,
+      lyrics: llmResult.content.music.lyrics,
+      instrumental: parameters.musicGenParams?.instrumental ?? true
+    };
+
+    let fakeProgressInterval;
+
     try {
-      const musicResult = await this.musicService.process(
-        jobId,
-        {
-          title: llmResult.content.music.title,
-          prompt: llmResult.content.music.prompt,
-          style: llmResult.content.music.style,
-          lyrics: llmResult.content.music.lyrics,
-          instrumental: parameters.musicGenParams?.instrumental ?? true
+      // --- Start Realistic Progress Simulation ---
+      this.jobDataAccess.updateJobProgress(jobId, 'music', 'in_progress', { progress: 5 });
+      
+      const updates = [
+        { delay: 30000, progress: 15 }, // 30 seconds
+        { delay: 30000, progress: 30 }, // 60 seconds
+        { delay: 30000, progress: 45 }, // 90 seconds total
+        { delay: 30000, progress: 60 }, // 120 seconds total
+        { delay: 30000, progress: 75 }, // 150 seconds total
+        { delay: 30000, progress: 80 }, // 180 seconds total
+        { delay: 30000, progress: 85 }, // 210 seconds total
+        { delay: 30000, progress: 90 } // 240 seconds total
+      ];
+
+      let completed = false;
+      const runUpdates = async () => {
+        for (const update of updates) {
+          await new Promise(resolve => setTimeout(resolve, update.delay));
+          if (completed) return; // Stop if the real process finished
+          this.jobDataAccess.updateJobProgress(jobId, 'music', 'in_progress', { progress: update.progress });
         }
-      );
+      };
+      
+      runUpdates();
+      // --- End Simulation ---
+
+      const musicResult = await this.musicService.process(jobId, musicData);
+      
+      completed = true; // Signal that the real process is done
 
       if (musicResult) {
+        // Final update to 100% 'completed'
         await this.jobDataAccess.updateJobProgress(jobId, 'music', 'completed', {
+          progress: 100, // Explicitly set final progress to 100
           filePath: musicResult.filePath,
           storageKey: musicResult.storageKey,
           publicUrl: musicResult.publicUrl,
@@ -49,6 +80,7 @@ class MusicProcessor {
       });
       return { status: 'failed', error: 'Music service returned empty result' };
     } catch (error) {
+      completed = true; // Stop simulation on error too
       logger.error('Error in music generation:', error);
       await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
         error: error.message

@@ -97,7 +97,15 @@ export function useJobDetails(jobId: string) {
       return response.data;
     },
     enabled: !!jobId && isAuthenticated, // Only run query if we have a job ID and user is authenticated
-    staleTime: 45 * 60 * 1000, // Consider data fresh for 45 minutes
+    // Refetch every 5 seconds if the job is in progress
+    refetchInterval: (query) => {
+      const data = query.state.data as JobDetails | undefined;
+      if (data?.status === 'in_progress' || data?.status === 'queued') {
+        return 5000; // 5 seconds
+      }
+      return false; // Disable polling for completed or failed jobs
+    },
+    staleTime: 60 * 1000, // Consider data fresh for 1 minute
     gcTime: 60 * 60 * 1000, // Keep in cache for 1 hour
   })
 

@@ -14,7 +14,7 @@ export default function WorkbenchPage() {
         <div className="relative">
           {/* Header section */}
           <div className="text-center space-y-2 mb-8">
-            <h1 className="text-4xl font-bold tracking-tight gradient-primary-text">
+            <h1 className="text-4xl font-bold tracking-tight">
               Content Workbench
             </h1>
             <p className="text-muted-foreground text-lg">

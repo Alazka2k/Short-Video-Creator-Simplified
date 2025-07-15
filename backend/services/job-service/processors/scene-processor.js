@@ -73,10 +73,10 @@ class SceneProcessor {
         );
         logger.info(`${visualizationType} generation for scene ${sceneId} completed with status: ${visualResult?.status}`);
       } else if (!serviceConfig.skipVisualization) {
-        logger.info(`${visualizationType} skipped for scene ${sceneId} due to missing or failed image`);
+        logger.info(`Visualization (Animation or Video) skipped for scene ${sceneId} due to missing or failed image`);
         visualResult = { status: 'skipped', reason: 'Missing or failed image' };
       } else {
-        logger.info(`${visualizationType} skipped for scene ${sceneId}`);
+        logger.info(`Visualization (Animation or Video) skipped for scene ${sceneId}`);
         visualResult = { status: 'skipped' };
       }
 

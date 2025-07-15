@@ -40,6 +40,7 @@ interface Job {
   status: 'completed' | 'in_progress' | 'failed' | 'queued';
   prompt: string;
   service_sequence?: string[];
+  previewUrl?: string;
   metadata: {
     progress?: Record<string, ProgressInfo>;
     llmResult?: {
@@ -140,7 +141,7 @@ const ServiceIcons = ({ services }: { services?: string[] }) => {
 
 export function JobCard({ job }: JobCardProps) {
   const title = job.metadata?.llmResult?.title || job.prompt;
-  const thumbnailUrl = job.metadata?.scenes?.[0]?.image?.publicUrl;
+  const thumbnailUrl = job.previewUrl || job.metadata?.scenes?.[0]?.image?.publicUrl;
   const createdAt = formatDistanceToNow(new Date(job.created_at), { addSuffix: true });
 
   const getOverallProgress = () => {

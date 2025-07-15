@@ -85,7 +85,14 @@ export function useWorkbench() {
       return response.data
     },
     enabled: isAuthenticated,
-    staleTime: 5000, // Refresh every 5 seconds for progress updates
+    // Keep data fresh for 1 minute, but poll actively if jobs are running.
+    staleTime: 60000, 
+    // Poll every 5 seconds, but only if there's an active job in progress.
+    refetchInterval: (query) => {
+      const data = query.state.data as JobsResponse | undefined;
+      const hasActiveJob = data?.data.some(job => job.status === 'in_progress' || job.status === 'queued');
+      return hasActiveJob ? 5000 : false;
+    },
     placeholderData: previousData => previousData,
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 404 || error?.response?.status === 204) {
@@ -163,23 +170,35 @@ export function useWorkbench() {
   }
 
   const jobs = jobsResponse?.data?.map(job => {
-    if (!job.metadata?.scenes?.[0]) return job
+    const aspectRatio = getAspectRatio(job);
+    const gridSpan = calculateGridSpan(aspectRatio);
     
-    const scene = job.metadata.scenes[0]
-    const aspectRatio = getAspectRatio(job)
-    const gridSpan = calculateGridSpan(aspectRatio)
-    
-    const previewUrl = scene.image?.storageKey ? 
-      previewUrls[scene.image.storageKey] || scene.image.publicUrl :
-      undefined
+    // Default to the dynamic preview URL if it exists
+    let previewUrl = job.metadata?.scenes?.[0]?.image?.storageKey ? 
+      previewUrls[job.metadata.scenes[0].image.storageKey] || job.metadata.scenes[0].image.publicUrl :
+      undefined;
 
+    // --- Logic for Non-Visual Job Thumbnails ---
+    const services = new Set(job.service_sequence || []);
+    const isVisual = services.has('image') || services.has('video') || services.has('animation');
+
+    if (!isVisual) {
+      if (services.has('music')) {
+        previewUrl = '/workbench/thumbnails/music_thumbnail.png';
+      } else if (services.has('voice')) {
+        previewUrl = '/workbench/thumbnails/voice_thumbnail.png';
+      } else {
+        previewUrl = '/workbench/thumbnails/script_thumbnail.png';
+      }
+    }
+    
     return {
       ...job,
       aspectRatio,
       gridSpan,
-      previewUrl
-    }
-  }) || []
+      previewUrl // This will be either the dynamic URL or our new static one
+    };
+  }) || [];
 
   return {
     jobs,

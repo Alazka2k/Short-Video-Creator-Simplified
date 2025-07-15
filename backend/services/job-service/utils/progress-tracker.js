@@ -26,36 +26,23 @@ class ProgressTracker {
       throw new Error('Job ID is required for progress tracking');
     }
     
-    // Check if this is an LLM-only job (all other services skipped)
-    const isLlmOnlyJob = serviceConfig.skipVoice && 
-                        serviceConfig.skipImage && 
-                        serviceConfig.skipMusic && 
-                        serviceConfig.skipVisualization;
-    
-    // Calculate weights for each service
-    const weights = {
-      llm: 10,             // LLM is always 10%
-      music: 10,           // Music is 10% if used
-      scene: 80            // Remaining 80% divided among scenes
-    };
-    
     // Create list of services that will be used in this job
     const services = ['llm']; // LLM is always included
     if (!serviceConfig.skipMusic) services.push('music');
     if (!serviceConfig.skipVoice) services.push('voice');
     if (!serviceConfig.skipImage) services.push('image');
     if (!serviceConfig.skipVisualization) {
+      // Use the specific visualization type ('animation' or 'video')
       services.push(serviceConfig.visualizationType || 'animation');
     }
     
     // Initialize progress data for this job
     const jobProgress = {
       startTime: new Date(),
-      services,
-      weights,
+      services, // Store the list of active services
       scenesCount,
       serviceProgress: {},
-      sceneProgress: {},  // Initialize empty scene progress object
+      sceneProgress: {},
       overallProgress: 0,
       status: 'in_progress',
       lastUpdated: new Date()
@@ -68,12 +55,7 @@ class ProgressTracker {
     
     this.progressData.set(jobId, jobProgress);
     
-    // For LLM-only jobs, log appropriate message
-    if (isLlmOnlyJob) {
-      logger.info(`Initialized progress for LLM-only job ${jobId}`);
-    } else {
-      logger.info(`Initialized progress for job ${jobId} with ${scenesCount} scenes`);
-    }
+    logger.info(`Initialized progress for job ${jobId}`, { services, scenesCount });
     
     return jobProgress;
   }
@@ -107,39 +89,8 @@ class ProgressTracker {
       ...metadata,
       lastUpdated: new Date()
     };
-
-    // Special handling for LLM service completion - don't set overall job to completed
-    // when only the LLM service is done, unless it's an LLM-only job
-    if (service === 'llm' && status === 'completed') {
-      // Determine if this is an LLM-only job
-      const isLlmOnlyJob = jobProgress.services.length === 1 || 
-                        (jobProgress.services.length === 2 && jobProgress.services.includes('music'));
-      
-      // For non-LLM-only jobs, prevent setting job status to completed here
-      // Let the full job completion logic handle it later
-      if (!isLlmOnlyJob) {
-        // Check what services are included
-        const includesVoice = jobProgress.services.includes('voice');
-        const includesImage = jobProgress.services.includes('image');
-        const includesAnimation = jobProgress.services.includes('animation');
-        const includesVideo = jobProgress.services.includes('video');
-        
-        // Calculate the approximate progress percentage based on what's left to do
-        const remainingServices = jobProgress.services.length - 1; // -1 for LLM which is complete
-        const progressPercentage = Math.floor(jobProgress.weights.llm);
-        
-        // Directly set the overall progress without full recalculation
-        jobProgress.overallProgress = progressPercentage;
-        jobProgress.status = 'in_progress';
-        jobProgress.lastUpdated = new Date();
-        
-        logger.info(`Progress updated for job after LLM completion: ${progressPercentage}% (in_progress)`);
-        
-        return this.getJobProgress(jobId);
-      }
-    }
-
-    // Normal recalculation for other services or LLM-only jobs
+    
+    // Recalculate overall progress
     this._recalculateProgress(jobProgress);
     
     return this.getJobProgress(jobId);
@@ -212,7 +163,10 @@ class ProgressTracker {
     jobProgress.status = status;
     jobProgress.lastUpdated = new Date();
     
-    if (status === 'completed' || status === 'failed') {
+    if (status === 'completed') {
+      jobProgress.overallProgress = 100;
+      jobProgress.endTime = new Date();
+    } else if (status === 'failed') {
       jobProgress.endTime = new Date();
       // Eventually we may want to clean up memory by removing completed jobs
       // this.progressData.delete(jobId);
@@ -274,139 +228,75 @@ class ProgressTracker {
   _recalculateProgress(jobProgress, updateStatus = true) {
     if (!jobProgress) return;
     
-    // Ensure all required objects exist
-    jobProgress.serviceProgress = jobProgress.serviceProgress || {};
-    jobProgress.sceneProgress = jobProgress.sceneProgress || {};
+    const { services, scenesCount, serviceProgress, sceneProgress } = jobProgress;
     
-    // Get services and scenes count
-    const services = jobProgress.services || ['llm'];
-    const scenesCount = jobProgress.scenesCount || 1;
+    // Calculate normalized weights based on active services for this job
+    const weights = this._calculateWeights(services);
     
-    // Calculate weights based on enabled services
-    const weights = this._calculateWeights(services, scenesCount);
+    let calculatedProgress = 0;
     
-    let progressSum = 0;
-    let weightSum = 0;
-    
-    // Handle LLM progress (always 5-10%)
-    if (jobProgress.serviceProgress.llm) {
-      const llmProgress = jobProgress.serviceProgress.llm;
-      if (llmProgress.status === 'completed') {
-        progressSum += weights.llm;
-      } else if (llmProgress.status === 'failed') {
-        progressSum += 0;
-      } else {
-        progressSum += (llmProgress.progress * weights.llm) / 100;
-      }
-      weightSum += weights.llm;
+    // --- Calculate progress for non-scene services (LLM, Music) ---
+    if (weights.llm && serviceProgress.llm) {
+      calculatedProgress += (serviceProgress.llm.progress / 100) * weights.llm;
     }
     
-    // Handle Music progress if enabled
-    if (services.includes('music') && jobProgress.serviceProgress.music) {
-      const musicProgress = jobProgress.serviceProgress.music;
-      if (musicProgress.status === 'completed') {
-        progressSum += weights.music;
-      } else if (musicProgress.status === 'failed') {
-        progressSum += 0;
-      } else {
-        progressSum += (musicProgress.progress * weights.music) / 100;
-      }
-      weightSum += weights.music;
+    if (weights.music && serviceProgress.music) {
+      calculatedProgress += (serviceProgress.music.progress / 100) * weights.music;
     }
-    
-    // Handle scene progress
-    for (let sceneId = 1; sceneId <= scenesCount; sceneId++) {
-      if (jobProgress.sceneProgress[sceneId]) {
-        const scene = jobProgress.sceneProgress[sceneId];
-        
-        // Voice progress
-        if (scene.voice) {
-          const voiceProgress = scene.voice;
-          const voiceWeight = weights.voice / scenesCount;
-          if (voiceProgress.status === 'completed') {
-            progressSum += voiceWeight;
-          } else if (voiceProgress.status === 'failed') {
-            progressSum += 0;
-          } else {
-            progressSum += (voiceProgress.progress * voiceWeight) / 100;
-          }
-          weightSum += voiceWeight;
+
+    // --- Calculate weighted progress for each scene ---
+    let totalSceneProgress = 0;
+    if (scenesCount > 0) {
+        for (let i = 1; i <= scenesCount; i++) {
+            const scene = sceneProgress[i] || {};
+            let sceneServiceProgress = 0;
+            let sceneTotalWeight = 0;
+
+            if (weights.voice && scene.voice) {
+                sceneServiceProgress += (scene.voice.progress / 100) * (weights.voice / scenesCount);
+            }
+            if (weights.image && scene.image) {
+                sceneServiceProgress += (scene.image.progress / 100) * (weights.image / scenesCount);
+            }
+            // Use 'visualization' key which covers both animation and video
+            if (weights.visualization && (scene.animation || scene.video)) {
+                const visual = scene.animation || scene.video;
+                sceneServiceProgress += (visual.progress / 100) * (weights.visualization / scenesCount);
+            }
+            totalSceneProgress += sceneServiceProgress;
         }
-        
-        // Image progress - use actual progress value
-        if (scene.image) {
-          const imageProgress = scene.image;
-          const imageWeight = weights.image / scenesCount;
-          // Always use the actual progress value for image generation
-          progressSum += (imageProgress.progress * imageWeight) / 100;
-          weightSum += imageWeight;
-        }
-        
-        // Video/Animation progress - only count if image is completed
-        const visualService = scene.video || scene.animation;
-        if (visualService && scene.image?.status === 'completed') {
-          const visualProgress = visualService;
-          const visualWeight = weights.visual / scenesCount;
-          if (visualProgress.status === 'completed') {
-            progressSum += visualWeight;
-          } else if (visualProgress.status === 'failed') {
-            progressSum += 0;
-          } else {
-            progressSum += (visualProgress.progress * visualWeight) / 100;
-          }
-          weightSum += visualWeight;
-        }
-      }
     }
+    calculatedProgress += totalSceneProgress;
     
-    // Update overall progress
-    jobProgress.overallProgress = weightSum > 0 ? Math.round((progressSum / weightSum) * 100) : 0;
+    // Update overall progress, ensuring it's an integer
+    jobProgress.overallProgress = Math.round(calculatedProgress);
     
-    // Update job status only if allowed
+    // Update job status only if allowed by the flag
     if (updateStatus) {
-      // Check if all services are completed
+      // Check if all services for all scenes are complete
       const allServicesCompleted = services.every(service => {
-        if (service === 'llm') {
-          return jobProgress.serviceProgress.llm?.status === 'completed';
-        }
-        if (service === 'music') {
-          if (!services.includes('music')) return true; // Skip if not included
-          return jobProgress.serviceProgress.music?.status === 'completed';
+        if (service === 'llm' || service === 'music') {
+          return serviceProgress[service]?.status === 'completed';
         }
         
-        // For scene services, check all scenes
-        return Array.from({ length: scenesCount }, (_, i) => i + 1).every(sceneId => {
-          const scene = jobProgress.sceneProgress[sceneId];
-          if (!scene) return false;
-          
-          if (service === 'voice') {
-            if (scene.voice?.status === 'skipped') return true;
-            return scene.voice?.status === 'completed';
+        // For scene-based services, check every scene
+        for (let i = 1; i <= scenesCount; i++) {
+          const scene = sceneProgress[i] || {};
+          const serviceState = scene[service];
+          // If a service for a scene is not marked as completed or skipped, the job is not done
+          if (!serviceState || (serviceState.status !== 'completed' && serviceState.status !== 'skipped')) {
+            return false;
           }
-          if (service === 'image') {
-            if (scene.image?.status === 'skipped') return true;
-            return scene.image?.status === 'completed' && scene.image?.progress === 100;
-          }
-          if (service === 'video') {
-            if (scene.video?.status === 'skipped') return true;
-            return scene.video?.status === 'completed';
-          }
-          if (service === 'animation') {
-            if (scene.animation?.status === 'skipped') return true;
-            return scene.animation?.status === 'completed';
-          }
-          
-          return true;
-        });
+        }
+        return true;
       });
       
-      // If all services are completed, set status to completed and progress to 100%
       if (allServicesCompleted) {
-        jobProgress.status = 'completed';
-        jobProgress.overallProgress = 100;
-        jobProgress.endTime = new Date();
+        // Cap progress at 95% to prevent premature completion.
+        // The final 100% and 'completed' status will be set explicitly by the job pipeline service.
+        jobProgress.status = 'in_progress';
+        jobProgress.overallProgress = 95;
       } else {
-        // Ensure status is in_progress if not all services are completed
         jobProgress.status = 'in_progress';
       }
     }
@@ -414,67 +304,51 @@ class ProgressTracker {
     jobProgress.lastUpdated = new Date();
     
     // Log when progress changes significantly
-    logger.info(`Progress recalculated for job: ${jobProgress.overallProgress}% (${jobProgress.status})`);
+    if (jobProgress.overallProgress % 10 === 0 || jobProgress.overallProgress > 90) {
+      logger.info(`Progress recalculated for job ${jobProgress.jobId}: ${jobProgress.overallProgress}% (${jobProgress.status})`);
+    }
   }
 
   /**
-   * Calculate weights for each service based on enabled services and scene count
+   * A robust method to calculate weights for each service based on the job's configuration.
+   * This ensures that the total weight of all active services always sums to 100.
    * @private
-   * @param {Array} services - Array of enabled services
-   * @param {number} scenesCount - Number of scenes
-   * @returns {Object} - Weights for each service
+   * @param {string[]} services - An array of enabled service names for the job.
+   * @returns {Object.<string, number>} An object mapping service names to their calculated weight.
    */
-  _calculateWeights(services, scenesCount) {
-    const weights = {
-      llm: 0,
-      music: 0,
-      voice: 0,
-      image: 0,
-      visual: 0
+  _calculateWeights(services) {
+    const baseWeights = {
+      llm: 5,
+      music: 30,
+      voice: 10,
+      image: 20,
+      visualization: 35, // Generic key for animation or video
     };
 
-    const hasMusic = services.includes('music');
-    const hasVoice = services.includes('voice');
-    const hasImage = services.includes('image');
-    const hasVideo = services.includes('video');
-    const hasAnimation = services.includes('animation');
+    const activeServices = new Set();
+    services.forEach(service => {
+      if (service === 'animation' || service === 'video') {
+        activeServices.add('visualization');
+      } else if (baseWeights[service]) {
+        activeServices.add(service);
+      }
+    });
 
-    // Base weights for LLM and Music
-    weights.llm = hasMusic ? 5 : 10; // 5% if music enabled, 10% otherwise
-    weights.music = hasMusic ? 10 : 0; // 10% if enabled
+    let totalWeight = 0;
+    activeServices.forEach(service => {
+      totalWeight += baseWeights[service];
+    });
 
-    // Calculate remaining weight (90% or 85% depending on music)
-    const remainingWeight = hasMusic ? 85 : 90;
+    if (totalWeight === 0) return {}; // Return empty if no valid services are active
 
-    if (hasVoice && hasImage && (hasVideo || hasAnimation)) {
-      // Voice + Image + Video/Animation
-      weights.voice = (remainingWeight * 0.1) / scenesCount; // 10% per scene
-      weights.image = (remainingWeight * 0.15) / scenesCount; // 15% per scene
-      weights.visual = (remainingWeight * 0.75) / scenesCount; // 75% per scene
-    } else if (hasVoice && hasImage) {
-      // Voice + Image only
-      weights.voice = (remainingWeight * 0.35) / scenesCount; // 35% per scene
-      weights.image = (remainingWeight * 0.65) / scenesCount; // 65% per scene
-    } else if (hasVoice && (hasVideo || hasAnimation)) {
-      // Voice + Video/Animation only
-      weights.voice = (remainingWeight * 0.3) / scenesCount; // 30% per scene
-      weights.visual = (remainingWeight * 0.7) / scenesCount; // 70% per scene
-    } else if (hasImage && (hasVideo || hasAnimation)) {
-      // Image + Video/Animation only
-      weights.image = (remainingWeight * 0.3) / scenesCount; // 30% per scene
-      weights.visual = (remainingWeight * 0.7) / scenesCount; // 70% per scene
-    } else if (hasVoice) {
-      // Voice only
-      weights.voice = remainingWeight / scenesCount; // 100% per scene
-    } else if (hasImage) {
-      // Image only
-      weights.image = remainingWeight / scenesCount; // 100% per scene
-    } else if (hasVideo || hasAnimation) {
-      // Video/Animation only
-      weights.visual = remainingWeight / scenesCount; // 100% per scene
-    }
-
-    return weights;
+    // Normalize the weights of active services so they sum to 100
+    const finalWeights = {};
+    activeServices.forEach(service => {
+      finalWeights[service] = (baseWeights[service] / totalWeight) * 100;
+    });
+    
+    logger.debug('Calculated normalized weights:', finalWeights);
+    return finalWeights;
   }
 
   /**
@@ -494,4 +368,5 @@ class ProgressTracker {
 }
 
 // Export as singleton
+module.exports = new ProgressTracker(); 
 module.exports = new ProgressTracker(); 

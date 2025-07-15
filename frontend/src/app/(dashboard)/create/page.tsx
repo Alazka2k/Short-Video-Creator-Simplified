@@ -203,7 +203,7 @@ export default function CreatePage() {
           <div className="grid gap-8">
             {/* Header section */}
             <div className="text-center space-y-2">
-              <h1 className="text-4xl font-bold tracking-tight gradient-primary-text">
+              <h1 className="text-4xl font-bold tracking-tight">
                 Create Your Content
               </h1>
               <p className="text-muted-foreground text-lg">
