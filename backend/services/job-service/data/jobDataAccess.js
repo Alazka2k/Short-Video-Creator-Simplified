@@ -170,6 +170,21 @@ class JobDataAccess {
       completedAt: new Date().toISOString()
     };
 
+    // --- Check for Scene Completion ---
+    const serviceSequence = this.safeJsonParse(job.service_sequence, []);
+    const requiredSceneServices = serviceSequence.filter(s => s !== 'llm' && s !== 'music');
+    
+    const allServicesComplete = requiredSceneServices.every(serviceName => {
+      return scene[serviceName] && scene[serviceName].status === 'completed';
+    });
+
+    if (allServicesComplete) {
+      scene.status = 'completed';
+      scene.completedAt = new Date().toISOString();
+      logger.info(`Scene ${sceneId} for job ${jobId} marked as complete.`);
+    }
+    // --- End Check for Scene Completion ---
+
     // Sort scenes by sceneId to maintain order
     metadata.scenes.sort((a, b) => a.sceneId - b.sceneId);
 

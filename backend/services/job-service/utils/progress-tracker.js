@@ -274,8 +274,11 @@ class ProgressTracker {
     
     // Update job status only if allowed by the flag
     if (updateStatus) {
-      // Check for any failed services first
-      const hasFailedService = services.some(service => {
+      // Check for any failed critical services first
+      const criticalServices = ['llm', 'image', 'video', 'animation'];
+      const hasFailedCriticalService = services.some(service => {
+        if (!criticalServices.includes(service)) return false; // Skip non-critical services
+
         if (serviceProgress[service]?.status === 'failed') return true;
         for (let i = 1; i <= scenesCount; i++) {
           if (sceneProgress[i]?.[service]?.status === 'failed') return true;
@@ -283,10 +286,10 @@ class ProgressTracker {
         return false;
       });
 
-      if (hasFailedService) {
+      if (hasFailedCriticalService) {
         jobProgress.status = 'failed';
         jobProgress.endTime = new Date();
-        logger.warn(`Job ${jobProgress.jobId} marked as failed due to a service failure.`);
+        logger.warn(`Job ${jobProgress.jobId} marked as failed due to a critical service failure.`);
         return; // Stop further calculation if a failure is detected
       }
 
@@ -386,5 +389,4 @@ class ProgressTracker {
 }
 
 // Export as singleton
-module.exports = new ProgressTracker(); 
-module.exports = new ProgressTracker(); 
+module.exports = new ProgressTracker();

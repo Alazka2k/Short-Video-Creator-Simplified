@@ -67,7 +67,7 @@ class MusicGenService {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${config.musicGen.apiKey}`
           },
-          timeout: 300000 // 5 minute timeout
+          timeout: 450000 // 7.5 minute timeout
         });
 
         if (!response.data || !response.data.success || !Array.isArray(response.data.data)) {

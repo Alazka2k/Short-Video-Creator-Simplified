@@ -1,12 +1,12 @@
-# Detailed Plan: Refactoring Asynchronous Visualization Logic
+# Detailed Plan: Improve llm request and generation
 
 ## 1. Overview
 
-This document outlines the architectural refactoring required to solve the change of the video generation service. The current implementation uses Lumalabs Dreammachine, but AceData Cloud offers a API to Midjourney which has a better video generation quality for image to video.
+This document outlines the improvements of improvements we need to do for voice generation with scaling for different users and for one job with more then 4 scenes. The api of elevenlabs restricts the number of parallel requests.
 
-**The Core Improvement:** We use Midjourneys Video Generation through AceData Cloud API to have a better video generation quality for image to video.
+**The Core Improvement:** Improve the voice generation with scaling for different users and for one job with more then 4 scenes.
 
-**The Solution:** Change the implementation of the video generation service.
+**The Solution:** We need to improve the voice generation with scaling for different users and for one job with more then 4 scenes.
 
 ---
 

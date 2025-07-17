@@ -37,77 +37,19 @@ class JobPipelineService {
       return this.sceneProcessor.processScene(
         scene, sceneId, jobId, sceneDir, serviceConfig, parameters, visualizationType
       ).catch(error => {
-        logger.error(`Error processing scene ${sceneId}:`, error);
-        return { status: 'failed', error: error.message };
+        // The error is already logged in the scene processor. We just need to avoid crashing Promise.all.
+        // We'll log it here again for context in the pipeline.
+        logger.error(`Error initiating processing for scene ${sceneId} in pipeline: ${error.message}`);
+        // A failure in one scene shouldn't stop others from being initiated.
+        // The job status will be marked as 'failed' by the progress tracker.
       });
     });
 
-    try {
-      const results = await Promise.all(scenePromises);
-      
-      // Log each scene result to verify data integrity
-      results.forEach(scene => {
-        /*logger.info(`Scene result in processScenes for scene ${scene.sceneId}:`, {
-          status: scene.status,
-          hasImage: !!scene.image,
-          hasVoice: !!scene.voice,
-          imageStatus: scene.image?.status,
-          imageHasFilePath: !!scene.image?.filePath,
-          imageHasPublicUrl: !!scene.image?.publicUrl
-        });*/
-      });
-      
-      // Try to recover missing image data if needed
-      if (!serviceConfig.skipImage) {
-        const recoveredResults = await Promise.all(results.map(async (scene) => {
-          if (scene.status !== 'failed' && scene.status !== 'skipped' && !scene.image) {
-            logger.warn(`Image result missing in scene ${scene.sceneId} when not skipped, attempting to recover from job progress data`);
-            
-            try {
-              // Get the job data to see if we can recover the image information
-              const job = await this.jobDataAccess.getJob(jobId);
-              if (job && job.progress && job.progress.image) {
-                const sceneProgressData = job.progress.image;
-                
-                logger.info(`Found job progress data for image in scene ${scene.sceneId}:`, { progress: sceneProgressData });
-                
-                // Create a new scene object with the recovered image data
-                return {
-                  ...scene,
-                  image: {
-                    filePath: sceneProgressData.filePath,
-                    fileName: sceneProgressData.filePath ? path.basename(sceneProgressData.filePath) : null,
-                    storageKey: sceneProgressData.storageKey,
-                    publicUrl: sceneProgressData.publicUrl,
-                    status: 'completed'
-                  }
-                };
-              }
-            } catch (error) {
-              logger.error(`Error recovering image data for scene ${scene.sceneId}:`, error);
-            }
-          }
-          return scene;
-        }));
-        
-        // Use recovered results if available
-        return {
-          sceneResults: recoveredResults,
-          hasFailedServices: recoveredResults.some(r => r.status === 'failed')
-        };
-      }
-      
-      return {
-        sceneResults: results,
-        hasFailedServices: results.some(r => r.status === 'failed')
-      };
-    } catch (error) {
-      logger.error(`Error processing scenes in parallel: ${error.message}`);
-      return {
-        sceneResults: [],
-        hasFailedServices: true
-      };
-    }
+    // We just need to wait for all the scene processing requests to be initiated.
+    // We don't need to inspect the results here, as they are handled asynchronously.
+    await Promise.all(scenePromises);
+    logger.info(`All scene processing requests have been initiated for job ${jobId}.`);
+    // No return value is needed as the caller doesn't use it.
   }
 
   async generateContent(prompt, parameters = {}, visualizationType = 'animation', userId = null, jobId) {
@@ -140,6 +82,14 @@ class JobPipelineService {
       if (!llmResult?.content?.scenes?.length) {
         throw new Error('LLM service did not generate any scenes');
       }
+
+      // --- Persist LLM Result ---
+      const job = await this.jobDataAccess.getJob(jobId);
+      const metadata = job.metadata || {};
+      metadata.llmResult = llmResult.content;
+      await this.jobDataAccess.updateJob(jobId, { metadata: JSON.stringify(metadata) });
+      logger.info(`Persisted llmResult to metadata for job ${jobId}`);
+      // --- End Persist ---
 
       // Create output directories using the method from outputManager instance
       await outputManager.createOutputDirectories(jobId, llmResult.content.scenes.length);

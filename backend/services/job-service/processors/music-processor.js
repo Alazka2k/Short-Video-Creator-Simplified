@@ -53,11 +53,34 @@ class MusicProcessor {
       runUpdates();
       // --- End Simulation ---
 
-      const musicResult = await this.musicService.process(jobId, musicData);
+      let musicResult;
+      try {
+        musicResult = await this.musicService.process(jobId, musicData, false);
+      } catch (error) {
+        if (error.code === 'ECONNABORTED') {
+          logger.warn(`Music generation for job ${jobId} timed out. Retrying once...`);
+          try {
+            musicResult = await this.musicService.process(jobId, musicData, true); // isRetry = true
+          } catch (retryError) {
+            logger.error(`Music generation retry failed for job ${jobId}:`, retryError);
+            throw retryError; // Throw the retry error to be caught by the outer block
+          }
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
       
       completed = true; // Signal that the real process is done
 
       if (musicResult) {
+        // --- Persist Music Result ---
+        const job = await this.jobDataAccess.getJob(jobId);
+        const metadata = job.metadata || {};
+        metadata.music = musicResult;
+        await this.jobDataAccess.updateJob(jobId, { metadata: JSON.stringify(metadata) });
+        logger.info(`Persisted musicResult to metadata for job ${jobId}`);
+        // --- End Persist ---
+
         // Final update to 100% 'completed'
         progressData = this.progressTracker.updateServiceProgress(jobId, 'music', 100, 'completed', {
           filePath: musicResult.filePath,
@@ -86,11 +109,27 @@ class MusicProcessor {
     } catch (error) {
       completed = true; // Stop simulation on error too
       logger.error('Error in music generation:', error);
+      
+      const errorResult = { status: 'failed', error: error.message };
+      
+      // Persist the failure to the metadata object
+      const job = await this.jobDataAccess.getJob(jobId);
+      const metadata = job.metadata || {};
+      metadata.music = errorResult;
+      
+      // Also update the top-level error columns on the job table
+      await this.jobDataAccess.updateJob(jobId, { 
+        metadata: JSON.stringify(metadata),
+        error: error.message,
+        error_type: 'MUSIC_GENERATION_FAILURE'
+      });
+      logger.info(`Persisted music failure to metadata and job table for job ${jobId}`);
+
       progressData = this.progressTracker.updateServiceProgress(jobId, 'music', 100, 'failed', {
         error: error.message
       });
       await this.jobDataAccess.updateJobProgress(jobId, progressData);
-      return { status: 'failed', error: error.message };
+      return errorResult;
     }
   }
 }

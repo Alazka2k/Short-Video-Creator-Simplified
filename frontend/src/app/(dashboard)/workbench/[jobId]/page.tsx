@@ -33,11 +33,13 @@ import { toast } from '@/components/ui/use-toast'
 import { TemplateSelector } from '@/components/job-details/sections/TemplateSelector'
 import { useAssembly } from '@/lib/hooks/useAssembly'
 import { JobStatusView } from '@/components/job-details/sections/JobStatusView'
+import { ErrorCard } from '@/components/shared/error/ErrorCard'
 
 interface MediaContent {
   publicUrl: string
   storageKey: string
   metadata: any
+  status?: string
 }
 
 interface JobScene {
@@ -57,7 +59,12 @@ interface JobDetails {
   service_sequence: string[]
   metadata: {
     jobId?: string
-    music?: MediaContent
+    music?: {
+      publicUrl: string
+      storageKey: string
+      metadata: any
+      status: 'completed' | 'failed' | 'in_progress' | 'skipped'
+    }
     scenes?: JobScene[]
     llmResult?: {
       title?: string
@@ -213,10 +220,21 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
     const focus = job.metadata.parameters?.llmGenParams?.general?.generalDescription
 
     // Transform job data with fresh URLs
-    const jobWithFreshUrls = {
+    const jobWithFreshUrls = job ? {
       ...job,
       metadata: {
         ...job.metadata,
+        music: job.metadata.music ? {
+          ...job.metadata.music,
+          publicUrl: job.metadata.music.storageKey 
+            ? freshUrls[job.metadata.music.storageKey] || job.metadata.music.publicUrl 
+            : job.metadata.music.publicUrl
+        } as {
+          publicUrl: string;
+          storageKey: string;
+          metadata: any;
+          status: 'completed' | 'failed' | 'in_progress' | 'skipped';
+        } : undefined,
         scenes: (job.metadata.scenes || []).map(scene => ({
           ...scene,
           image: scene.image ? {
@@ -237,6 +255,16 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
           } : scene.animation,
         }))
       }
+    } : null
+
+    if (!jobWithFreshUrls) {
+      // Handle the case where job is null after transformation
+      // This can happen if loading is finished but job is still null (e.g., not found)
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <p>Job not found.</p>
+        </div>
+      );
     }
 
     return (
@@ -320,17 +348,37 @@ export default function JobDetailsPage({ params }: { params: Promise<{ jobId: st
 
         {/* Music Player */}
         {jobWithFreshUrls.metadata.music && (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <div className="p-4 border-b border-border bg-muted/10">
-              <h3 className="font-medium">Background Music</h3>
-            </div>
-            <div className="p-6">
-              <AudioPlayer
-                url={jobWithFreshUrls.metadata.music.publicUrl}
-                title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
-              />
-            </div>
-          </div>
+          jobWithFreshUrls.metadata.music.status === 'failed'
+            ? (
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <div className="p-4 border-b border-border bg-muted/10">
+                  <h3 className="font-medium">Background Music</h3>
+                </div>
+                <div className="p-6">
+                  <ErrorCard variant="warning" title="Music Generation Failed">
+                  <p>
+          We encountered a problem while generating your content. Our team has been notified.
+        </p>
+        <p className="mt-2 text-xs">
+          If you need immediate assistance, please contact support and provide Job ID: <span className="font-mono font-semibold">{jobWithFreshUrls.job_id}</span>
+        </p>
+                  </ErrorCard>
+                </div>
+              </div>
+            )
+            : (
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <div className="p-4 border-b border-border bg-muted/10">
+                  <h3 className="font-medium">Background Music</h3>
+                </div>
+                <div className="p-6">
+                  <AudioPlayer
+                    url={jobWithFreshUrls.metadata.music.publicUrl}
+                    title={jobWithFreshUrls.metadata.llmResult?.music?.title || 'Background Music'}
+                  />
+                </div>
+              </div>
+            )
         )}        
 
       </div>

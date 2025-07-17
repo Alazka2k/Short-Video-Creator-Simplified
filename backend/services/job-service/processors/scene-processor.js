@@ -64,66 +64,18 @@ class SceneProcessor {
       // The logic to generate or handle visualization results has been removed
       // from this processor to prevent data corruption (e.g., the 'undefined' key).
 
-      // Save scene metadata with complete results
-      const metadataToSave = {
-        sceneId,
-        text: scene?.description,
-        visualPrompt: scene?.visual_prompt,
-        videoPrompt: scene?.video_prompt,
-        voice: voiceResult,
-        image: imageResult, // This is now just a status object like { status: 'in_progress' }
-        generatedAt: new Date().toISOString()
-      };
-      logger.info(`[Scene Processor] Saving final metadata for scene ${sceneId}:`, metadataToSave);
-      await this.saveSceneMetadata(sceneDir, metadataToSave);
+      // The concept of returning a complete "sceneResult" from this processor is now obsolete.
+      // Each service is responsible for reporting its own results back to the job-service.
+      // Therefore, the block that constructed and returned a sceneResult has been removed.
+      logger.info(`[Scene Processor] Asynchronous processing for scene ${sceneId} has been initiated.`);
 
-      // Create the scene result to return
-      const sceneResult = {
-        sceneId,
-        jobId,
-        status: 'completed'
-      };
-
-      // Only include voice result if voice was not skipped and is available
-      if (!serviceConfig.skipVoice && voiceResult) {
-        sceneResult.voice = { ...voiceResult };
-      }
-
-      // Only include image result if image was not skipped and is available
-      if (!serviceConfig.skipImage && imageResult) {
-        sceneResult.image = {
-          filePath: imageResult.filePath,
-          fileName: imageResult.fileName,
-          storageKey: imageResult.storageKey,
-          publicUrl: imageResult.publicUrl, 
-          status: imageResult.status,
-          metadata: imageResult.metadata
-        };
-      }
-
-      // Visualization result is no longer available in this context and is removed.
-
-      // Log the final scene result before returning
-      /*logger.info(`Final scene ${sceneId} result:`, {
-        sceneId: sceneResult.sceneId,
-        status: sceneResult.status,
-        hasVoice: !!sceneResult.voice,
-        hasImage: !!sceneResult.image,
-        voiceStatus: sceneResult.voice?.status,
-        imageStatus: sceneResult.image?.status,
-        visualizationType: visualizationType,
-        visualizationStatus: sceneResult[visualizationType]?.status
-      }); */
-
-      return sceneResult;
     } catch (error) {
       logger.error(`Error processing scene ${sceneId}:`, error);
-      return {
-        sceneId,
-        jobId,
-        status: 'failed',
-        error: error.message
-      };
+      // We no longer return a failed object, as the error is handled within the specific
+      // service-calling methods (generateImage, processVoice) which update the progress tracker.
+      // We will re-throw to allow the main pipeline to potentially catch it, though individual
+      // service callers should handle their own errors and report failure.
+      throw error;
     }
   }
 
@@ -238,6 +190,12 @@ class SceneProcessor {
         jobId,
         parameters.voiceGenParams?.elevenlabsVoiceId
       );
+
+      // --- Persist Voice Result ---
+      const { status, ...data } = voiceResult;
+      await this.jobDataAccess.addResultToScene(jobId, sceneId, 'voice', status, data);
+      logger.info(`Persisted voice result to scene ${sceneId} for job ${jobId}`);
+      // --- End Persist ---
 
       // Update progress to completed (100%)
       progressData = this.progressTracker.updateSceneProgress(jobId, sceneId, 'voice', 100, voiceResult.status, {

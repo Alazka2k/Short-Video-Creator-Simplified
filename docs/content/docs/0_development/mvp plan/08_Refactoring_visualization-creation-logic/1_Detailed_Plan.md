@@ -95,10 +95,10 @@ Both `video-service` and `animation-service` now operate as fully independent, a
 - **Action 1 (Write documentation):** Write a new documentation file at docs/content/docs/0_development/mvp plan/08_Refactoring_visualization-creation-logic/2_Progress_Tracking.md that explains the new progress tracking logic.
 - **Action 2 (Adapt the job data access):** Adapt the job data access to use the new progress tracking data structure.
 
-## Phase 5: Finalize Progress Tracking Persistence Logic **STATUS: In Progress**
+## Phase 5: Finalize Progress Tracking Persistence Logic **STATUS: ✅ Finished**
 **Objective:** Implement a hybrid approach that uses the in-memory `ProgressTracker` for performance while consistently mirroring its state to the database. This ensures data persistence for the frontend, with a clean separation of concerns. The `progress` object will exist inside the job's `metadata` field during execution and will be removed upon successful completion.
 
-#### Step 1: Refactor `jobDataAccess.js`
+#### Step 1: Refactor `jobDataAccess.js` **STATUS: ✅ Finished**
 - **Action:** Modify `jobDataAccess.js` to serve as the single point of interaction with the database for progress updates.
 - **Details:**
     - Create a new function: `updateJobProgress(jobId, progressData)`.
@@ -106,30 +106,43 @@ Both `video-service` and `animation-service` now operate as fully independent, a
     - It will fetch the current job's metadata, embed the `progressData` into a `progress` key within the metadata, and save the entire updated metadata object back to the database.
     - It will also update the top-level `status` and `overall_progress` columns on the `jobs` table from the `progressData` object to ensure consistency.
 
-#### Step 2: Implement Job Finalization Logic in `jobDataAccess.js`
+#### Step 2: Implement Job Finalization Logic in `jobDataAccess.js` **STATUS: ✅ Finished**
 - **Action:** Add a new function: `finalizeJob(jobId)`.
 - **Details:**
     - When a job succeeds, this function will be called.
     - It will load the job's metadata, **delete** the `progress` key entirely, set the top-level `status` to `completed`, and save the cleaned metadata back. This ensures the final output is clean and matches the required structure for the frontend.
 
-#### Step 3: Update Orchestration Services
+#### Step 3: Update Orchestration Services **STATUS: ✅ Finished**
 - **Files:** `job-pipeline-service.js`, `scene-processor.js`.
 - **Action:** Modify the services that manage the job lifecycle.
 - **Details:**
     - After every call to a `progressTracker.update...` method, the service will immediately call the new `jobDataAccess.updateJobProgress` function, passing the `jobId` and the updated progress object to persist it.
     - The `job-pipeline-service` will be updated to call `jobDataAccess.finalizeJob(jobId)` at the very end of a successful job.
 
-#### Step 4: End-to-End Alignment Review
+#### Step 4: End-to-End Alignment Review **STATUS: ✅ Finished**
 - **Action:** Review all services that generate assets to ensure they follow the new, robust pattern.
 - **Details:**
     - Specifically check the `music-processor` and any other relevant services to guarantee they update the in-memory tracker and then immediately persist the state to the database via `jobDataAccess`.
 
-#### Step 5: Fix issue of data consistency for voice and music generation.
+#### Step 5: Fix issue of data consistency for voice and music generation. **STATUS: ✅ Finished**
 - **Action:** Fix the issue of data consistency for voice and music generation. They are missing in the job metadata.
 - **Details:**
     - The results for synchronous services like `voice` and `music`, along with the initial `llmResult`, are not being correctly saved to the permanent job metadata structure.
     - They are either only stored in the temporary `progress` object within the metadata (which is deleted upon finalization) or lost entirely.
     - This leads to an incomplete final job record in the database, causing the frontend to receive missing data. The fix involves ensuring these results are written to a permanent location in the metadata before the job is finalized.
+
+#### Step 6: Improve music generation error handling, voice metadata structure issue and scene completion logic. **STATUS: ✅ Finished**
+- **Action:** Add robust error handling for music generation timeouts and fix the data structure for voice results.
+- **Details:**
+    - **Music Service:**
+        - Implement a retry mechanism in the `music-processor` for network-related errors like timeouts (`ECONNABORTED`).
+        - If a retry fails or for any other error, persist a final error object (`{ status: 'failed', error: '...' }`) to the `metadata.music` field.
+        - Crucially, also update the top-level `error` and `error_type` columns on the `jobs` table to ensure critical failures are visible at a glance.
+        - The frontend will be updated to display a consistent `ErrorCard` component (similar to the one in `JobStatusView`) when `metadata.music.status` is `'failed'`.
+    - **Voice Service:**
+        - Correct the data persistence call in `scene-processor.js` to prevent creating a nested `status` object within the `voice` metadata.
+    - **Scene Completion:**
+        - Enhance the `jobDataAccess.addResultToScene` method to intelligently check if a scene's components are all complete. If they are, it will add `status: 'completed'` and a `completedAt` timestamp to the root of that scene object in the `metadata.scenes` array.
 
 ## Phase 6: Refactor the progress tracker and add a progress simulation **STATUS: Not Started**
 - **Service:** Implement Progress Simulation (Your Suggestion)

@@ -207,7 +207,7 @@ export function TemplateSelector({
         <div className="text-center">
           <p className="text-muted-foreground">No compatible templates found for your content.</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Templates are filtered based on aspect ratio ({aspectRatio}), available content, scene count ({sceneCount}), and your subscription plan.
+            Templates are filtered based on aspect ratio, available content, scene count and your subscription plan.
           </p>
         </div>
       </div>

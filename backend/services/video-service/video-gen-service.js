@@ -39,7 +39,7 @@ class VideoGenService {
         }
       });
       this.supportedCameraMotions = response.data;
-      logger.info(`Fetched supported camera motions: ${JSON.stringify(this.supportedCameraMotions)}`);
+      //logger.info(`Fetched supported camera motions: ${JSON.stringify(this.supportedCameraMotions)}`);
     } catch (error) {
       logger.error('Error fetching supported camera motions:', error);
       throw error;
