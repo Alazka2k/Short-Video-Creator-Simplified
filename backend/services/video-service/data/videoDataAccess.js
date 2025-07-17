@@ -13,26 +13,6 @@ class VideoDataAccess {
     this.baseOutputDir = path.join(config.output.directory, 'video');
   }
 
-  getOutputPaths(jobId, sceneIndex, fileName) {
-    // Get current date for folder structure
-    const currentDate = new Date();
-    const dateString = currentDate.toISOString().split('T')[0];
-    
-    // Construct paths
-    const outputDir = path.join(
-      this.baseOutputDir,
-      dateString,
-      jobId,
-      `scene_${sceneIndex}`
-    );
-    
-    return {
-      outputDir,
-      videoPath: path.join(outputDir, fileName),
-      metadataPath: path.join(outputDir, 'metadata.json')
-    };
-  }
-
   async ensureDirectoryExists(directory) {
     try {
       await fs.mkdir(directory, { recursive: true });
@@ -65,14 +45,14 @@ class VideoDataAccess {
     }
   }
 
-  async saveMetadata(metadataPath, sceneIndex, metadata) {
+  async saveMetadata(metadataPath, sceneId, metadata) {
     try {
       // Ensure the directory exists
       await this.ensureDirectoryExists(path.dirname(metadataPath));
       
       // Prepare metadata object
       const metadataObj = {
-        [`scene_${sceneIndex}`]: {
+        [`scene_${sceneId}`]: {
           ...metadata,
           savedAt: new Date().toISOString()
         }
@@ -99,44 +79,44 @@ class VideoDataAccess {
       logger.info(`Creating video output record for job ${jobId}, scene ${sceneId}`);
       logger.debug('Video data:', JSON.stringify(videoData, null, 2));
 
-      // Get paths for the video output
-      const { outputDir, videoPath, metadataPath } = this.getOutputPaths(
-        jobId,
-        sceneId,
-        videoData.fileName
-      );
-
-      // Move video file if it exists
-      if (videoData.tempFilePath) {
-        await this.moveVideoFile(videoData.tempFilePath, videoPath);
+      // Path logic is now handled in video-gen-service. videoData.videoPath is the source of truth.
+      const videoPath = videoData.videoPath;
+      if (!videoPath || typeof videoPath !== 'string') {
+        throw new Error('videoPath is required and must be a string.');
       }
+      
+      const metadataPath = path.join(path.dirname(videoPath), 'metadata.json');
 
-      // Prepare database record with required fields
+      // Ensure the destination directory exists before doing anything else
+      await this.ensureDirectoryExists(path.dirname(videoPath));
+
+      // Database record preparation
       const record = {
         job_id: jobId,
         scene_id: sceneId,
         file_path: videoPath,
-        storage_key: videoData.storage_key,
-        public_url: videoData.public_url,
+        storage_key: videoData.storageKey,
+        public_url: videoData.publicUrl,
         created_at: new Date(),
       };
 
-      // Add optional fields based on model type (add more information for ray-1.5)
-      if (videoData.videoPrompt) {
-        record.video_prompt = videoData.videoPrompt;
-      }
-      if (videoData.cameraMovement) {
-        record.camera_movement = videoData.cameraMovement;
-      }
-      if (videoData.aspectRatio) {
-        record.aspect_ratio = videoData.aspectRatio;
+      // Optional fields for different models
+      if (videoData.videoPrompt) record.video_prompt = videoData.videoPrompt;
+      if (videoData.cameraMovement) record.camera_movement = videoData.cameraMovement;
+      if (videoData.aspectRatio) record.aspect_ratio = videoData.aspectRatio;
+
+      // Add metadata, ensuring file size is safely checked
+      let fileSize = 0;
+      try {
+        fileSize = (await fs.stat(videoPath)).size;
+      } catch(e) {
+        logger.warn(`Could not get file size for ${videoPath}, defaulting to 0. Error: ${e.message}`);
       }
 
-      // Add metadata
       record.metadata = JSON.stringify({
-        fileName: videoData.fileName,
+        fileName: path.basename(videoPath),
         generatedAt: new Date().toISOString(),
-        fileSize: fsSync.statSync(videoPath).size,
+        fileSize,
         model: config.videoGen.model,
         resolution: config.videoGen.resolution,
         ...videoData.metadata
@@ -147,27 +127,20 @@ class VideoDataAccess {
         .insert(record)
         .returning('*');
 
-      // Save metadata file
+      // Save companion metadata file
       const metadataObj = {
         videoId: videoOutput.video_id,
-        fileName: videoData.fileName,
+        fileName: path.basename(videoPath),
         filePath: videoPath,
-        storageKey: videoData.storage_key,
-        publicUrl: videoData.public_url,
+        storageKey: videoData.storageKey,
+        publicUrl: videoData.publicUrl,
         model: config.videoGen.model,
-        ...videoData.metadata
+        ...videoData.metadata,
       };
-
-      // Add optional metadata fields based on model type
-      if (videoData.videoPrompt) {
-        metadataObj.videoPrompt = videoData.videoPrompt;
-      }
-      if (videoData.cameraMovement) {
-        metadataObj.cameraMovement = videoData.cameraMovement;
-      }
-      if (videoData.aspectRatio) {
-        metadataObj.aspectRatio = videoData.aspectRatio;
-      }
+      
+      if (videoData.videoPrompt) metadataObj.videoPrompt = videoData.videoPrompt;
+      if (videoData.cameraMovement) metadataObj.cameraMovement = videoData.cameraMovement;
+      if (videoData.aspectRatio) metadataObj.aspectRatio = videoData.aspectRatio;
 
       await this.saveMetadata(metadataPath, sceneId, metadataObj);
 

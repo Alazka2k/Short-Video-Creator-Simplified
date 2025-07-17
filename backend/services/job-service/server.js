@@ -178,9 +178,32 @@ function createServer(jobService) {
     }
   });
 
-  // Catch-all route for unhandled requests
+  // Internal endpoint for services to report back results
+  app.post('/internal/job/:jobId/scene/:sceneId/result', async (req, res) => {
+    const { jobId, sceneId } = req.params;
+    const { service, data, status } = req.body;
+
+    if (!service || !data) {
+      logger.error('Internal result endpoint called with missing service or data', { jobId, sceneId });
+      return res.status(400).json({ error: 'Missing service name or result data' });
+    }
+
+    try {
+      logger.info(`Received result for job ${jobId}, scene ${sceneId} from ${service} service.`);
+      await jobService.addResultToScene(jobId, parseInt(sceneId), service, status, data);
+      res.status(200).json({ message: 'Result processed successfully' });
+    } catch (error) {
+      logger.error(`Error processing result for job ${jobId}, scene ${sceneId}`, { 
+        service,
+        error: error.message 
+      });
+      res.status(500).json({ error: 'Failed to process result' });
+    }
+  });
+
+  // Catch-all for any other routes
   app.use('*', (req, res) => {
-    logger.warn(`Job Service: Received unhandled request: ${req.method} ${req.originalUrl}`);
+    logger.warn(`Job Service: Unhandled request for ${req.method} ${req.originalUrl}`);
     res.status(404).json({ error: 'Not Found', message: 'The requested resource does not exist.' });
   });
 

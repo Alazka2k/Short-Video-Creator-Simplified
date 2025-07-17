@@ -134,27 +134,53 @@ class VideoGenService {
     }
   }
 
-  getOutputPaths(promptOrTestFolder, sceneIndex, isTest) {
+  getOutputPaths(jobId, sceneId, isTest) {
     let videoFilePath, metadataPath;
+    const jobIdentifier = String(isTest ? 'test' : jobId);
 
     if (isTest) {
-      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'video', promptOrTestFolder);
-      videoFilePath = path.join(testOutputDir, `video_scene_${sceneIndex}.mp4`);
+      const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'video', jobIdentifier);
+      videoFilePath = path.join(testOutputDir, `video_scene_${sceneId}.mp4`);
       metadataPath = path.join(testOutputDir, 'metadata.json');
     } else {
       const currentDate = new Date();
       const dateString = currentDate.toISOString().split('T')[0];
-      const promptDir = path.join(config.output.directory, 'video', dateString, promptOrTestFolder, `scene_${sceneIndex}`);
-      videoFilePath = path.join(promptDir, `video_scene_${sceneIndex}.mp4`);
-      metadataPath = path.join(promptDir, 'metadata.json');
+      // Use a job-specific directory to organize outputs
+      const jobDir = path.join(config.output.directory, 'video', dateString, jobIdentifier);
+      const sceneDir = path.join(jobDir, `scene_${sceneId}`);
+      videoFilePath = path.join(sceneDir, `video_scene_${sceneId}.mp4`);
+      metadataPath = path.join(sceneDir, 'metadata.json');
     }
 
     return { videoFilePath, metadataPath };
   }
 
-  async generateVideo(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneIndex, promptOrTestFolder, isTest = false) {
+  async reportProgress(jobId, sceneId, status, progress, metadata = {}) {
+    try {
+      await axios.post(`${config.services.job.url}/progress/update`, {
+        jobId,
+        sceneId,
+        service: 'video',
+        status,
+        progress,
+        metadata
+      });
+    } catch (error) {
+      logger.error(`Failed to report video progress to job service for job ${jobId}, scene ${sceneId}:`, {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      // This is non-fatal, so we don't re-throw.
+    }
+  }
+
+  async generateVideo(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneId, jobId, isTest = false) {
     let tempFiles = [];
     try {
+      // Report that the service has started
+      await this.reportProgress(jobId, sceneId, 'in_progress', 5);
+
       logger.info(`Generating video with the following parameters:`);
       logger.info(`Model: ${config.videoGen.model}`);
       logger.info(`Resolution: ${config.videoGen.resolution}`);
@@ -167,7 +193,7 @@ class VideoGenService {
         logger.info(`Aspect Ratio: ${aspectRatio}`);
       }
       
-      logger.info(`Scene Index: ${sceneIndex}`);
+      logger.info(`Scene ID: ${sceneId}`);
       logger.info(`Is Test: ${isTest}`);
 
       // Get fresh URL if it's an S3 URL
@@ -182,7 +208,7 @@ class VideoGenService {
         // Create temp file for the image
         const tempDir = path.join(os.tmpdir(), 'video-service', 'temp');
         await fs.mkdir(tempDir, { recursive: true });
-        tempImagePath = path.join(tempDir, `scene_${sceneIndex}_input.jpg`);
+        tempImagePath = path.join(tempDir, `scene_${sceneId}_input.jpg`);
         await fs.writeFile(tempImagePath, imageBuffer);
         tempFiles.push(tempImagePath);
       } catch (error) {
@@ -239,108 +265,91 @@ class VideoGenService {
         }
 
         const videoGeneration = await this.client.generations.get(generation.id);
-        logger.info(`Generation status update (${Math.floor(elapsedTime / 1000)}s elapsed): ${JSON.stringify(videoGeneration, null, 2)}`);
+
+        logger.info(`Generation status update (${Math.floor(elapsedTime / 1000)}s elapsed):`, {
+          id: videoGeneration.id,
+          state: videoGeneration.state,
+        });
 
         if (videoGeneration.state === 'completed') {
+          await this.reportProgress(jobId, sceneId, 'completed', 100);
           const videoUrl = videoGeneration.assets.video;
-          const { videoFilePath, metadataPath } = this.getOutputPaths(promptOrTestFolder, sceneIndex, isTest);
+          const { videoFilePath } = this.getOutputPaths(jobId, sceneId, isTest);
           await this.downloadVideo(videoUrl, videoFilePath);
           tempFiles.push(videoFilePath);
 
-          let storageResult;
-          let result;
-          let metadata = {
-            fileName: path.basename(videoFilePath)
+          const storageResult = await storageService.uploadFile(videoFilePath, 'video');
+          logger.info('Video uploaded to storage successfully');
+
+          const videoRecord = await this.dataAccess.createVideoOutput(jobId, sceneId, {
+            videoPath: videoFilePath,
+            videoUrl: storageResult.url,
+            storageKey: storageResult.storageKey,
+            publicUrl: storageResult.url,
+            metadata: {
+              prompt: videoPrompt,
+              lumaGenerationId: generation.id,
+              generatedAt: new Date().toISOString()
+            }
+          });
+
+          const result = {
+            filePath: videoFilePath,
+            fileName: path.basename(videoFilePath),
+            videoUrl: storageResult.url,
+            storageKey: storageResult.storageKey,
+            publicUrl: storageResult.url,
+            status: 'completed',
+            metadata: typeof videoRecord.metadata === 'string' 
+              ? JSON.parse(videoRecord.metadata) 
+              : videoRecord.metadata
           };
 
-          // Add additional metadata only for ray-1.5
-          if (config.videoGen.model === 'ray-1.5') {
-            metadata = {
-              ...metadata,
-              videoPrompt: this.sanitizeVideoPrompt(videoPrompt),
-              cameraMovement,
-              aspectRatio,
-            };
-          }
-
-          if (isTest) {
-            await this.saveVideoMetadata(metadataPath, sceneIndex, metadata);
-
-            result = {
-              filePath: videoFilePath,
-              fileName: path.basename(videoFilePath),
-              metadata: {
-                generationId: generation.id,
-                sourceImageUrl: freshImageUrl,
-                generationDuration: elapsedTime,
-                generatedAt: new Date().toISOString()
-              }
-            };
-          } else {
-            storageResult = await storageService.uploadFile(videoFilePath, 'video');
-            logger.info('Video uploaded to storage successfully');
-
-            const videoData = {
-              fileName: path.basename(videoFilePath),
-              tempFilePath: videoFilePath,
-              storage_key: storageResult.storageKey,
-              public_url: storageResult.url,
-              metadata: {
-                generationId: generation.id,
-                sourceImageUrl: freshImageUrl,
-                generationDuration: elapsedTime,
-                generatedAt: new Date().toISOString()
-              }
-            };
-
-            // Add additional data only for ray-1.5
-            if (config.videoGen.model === 'ray-1.5') {
-              videoData.videoPrompt = this.sanitizeVideoPrompt(videoPrompt);
-              videoData.cameraMovement = cameraMovement;
-              videoData.aspectRatio = aspectRatio;
-            }
-
-            await this.dataAccess.createVideoOutput(
-              promptOrTestFolder,
-              sceneIndex,
-              videoData
-            );
-
-            result = {
-              filePath: videoFilePath,
-              fileName: path.basename(videoFilePath),
-              storageKey: storageResult.storageKey,
-              publicUrl: storageResult.url,
+          // --- Report video completion back to job-service ---
+          try {
+            logger.info(`Reporting final video result back to job-service for job ${jobId}, scene ${sceneId}`);
+            await axios.post(`${config.services.job.url}/internal/job/${jobId}/scene/${sceneId}/result`, {
+              service: 'video',
               status: 'completed',
-              metadata: videoData.metadata
-            };
+              data: result
+            });
+            logger.info(`Successfully reported video completion for job ${jobId}, scene ${sceneId}`);
+          } catch (reportError) {
+            logger.error(`Failed to report video completion back to job-service for job ${jobId}, scene ${sceneId}:`, reportError);
+            // Non-fatal, as the video is generated and saved.
           }
+          // --- End Reporting ---
 
           return result;
         } else if (videoGeneration.state === 'failed') {
-          throw new Error(`Video generation failed: ${videoGeneration.failure_reason || 'Unknown error'}`);
+          const failureReason = videoGeneration.failure_reason || 'Video generation failed without a specific reason.';
+          await this.reportProgress(jobId, sceneId, 'failed', 100, { error: failureReason });
+          throw new Error(failureReason);
         }
 
         // Wait before checking again
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     } catch (error) {
-      const safeError = {
+      logger.error(`Error in video generation for job ${jobId}, scene ${sceneId}:`, {
         message: error.message,
-        code: error.code,
-        response: error.response ? {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: typeof error.response.data === 'string' ? error.response.data.substring(0, 500) : 'Response data too large'
-        } : undefined
-      };
-      logger.error('Error in video generation:', safeError);
+        stack: error.stack?.substring(0, 1000) // Log a portion of the stack
+      });
+
+      // Report failure back to job-service
+      try {
+        // We still report the final result for stitching, even on failure
+        await axios.post(`${config.services.job.url}/internal/job/${jobId}/scene/${sceneId}/result`, {
+          service: 'video',
+          status: 'failed',
+          data: { error: error.message }
+        });
+        logger.info(`Successfully reported video failure back to job-service for job ${jobId}, scene ${sceneId}`);
+      } catch (reportError) {
+        logger.error(`Failed to report video failure back to job-service for job ${jobId}, scene ${sceneId}:`, reportError);
+      }
       
-      // Return error result with failed status
-      return {
-        status: 'failed',
-        error: error.message
-      };
+      // Do not re-throw, which prevents the service from crashing.
     } finally {
       // Clean up all temp files
       for (const file of tempFiles) {
@@ -383,7 +392,7 @@ class VideoGenService {
     }
   }
 
-  async saveVideoMetadata(metadataPath, sceneIndex, data) {
+  async saveVideoMetadata(metadataPath, sceneId, data) {
     let metadata = {};
     try {
       const existingData = await fs.readFile(metadataPath, 'utf8');
@@ -394,7 +403,7 @@ class VideoGenService {
       }
     }
 
-    metadata[`scene_${sceneIndex}`] = data;
+    metadata[`scene_${sceneId}`] = data;
 
     await fs.mkdir(path.dirname(metadataPath), { recursive: true });
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));

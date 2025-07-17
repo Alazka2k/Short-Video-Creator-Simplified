@@ -2,12 +2,10 @@ const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../../shared/utils/logger');
-const jobDataAccess = require('./data/jobDataAccess');
 const config = require('../../shared/utils/config');
 const SceneProcessor = require('./processors/scene-processor');
 const MusicProcessor = require('./processors/music-processor');
 const MetadataManager = require('./utils/metadata-manager');
-const progressTracker = require('./utils/progress-tracker');
 
 // Import new utility classes
 const serviceConfigManager = require('./utils/service-config-manager');
@@ -15,11 +13,12 @@ const jobResultManager = require('./utils/job-result-manager');
 const outputManager = require('./utils/output-manager');
 
 class JobPipelineService {
-  constructor(services) {
+  constructor(services, jobDataAccess, progressTracker) {
     this.services = services;
     this.jobDataAccess = jobDataAccess;
-    this.sceneProcessor = new SceneProcessor(services, jobDataAccess);
-    this.musicProcessor = new MusicProcessor(services.music, jobDataAccess);
+    this.progressTracker = progressTracker;
+    this.sceneProcessor = new SceneProcessor(services, this.jobDataAccess, this.progressTracker);
+    this.musicProcessor = new MusicProcessor(services.music, this.jobDataAccess, this.progressTracker);
     this.integrationOutputPath = path.join(config.output.integrationDirectory);
     logger.info('JobPipelineService initialized with JobDataAccess');
   }
@@ -166,9 +165,7 @@ class JobPipelineService {
         const emptyMusicResult = { status: 'skipped' };
         
         // Finalize the job as completed
-        await this.finalizeJob(
-          jobId, jobOutputDir, llmResult, emptySceneResults, emptyMusicResult, parameters
-        );
+        await this.jobDataAccess.finalizeJob(jobId);
         
         // Custom status info for LLM-only jobs
         const statusInfo = {
@@ -188,23 +185,95 @@ class JobPipelineService {
       );
 
       // Process scenes in parallel
-      const sceneResults = await this.processScenes(
+      const sceneProcessingPromise = this.processScenes(
         llmResult, jobId, jobOutputDir, serviceConfig, parameters, outputType
       );
+
+      // Wait for the initial scene processing requests to be sent
+      await sceneProcessingPromise;
 
       // Wait for music to complete
       const musicResult = await musicPromise;
 
-      // Save metadata and finish up
-      await this.finalizeJob(
-        jobId, jobOutputDir, llmResult, sceneResults, musicResult, parameters
-      );
+      // NEW: Wait for all asynchronous scene services (image, video, etc.) to complete via webhooks
+      const allScenesCompleted = await this._waitForSceneCompletion(jobId, llmResult.content.scenes.length, serviceConfig);
 
-      return this.prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResult, null, parameters);
+      if (!allScenesCompleted) {
+        const timeoutError = new Error(`Job timed out waiting for scene completion.`);
+        logger.error(`Job ${jobId} failed: ${timeoutError.message}`);
+        await this.handleError(jobId, timeoutError);
+        return; // Explicitly stop processing
+      }
+
+      // Finalize job if all scenes completed
+      logger.info(`All services for job ${jobId} have reported completion. Finalizing job.`);
+      await this.jobDataAccess.finalizeJob(jobId);
+
     } catch (error) {
       await this.handleError(jobId, error);
-      throw error;
+      // Do not re-throw error to the caller (e.g., the API route)
+      // The error has been handled and logged.
     }
+  }
+
+  /**
+   * Waits for all scene-related services to report a final status (completed, failed, or skipped).
+   * @param {string} jobId The ID of the job to monitor.
+   * @param {number} scenesCount The number of scenes in the job.
+   * @param {object} serviceConfig The configuration of active services.
+   * @returns {Promise<boolean>} A promise that resolves to true if all scenes complete, false on timeout/failure.
+   */
+  async _waitForSceneCompletion(jobId, scenesCount, serviceConfig) {
+    const checkInterval = 5000; // Check every 5 seconds
+    const timeout = 10 * 60 * 1000; // 10-minute timeout
+    const startTime = Date.now();
+
+    const servicesToTrack = [];
+    if (!serviceConfig.skipImage) servicesToTrack.push('image');
+    if (!serviceConfig.skipVisualization) {
+      servicesToTrack.push(serviceConfig.visualizationType || 'animation');
+    }
+
+    if (servicesToTrack.length === 0) {
+      logger.info(`No asynchronous scene services to track for job ${jobId}.`);
+      return true; // Nothing to wait for
+    }
+
+    return new Promise(async (resolve) => {
+      const intervalId = setInterval(async () => {
+        if (Date.now() - startTime > timeout) {
+          clearInterval(intervalId);
+          logger.error(`Timeout waiting for scene completion for job ${jobId}`);
+          resolve(false);
+          return;
+        }
+
+        const progress = this.progressTracker.getJobProgress(jobId);
+        if (!progress || progress.status === 'failed') {
+          clearInterval(intervalId);
+          logger.info(`Job ${jobId} failed or was cancelled, stopping wait.`);
+          resolve(false);
+          return;
+        }
+
+        let allDone = true;
+        for (let i = 1; i <= scenesCount; i++) {
+          for (const service of servicesToTrack) {
+            const sceneServiceStatus = progress.sceneProgress?.[i]?.[service]?.status;
+            if (!['completed', 'failed', 'skipped'].includes(sceneServiceStatus)) {
+              allDone = false;
+              break;
+            }
+          }
+          if (!allDone) break;
+        }
+
+        if (allDone) {
+          clearInterval(intervalId);
+          resolve(true);
+        }
+      }, checkInterval);
+    });
   }
 
   getSceneOutputPath(jobOutputDir, sceneIndex) {
@@ -294,7 +363,7 @@ class JobPipelineService {
       const sceneAmount = llmGenParams.general?.sceneAmount || 5; // Default to 5 scenes if not specified
 
       // Initialize progress tracking
-      progressTracker.initJobProgress(jobId, serviceConfig, sceneAmount);
+      this.progressTracker.initJobProgress(jobId, serviceConfig, sceneAmount);
 
       // Create initial job record with userId
       await this.jobDataAccess.createJob({
@@ -329,7 +398,7 @@ class JobPipelineService {
   async processJobInBackground(jobId, prompt, parameters = {}, visualizationType, userId = null) {
     try {
       // Start actual processing
-      const result = await this.generateContent(
+      await this.generateContent(
         prompt, 
         parameters, 
         visualizationType, 
@@ -337,41 +406,18 @@ class JobPipelineService {
         jobId // Pass the job ID directly
       );
       
-      // Update progress tracker with the final status
-      progressTracker.setJobStatus(jobId, result.status);
-      
-      // Log appropriate message based on status
-      if (result.status === 'failed') {
-        logger.warn(`Job ${jobId} completed with status: failed`);
-      } else if (result.status === 'incomplete') {
-        logger.warn(`Job ${jobId} completed with status: incomplete - some content creation tasks had errors`);
-      } else {
-        logger.info(`Job ${jobId} completed successfully with status: ${result.status}`);
-      }
-      
-      return result;
+      // If the pipeline returns no result (e.g., from a handled timeout), stop here.
+      // The generateContent function now handles its own logging and status updates.
     } catch (error) {
-      logger.error(`Background job processing error for job ${jobId}:`, error);
+      logger.error(`Background job processing error for job ${jobId}`, {
+        message: error.message,
+        stack: error.stack,
+        status: error.response?.status,
+        data: error.response?.data
+      });
       
       // Update job status to failed in case of error
-      try {
-        // Prepare error metadata
-        const errorMetadata = jobResultManager.prepareErrorMetadata(jobId, error);
-        
-        // Update job record
-        await this.jobDataAccess.updateJob(jobId, {
-          status: 'failed',
-          error: error.message,
-          metadata: JSON.stringify(errorMetadata)
-        });
-        
-        // Update progress tracker with failed status
-        progressTracker.setJobStatus(jobId, 'failed');
-      } catch (updateError) {
-        logger.error(`Error updating job status for failed job ${jobId}:`, updateError);
-      }
-      
-      throw error;
+      await this.handleError(jobId, error);
     }
   }
 
@@ -383,7 +429,7 @@ class JobPipelineService {
       }
       
       // Get progress from the progress tracker
-      const progress = progressTracker.getJobProgress(jobId);
+      const progress = this.progressTracker.getJobProgress(jobId);
       
       // If no progress data is found, try to get data from the database
       if (!progress) {
@@ -483,101 +529,31 @@ class JobPipelineService {
     }
   }
 
-  async finalizeJob(jobId, jobOutputDir, llmResult, sceneResults, musicResult, parameters, customStatusInfo = null) {
-    // Extract service config from parameters
-    const config = parameters?.serviceConfig || {};
-    
-    // Get status info from custom info or analyze results
-    const jobStatusInfo = customStatusInfo || jobResultManager.analyzeResults(sceneResults, config, musicResult);
-    
-    // Ensure status is properly set
-    if (jobStatusInfo.status !== 'completed' && jobStatusInfo.status !== 'failed') {
-      jobStatusInfo.status = 'completed';
-    }
-    
-    // Prepare metadata with the correct structure
-    const jobMetadata = jobResultManager.prepareMetadata(
-      jobId,
-      llmResult,
-      sceneResults,
-      musicResult,
-      parameters,
-      jobStatusInfo
-    );
-
-    // Save metadata
-    await outputManager.saveJobMetadata(jobOutputDir, jobMetadata);
-    
-    // Get progress tracker
-    const progressTracker = require('./utils/progress-tracker');
-    
-    // Mark job as finalizing to prevent race conditions
-    progressTracker.finalizingJobs.add(jobId);
-    
-    try {
-      // Update job status in database
-      await jobDataAccess.updateJob(jobId, {
-        status: jobStatusInfo.status,
-        metadata: JSON.stringify(jobMetadata),
-        completed_at: new Date().toISOString()
-      });
-      
-      // Remove from finalizing set
-      progressTracker.finalizingJobs.delete(jobId);
-      
-      // Log completion
-      logger.info(`Job ${jobId} finalized with status: ${jobStatusInfo.status}`);
-      
-      return jobMetadata;
-    } catch (error) {
-      // Remove from finalizing set even if there's an error
-      progressTracker.finalizingJobs.delete(jobId);
-      throw error;
-    }
-  }
-
   async handleError(jobId, error) {
-    logger.error(`Error in job ${jobId}:`, error);
+    logger.error(`Error in job ${jobId}: ${error.message}`);
     try {
-      // Prepare error metadata with enhanced details
-      const errorMetadata = {
-        ...jobResultManager.prepareErrorMetadata(jobId, error),
-        errorDetails: {
-          name: error.name,
-          code: error.code,
-          stack: error.stack,
-          timestamp: new Date().toISOString(),
-          type: this._categorizeError(error),
-          context: {
-            message: error.message,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            errorCode: error.response?.data?.error?.code,
-            errorMessage: error.response?.data?.error?.message
-          }
-        }
-      };
+      // First, update the tracker with a failed status.
+      // This immediately stops any polling loops that depend on it.
+      const progressData = this.progressTracker.setJobStatus(jobId, 'failed');
       
-      // Update job record with enhanced error information
-      await this.jobDataAccess.updateJob(jobId, {
-        status: 'failed',
-        error: error.message,
-        error_type: this._categorizeError(error),
-        error_code: error.code || error.response?.data?.error?.code,
-        metadata: JSON.stringify(errorMetadata)
-      });
-      
-      // Update progress tracker with failed status
-      progressTracker.setJobStatus(jobId, 'failed');
+      // Persist this final failed state to the database, which also sets the completed_at timestamp
+      if (progressData) {
+        await this.jobDataAccess.updateJobProgress(jobId, progressData);
+      }
       
       // Log the categorized error
-      logger.error(`Job ${jobId} failed with error type: ${this._categorizeError(error)}`, {
-        errorMessage: error.message,
-        errorCode: error.code || error.response?.data?.error?.code,
-        timestamp: new Date().toISOString()
+      const simplifiedError = {
+        message: error.message,
+        stack: error.stack,
+        status: error.response?.status,
+        data: error.response?.data
+      };
+      logger.error(`Job ${jobId} failed with categorized error:`, { 
+        type: this._categorizeError(error),
+        details: simplifiedError 
       });
     } catch (updateError) {
-      logger.error('Error updating job status:', updateError);
+      logger.error('Error updating job status during error handling:', updateError);
     }
   }
 
@@ -629,105 +605,6 @@ class JobPipelineService {
     }
     
     return 'UNKNOWN_ERROR';
-  }
-
-  prepareResponse(jobId, jobOutputDir, llmResult, sceneResults, musicResult, statusInfo = null, parameters = null) {
-    // Extract service config from parameters or fallback to llmResult.parameters
-    const serviceConfig = (parameters && parameters.serviceConfig) || 
-                        (llmResult && llmResult.parameters && llmResult.parameters.serviceConfig) || 
-                        {
-                          skipVoice: false,
-                          skipMusic: false,
-                          skipImage: false,
-                          skipVisualization: false
-                        };
-    
-    // Add visualizationType to serviceConfig if it doesn't exist
-    if (!serviceConfig.visualizationType) {
-      serviceConfig.visualizationType = (parameters && parameters.visualizationType) || 
-                                      (llmResult && llmResult.parameters && llmResult.parameters.visualizationType) ||
-                                      'image';
-    }
-    
-    // Log the scene results for debugging
-    /*logger.info('Scene results passed to analyzeResults:', {
-      jobId,
-      hasSceneResults: !!sceneResults,
-      sceneResultsCount: sceneResults?.sceneResults?.length,
-      scenes: sceneResults?.sceneResults?.map(scene => ({
-        sceneId: scene.sceneId,
-        status: scene.status,
-        hasImage: !!scene.image,
-        imageStatus: scene.image?.status,
-        imageFilePath: scene.image?.filePath,
-        hasVoice: !!scene.voice,
-        voiceStatus: scene.voice?.status
-      })),
-      hasMusicResult: !!musicResult,
-      musicStatus: musicResult?.status
-    }); */
-    
-    // Analyze results
-    const statusInfoFromResults = jobResultManager.analyzeResults(sceneResults, serviceConfig, musicResult);
-    
-    // Prepare response with serviceConfig
-    return jobResultManager.prepareResponse(
-      jobId, jobOutputDir, llmResult, sceneResults, musicResult, statusInfo || statusInfoFromResults, serviceConfig
-    );
-  }
-
-  /**
-   * Get the status of a service across all scenes
-   * @private
-   * @param {Object} progress - The progress data
-   * @param {string} service - The service name
-   * @returns {Object} - Service status summary
-   */
-  _getServiceStatusForAllScenes(progress, service) {
-    const sceneProgress = progress.sceneProgress || {};
-    const statuses = Object.values(sceneProgress)
-      .map(scene => scene[service]?.status)
-      .filter(status => status !== undefined);
-    
-    if (statuses.length === 0) return 'unknown';
-    
-    const completed = statuses.filter(s => s === 'completed').length;
-    const failed = statuses.filter(s => s === 'failed').length;
-    const inProgress = statuses.filter(s => s === 'in_progress').length;
-    
-    return {
-      total: statuses.length,
-      completed,
-      failed,
-      inProgress,
-      status: failed > 0 ? 'failed' : 
-              inProgress > 0 ? 'in_progress' : 
-              completed === statuses.length ? 'completed' : 'unknown'
-    };
-  }
-
-  /**
-   * Get a summary of scene progress
-   * @private
-   * @param {Object} progress - The progress data
-   * @returns {Object} - Scene progress summary
-   */
-  _getSceneProgressSummary(progress) {
-    const sceneProgress = progress.sceneProgress || {};
-    const scenes = Object.values(sceneProgress);
-    
-    return {
-      total: scenes.length,
-      completed: scenes.filter(scene => 
-        Object.values(scene).every(service => service?.status === 'completed')
-      ).length,
-      failed: scenes.filter(scene => 
-        Object.values(scene).some(service => service?.status === 'failed')
-      ).length,
-      inProgress: scenes.filter(scene => 
-        Object.values(scene).some(service => service?.status === 'in_progress')
-      ).length
-    };
   }
 }
 

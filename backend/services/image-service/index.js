@@ -31,7 +31,8 @@ class ImageServiceInterface {
     if (!this.service) {
       throw new Error('Image Service not initialized');
     }
-    return await this.service.generateImage(prompt, sceneIndex, jobId, isTest);
+    // No longer awaiting the result here
+    this.service.generateImage(prompt, sceneIndex, jobId, isTest);
   }
 
   async process(prompt, sceneIndex = null, jobId = null, isTest = false) {

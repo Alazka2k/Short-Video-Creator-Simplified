@@ -49,14 +49,17 @@ function createServer(imageServiceInterface) {
         return res.status(400).json({ error: 'Invalid request', details: 'Missing prompt, jobId, or sceneIndex.' });
       }
 
-      logger.info(`Image Service: Generating image with prompt: ${prompt.substring(0, 100)}...`);
+      // Correctly access the image_prompt from the prompt object for logging
+      const imagePromptForLog = prompt.image_prompt || 'No image prompt provided';
+      logger.info(`Image Service: Generating image with prompt: ${imagePromptForLog.substring(0, 100)}...`);
       // This now waits for the entire async flow (including webhook) to complete
-      const result = await imageServiceInterface.generateContent(prompt, sceneIndex, jobId, userId);
+      imageServiceInterface.generateContent(prompt, sceneIndex, jobId, userId);
       
-      logger.info('Image Service: Image generated successfully, returning result.');
-      res.json({
-        message: 'Image generated successfully',
-        result: result
+      logger.info('Image Service: Image generation request accepted and is processing in the background.');
+      res.status(202).json({
+        message: 'Image generation started',
+        jobId: jobId,
+        sceneId: sceneIndex
       });
     } catch (error) {
       logger.error('Image Service: Error generating image:', {

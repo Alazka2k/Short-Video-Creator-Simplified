@@ -142,6 +142,103 @@ class JobDataAccess {
     }
   }
 
+  async addResultToScene(jobId, sceneId, serviceName, status, resultData) {
+    logger.info(`Adding result to job ${jobId}, scene ${sceneId}`, { serviceName, status });
+
+    const job = await knex('jobs').where({ job_id: jobId }).first();
+    if (!job) {
+      throw new Error(`Job not found: ${jobId}`);
+    }
+
+    let metadata = typeof job.metadata === 'string' ? JSON.parse(job.metadata) : job.metadata;
+
+    if (!metadata.scenes) {
+      metadata.scenes = [];
+    }
+
+    let scene = metadata.scenes.find(s => s.sceneId === sceneId);
+    if (!scene) {
+      // If scene doesn't exist, create a placeholder. This might happen if services report out of order.
+      scene = { sceneId: sceneId };
+      metadata.scenes.push(scene);
+    }
+    
+    // Atomically add or update the service result for the scene
+    scene[serviceName] = {
+      status,
+      ...resultData,
+      completedAt: new Date().toISOString()
+    };
+
+    // Sort scenes by sceneId to maintain order
+    metadata.scenes.sort((a, b) => a.sceneId - b.sceneId);
+
+    const updatedJob = await this.updateJob(jobId, {
+      metadata: JSON.stringify(metadata)
+    });
+
+    logger.info(`Successfully added ${serviceName} result to scene ${sceneId} for job ${jobId}`);
+
+    // Return the job with the updated metadata, not the whole job object from DB
+    return { ...job, metadata };
+  }
+
+  async getJobById(jobId) {
+    try {
+      if (!this.isValidUUID(jobId)) {
+        throw new Error(`Invalid jobId: ${jobId}`);
+      }
+  
+      const job = await knex('jobs')
+        .where('job_id', jobId)
+        .first();
+  
+      if (!job) return null;
+  
+      const processedJob = {
+        ...job,
+        service_sequence: this.safeJsonParse(job.service_sequence) || [],
+        metadata: this.safeJsonParse(job.metadata) || {}
+      };
+
+      // Only refresh URLs for completed jobs
+      if (job.status === 'completed') {
+        const metadata = processedJob.metadata;
+        const lastUrlRefresh = metadata.lastUrlRefresh ? new Date(metadata.lastUrlRefresh) : null;
+        const now = new Date();
+        const shouldRefresh = !lastUrlRefresh || (now - lastUrlRefresh) > 3600000; // Refresh if more than 1 hour has passed
+
+        if (shouldRefresh) {
+          // Refresh URLs for each job
+          const updatedJob = await this.storageUrlHelper.updateJobUrls(processedJob);
+          
+          // Only update if URLs actually changed
+          if (JSON.stringify(updatedJob.metadata) !== JSON.stringify(processedJob.metadata)) {
+            // Add lastUrlRefresh timestamp
+            updatedJob.metadata.lastUrlRefresh = now.toISOString();
+            
+            /*logger.info('Refreshing URLs for completed job in list:', { 
+              jobId: job.job_id,
+              lastRefresh: lastUrlRefresh?.toISOString(),
+              timeSinceLastRefresh: lastUrlRefresh ? `${Math.round((now - lastUrlRefresh) / 1000)}s` : 'never'
+            });*/
+            
+            await this.updateJob(job.job_id, {
+              metadata: JSON.stringify(updatedJob.metadata)
+            });
+            
+            return updatedJob;
+          }
+        }
+      }
+
+      return processedJob;
+    } catch (error) {
+      logger.error('Error getting job:', error);
+      throw error;
+    }
+  }
+
   // Helper method to check if any URLs in the job are expired
   _checkForExpiredUrls(job) {
     const metadata = job.metadata;
@@ -177,77 +274,74 @@ class JobDataAccess {
     }
   }
 
-  async updateJobProgress(jobId, service, status, details = {}) {
+  async updateJobProgress(jobId, progressData) {
+    if (!jobId) {
+      logger.warn('Cannot update progress, jobId is missing.');
+      return;
+    }
+
     try {
-      const job = await this.getJob(jobId);
-      if (!job) throw new Error(`Job not found: ${jobId}`);
-  
-      const metadata = this.safeJsonParse(job.metadata) || {};
-      const serviceSequence = this.safeJsonParse(job.service_sequence) || [];
-  
-      // Add service to sequence if not already present
-      if (!serviceSequence.includes(service)) {
-        serviceSequence.push(service);
+      const job = await knex('jobs').where({ job_id: jobId }).first();
+      if (!job) {
+        logger.warn(`Cannot update progress, job not found: ${jobId}`);
+        return;
       }
-  
-      metadata.progress = metadata.progress || {};
-      metadata.progress[service] = {
-        status,
-        ...(details || {}),
-        updatedAt: new Date().toISOString()
-      };
-  
-      // If any service failed, store the error
-      if (status === 'failed' && details.error) {
-        metadata.errors = metadata.errors || [];
-        metadata.errors.push({
-          service,
-          error: details.error,
-          timestamp: new Date().toISOString()
-        });
-      }
-  
-      // Update progress tracker
-      const progressTracker = require('../utils/progress-tracker');
-      
-      // Calculate progress percentage based on status
-      let progressPercentage = 0;
-      if (status === 'started') progressPercentage = 10;
-      else if (status === 'in_progress') progressPercentage = 50;
-      else if (status === 'completed') progressPercentage = 100;
-      else if (status === 'failed') progressPercentage = 100;
-      
-      // Determine if this is a scene-specific service
-      if (details.sceneId) {
-        // Update progress for this scene and service
-        progressTracker.updateSceneProgress(
-          jobId, 
-          details.sceneId, 
-          service, 
-          progressPercentage, 
-          status,
-          details
-        );
-      } else {
-        // Update progress for the global service
-        progressTracker.updateServiceProgress(
-          jobId,
-          service,
-          progressPercentage,
-          status,
-          details
-        );
-      }
-  
-      await this.updateJob(jobId, {
+
+      let metadata = this.safeJsonParse(job.metadata) || {};
+
+      // Embed the progress object into the metadata
+      metadata.progress = progressData;
+
+      const updatePayload = {
         metadata: JSON.stringify(metadata),
-        service_sequence: JSON.stringify(serviceSequence)
-      });
-  
-      logger.info(`Updated progress for job ${jobId}, service: ${service}, status: ${status}`);
+        status: progressData.status,
+      };
+
+      if (progressData.status === 'failed' && !job.completed_at) {
+        updatePayload.completed_at = new Date();
+      }
+
+      await this.updateJob(jobId, updatePayload);
+      logger.info(`Persisted job progress for ${jobId} to metadata: ${progressData.overallProgress}% (${progressData.status})`);
+
     } catch (error) {
-      logger.error('Error updating job progress:', error);
-      throw error;
+      logger.error(`Failed to persist job progress for ${jobId}:`, error);
+    }
+  }
+
+  async finalizeJob(jobId) {
+    if (!jobId) {
+      logger.warn('Cannot finalize job, jobId is missing.');
+      return;
+    }
+
+    try {
+      const job = await knex('jobs').where({ job_id: jobId }).first();
+      if (!job) {
+        logger.warn(`Cannot finalize job, job not found: ${jobId}`);
+        return;
+      }
+
+      let metadata = this.safeJsonParse(job.metadata) || {};
+
+      // Remove the progress object from metadata
+      delete metadata.progress;
+
+      // Add completion timestamp to metadata
+      metadata.completedAt = new Date().toISOString();
+
+      const updatePayload = {
+        metadata: JSON.stringify(metadata),
+        status: 'completed',
+        completed_at: new Date()
+      };
+
+      await this.updateJob(jobId, updatePayload);
+      logger.info(`Successfully finalized job ${jobId} and cleaned progress from metadata.`);
+
+    } catch (error) {
+      logger.error(`Failed to finalize job ${jobId}:`, error);
+      throw error; // Re-throw to be handled by the caller
     }
   }
   

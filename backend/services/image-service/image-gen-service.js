@@ -36,10 +36,11 @@ class ImageGenService {
     logger.info(`Queueing image generation for: ${jobKey}`);
 
     return new Promise(async (resolve, reject) => {
-      pendingJobs.set(jobKey, { resolve, reject, sceneIndex, jobId });
+      // Store the video prompt and parameters along with the promise
+      pendingJobs.set(jobKey, { resolve, reject, sceneIndex, jobId, videoPrompt: prompt.video_prompt, parameters: prompt.parameters });
 
       try {
-        await this.client.generateImage(prompt, jobId, sceneIndex);
+        await this.client.generateImage(prompt.image_prompt, jobId, sceneIndex);
       } catch (error) {
         logger.error(`[ImageGenService] Error starting image generation for ${jobKey}:`, error);
         pendingJobs.delete(jobKey);
@@ -93,11 +94,69 @@ class ImageGenService {
         };
         
         const finalResult = await this.processGeneratedImage(result, sceneId, jobId);
+
+        // --- Report image completion back to job-service ---
+        try {
+          logger.info(`Reporting final image result back to job-service for ${jobKey}`);
+          await axios.post(`${config.services.job.url}/internal/job/${jobId}/scene/${sceneId}/result`, {
+            service: 'image',
+            status: 'completed',
+            data: finalResult
+          });
+          logger.info(`Successfully reported image completion for ${jobKey}`);
+        } catch (reportError) {
+          logger.error(`Failed to report image completion back to job-service for ${jobKey}:`, reportError);
+          // Do not re-throw; we have the image, the job can technically continue.
+        }
+        // --- End Reporting ---
+
         jobPromise.resolve(finalResult);
+
+        // --- Trigger Visualization ---
+        if (jobPromise.parameters && !jobPromise.parameters.serviceConfig.skipVisualization) {
+          const visualizationType = jobPromise.parameters.visualizationType;
+          logger.info(`[ImageGenService] Triggering '${visualizationType}' generation for completed image job: ${jobKey}`);
+
+          try {
+            if (visualizationType === 'video') {
+              await axios.post(`${config.services.video.url}/generate`, {
+                imageUrl: finalResult.publicUrl,
+                videoPrompt: jobPromise.videoPrompt,
+                sceneId: sceneId,
+                jobId: jobId,
+                parameters: jobPromise.parameters.videoGenParams
+              });
+            } else if (visualizationType === 'animation') {
+              await axios.post(`${config.services.animation.url}/process`, {
+                imageUrl: finalResult.publicUrl,
+                prompt: jobPromise.videoPrompt, // Animation service uses 'prompt'
+                sceneId: sceneId,
+                jobId: jobId,
+                parameters: jobPromise.parameters.animationGenParams
+              });
+            }
+            logger.info(`[ImageGenService] Successfully requested ${visualizationType} generation for ${jobKey}`);
+          } catch (visError) {
+            logger.error(`[ImageGenService] Failed to trigger ${visualizationType} generation for ${jobKey}:`, visError);
+            // Report the visualization failure back to the job service
+            await axios.post(`${config.services.job.url}/internal/job/${jobId}/scene/${sceneId}/result`, {
+              service: visualizationType,
+              status: 'failed',
+              data: { error: visError.message }
+            });
+          }
+        }
+        // --- End Trigger Visualization ---
+
         pendingJobs.delete(jobKey);
       }
     } catch (error) {
-      logger.error(`[ImageGenService] Error processing webhook for ${jobKey}:`, error);
+      logger.error(`[ImageGenService] Error processing webhook for ${jobKey}:`, {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+
       await axios.post(`${config.services.job.url}/progress/update`, {
         jobId,
         sceneId,

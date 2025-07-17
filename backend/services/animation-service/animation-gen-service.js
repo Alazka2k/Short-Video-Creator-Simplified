@@ -162,6 +162,26 @@ class AnimationGenService {
     }
   }
 
+  async reportProgress(jobId, sceneId, status, progress, metadata = {}) {
+    try {
+      await axios.post(`${config.services.job.url}/progress/update`, {
+        jobId,
+        sceneId,
+        service: 'animation',
+        status,
+        progress,
+        metadata
+      });
+    } catch (error) {
+      logger.error(`Failed to report animation progress to job service for job ${jobId}, scene ${sceneId}:`, {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      // This is non-fatal, so we don't re-throw.
+    }
+  }
+
   getOutputPaths(promptOrTestFolder, sceneIndex, isTest) {
     if (isTest) {
       const testOutputDir = path.join(__dirname, '..', '..', '..', 'tests', 'test_output', 'animation', promptOrTestFolder);
@@ -215,6 +235,9 @@ class AnimationGenService {
 
     let tempFiles = [];
     try {
+      // Report that the service has started
+      await this.reportProgress(jobId, sceneIndex, 'in_progress', 5);
+
       logger.info(`Starting animation generation for image: ${imageUrl}`);
       
       let imageSource = imageUrl;
@@ -329,6 +352,29 @@ class AnimationGenService {
             sceneIndex,
             animationData
           );
+
+          // No longer updating progress directly from here
+          // this.jobDataAccess.updateJobProgress(jobId, 'animation', 'completed', { sceneId: sceneIndex, progress: 100, publicUrl: storageResult.url });
+
+          const animationResult = {
+            status: 'completed',
+            ...storageResult,
+            // Add relevant metadata if any
+          };
+
+          // --- Report final result back to job-service ---
+          try {
+            logger.info(`Reporting final animation result back to job-service for job ${jobId}, scene ${sceneIndex}`);
+            await axios.post(`${config.services.job.url}/internal/job/${jobId}/scene/${sceneIndex}/result`, {
+              service: 'animation',
+              status: 'completed',
+              data: animationResult
+            });
+            logger.info(`Successfully reported animation completion for job ${jobId}, scene ${sceneIndex}`);
+          } catch (reportError) {
+            logger.error(`Failed to report animation completion back to job-service for job ${jobId}, scene ${sceneIndex}:`, reportError);
+          }
+          // --- End Reporting ---
 
           return {
             filePath: animationFilePath,

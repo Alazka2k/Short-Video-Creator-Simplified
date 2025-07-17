@@ -6,7 +6,7 @@ This document provides a concrete, step-by-step guide for refactoring the applic
 
 ---
 
-## Phase 1: Backend Refactoring (Image Service) **STATUS: Started**
+## Phase 1: Backend Refactoring (Image Service) **STATUS: ✅ Finished**
 
 This phase focuses on overhauling the core logic within the `image-service` to communicate with the new external API instead of scraping Midjourney directly.
 
@@ -58,18 +58,18 @@ This phase focuses on overhauling the core logic within the `image-service` to c
       `backend/services/job-service/processors/scene-processor.js` -> No changes needed
       `backend\shared\utils\image-helper.js` -> No changes needed
 
-**6. Smoke Testing Image Service**  **STATUS: In progress**
+**6. Smoke Testing Image Service**  **STATUS: ✅ Finished**
 - **Purpose:** Test the image service to ensure it is working as expected.
 - **Actions:**
     - Test the image service directly / Test the image service with gateway **STATUS: ✅ Finished**
     -> Progress tracking is not working, but the image is generated. Progress fix in 6.1. Progress tracking can only be tested with job execution and then calling endpoint to get the progress http://localhost:3000/api/job/jobs/[jobId]/progress.
-    - Test the image service with a job execution **STATUS: In progress**
+    - Test the image service with a job execution **STATUS: ✅ Finished**
       **Findings:**:
       1. The Job is Genuinely Stuck: The job isn't completing and then having its progress tracker erased. It's truly getting stuck mid-process. The images are not being generated, and the progress is not advancing beyond the initial "in_progress" state set by the scene-processor.
       2. No image-service Logs for the Job: This is the most telling clue. If the job-service is trying to generate images, but the image-service shows no logs of receiving the requests, it points to a communication breakdown or a logical error before the API call is made.
       3. Cross-Job/User Contamination: The log showing a request for a different jobId and userId is extremely concerning. It suggests a potential state management issue where data from one request might be leaking into another. This is a serious problem.
    
-**6.1 Test the image service with image (http://localhost:3000/api/image/generate) and job (http://localhost:3000/api/job/generate) execution**
+**6.1 Test the image service with image (http://localhost:3000/api/image/generate) and job (http://localhost:3000/api/job/generate) execution** **STATUS: ✅ Finished**
 - **Purpose:** Collect all open issues, define them and fix them.
 - **Actions:** 
     - Fix the progress tracking with a full asynchronous webhook-to-callback flow. **STATUS: ✅ Finished**
@@ -91,7 +91,7 @@ This phase focuses on overhauling the core logic within the `image-service` to c
    - Fix the stuck / not working image generation for job execution **STATUS: ✅ Finished**
 
 
-**7. Update Service Dependencies after testing**
+**7. Update Service Dependencies after testing** 
     - **File to Modify:** `package.json` (in the project root)
     - **Purpose:** Clean up unused packages.
     - **Actions:**
@@ -100,7 +100,7 @@ This phase focuses on overhauling the core logic within the `image-service` to c
 
 ---
 
-## Phase 2: Testing & Validation **STATUS: Not Started**
+## Phase 2: Testing & Validation **STATUS: ✅ Finished**
 
 **1. Direct API Testing (Postman):**
    - Call the `image-service`'s `/generate` endpoint directly.

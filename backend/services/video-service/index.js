@@ -15,24 +15,28 @@ class VideoServiceInterface {
     logger.info('VideoServiceInterface initialized');
   }
 
-  async process(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneIndex, jobId, isTest = false, model = config.videoGen.model) {
+  async process(imageUrl, videoPrompt, cameraMovement, aspectRatio, sceneId, jobId, isTest = false, model = config.videoGen.model) {
     logger.info('Processing video generation request', {
       imageUrl,
       videoPrompt,
       cameraMovement,
       aspectRatio,
-      sceneIndex,
+      sceneId,
       jobId,
       isTest,
       model
     });
 
+    if (!this.service) {
+      throw new Error('Video Service not initialized');
+    }
+    // Correctly pass all necessary parameters to the service's method
     return await this.service.generateVideo(
       imageUrl,
       videoPrompt,
       cameraMovement,
       aspectRatio,
-      sceneIndex,
+      sceneId,
       jobId,
       isTest,
       model

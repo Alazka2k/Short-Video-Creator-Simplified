@@ -38,6 +38,7 @@ class ProgressTracker {
     
     // Initialize progress data for this job
     const jobProgress = {
+      jobId, // Add jobId to the object itself for easier reference
       startTime: new Date(),
       services, // Store the list of active services
       scenesCount,
@@ -273,6 +274,22 @@ class ProgressTracker {
     
     // Update job status only if allowed by the flag
     if (updateStatus) {
+      // Check for any failed services first
+      const hasFailedService = services.some(service => {
+        if (serviceProgress[service]?.status === 'failed') return true;
+        for (let i = 1; i <= scenesCount; i++) {
+          if (sceneProgress[i]?.[service]?.status === 'failed') return true;
+        }
+        return false;
+      });
+
+      if (hasFailedService) {
+        jobProgress.status = 'failed';
+        jobProgress.endTime = new Date();
+        logger.warn(`Job ${jobProgress.jobId} marked as failed due to a service failure.`);
+        return; // Stop further calculation if a failure is detected
+      }
+
       // Check if all services for all scenes are complete
       const allServicesCompleted = services.every(service => {
         if (service === 'llm' || service === 'music') {
@@ -283,8 +300,9 @@ class ProgressTracker {
         for (let i = 1; i <= scenesCount; i++) {
           const scene = sceneProgress[i] || {};
           const serviceState = scene[service];
-          // If a service for a scene is not marked as completed or skipped, the job is not done
-          if (!serviceState || (serviceState.status !== 'completed' && serviceState.status !== 'skipped')) {
+          // A service is only considered 'not done' if its state exists and is NOT 'completed' or 'skipped'.
+          // A missing state means it hasn't started, which is okay.
+          if (serviceState && serviceState.status !== 'completed' && serviceState.status !== 'skipped') {
             return false;
           }
         }

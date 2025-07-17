@@ -15,119 +15,47 @@ function createServer(videoServiceInterface) {
         next();
     });
   
-    // Health check endpoint
-    app.get('/health', (req, res) => {
-      res.json({ status: 'Video Service is healthy' });
-    });
-
-    // Generate video endpoint
+    // Generate video endpoint, called by image-service
     app.post('/generate', async (req, res) => {
-      logger.info('Video Service: Handling /generate request');
-      const requestTimeout = setTimeout(() => {
-        logger.error('Video Service: Request timed out');
-        res.status(504).json({ 
-          error: 'Service timeout', 
-          message: 'The video generation request took too long to process. Please try again.' 
-        });
-      }, 900000); // 15 minutes timeout
-
+      logger.info('Video Service: Handling /generate request from image-service');
       try {
-        const { 
-          imageUrl, 
-          videoPrompt, 
-          cameraMovement, 
-          aspectRatio, 
-          sceneIndex,
-          jobId,
-          model = config.videoGen.model
-        } = req.body;
+        const { imageUrl, videoPrompt, sceneId, jobId, parameters } = req.body;
 
-        logger.info(`Video Service: Request body: ${JSON.stringify(req.body)}`);
-        
-        // Basic validation
-        if (!imageUrl) {
-          throw new Error('Missing required parameter: imageUrl');
-        }
-        if (!jobId) {
-          throw new Error('Missing required parameter: jobId');
-        }
-        if (sceneIndex === undefined) {
-          throw new Error('Missing required parameter: sceneIndex');
+        if (!imageUrl || !jobId || sceneId === undefined) {
+          logger.error('Video Service: Invalid request to /generate. Missing imageUrl, jobId, or sceneId.');
+          return res.status(400).json({ error: 'Invalid request', details: 'Missing imageUrl, jobId, or sceneId.' });
         }
 
-        // Additional validation for ray-1.5
-        if (model === 'ray-1.5') {
-          if (!videoPrompt) {
-            throw new Error('Missing required parameter for ray-1.5: videoPrompt');
-          }
-          if (!cameraMovement) {
-            throw new Error('Missing required parameter for ray-1.5: cameraMovement');
-          }
-          if (!aspectRatio) {
-            throw new Error('Missing required parameter for ray-1.5: aspectRatio');
-          }
-        }
-  
-        logger.info(`Video Service: Generating video for scene ${sceneIndex}, job ${jobId} with model ${model}`);
-        
-        const result = await videoServiceInterface.process(
+        logger.info(`Video Service: Generating video for job ${jobId}, scene ${sceneId}`);
+        // This is now fire-and-forget from the perspective of the image-service
+        videoServiceInterface.process(
           imageUrl,
           videoPrompt,
-          cameraMovement,
-          aspectRatio,
-          sceneIndex,
-          jobId,
-          false,  // isTest = false for production
-          model
+          parameters?.cameraMovement,
+          parameters?.aspectRatio,
+          sceneId,
+          jobId
         );
-        
-        clearTimeout(requestTimeout);
-        logger.info('Video Service: Video generated successfully');
-        
-        res.json({ 
-          message: 'Video generated successfully',
-          result: await StorageUrlHelper.refreshUrlsInObject(result)
-        });
+
+        res.status(202).json({ message: 'Video generation started' });
       } catch (error) {
-        clearTimeout(requestTimeout);
-        logger.error('Video Service: Error generating video:', {
-          error: error.message,
-          stack: error.stack,
-          details: error.response?.data || error
+        logger.error('Video Service: Error in /generate endpoint:', {
+          message: error.message,
+          jobId: req.body.jobId,
+          sceneId: req.body.sceneId,
         });
+        res.status(500).json({ error: 'Video generation failed', details: error.message });
+      }
+    });
 
-        // Handle specific error types
-        if (error.response?.data?.failure_reason === 'NOT_ENOUGH_FUNDS') {
-          return res.status(503).json({
-            error: 'Service temporarily unavailable',
-            message: 'The video service is currently unavailable. Our team has been notified and is working to resolve this issue. Please try again later.'
-          });
-        }
-
-        // Handle other known error types
-        const errorMapping = {
-          'Missing required parameters': 400,
-          'Video generation timed out': 504,
-          'Video generation failed': 500,
-          'Failed to download video': 500,
-          'Failed to upload to storage': 500
-        };
-
-        // Extract the base error message without additional details
-        const baseErrorMessage = error.message.split(':')[0];
-        const statusCode = errorMapping[baseErrorMessage] || 500;
-
-        // Provide user-friendly messages based on the error type
-        const userMessages = {
-          400: error.message, // For validation errors, show the actual message
-          504: 'The video generation process took too long. Please try again.',
-          500: 'An unexpected error occurred while generating the video. Please try again later.'
-        };
-
-        res.status(statusCode).json({
-          error: statusCode === 400 ? 'Invalid request' : 'Internal server error',
-          message: userMessages[statusCode] || userMessages[500]
-        });
+    // Health check endpoint
+    app.get('/health', async (req, res) => {
+      try {
+        const isHealthy = await videoServiceInterface.isHealthy();
+        res.json({ status: 'Video Service is healthy' });
+      } catch (error) {
+        logger.error('Video Service: Health check failed', error);
+        res.status(500).json({ status: 'Video Service is not healthy', details: error.message });
       }
     });
 

@@ -1,9 +1,10 @@
 const logger = require('../../../shared/utils/logger');
 
 class MusicProcessor {
-  constructor(musicService, jobDataAccess) {
+  constructor(musicService, jobDataAccess, progressTracker) {
     this.musicService = musicService;
     this.jobDataAccess = jobDataAccess;
+    this.progressTracker = progressTracker;
   }
 
   async generateMusic(jobId, llmResult, parameters, serviceConfig) {
@@ -25,7 +26,8 @@ class MusicProcessor {
 
     try {
       // --- Start Realistic Progress Simulation ---
-      this.jobDataAccess.updateJobProgress(jobId, 'music', 'in_progress', { progress: 5 });
+      let progressData = this.progressTracker.updateServiceProgress(jobId, 'music', 5, 'in_progress');
+      await this.jobDataAccess.updateJobProgress(jobId, progressData);
       
       const updates = [
         { delay: 30000, progress: 15 }, // 30 seconds
@@ -43,7 +45,8 @@ class MusicProcessor {
         for (const update of updates) {
           await new Promise(resolve => setTimeout(resolve, update.delay));
           if (completed) return; // Stop if the real process finished
-          this.jobDataAccess.updateJobProgress(jobId, 'music', 'in_progress', { progress: update.progress });
+          progressData = this.progressTracker.updateServiceProgress(jobId, 'music', update.progress, 'in_progress');
+          await this.jobDataAccess.updateJobProgress(jobId, progressData);
         }
       };
       
@@ -56,13 +59,13 @@ class MusicProcessor {
 
       if (musicResult) {
         // Final update to 100% 'completed'
-        await this.jobDataAccess.updateJobProgress(jobId, 'music', 'completed', {
-          progress: 100, // Explicitly set final progress to 100
+        progressData = this.progressTracker.updateServiceProgress(jobId, 'music', 100, 'completed', {
           filePath: musicResult.filePath,
           storageKey: musicResult.storageKey,
           publicUrl: musicResult.publicUrl,
           metadata: musicResult.metadata
         });
+        await this.jobDataAccess.updateJobProgress(jobId, progressData);
         
         // Validate that result has a status property
         if (!musicResult.status) {
@@ -75,16 +78,18 @@ class MusicProcessor {
 
       // If musicResult is falsy but no error was thrown, consider it a failure
       logger.error('Music service returned empty result without throwing an error');
-      await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
+      progressData = this.progressTracker.updateServiceProgress(jobId, 'music', 100, 'failed', {
         error: 'Music service returned empty result'
       });
+      await this.jobDataAccess.updateJobProgress(jobId, progressData);
       return { status: 'failed', error: 'Music service returned empty result' };
     } catch (error) {
       completed = true; // Stop simulation on error too
       logger.error('Error in music generation:', error);
-      await this.jobDataAccess.updateJobProgress(jobId, 'music', 'failed', {
+      progressData = this.progressTracker.updateServiceProgress(jobId, 'music', 100, 'failed', {
         error: error.message
       });
+      await this.jobDataAccess.updateJobProgress(jobId, progressData);
       return { status: 'failed', error: error.message };
     }
   }

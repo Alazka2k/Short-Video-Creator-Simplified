@@ -175,6 +175,7 @@ This phase simplifies the backend services to handle the new single-token authen
          - Start ngrok and get the public url (local testing) and add it to the custom claims as variable API_GATEWAY_SERVICE_URL in auth0
       - Create regular user (bob@example.com) in auth0 and login with custom address: 
             `https://dev-5e34magdrr8ridcc.eu.auth0.com/authorize?audience=https://api.dev-5e34magdr8rdcc.com&scope=openid%20profile%20email&response_type=token&client_id=K6CCXpPhnlzAPBcf09dAJIQLC4mGn7Db&redirect_uri=https://jwt.io`
+            -> Setting of access token expiration for api under Video Creator API: 28800 seconds (8 hours)
       - Create admin user (alicen@example.com) in auth0 and login with custom address:
             - #How is the URL looking for admin?
       - Use the JWT access token to test the endpoint in postman

@@ -10,6 +10,7 @@ const { MusicServiceInterface } = require('../music-service');
 const { AnimationServiceInterface } = require('../animation-service');
 const { VideoServiceInterface } = require('../video-service');
 const progressTracker = require('./utils/progress-tracker');
+const JobDataAccess = require('./data/jobDataAccess');
 
 class JobServiceInterface {
   constructor() {
@@ -40,8 +41,9 @@ class JobServiceInterface {
       this.services.video = new VideoServiceInterface();
       await this.services.video.initialize();
 
-      // Initialize job pipeline service
-      this.jobPipeline = new JobPipelineService(this.services);
+      // Corrected Initialization Order
+      this.jobDataAccess = JobDataAccess;
+      this.jobPipelineService = new JobPipelineService(this.services, this.jobDataAccess, progressTracker);
 
       logger.info('Job Service initialized successfully');
     } catch (error) {
@@ -52,16 +54,14 @@ class JobServiceInterface {
 
   // Create a unique job ID
   createJobId() {
-    return this.jobPipeline.createJobId();
+    return this.jobPipelineService.createJobId();
   }
 
   // Create the initial job record and return a job ID
   async createInitialJob(prompt, parameters = {}, visualizationType = 'image', userId = null) {
     try {
-      // Create a job ID
       const jobId = this.createJobId();
       
-      // Check if this is an LLM-only job for logging
       const isLlmOnlyJob = parameters.serviceConfig?.skipVoice && 
                           parameters.serviceConfig?.skipImage && 
                           parameters.serviceConfig?.skipMusic && 
@@ -73,10 +73,8 @@ class JobServiceInterface {
         isLlmOnly: isLlmOnlyJob
       });
       
-      // Create the job record
-      await this.jobPipeline.createInitialJobRecord(jobId, prompt, parameters, visualizationType, userId);
+      await this.jobPipelineService.createInitialJobRecord(jobId, prompt, parameters, visualizationType, userId);
       
-      // Return the job ID in an object for future expansion
       return { jobId };
     } catch (error) {
       logger.error('Error creating initial job record:', error);
@@ -87,7 +85,6 @@ class JobServiceInterface {
   // Process job in the background
   async processJobInBackground(jobId, prompt, parameters = {}, visualizationType = 'image', userId = null) {
     try {
-      // Check if this is an LLM-only job for logging
       const isLlmOnlyJob = parameters.serviceConfig?.skipVoice && 
                           parameters.serviceConfig?.skipImage && 
                           parameters.serviceConfig?.skipMusic && 
@@ -100,19 +97,20 @@ class JobServiceInterface {
         isLlmOnly: isLlmOnlyJob
       });
       
-      return await this.jobPipeline.processJobInBackground(jobId, prompt, parameters, visualizationType, userId);
+      // Note the change to use jobPipelineService
+      this.jobPipelineService.processJobInBackground(jobId, prompt, parameters, visualizationType, userId);
     } catch (error) {
       logger.error(`Background job processing error for job ${jobId}:`, error);
-      throw error;
+      // We don't re-throw here because this is an async background process
     }
   }
 
   async getJobStatus(jobId) {
-    return await this.jobPipeline.getJobStatus(jobId);
+    return await this.jobPipelineService.getJobStatus(jobId);
   }
 
   async getAllJobs(filters = {}) {
-    return await this.jobPipeline.getAllJobs(filters);
+    return await this.jobDataAccess.getAllJobs(filters);
   }
 
   async cleanup() {
@@ -131,7 +129,7 @@ class JobServiceInterface {
   // Get job progress
   getJobProgress(jobId) {
     try {
-      return this.jobPipeline.getJobProgress(jobId);
+      return this.jobPipelineService.getJobProgress(jobId);
     } catch (error) {
       logger.error(`Error getting job progress for ${jobId}:`, error);
       throw error;
@@ -141,11 +139,22 @@ class JobServiceInterface {
   // Get basic job progress from the database if not in memory
   async getBasicJobProgress(jobId) {
     try {
-      return await this.jobPipeline.getBasicJobProgress(jobId);
+      return await this.jobPipelineService.getBasicJobProgress(jobId);
     } catch (error) {
       logger.error(`Error getting basic job progress for ${jobId}:`, error);
       return null;
     }
+  }
+
+  async addResultToScene(jobId, sceneId, service, status, data) {
+    if (!this.jobDataAccess) {
+      throw new Error('JobDataAccess not initialized');
+    }
+    await this.jobDataAccess.addResultToScene(jobId, sceneId, service, status, data);
+  }
+
+  async getJob(jobId, userId) {
+    return await this.jobDataAccess.getJobByIdAndUser(jobId, userId);
   }
 }
 
@@ -171,5 +180,5 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { JobServiceInterface, startServer };
+module.exports = jobService = new JobServiceInterface();
 

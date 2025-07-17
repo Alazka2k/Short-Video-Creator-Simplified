@@ -6,9 +6,10 @@ const axios = require('axios');
 const config = require('../../../shared/utils/config');
 
 class SceneProcessor {
-  constructor(services, jobDataAccess) {
+  constructor(services, jobDataAccess, progressTracker) {
     this.services = services;
     this.jobDataAccess = jobDataAccess;
+    this.progressTracker = progressTracker;
   }
 
   async processScene(scene, sceneId, jobId, sceneDir, serviceConfig, parameters, visualizationType) {
@@ -46,8 +47,8 @@ class SceneProcessor {
 
       // Process image if not skipped
       if (!serviceConfig.skipImage) {
-        imageResult = await this.generateImage(scene, sceneId, jobId);
-        logger.info(`Image generation for scene ${sceneId} completed with status: ${imageResult?.status || 'unknown'}`);
+        imageResult = await this.generateImage(scene, sceneId, jobId, parameters);
+        logger.info(`Image generation request for scene ${sceneId} accepted, current status: ${imageResult?.status || 'unknown'}`);
         
         // Ensure image result has a status field
         if (imageResult && !imageResult.status) {
@@ -59,39 +60,22 @@ class SceneProcessor {
         logger.info(`Image generation skipped for scene ${sceneId}`);
       }
 
-      // Check if visualization is enabled
-      let visualResult = null;
-      if (!serviceConfig.skipVisualization && imageResult && imageResult.status !== 'failed' && imageResult.status !== 'skipped') {
-        visualResult = await this.generateVisualization(
-          scene,
-          sceneId,
-          jobId,
-          imageResult,
-          serviceConfig,
-          parameters,
-          visualizationType
-        );
-        logger.info(`${visualizationType} generation for scene ${sceneId} completed with status: ${visualResult?.status}`);
-      } else if (!serviceConfig.skipVisualization) {
-        logger.info(`Visualization (Animation or Video) skipped for scene ${sceneId} due to missing or failed image`);
-        visualResult = { status: 'skipped', reason: 'Missing or failed image' };
-      } else {
-        logger.info(`Visualization (Animation or Video) skipped for scene ${sceneId}`);
-        visualResult = { status: 'skipped' };
-      }
+      // Visualization is now triggered by the image-service webhook chain.
+      // The logic to generate or handle visualization results has been removed
+      // from this processor to prevent data corruption (e.g., the 'undefined' key).
 
       // Save scene metadata with complete results
-      await this.saveSceneMetadata(sceneDir, {
+      const metadataToSave = {
         sceneId,
         text: scene?.description,
         visualPrompt: scene?.visual_prompt,
         videoPrompt: scene?.video_prompt,
         voice: voiceResult,
-        image: imageResult,
-        [serviceConfig.visualizationType]: visualResult,
-        visualizationType: serviceConfig.visualizationType,
+        image: imageResult, // This is now just a status object like { status: 'in_progress' }
         generatedAt: new Date().toISOString()
-      });
+      };
+      logger.info(`[Scene Processor] Saving final metadata for scene ${sceneId}:`, metadataToSave);
+      await this.saveSceneMetadata(sceneDir, metadataToSave);
 
       // Create the scene result to return
       const sceneResult = {
@@ -117,10 +101,7 @@ class SceneProcessor {
         };
       }
 
-      // Only include visualization result if it was not skipped and is available
-      if (!serviceConfig.skipVisualization && visualResult) {
-        sceneResult[serviceConfig.visualizationType] = { ...visualResult };
-      }
+      // Visualization result is no longer available in this context and is removed.
 
       // Log the final scene result before returning
       /*logger.info(`Final scene ${sceneId} result:`, {
@@ -130,8 +111,8 @@ class SceneProcessor {
         hasImage: !!sceneResult.image,
         voiceStatus: sceneResult.voice?.status,
         imageStatus: sceneResult.image?.status,
-        visualizationType: serviceConfig.visualizationType,
-        visualizationStatus: sceneResult[serviceConfig.visualizationType]?.status
+        visualizationType: visualizationType,
+        visualizationStatus: sceneResult[visualizationType]?.status
       }); */
 
       return sceneResult;
@@ -146,114 +127,8 @@ class SceneProcessor {
     }
   }
 
-  async generateVisualization(scene, sceneId, jobId, imageResult, serviceConfig, parameters, visualizationType) {
-    if (serviceConfig.skipVisualization) {
-      logger.info(`Visualization generation skipped for scene ${sceneId}`, { jobId });
-      return { status: 'skipped' };
-    }
-
-    // Log the visualization intent
-    logger.info('Starting visualization generation:', {
-      type: visualizationType,
-      sceneId,
-      jobId,
-      hasImageResult: !!imageResult,
-      hasVideoPrompt: !!scene.video_prompt
-    });
-
-    // If we don't have an image result and image generation wasn't skipped, 
-    // it means the image generation failed
-    if (!imageResult || imageResult.status === 'failed') {
-      logger.warn('No valid image available for visualization, skipping', { sceneId, jobId });
-      return { 
-        status: 'skipped', 
-        reason: 'No valid image available for visualization' 
-      };
-    }
-
-    try {
-      // First check visualization type
-      if (!['video', 'animation'].includes(visualizationType)) {
-        throw new Error(`Invalid visualization type: ${visualizationType}`);
-      }
-
-      if (!imageResult?.publicUrl) {
-        logger.error('Missing image URL for visualization', { sceneId, jobId });
-        throw new Error('Image URL is required for visualization generation');
-      }
-
-      let visualResult;
-      
-      if (visualizationType === 'video') {
-        logger.info('Executing video service...', {
-          sceneId,
-          jobId,
-          imageUrl: imageResult.publicUrl,
-          videoPrompt: scene.video_prompt,
-          model: parameters.videoGenParams?.model || 'ray-2'
-        });
-
-        // For ray-1.5, we need video prompt and camera movement
-        if (parameters.videoGenParams?.model === 'ray-1.5') {
-          if (!scene.video_prompt) {
-            logger.error('Missing video prompt for scene', { sceneId, jobId });
-            throw new Error('Video prompt is required for ray-1.5 visualization generation');
-          }
-          
-          visualResult = await this.services.video.process(
-            imageResult.publicUrl,
-            scene.video_prompt,
-            scene.camera_movement,
-            parameters.videoGenParams?.aspectRatio || '16:9',
-            sceneId,
-            jobId
-          );
-        } else {
-          // For ray-2, we only need the image URL
-          visualResult = await this.services.video.process(
-            imageResult.publicUrl,
-            null,
-            null,
-            null,
-            sceneId,
-            jobId
-          );
-        }
-      } else { // animation
-        logger.info('Executing animation service...', {
-          sceneId,
-          jobId,
-          imageUrl: imageResult?.publicUrl,
-          videoPrompt: scene.video_prompt
-        });
-        visualResult = await this.services.animation.process(
-          imageResult?.publicUrl,
-          scene.video_prompt,
-          sceneId,
-          jobId,
-          {
-            animationLength: parameters.animationGenParams?.animationLength || 5,
-            ...parameters.animationGenParams
-          }
-        );
-      }
-      
-      // Validate that visualResult has a status property
-      if (!visualResult || !visualResult.status) {
-        logger.error(`${visualizationType} service returned result without status for scene ${sceneId}`, { jobId });
-        throw new Error(`${visualizationType} service result is missing status field`);
-      }
-      
-      return visualResult;
-    } catch (error) {
-      logger.error(`Error in ${visualizationType} generation:`, error);
-      await this.jobDataAccess.updateJobProgress(jobId, visualizationType, 'failed', {
-        sceneId,
-        error: error.message
-      });
-      return { status: 'failed', error: error.message };
-    }
-  }
+  // The generateVisualization method is now obsolete and has been removed.
+  // The video/animation generation is triggered by the image-service upon image completion.
 
   async saveSceneMetadata(sceneDir, metadata) {
     try {
@@ -264,7 +139,7 @@ class SceneProcessor {
     }
   }
 
-  async generateImage(scene, sceneIndex, jobId) {
+  async generateImage(scene, sceneIndex, jobId, parameters) {
     // This function is refactored to make a direct HTTP call to the image-service,
     // treating it as a proper microservice. This solves the cross-process state
     // issue where the job was queued in one process and the webhook was received in another.
@@ -279,28 +154,30 @@ class SceneProcessor {
 
     // Immediately update progress to indicate that image generation has started.
     // This ensures its weight is included in the overall progress calculation from the beginning.
-    this.jobDataAccess.updateJobProgress(jobId, 'image', 'started', {
-      sceneId: sceneIndex,
-      progress: 0,
-      status: 'in_progress'
-    });
+    const progressData = this.progressTracker.updateSceneProgress(jobId, sceneIndex, 'image', 0, 'in_progress');
+    await this.jobDataAccess.updateJobProgress(jobId, progressData);
+
 
     const maxRetries = 3;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const response = await axios.post(`${config.services.image.url}/generate`, {
-          prompt: imagePrompt,
+          prompt: {
+            image_prompt: imagePrompt,
+            video_prompt: scene.video_prompt,
+            parameters: parameters
+          },
           sceneIndex,
           jobId,
         }, {
-          timeout: 300000 // 5 minute timeout, to allow for image generation
+          timeout: 30000 // A short timeout, since the service should respond immediately
         });
 
-        if (response.data && response.data.result) {
-          logger.info(`Image service successfully returned result for scene ${sceneIndex} on attempt ${attempt}`);
-          return response.data.result;
+        if (response.status === 202) {
+          logger.info(`Image service accepted request for scene ${sceneIndex} on attempt ${attempt}`);
+          return { status: 'in_progress' }; // Return a temporary status
         } else {
-          throw new Error('Invalid response structure from image service');
+          throw new Error(`Invalid response status from image service: ${response.status}`);
         }
       } catch (error) {
         logger.error(`Error calling image service for scene ${sceneIndex} (attempt ${attempt}/${maxRetries}):`, {
@@ -317,13 +194,13 @@ class SceneProcessor {
         if (isRetryable && attempt < maxRetries) {
           const delay = attempt * 2000; // 2s, 4s
           logger.info(`Retryable error detected. Waiting ${delay}ms before next attempt.`);
-          await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise(resolve => setTimeout(resolve, delay));
         } else {
           // If not retryable or max retries reached, update progress and throw
-          this.jobDataAccess.updateJobProgress(jobId, 'image', 'failed', {
-            sceneId: sceneIndex,
+          const failureProgress = this.progressTracker.updateSceneProgress(jobId, sceneIndex, 'image', 100, 'failed', {
             error: error.response?.data?.details || error.message
           });
+          await this.jobDataAccess.updateJobProgress(jobId, failureProgress);
           throw error; // Re-throw to be caught by the main scene processing loop
         }
       }
@@ -341,10 +218,8 @@ class SceneProcessor {
 
     try {
       // First update progress to started (0%)
-      this.jobDataAccess.updateJobProgress(jobId, 'voice', 'started', { 
-        sceneId,
-        progress: 0
-      });
+      let progressData = this.progressTracker.updateSceneProgress(jobId, sceneId, 'voice', 0, 'started');
+      await this.jobDataAccess.updateJobProgress(jobId, progressData);
       
       logger.info('Executing voice service...', {
         sceneId,
@@ -353,10 +228,8 @@ class SceneProcessor {
       });
 
       // Update progress to in_progress (50%)
-      this.jobDataAccess.updateJobProgress(jobId, 'voice', 'in_progress', { 
-        sceneId,
-        progress: 50
-      });
+      progressData = this.progressTracker.updateSceneProgress(jobId, sceneId, 'voice', 50, 'in_progress');
+      await this.jobDataAccess.updateJobProgress(jobId, progressData);
 
       // Generate voice
       const voiceResult = await this.services.voice.process(
@@ -367,22 +240,21 @@ class SceneProcessor {
       );
 
       // Update progress to completed (100%)
-      this.jobDataAccess.updateJobProgress(jobId, 'voice', voiceResult.status, { 
-        sceneId,
-        progress: 100,
+      progressData = this.progressTracker.updateSceneProgress(jobId, sceneId, 'voice', 100, voiceResult.status, {
         filePath: voiceResult.filePath,
         publicUrl: voiceResult.publicUrl,
         storageKey: voiceResult.storageKey
       });
+      await this.jobDataAccess.updateJobProgress(jobId, progressData);
       
       logger.info(`Voice generation for scene ${sceneId} completed with status: ${voiceResult.status}`);
       return voiceResult;
     } catch (error) {
       // Update progress to failed with error
-      this.jobDataAccess.updateJobProgress(jobId, 'voice', 'failed', { 
-        sceneId,
+      const failureProgress = this.progressTracker.updateSceneProgress(jobId, sceneId, 'voice', 100, 'failed', { 
         error: error.message
       });
+      await this.jobDataAccess.updateJobProgress(jobId, failureProgress);
       
       logger.error(`Error generating voice for scene ${sceneId}:`, error);
       return {
