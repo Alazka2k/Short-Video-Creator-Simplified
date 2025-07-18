@@ -7,6 +7,8 @@
  * subscription limits for users. It provides visual feedback on token
  * consumption and easy access to subscription management.
  * 
+ * Should be renamed to TokenUsageDetails
+ * 
  * KEY FEATURES:
  * - Token usage progress visualization
  * - Service-specific usage breakdown

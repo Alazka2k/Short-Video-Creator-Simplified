@@ -5,7 +5,7 @@ The Subscription Service handles all subscription, payment, and token management
 
 ## Architecture
 
-### Updated Service Structure
+### Service Structure
 ```
 subscription-service/
 ├── controllers/              # API route controllers

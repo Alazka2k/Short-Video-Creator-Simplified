@@ -4,6 +4,8 @@
 
 This document outlines the improvements of the llm generation (llm result), which is the groundbase for the content generation. We need to improve the prompt and also the result. Currently e.g. the Visual prompt is not always created with the parameters we need (like aspect ratio), e.g. llm_scene_id 644 in llm_scenes.
 
+Improve also the prompt / the selection of script settings and enhance with multiple different examples for different selections which are loaded and imported into the prompt similar like the input for the initial_prompt.txt.
+
 **The Core Improvement:** Improve the prompt and the result of the llm generation.
 
 **The Solution:** We need to improve the prompt data\input\initial_prompt.txt.
