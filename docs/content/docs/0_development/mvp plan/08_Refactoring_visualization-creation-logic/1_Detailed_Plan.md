@@ -144,17 +144,7 @@ Both `video-service` and `animation-service` now operate as fully independent, a
     - **Scene Completion:**
         - Enhance the `jobDataAccess.addResultToScene` method to intelligently check if a scene's components are all complete. If they are, it will add `status: 'completed'` and a `completedAt` timestamp to the root of that scene object in the `metadata.scenes` array.
 
-## Phase 6: Refactor the progress tracker and add a progress simulation **STATUS: Not Started**
-- **Service:** Implement Progress Simulation (Your Suggestion)
-    This will solve the "0% progress" problem for long-running tasks.
-- **Goal:** Provide realistic, simulated progress updates for image and video generation.
-- **Action 1 (Create a Central Utility):** Create a new, reusable utility file at backend/services/job-service/utils/progress-simulator.js. This class will manage the logic for sending periodic progress updates for any long-running task.
-- **Action 2 (Integrate the Simulator):**
-  - First, update the music-processor.js to use this new centralized simulator, cleaning up the existing code.
-  - Then, in scene-processor.js, when an image generation request is successfully sent, start a progress simulation for the image step of that scene.
-  - Finally, once the image-service reports back to the job-service that the image is done, the job-service will automatically start a new progress simulation for the video step.
-- **Action 3 (Ensure Accuracy):** 
-  - The simulation for each step will be automatically stopped and set to 100% as soon as the actual completion or failure message is received from the corresponding service, ensuring the final status is always accurate.
+
 
 ## Continous Testing and Validation 
 - **Test Case 1 (Video):** Run a one-scene job with `visualizationType: "video"`.

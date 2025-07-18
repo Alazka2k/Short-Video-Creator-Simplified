@@ -146,18 +146,27 @@ class JobPipelineService {
       const musicResult = await musicPromise;
 
       // NEW: Wait for all asynchronous scene services (image, video, etc.) to complete via webhooks
-      const allScenesCompleted = await this._waitForSceneCompletion(jobId, llmResult.content.scenes.length, serviceConfig);
+      const sceneWaitResult = await this._waitForSceneCompletion(jobId, llmResult.content.scenes.length, serviceConfig);
 
-      if (!allScenesCompleted) {
-        const timeoutError = new Error(`Job timed out waiting for scene completion.`);
-        logger.error(`Job ${jobId} failed: ${timeoutError.message}`);
-        await this.handleError(jobId, timeoutError);
-        return; // Explicitly stop processing
+      if (sceneWaitResult === 'completed') {
+        // This is the success path. All scenes finished correctly.
+        logger.info(`All services for job ${jobId} have reported completion. Finalizing job.`);
+        await this.jobDataAccess.finalizeJob(jobId);
+      } else {
+        // This is the failure path. The wait ended because of a failure or a true timeout.
+        const finalProgress = this.progressTracker.getJobProgress(jobId);
+
+        if (finalProgress.status === 'failed') {
+          // A service has already failed and reported the error.
+          // We log that the job failed, but we DON'T create a new, misleading error.
+          logger.error(`Job ${jobId} failed because a critical service reported an error. See previous logs for details.`);
+        } else {
+          // The wait ended, but the job is still 'in_progress'. This is a true timeout.
+          const timeoutError = new Error(`Job timed out waiting for scene completion.`);
+          logger.error(`Job ${jobId} failed: ${timeoutError.message}`);
+          await this.handleError(jobId, timeoutError); // This will correctly log the timeout and mark the job as failed.
+        }
       }
-
-      // Finalize job if all scenes completed
-      logger.info(`All services for job ${jobId} have reported completion. Finalizing job.`);
-      await this.jobDataAccess.finalizeJob(jobId);
 
     } catch (error) {
       await this.handleError(jobId, error);
@@ -186,7 +195,7 @@ class JobPipelineService {
 
     if (servicesToTrack.length === 0) {
       logger.info(`No asynchronous scene services to track for job ${jobId}.`);
-      return true; // Nothing to wait for
+      return 'completed'; // Nothing to wait for
     }
 
     return new Promise(async (resolve) => {
@@ -194,7 +203,7 @@ class JobPipelineService {
         if (Date.now() - startTime > timeout) {
           clearInterval(intervalId);
           logger.error(`Timeout waiting for scene completion for job ${jobId}`);
-          resolve(false);
+          resolve('timeout');
           return;
         }
 
@@ -202,7 +211,7 @@ class JobPipelineService {
         if (!progress || progress.status === 'failed') {
           clearInterval(intervalId);
           logger.info(`Job ${jobId} failed or was cancelled, stopping wait.`);
-          resolve(false);
+          resolve('failed');
           return;
         }
 
@@ -220,7 +229,7 @@ class JobPipelineService {
 
         if (allDone) {
           clearInterval(intervalId);
-          resolve(true);
+          resolve('completed');
         }
       }, checkInterval);
     });

@@ -58,6 +58,10 @@ class ImageGenService {
       return;
     }
 
+    // Immediately remove the job from the pending map to make this function idempotent.
+    // This prevents race conditions if multiple 'completed' webhooks arrive simultaneously.
+    pendingJobs.delete(jobKey);
+
     try {
       // Forward progress to job-service
       await axios.post(`${config.services.job.url}/progress/update`, {
@@ -148,7 +152,7 @@ class ImageGenService {
         }
         // --- End Trigger Visualization ---
 
-        pendingJobs.delete(jobKey);
+        // No longer need to delete here, as it's handled at the start of the function.
       }
     } catch (error) {
       logger.error(`[ImageGenService] Error processing webhook for ${jobKey}:`, {
@@ -167,7 +171,7 @@ class ImageGenService {
       }).catch(e => logger.error(`Failed to report failure to job service for ${jobKey}`, e));
       
       jobPromise.reject(error);
-      pendingJobs.delete(jobKey);
+      // No longer need to delete here.
     }
   }
 
