@@ -14,7 +14,12 @@ module.exports = (webhookController) => {
    * @description Handle Stripe webhook events
    * @access Public (secured by Stripe signature)
    */
-  router.post('/stripe', webhookController.handleStripeWebhook.bind(webhookController));
+  router.post(
+    '/stripe',
+    // We need the raw body to verify the Stripe signature
+    express.raw({ type: 'application/json' }),
+    webhookController.handleStripeWebhook.bind(webhookController)
+  );
 
   return router;
 }; 

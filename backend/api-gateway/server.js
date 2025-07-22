@@ -23,6 +23,7 @@ const downloadRoutes = require('./routes/download');
 const subscriptionRoutes = require('./routes/subscription');
 const batchRoutes = require('./routes/batch');
 const adminRoutes = require('./routes/admin');
+const webhookRoutes = require('./routes/webhook');
 
 // Log environment configuration
 logger.info('Environment Configuration:', {
@@ -83,8 +84,14 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// IMPORTANT: Mount the webhook router BEFORE the express.json() parser
+// This ensures that for webhook routes, the body remains a raw buffer.
+app.use('/api/webhooks', webhookRoutes);
+
+// JSON parser for all other API routes
+app.use(express.json());
 
 // Request logging middleware
 app.use((req, res, next) => {

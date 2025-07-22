@@ -361,24 +361,16 @@ class PaymentService {
   }
 
   /**
-   * Handle Stripe webhooks
-   * @param {Object} payload - The webhook payload
-   * @param {string} signature - The webhook signature
-   * @returns {Promise<Object>} - The processed event
+   * Process a Stripe webhook event after it has been verified and logged.
+   * @param {Object} event - The verified Stripe event object.
+   * @returns {Promise<void>}
    */
-  async handleStripeWebhook(payload, signature) {
+  async processWebhookEvent(event) {
     try {
-      logger.info('Handling Stripe webhook:', { signatureLength: signature ? signature.length : 0 });
-      
-      // Verify the webhook signature and parse the event
-      const event = await this.stripeService.constructEvent(payload, signature);
-      
-      logger.info('Stripe webhook event verified:', {
-        eventId: event.id,
-        eventType: event.type
-      });
-      
-      // Handle the event based on its type
+      logger.info('Processing Stripe webhook event:', { eventId: event.id, eventType: event.type });
+
+      // The temporary error simulation for testing has been removed.
+
       switch (event.type) {
         case 'checkout.session.completed':
           await this.handleCheckoutSessionCompleted(event.data.object);
@@ -404,10 +396,8 @@ class PaymentService {
         default:
           logger.info(`Unhandled event type: ${event.type}`);
       }
-      
-      return event;
     } catch (error) {
-      logger.error('Error in handleStripeWebhook:', error);
+      logger.error('Error in processWebhookEvent:', error);
       throw error;
     }
   }
@@ -553,19 +543,23 @@ class PaymentService {
    */
   async handlePaymentIntentFailed(paymentIntent) {
     try {
-      logger.info('Processing payment intent failed:', paymentIntent.id);
+      logger.info('Processing payment intent failed:', { paymentIntentId: paymentIntent.id });
+      // Find the corresponding payment record in our database
+      const payment = await this.dataAccess.payments.findByStripePaymentIntentId(paymentIntent.id);
+
+      if (!payment) {
+        logger.warn('No corresponding payment found for failed payment intent:', { paymentIntentId: paymentIntent.id });
+        return;
+      }
       
       // Update payment record to failed status
-      const payment = await this.dataAccess.payments.findByStripePaymentIntentId(paymentIntent.id);
-      if (payment) {
-        await this.updatePayment(payment.payment_id, {
-          status: 'failed',
-          stripe_payment_intent_id: paymentIntent.id,
-          failure_reason: paymentIntent.last_payment_error?.message || 'Payment failed'
-        });
-        
-        logger.info(`Updated payment ${payment.payment_id} to failed status`);
-      }
+      await this.updatePayment(payment.payment_id, {
+        status: 'failed',
+        stripe_payment_intent_id: paymentIntent.id,
+        failure_reason: paymentIntent.last_payment_error?.message || 'Payment failed'
+      });
+      
+      logger.info(`Updated payment ${payment.payment_id} to failed status`);
       
     } catch (error) {
       logger.error('Error handling payment intent failed:', error);
@@ -644,39 +638,28 @@ class PaymentService {
 
   /**
    * Handle Invoice Payment Failed event
-   * @param {Object} invoice - The invoice object
+   * @param {Object} invoice - The Stripe invoice object.
    */
   async handleInvoicePaymentFailed(invoice) {
     try {
-      logger.info('Processing invoice payment failed:', invoice.id);
-      
-      const subscriptionId = invoice.subscription;
-      
-      if (subscriptionId) {
-        // Get subscription details to find user
-        const subscription = await this.stripeService.retrieveSubscription(subscriptionId);
-        const userId = subscription.metadata?.userId;
-        
-        if (userId) {
-          // Update subscription status to reflect payment failure
-          await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
-            stripe_subscription_id: subscriptionId,
-            stripe_status: subscription.status // Will be 'past_due' or 'unpaid'
-          });
-          
-          logger.info(`Updated subscription status for user ${userId} due to failed payment`);
-        }
-      }
-      
-      // Update payment record if it exists
+      logger.info('Processing invoice payment failed:', { invoiceId: invoice.id });
+  
+      // Find the corresponding payment record in our database
       const payment = await this.dataAccess.payments.findByStripeInvoiceId(invoice.id);
-      if (payment) {
-        await this.updatePayment(payment.payment_id, {
-          status: 'failed',
-          stripe_invoice_id: invoice.id,
-          failure_reason: 'Invoice payment failed'
-        });
+  
+      if (!payment) {
+        logger.warn('No corresponding payment found for failed invoice:', { invoiceId: invoice.id });
+        return;
       }
+      
+      // Update payment record to failed status
+      await this.updatePayment(payment.payment_id, {
+        status: 'failed',
+        stripe_invoice_id: invoice.id,
+        failure_reason: 'Invoice payment failed'
+      });
+      
+      logger.info(`Updated payment ${payment.payment_id} to failed status`);
       
     } catch (error) {
       logger.error('Error handling invoice payment failed:', error);

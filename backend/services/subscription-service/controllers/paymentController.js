@@ -19,25 +19,29 @@ class PaymentController {
   }
 
   /**
-   * Get user's payment history
+   * Get user's payment history with pagination
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    */
   async getUserPayments(req, res) {
     try {
       const { userId } = req.params;
-      const { limit = 100, offset = 0 } = req.query;
+      const { limit, offset } = req.query;
+
+      logger.info('Getting payments for user:', { userId, limit, offset });
       
-      const payments = await this.paymentService.getUserPayments(
-        userId, 
-        parseInt(limit), 
-        parseInt(offset)
-      );
+      const payments = await this.paymentService.getUserPayments(userId, limit, offset);
       
-      res.json(payments);
+      res.json({
+        success: true,
+        data: payments
+      });
     } catch (error) {
-      logger.error('Error fetching user payments:', error);
-      res.status(500).json({ error: 'Internal server error', details: error.message });
+      logger.error('Error in getUserPayments:', error);
+      res.status(500).json({
+        error: 'Failed to get user payments',
+        message: error.message
+      });
     }
   }
 

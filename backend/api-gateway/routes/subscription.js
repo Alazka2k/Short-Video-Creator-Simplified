@@ -199,35 +199,41 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
 
 /**
  * @route GET /api/subscription/plans
- * @description Get all available subscription plans
- * @access Public - requires service auth
+ * @description Get all subscription plans
+ * @access Public
  */
-router.get('/plans', serviceAuth, (req, res) => forwardToSubscriptionService(req, res, '/plans'));
+router.get('/plans', (req, res) => forwardToSubscriptionService(req, res, '/plans'));
 
 /**
  * @route GET /api/subscription/plans/:planId
- * @description Get details of a specific plan
- * @access Public - requires service auth
+ * @description Get a specific subscription plan
+ * @access Public
  */
-router.get('/plans/:planId', serviceAuth, (req, res) => forwardToSubscriptionService(req, res, `/plans/${req.params.planId}`));
+router.get('/plans/:planId', (req, res) => forwardToSubscriptionService(req, res, `/plans/${req.params.planId}`));
 
 /**
- * @route GET /api/subscription/subscriptions/user/:userId
- * @description Get active subscription for a user
- * @access Protected - requires read:subscription permission
+ * @route GET /api/subscription/subscriptions/me
+ * @description Get the current user's active subscription
+ * @access Private
  */
-router.get('/subscriptions/user/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/subscriptions/user/${req.params.userId}`));
+router.get('/subscriptions/me', jwtAuth({ requireUser: true }), (req, res) => {
+  // Forward to the service, which will get the userId from the token
+  forwardToSubscriptionService(req, res, `/subscriptions/user/${req.user.userId}`);
+});
 
 /**
- * @route POST /api/subscription/subscriptions/:userId/renew
- * @description Renew a subscription's token allocation period
- * @access Protected - requires update:subscription permission
+ * @route GET /api/subscription/payments/me
+ * @description Get the current user's payment history
+ * @access Private
  */
-router.post('/subscriptions/:userId/renew', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/subscriptions/user/${req.params.userId}/renew`));
+router.get('/payments/me', jwtAuth({ requireUser: true }), (req, res) => {
+  // Forward to the service, which will get the userId from the token
+  forwardToSubscriptionService(req, res, `/payments/user/${req.user.userId}`);
+});
 
 /**
  * @route POST /api/subscription/subscriptions
- * @description Create a new subscription or change an existing subscription plan
+ * @description Create a new subscription
  * @access Protected - requires create:subscription permission
  */
 router.post('/subscriptions', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, '/subscriptions'));
@@ -261,6 +267,13 @@ router.put('/subscriptions/:subscriptionId', jwtAuth({ requireUser: true }), (re
 router.post('/subscriptions/:subscriptionId/cancel', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/subscriptions/${req.params.subscriptionId}/cancel`));
 
 /**
+ * @route POST /api/subscription/subscriptions/:userId/renew
+ * @description Renew a subscription's token allocation period
+ * @access Protected - requires update:subscription permission
+ */
+router.post('/subscriptions/:userId/renew', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/subscriptions/user/${req.params.userId}/renew`));
+
+/**
  * @route GET /api/subscription/token-packages
  * @description Get all available token packages
  * @access Public - requires service auth
@@ -284,7 +297,7 @@ router.post('/token-packages/add', jwtAuth({ requireAdmin: true }), (req, res) =
 
 /**
  * @route GET /api/subscription/tokens/balance/:userId
- * @description Get token balance for a user
+ * @description Get user's token balance
  * @access Protected - requires read:tokens permission
  */
 router.get('/tokens/balance/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/tokens/balance/${req.params.userId}`));
@@ -312,7 +325,7 @@ router.post('/tokens/buy', jwtAuth({ requireUser: true }), (req, res) => forward
 
 /**
  * @route GET /api/subscription/transactions/user/:userId
- * @description Get token transactions for a user
+ * @description Get user's transaction history
  * @access Protected - requires read:transactions permission
  */
 router.get('/transactions/user/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/transactions/user/${req.params.userId}`));
@@ -333,14 +346,14 @@ router.post('/transactions/calculate-job-cost', serviceAuth, (req, res) => forwa
 
 /**
  * @route GET /api/subscription/payments/user/:userId
- * @description Get payment history for a user
- * @access Protected - requires read:payments permission
+ * @description Get user's payment history
+ * @access Private
  */
-router.get('/payments/user/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/payments/user/${req.params.userId}`));
+// router.get('/payments/user/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/payments/user/${req.params.userId}`));
 
 /**
  * @route GET /api/subscription/payments/summary/:userId
- * @description Get payment summary for a user
+ * @description Get user's payment summary
  * @access Protected - requires read:payments permission
  */
 router.get('/payments/summary/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/payments/summary/${req.params.userId}`));

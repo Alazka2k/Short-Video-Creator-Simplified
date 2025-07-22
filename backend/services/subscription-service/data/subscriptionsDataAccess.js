@@ -10,7 +10,7 @@
  * about the specific subscription tier.
  */
 
-const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV || 'development']);
+const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../../shared/utils/logger');
 const config = require('../../../shared/utils/config');
 const path = require('path');

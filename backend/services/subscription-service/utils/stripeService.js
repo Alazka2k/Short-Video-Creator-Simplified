@@ -16,6 +16,7 @@ class StripeService {
     this.stripe = null;
     this.webhookSecret = null;
     this.initialized = false;
+    this.initialize(); // Initialize on creation
   }
 
   /**
@@ -609,26 +610,20 @@ class StripeService {
 
   /**
    * Construct a Stripe event from webhook payload
-   * @param {string} payload - The raw request body
+   * @param {Buffer} payload - The raw request body buffer
    * @param {string} signature - The Stripe signature from request headers
-   * @returns {Promise<Object>} - The constructed Stripe event
+   * @returns {Object} - The constructed Stripe event
    */
-  async constructEvent(payload, signature) {
+  constructEvent(payload, signature) {
     try {
-      if (!this.initialized) await this.initialize();
+      if (!this.initialized) {
+        throw new Error('Stripe service not initialized');
+      }
       
       if (!this.webhookSecret) {
-        logger.warn('Webhook secret not found. Unable to verify Stripe webhook signature.');
-        
-        // For development, just parse the payload
-        if (process.env.NODE_ENV === 'development') {
-          return { 
-            type: JSON.parse(payload).type,
-            data: { object: JSON.parse(payload).data.object }
-          };
-        } else {
-          throw new Error('Webhook secret not configured');
-        }
+        // Enforce webhook secret existence in all environments for security.
+        logger.error('Stripe webhook secret is not set.');
+        throw new Error('Webhook secret is not configured. Cannot verify webhook signature.');
       }
       
       // Verify and construct the event
@@ -647,4 +642,5 @@ class StripeService {
   }
 }
 
+// Export a single, initialized instance of the service (Singleton Pattern)
 module.exports = new StripeService(); 

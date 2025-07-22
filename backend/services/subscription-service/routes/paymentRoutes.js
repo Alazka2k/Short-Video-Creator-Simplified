@@ -6,7 +6,6 @@
  * - GET /payments/summary/:userId - Get user's payment summary
  * - POST /payments - Create a payment record
  * - POST /payments/update - Update a payment record
- * - POST /webhooks/stripe - Handle Stripe webhook
  */
 
 const express = require('express');
@@ -46,7 +45,7 @@ module.exports = (paymentController) => {
    * @description Handle Stripe webhook
    * @access Public (secured by Stripe signature)
    */
-  router.post('/webhooks/stripe', paymentController.handleStripeWebhook.bind(paymentController));
+  // router.post('/webhooks/stripe', paymentController.handleStripeWebhook.bind(paymentController));
 
   /**
    * @route GET /api/subscription/payments/renewal

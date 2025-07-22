@@ -4,7 +4,7 @@
  * This module manages operations on the tokens table, which stores up-to-date user token balances.
  */
 
-const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV || 'development']);
+const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../../shared/utils/logger');
 
 class TokenBalanceDataAccess {

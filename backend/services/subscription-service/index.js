@@ -15,6 +15,7 @@ const TokenTransactionsDataAccess = require('./data/tokenTransactionsDataAccess'
 const TokenPackagesDataAccess = require('./data/tokenPackagesDataAccess');
 const TokenBalanceDataAccess = require('./data/tokenBalanceDataAccess');
 const PaymentsDataAccess = require('./data/paymentsDataAccess');
+const WebhookEventsDataAccess = require('./data/webhookEventsDataAccess');
 
 // Import service classes
 const PlanService = require('./services/planService');
@@ -44,7 +45,8 @@ const dataAccess = {
   tokenTransactions: TokenTransactionsDataAccess,
   tokenPackages: TokenPackagesDataAccess,
   tokenBalance: new TokenBalanceDataAccess(),
-  payments: PaymentsDataAccess
+  payments: PaymentsDataAccess,
+  webhookEvents: WebhookEventsDataAccess
 };
 
 // Utilities
@@ -73,7 +75,7 @@ async function startServer() {
     const tokenController = new TokenController(tokenService);
     const tokenPackageController = new TokenPackageController(tokenPackageService);
     const paymentController = new PaymentController(paymentService);
-    const webhookController = new WebhookController(paymentService);
+    const webhookController = new WebhookController(paymentService, stripeService);
     const transactionController = new TransactionController(transactionService);
     
     // Create and start the server

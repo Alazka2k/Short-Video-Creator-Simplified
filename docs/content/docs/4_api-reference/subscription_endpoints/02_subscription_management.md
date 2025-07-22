@@ -10,18 +10,17 @@ All endpoints include proper authentication and authorization checks.
 
 ## Subscription Management
 
-### 1. ✅ Get User's Current Subscription
-Retrieves the active subscription for a user.
+### 1. ✅ Get Current User's Subscription
+Retrieves the active subscription for the currently authenticated user.
 
-**Endpoint**: `GET /subscriptions/user/:userId`
+**Endpoint**: `GET /subscriptions/me`
 
 **URL Parameters**:
-- `userId`: The numeric ID of the user (e.g., "30")
-- `status`: (optional, query): The status of the subscription to filter by. Valid values: `active`, `cancelled`, `expired`.
+- `status`: (optional, query): The status of the subscription to filter by. Valid values: `active`, `cancelled`, `expired`. Default is `active`.
 
 **Example Requests**:
-- `GET /subscriptions/user/30` - Returns the active subscription for user 30
-- `GET /subscriptions/user/30?status=active` - Returns the active subscription for user 30
+- `GET /subscriptions/me` - Returns the active subscription for the logged-in user.
+- `GET /subscriptions/me?status=cancelled` - Returns any cancelled subscriptions for the logged-in user.
 
 **Response Example**:
 ```json

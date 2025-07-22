@@ -10,7 +10,7 @@ const stripeService = require('../utils/stripeService');
 const subscriptionsDataAccess = require('../data/subscriptionsDataAccess');
 const plansDataAccess = require('../data/plansDataAccess');
 const tokenPackagesDataAccess = require('../data/tokenPackagesDataAccess');
-const authDataAccess = require('../../auth-service/data/authDataAccess');
+const userDataAccess = require('../data/userDataAccess');
 
 class CheckoutController {
   /**
@@ -20,7 +20,8 @@ class CheckoutController {
    */
   async createSubscriptionCheckout(req, res) {
     try {
-      const { userId, planId, successUrl, cancelUrl } = req.body;
+      const { planId, successUrl, cancelUrl } = req.body;
+      const userId = req.user?.userId; // Get userId from authenticated user
       
       logger.info('Creating subscription checkout session:', { userId, planId });
       
@@ -49,7 +50,7 @@ class CheckoutController {
       }
       
       // Get user details
-      const user = await authDataAccess.findUserById(userId);
+      const user = await userDataAccess.getUserById(userId);
       if (!user) {
         return res.status(404).json({
           error: 'User not found',
@@ -82,7 +83,7 @@ class CheckoutController {
         stripeCustomerId = customer.id;
         
         // Update user with Stripe customer ID
-        await authDataAccess.updateUserById(userId, { stripe_customer_id: stripeCustomerId });
+        await userDataAccess.updateUser(userId, { stripe_customer_id: stripeCustomerId });
         logger.info(`Created Stripe customer ${stripeCustomerId} for user ${userId}`);
       }
       
@@ -114,7 +115,7 @@ class CheckoutController {
       logger.error('Error creating subscription checkout session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.body.userId,
+        userId: req.user?.userId,
         planId: req.body.planId
       });
       
@@ -132,7 +133,8 @@ class CheckoutController {
    */
   async createTokenPackageCheckout(req, res) {
     try {
-      const { userId, packageId, successUrl, cancelUrl } = req.body;
+      const { packageId, successUrl, cancelUrl } = req.body;
+      const userId = req.user?.userId; // Get userId from authenticated user
       
       logger.info('Creating token package checkout session:', { userId, packageId });
       
@@ -161,7 +163,7 @@ class CheckoutController {
       }
       
       // Get user details
-      const user = await authDataAccess.findUserById(userId);
+      const user = await userDataAccess.getUserById(userId);
       if (!user) {
         return res.status(404).json({
           error: 'User not found',
@@ -180,7 +182,7 @@ class CheckoutController {
         stripeCustomerId = customer.id;
         
         // Update user with Stripe customer ID
-        await authDataAccess.updateUserById(userId, { stripe_customer_id: stripeCustomerId });
+        await userDataAccess.updateUser(userId, { stripe_customer_id: stripeCustomerId });
         logger.info(`Created Stripe customer ${stripeCustomerId} for user ${userId}`);
       }
       
@@ -212,7 +214,7 @@ class CheckoutController {
       logger.error('Error creating token package checkout session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.body.userId,
+        userId: req.user?.userId,
         packageId: req.body.packageId
       });
       
@@ -230,7 +232,8 @@ class CheckoutController {
    */
   async createCustomerPortalSession(req, res) {
     try {
-      const { userId, returnUrl } = req.body;
+      const { returnUrl } = req.body;
+      const userId = req.user?.userId; // Get userId from authenticated user
       
       logger.info('Creating customer portal session:', { userId });
       
@@ -243,7 +246,7 @@ class CheckoutController {
       }
       
       // Get user details
-      const user = await authDataAccess.findUserById(userId);
+      const user = await userDataAccess.getUserById(userId);
       if (!user) {
         return res.status(404).json({
           error: 'User not found',
@@ -251,21 +254,17 @@ class CheckoutController {
         });
       }
       
-      // Check if user has a Stripe customer ID
       if (!user.stripe_customer_id) {
         return res.status(400).json({
-          error: 'No Stripe customer found',
-          message: 'User must have made at least one purchase to access the customer portal'
+          error: 'User is not a Stripe customer',
+          message: `User ${userId} does not have a Stripe customer ID`
         });
       }
       
-      // Create Stripe Customer Portal session
       const session = await stripeService.createCustomerPortalSession(
         user.stripe_customer_id,
         returnUrl
       );
-      
-      logger.info(`Customer portal session created: ${session.id} for user ${userId}`);
       
       res.json({
         success: true,
@@ -277,7 +276,7 @@ class CheckoutController {
       logger.error('Error creating customer portal session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.body.userId
+        userId: req.user?.userId
       });
       
       res.status(500).json({
@@ -286,87 +285,56 @@ class CheckoutController {
       });
     }
   }
-
+  
   /**
-   * Verify a Stripe Checkout session and return session details
+   * Verify a Stripe Checkout session after successful payment
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    */
   async verifyCheckoutSession(req, res) {
     try {
-      const { sessionId } = req.params;
+      const { sessionId } = req.body;
+      const userId = req.user?.userId; // Get userId from authenticated user
       
-      if (!sessionId) {
+      logger.info('Verifying checkout session:', { userId, sessionId });
+      
+      if (!sessionId || !userId) {
         return res.status(400).json({
-          error: 'Session ID is required'
+          error: 'Missing required fields',
+          message: 'sessionId and userId are required'
         });
       }
       
-      logger.info('Verifying checkout session:', { sessionId });
+      const session = await stripeService.verifyCheckoutSession(sessionId);
       
-      // Retrieve session from Stripe
-      const session = await stripeService.retrieveCheckoutSession(sessionId);
-      
-      if (!session) {
-        return res.status(404).json({
-          error: 'Session not found'
+      // Verify that the session belongs to the authenticated user
+      if (session.metadata.userId !== userId.toString()) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Checkout session does not belong to the authenticated user'
         });
       }
       
-      // Get additional details based on session metadata
-      const userId = session.metadata?.userId;
-      const planId = session.metadata?.planId;
-      const packageId = session.metadata?.packageId;
+      // Session is valid and belongs to the user
+      // Further processing can be done here if needed (e.g., final confirmation)
       
-      let planDetails = null;
-      let packageDetails = null;
-      
-      if (planId) {
-        planDetails = await plansDataAccess.getPlanById(planId);
-      }
-      
-      if (packageId) {
-        packageDetails = await tokenPackagesDataAccess.getTokenPackageById(packageId);
-      }
-      
-      // Format response
-      const responseData = {
+      res.json({
         success: true,
-        sessionId: session.id,
-        status: session.status,
-        paymentStatus: session.payment_status,
-        mode: session.mode,
-        customerId: session.customer,
-        metadata: session.metadata,
-        amountTotal: session.amount_total,
-        currency: session.currency,
-        created: new Date(session.created * 1000),
-        planDetails,
-        packageDetails
-      };
-      
-      // Add subscription details if available
-      if (session.subscription && session.mode === 'subscription') {
-        responseData.subscriptionId = session.subscription;
-      }
-      
-      logger.info(`Checkout session verified: ${sessionId}`, { 
-        status: session.status, 
-        paymentStatus: session.payment_status 
+        message: 'Checkout session verified successfully',
+        session
       });
-      
-      res.json(responseData);
       
     } catch (error) {
       logger.error('Error verifying checkout session:', {
         error: error.message,
         stack: error.stack,
-        sessionId: req.params.sessionId
+        userId: req.user?.userId,
+        sessionId: req.body.sessionId
       });
       
       res.status(500).json({
         error: 'Failed to verify checkout session',
-        details: error.message
+        message: error.message
       });
     }
   }

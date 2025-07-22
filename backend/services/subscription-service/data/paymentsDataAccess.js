@@ -10,7 +10,7 @@
  * the platform.
  */
 
-const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV || 'development']);
+const knex = require('knex')(require('../../../../knexfile')[process.env.NODE_ENV]);
 const logger = require('../../../shared/utils/logger');
 const config = require('../../../shared/utils/config');
 const path = require('path');
@@ -464,6 +464,56 @@ class PaymentsDataAccess {
       return this.formatPayment(payment);
     } catch (error) {
       this.logger.error('Error getting latest payment for subscription:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find a payment by its Stripe Payment Intent ID
+   * @param {string} stripePaymentIntentId - The Stripe Payment Intent ID
+   * @returns {Promise<Object|null>} - The payment or null if not found
+   */
+  async findByStripePaymentIntentId(stripePaymentIntentId) {
+    try {
+      this.logger.info('Fetching payment by Stripe Payment Intent ID:', { stripePaymentIntentId });
+
+      const payment = await knex(this.tableName)
+        .where('stripe_payment_intent_id', stripePaymentIntentId)
+        .first();
+
+      if (!payment) {
+        this.logger.warn('Payment not found for Stripe Payment Intent ID:', { stripePaymentIntentId });
+        return null;
+      }
+
+      return this.formatPayment(payment);
+    } catch (error) {
+      this.logger.error('Error fetching payment by Stripe Payment Intent ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find a payment by its Stripe Invoice ID
+   * @param {string} stripeInvoiceId - The Stripe Invoice ID
+   * @returns {Promise<Object|null>} - The payment or null if not found
+   */
+  async findByStripeInvoiceId(stripeInvoiceId) {
+    try {
+      this.logger.info('Fetching payment by Stripe Invoice ID:', { stripeInvoiceId });
+
+      const payment = await knex(this.tableName)
+        .where('stripe_invoice_id', stripeInvoiceId)
+        .first();
+
+      if (!payment) {
+        this.logger.warn('Payment not found for Stripe Invoice ID:', { stripeInvoiceId });
+        return null;
+      }
+
+      return this.formatPayment(payment);
+    } catch (error) {
+      this.logger.error('Error fetching payment by Stripe Invoice ID:', error);
       throw error;
     }
   }

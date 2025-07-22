@@ -10,17 +10,14 @@ All endpoints include proper authentication and authorization checks.
 
 ## Payment History
 
-### 1. ✅ Get Payment History
-Retrieves payment history for a user.
+### 1. ✅ Get Current User's Payment History
+Retrieves payment history for the currently authenticated user.
 
-**Endpoint**: `GET /payments/user/:userId`
-
-**URL Parameters**:
-- `userId`: The numeric ID of the user (e.g., "30")
+**Endpoint**: `GET /payments/me`
 
 **Query Parameters**:
-- `limit` (optional): Maximum number of results to return (default: 100)
-- `offset` (optional): Number of results to skip (default: 0)
+- `limit` (optional): Maximum number of results to return (default: 100).
+- `offset` (optional): Number of results to skip for pagination (default: 0).
 
 **Response Example**:
 ```json

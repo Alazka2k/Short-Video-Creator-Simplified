@@ -43,7 +43,7 @@ function createServer(controllers) {
 
   // Mount webhook routes first (before JSON parsing middleware)
   // Webhooks need raw body for signature verification
-  app.use('/webhooks', express.raw({ type: 'application/json' }), webhookRoutes(controllers.webhookController));
+  app.use('/webhooks', webhookRoutes(controllers.webhookController));
 
   // Basic middleware for all other routes
   app.use(express.json({ limit: '10mb' }));
