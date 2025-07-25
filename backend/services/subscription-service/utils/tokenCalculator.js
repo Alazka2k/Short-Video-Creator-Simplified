@@ -12,6 +12,7 @@ const config = require('../../../shared/utils/config');
 class TokenCalculator {
   constructor() {
     // Default token costs per service, can be overridden by config
+    // TODO: Load from json config file to have a single source of truth and better maintainability
     this.defaultTokenCosts = {
       llm: 5,           // Fixed per job
       image: 10,         // Per scene

@@ -3,9 +3,6 @@
 exports.seed = async function(knex) {
   console.log('Seeding token packages...');
   
-  // Delete all existing token packages first
-  await knex('token_packages').del();
-  
   // Note: stripe_price_id values correspond to the Stripe Price IDs created for each token package
   // These IDs are used for direct Stripe Checkout integration and webhook verification
   
@@ -19,10 +16,11 @@ exports.seed = async function(knex) {
       active: true,
       stripe_price_id: 'price_1Rc1S6LNIN3RdSe9P2J8eKE0',
       marketing_description: JSON.stringify({
+        name: 'Starter Pack',
+        description: 'A quick boost to get you through a small project.',
         features: [
-          '1,000 additional tokens',
-          'Never expires',
-          'Use with any subscription'
+          'Works with any plan - Supplements your monthly allocation seamlessly',
+          'Instant availability - Tokens added immediately to your account'
         ]
       })
     },
@@ -34,11 +32,11 @@ exports.seed = async function(knex) {
       active: true,
       stripe_price_id: 'price_1Rc1T1LNIN3RdSe9ipl3BesU',
       marketing_description: JSON.stringify({
+        name: 'Creator Pack',
+        description: 'Perfect for completing a series of social media posts.',
         features: [
-          '2,500 additional tokens',
-          'Never expires',
-          'Use with any subscription',
-          'Best value for basic users'
+          'Great value - Cost-effective for consistent creators',
+          'Universal compatibility - Use with any subscription tier'
         ]
       })
     },
@@ -50,11 +48,11 @@ exports.seed = async function(knex) {
       active: true,
       stripe_price_id: 'price_1Rc1ThLNIN3RdSe9Sw813QvO',
       marketing_description: JSON.stringify({
+        name: 'Pro Pack',
+        description: 'The best value for creators with consistent monthly needs.',
         features: [
-          '6,000 additional tokens',
-          'Never expires',
-          'Use with any subscription',
-          'Perfect for power users'
+          'Premium value - Better cost per token than smaller packs',
+          'Any plan compatible - Enhances all subscription tiers'
         ]
       })
     },
@@ -66,18 +64,26 @@ exports.seed = async function(knex) {
       active: true,
       stripe_price_id: 'price_1Rc1UYLNIN3RdSe9NTJ6wEE7',
       marketing_description: JSON.stringify({
+        name: 'Studio Pack',
+        description: 'For agencies and professionals with high-volume production.',
         features: [
-          '15,000 additional tokens',
-          'Never expires',
-          'Use with any subscription',
-          'Best value for professionals'
+          'Best value overall - Maximum tokens',
+          'Universal plan support - Works with every subscription level'
         ]
       })
     }
   ];
   
-  // Insert the token packages
-  await knex('token_packages').insert(tokenPackages);
+  // Use a transaction and upsert logic to avoid foreign key constraint errors
+  await knex.transaction(async (trx) => {
+    console.log('Upserting token packages...');
+    for (const pkg of tokenPackages) {
+      await trx('token_packages')
+        .insert(pkg)
+        .onConflict('package_id')
+        .merge();
+    }
+  });
   
   console.log('Successfully seeded token packages');
 }; 

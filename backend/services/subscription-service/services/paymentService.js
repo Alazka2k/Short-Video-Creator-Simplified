@@ -12,9 +12,10 @@
 const logger = require('../../../shared/utils/logger');
 
 class PaymentService {
-  constructor(dataAccess, stripeService) {
+  constructor(dataAccess, stripeService, subscriptionService) {
     this.dataAccess = dataAccess;
     this.stripeService = stripeService;
+    this.subscriptionService = subscriptionService;
     logger.info('PaymentService initialized');
   }
 
@@ -420,67 +421,27 @@ class PaymentService {
       }
       
       if (session.mode === 'subscription' && planId) {
-        // Handle subscription creation
-        const subscriptionId = session.subscription;
-        if (subscriptionId) {
-          // Get full subscription details from Stripe
-          const subscription = await this.stripeService.retrieveSubscription(subscriptionId);
-          
-          // Create or update local subscription record
-          await this.dataAccess.subscriptions.createOrUpdateSubscription({
-            userId,
-            planId,
-            status: 'active',
-            stripe_subscription_id: subscriptionId,
-            stripe_status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000),
-            current_period_end: new Date(subscription.current_period_end * 1000),
-            cancel_at_period_end: subscription.cancel_at_period_end
-          });
-          
-          // Allocate initial tokens for the subscription
-          const plan = await this.dataAccess.plans.getPlanById(planId);
-          if (plan && plan.monthly_tokens > 0) {
-            await this.dataAccess.tokens.allocateTokens(userId, plan.monthly_tokens, 'subscription_activation', {
-              planId,
-              subscriptionId,
-              checkoutSessionId: session.id
-            });
-            
-            logger.info(`Allocated ${plan.monthly_tokens} initial tokens to user ${userId} for new subscription`);
-          }
-          
-          logger.info(`Created subscription for user ${userId}, plan ${planId}, Stripe subscription ${subscriptionId}`);
-        }
-      } else if (session.mode === 'payment' && packageId) {
-        // Handle token package purchase
-        const paymentIntentId = session.payment_intent;
+        // --- DELEGATE TO SUBSCRIPTION SERVICE ---
+        const subscriptionData = await this.stripeService.retrieveSubscription(session.subscription);
         
-        // Create payment record for token package purchase
-        const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(packageId);
-        if (tokenPackage) {
-          await this.createPaymentRecord({
-            userId,
-            amount: tokenPackage.price,
-            currency: 'eur',
-            status: 'completed',
-            payment_type: 'token_package',
-            stripe_payment_intent_id: paymentIntentId,
-            metadata: {
-              packageId,
-              checkoutSessionId: session.id
-            }
-          });
-          
-          // Allocate tokens
-          await this.dataAccess.tokens.allocateTokens(userId, tokenPackage.token_amount, 'token_package_purchase', {
-            packageId,
-            paymentIntentId,
-            checkoutSessionId: session.id
-          });
-          
-          logger.info(`Processed token package purchase for user ${userId}, package ${packageId}, ${tokenPackage.token_amount} tokens`);
-        }
+        await this.subscriptionService.createSubscriptionFromStripeEvent({
+          userId,
+          planId,
+          stripeSubscription: subscriptionData,
+          stripePaymentIntentId: session.payment_intent || null,
+        });
+
+        logger.info(`Delegated subscription creation to SubscriptionService for user ${userId}, plan ${planId}`);
+
+      } else if (session.mode === 'payment' && packageId) {
+        // --- DELEGATE TOKEN PACKAGE LOGIC ---
+        await this.subscriptionService.purchaseTokenPackageFromStripeEvent({
+          userId,
+          packageId,
+          stripePaymentIntentId: session.payment_intent,
+        });
+        
+        logger.info(`Delegated token package purchase to SubscriptionService for user ${userId}, package ${packageId}`);
       }
       
     } catch (error) {
@@ -676,28 +637,17 @@ class PaymentService {
       logger.info('Processing subscription updated:', subscription.id);
       
       const userId = subscription.metadata?.userId;
-      
       if (!userId) {
         logger.warn('No userId found in subscription metadata:', subscription.id);
         return;
       }
-      
-      // Update local subscription with Stripe data
-      await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
-        stripe_subscription_id: subscription.id,
-        stripe_status: subscription.status,
-        current_period_start: new Date(subscription.current_period_start * 1000),
-        current_period_end: new Date(subscription.current_period_end * 1000),
-        cancel_at_period_end: subscription.cancel_at_period_end
+
+      await this.subscriptionService.updateSubscriptionFromStripeEvent({
+        userId,
+        stripeSubscription: subscription,
       });
-      
-      // If subscription was canceled, update status
-      if (subscription.status === 'canceled') {
-        await this.dataAccess.subscriptions.updateSubscriptionStatus(userId, 'canceled');
-        logger.info(`Subscription canceled for user ${userId}`);
-      }
-      
-      logger.info(`Updated subscription for user ${userId} with Stripe data`);
+
+      logger.info(`Delegated subscription update to SubscriptionService for user ${userId}`);
       
     } catch (error) {
       logger.error('Error handling subscription updated:', error);
@@ -714,23 +664,17 @@ class PaymentService {
       logger.info('Processing subscription deleted:', subscription.id);
       
       const userId = subscription.metadata?.userId;
-      
       if (!userId) {
         logger.warn('No userId found in subscription metadata:', subscription.id);
         return;
       }
       
-      // Update local subscription status to canceled
-      await this.dataAccess.subscriptions.updateSubscriptionStatus(userId, 'canceled');
-      
-      // Clear Stripe subscription data
-      await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
-        stripe_subscription_id: null,
-        stripe_status: null,
-        cancel_at_period_end: false
+      await this.subscriptionService.cancelSubscriptionFromStripeEvent({
+        userId,
+        stripeSubscription: subscription,
       });
-      
-      logger.info(`Subscription deleted for user ${userId}, updated local status to canceled`);
+
+      logger.info(`Delegated subscription deletion to SubscriptionService for user ${userId}`);
       
     } catch (error) {
       logger.error('Error handling subscription deleted:', error);

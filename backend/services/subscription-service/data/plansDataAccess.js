@@ -48,10 +48,9 @@ class PlansDataAccess {
         query = query.where('active', true);
       } else if (status === 'inactive') {
         query = query.where('active', false);
-      } else if (!includeInactive) {
-        // Default behavior if no status specified
-        query = query.where('active', true);
       }
+      // If no status is provided, we return all plans, respecting includeInactive for legacy if needed,
+      // but the primary logic is to not filter by 'active' by default anymore.
       
       const plans = await query.orderBy(actualSortField, actualSortOrder);
       
@@ -344,6 +343,23 @@ class PlansDataAccess {
     formattedPlan.updated_at = plan.updated_at ? new Date(plan.updated_at).toISOString() : null;
     
     return formattedPlan;
+  }
+
+  /**
+   * Find a plan by its Stripe price ID.
+   * @param {string} stripePriceId - The Stripe price ID.
+   * @returns {Promise<Object|null>}
+   */
+  async findByStripePriceId(stripePriceId) {
+    try {
+      this.logger.info('Finding plan by Stripe price ID:', { stripePriceId });
+      return await this.knex('plans')
+        .where('stripe_price_id', stripePriceId)
+        .first();
+    } catch (error) {
+      this.logger.error('Error finding plan by Stripe price ID:', error);
+      throw error;
+    }
   }
 }
 

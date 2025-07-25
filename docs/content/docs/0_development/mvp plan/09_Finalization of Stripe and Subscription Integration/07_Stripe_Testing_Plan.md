@@ -3,13 +3,41 @@
 ## Overview
 This testing plan covers the new Stripe-specific functionality added to the subscription service. It focuses on checkout sessions, webhook processing, and Stripe customer management - the core components that integrate our platform with Stripe's payment processing.
 
+## Test Data
+
+Use the following official Stripe test card numbers to simulate different payment scenarios on the Stripe Checkout page.
+
+**For all cards:**
+- **Expiration Date:** Any valid future date (e.g., `12/34`).
+- **CVC:** Any random 3-digit number (or 4 digits for American Express).
+- **Name/Address:** Any value.
+
+**Common Scenarios:**
+- **Successful Payment (Visa):** `4242 4242 4242 4242`
+- **Successful Payment (Mastercard):** `5555 5555 5555 4444`
+- **Successful Payment (American Express):** `3782 8224 6310 005`
+
+**Decline Scenarios:**
+- **Generic Decline:** `4000 0000 0000 0002`
+- **Insufficient Funds:** `4000 0000 0000 9995`
+- **Lost Card:** `4000 0000 0000 9987`
+- **Stolen Card:** `4000 0000 0000 9979`
+- **Expired Card:** `4000 0000 0000 0069`
+- **Incorrect CVC:** `4000 0000 0000 0127`
+
+**Fraud Prevention Scenarios:**
+- **Card that will be blocked by Radar:** `4100 0000 0000 0019`
+- **CVC check fails:** `4000 0000 0000 0101` (You must enter a CVC for this to fail).
+- **Postal code check fails:** `4000 0000 0000 0036` (You must enter a postal code for this to fail).
+---
+
 ## Test Cases
 
 ### Phase Testing
 
 #### Phase 1: Backend Core Refinement & Auth Integration ✅ Successful
 
-##### Task 1.1: Secure and Adapt Existing Endpoints with New Auth Flow
+##### Task 1.1: Secure and Adapt Existing Endpoints with New Auth Flow ✅ Successfu
 
 ###### Test Case 1.1.1: Fetch Current User's Subscription ✅ Successful
 **Objective**: Verify that an authenticated user can fetch their own subscription data using the `/me` endpoint.
@@ -55,7 +83,7 @@ This testing plan covers the new Stripe-specific functionality added to the subs
 **Expected Results**:
 - The request is rejected with a `404 Not Found` status.
 
-##### Task 1.2: Implement Webhook Idempotency
+##### Task 1.2: Implement Webhook Idempotency ✅ Successfu
 
 ###### Test Case 1.2.1: Process a New Webhook Event ✅ Successful
 **Objective**: Verify that a new, unique webhook event is processed and logged correctly.
@@ -102,19 +130,106 @@ This testing plan covers the new Stripe-specific functionality added to the subs
 
 #### Phase 2: Frontend Integration & UI/UX Refactor
 
-##### Task 2.1: Create Reusable `PricingPageComponent`
+##### Task 2.1: Create `PricingPageComponent`, button, adapt endpoints and a page `pricing/page.tsx` ✅ Successful
 
-###### Test Case 2.1.1: Not logged in visitor
+##### Test Case 2.1.1.: Test adapted endpoints in subscription.js with postman (/token-packages, /token-packages/:packageId, /transactions/token-costs, /transactions/calculate-job-cost) ✅ Successful
 
-###### Test Case 2.1.3: Logged in user in free tier
+###### Test Case 2.1.2: Not logged in visitor ✅ Successful
+**Objective**: Verify the user flow for an unauthenticated visitor.
+**Preconditions**:
+- Visitor is not logged in.
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+2. Verify all plans (including the inactive "Professional" tier) and token packages are displayed correctly.
+3. Click the "Get Started" button on the "Creator" plan.
+4. Click the "Purchase Now" button on a token package.
+**Expected Results**:
+- All "Get Started" and "Purchase" buttons are `<Link>` components.
+- Clicking the "Get Started" button on the "Creator" plan redirects the user to `/signup?plan=<creator_plan_stripe_price_id>`.
+- Clicking the "Purchase Now" button on a token package redirects the user to `/signup?redirect=/pricing`.
 
-###### Test Case 2.1.4: Logged in user in paid tier
+###### Test Case 2.1.3: Logged in user in free tier with intention to buy token package ✅ Successful
+**Objective**: Verify the user flow and token package purchase for an authenticated user in a free tier.
+**Preconditions**:
+- User is logged in and is on the free tier.
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+2. Verify the "Free Tier" card is correctly highlighted as the "Current Plan" and its button is disabled.
+3. Go to token packages page.
+4. Click the "Purchase Now" button on the "Creator Pack" token package.
+**Expected Results**:
+- The user is redirected to a Stripe Checkout session for the "Creator Pack" token package.
+- After successful payment for the token package, redirection to the successful payment page, the user's token balance is increased accordingly. Token transaction and payment record are created in the database. Token balance is updated.
+- In the success page the user sees a correct message "Tokens Added!"
+
+###### Test Case 2.1.4: Logged in user in free tier with intention to upgrade from free to paid tier 
+
+####### Sub Test 2.1.4.1: User without stripe customer id
+**Objective**: Verify the user flow and subscription upgrade to paid tier for an authenticated user on the Free tier. User has no stripe customer id - so the customer is not created in stripe yet.
+**Preconditions**:
+- User is logged in and is on the Free tier (plan_id: 1).
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+2. Verify the "Free Tier" card is correctly highlighted as the "Current Plan" and its button is disabled.
+3. Click the "Get Started" button on the "Basic" plan.
+**Expected Results**:
+- A new stripe customer is created in stripe and added to the application database under stripe_customer_id.
+- The user is redirected to a Stripe Checkout session for the "Creator" monthly subscription.
+- After successful payment for the "Basic" plan, the user is redirected to the successful payment page.
+- The user's subscription record in the database is updated to the new plan. A new plan entry is created, to old entry is cancelled
+- After successful upgrade the tokens are allocated to the user's account.
+
+####### Sub Test 2.1.4.2: User with stripe customer id ✅ Successful
+**Objective**: Verify the user flow and subscription upgrade to paid tier for an authenticated user on the Free tier. User has a stripe customer id - so the customer is already created in stripe.
+**Preconditions**:
+- User is logged in and is on the Free tier (plan_id: 1).
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+2. Verify the "Free Tier" card is correctly highlighted as the "Current Plan" and its button is disabled.
+3. Click the "Get Started" button on the "Basic" plan.
+**Expected Results**:
+- Since the user has a stripe customer id, the customer is not created in stripe again.
+- The user is redirected to a Stripe Checkout session for the "Creator" monthly subscription.
+- After successful payment for the "Basic" plan, the user is redirected to the successful payment page.
+- The user's subscription record in the database is updated to the new plan. A new plan entry is created, to old entry is cancelled
+- After successful upgrade the tokens are allocated to the user's account.
+
+###### Test Case 2.1.5: Logged in user in paid tier with intention to buy token package
+**Objective**: Verify the user flow and token package purchase for an authenticated user in a paid tier.
+**Preconditions**:
+- User is logged in and is on the "Basic" monthly plan.
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+2. Verify the "Basic" plan card is correctly highlighted as the "Current Plan" and its button is disabled.
+3. Go to token packages page.
+4. Click the "Purchase Now" button on the "Creator Pack" token package.
+**Expected Results**:
+- The user is redirected to a Stripe Checkout session for the "Creator Pack" token package.
+- After successful payment for the token package, redirection to the successful payment page, the user's token balance is increased accordingly.
+
+###### Test Case 2.1.6: Logged in user in paid tier with intention to upgrade the plan
+**Objective**: Verify the user flow for an authenticated user already on a paid plan.
+**Preconditions**:
+- User is logged in and is on the "Basic" monthly plan.
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+2. Verify the "Basic" plan card is correctly highlighted as the "Current Plan" and its button is disabled.
+3. Click the "Get Started" button on the "Creator" plan (a upgrade).
+**Expected Results**:
+- The button for the "Get Started" plan should initiate the Stripe Customer Portal flow to manage the subscription upgade.
+- After successful payment for the "Creator" plan, the user is redirected to the successful payment page.
+- The user's subscription record in the database is updated to the new plan. A new plan entry is created, to old entry is cancelled
+- After successful upgrade the tokens are allocated to the user's account.
 
 ##### Task 2.2: Redesign and Implement ProtectedUser Dashboard (`/dashboard`)
 
 ##### Task 2.3: Implement ProtectedSubscription Management Page (`/subscription`)
 
 ##### Task 2.4: Finalize Payment Flow Pages
+
+#### Phase 3: Batch Job Enhancement & Finalization
+
+#### Phase 4: Business Logic Finalization (Post-Stripe E2E)
 
 ### E2E Testing
 

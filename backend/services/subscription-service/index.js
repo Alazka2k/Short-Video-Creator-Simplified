@@ -65,8 +65,8 @@ async function startServer() {
     const subscriptionService = new SubscriptionService(dataAccess);
     const planService = new PlanService(dataAccess);
     const tokenService = new TokenService(dataAccess, tokenCalculator);
-    const paymentService = new PaymentService(dataAccess, stripeService);
-    const tokenPackageService = new TokenPackageService(dataAccess, paymentService);
+    const paymentService = new PaymentService(dataAccess, stripeService, subscriptionService);
+    const tokenPackageService = new TokenPackageService(dataAccess);
     const transactionService = new TransactionService(dataAccess, tokenCalculator);
     
     // Initialize controllers
@@ -89,7 +89,7 @@ async function startServer() {
       transactionController
     });
     
-    // Get port from config, or use 3010 as a fallback
+    // Get port from config
     let PORT;
     try {
       // First check for environment variable
@@ -110,7 +110,8 @@ async function startServer() {
       logger.info(`Subscription Service running on port ${PORT}`);
     });
     
-    // Handle graceful shutdown
+    // Handle graceful shutdown 
+    // ToDo: Add this graceful shutdown to every service
     const shutdown = async () => {
       logger.info('Shutting down Subscription Service...');
       process.exit(0);

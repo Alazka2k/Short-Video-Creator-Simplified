@@ -50,12 +50,12 @@ router.post('/create-customer-portal-session', async (req, res) => {
 });
 
 /**
- * @route GET /checkout/verify-session/:sessionId
- * @description Verify a Stripe Checkout session and return session details
- * @access Public - no authentication required for session verification
+ * @route POST /checkout/verify-session
+ * @description Verify a Stripe Checkout session
+ * @access Private
  */
-router.get('/verify-session/:sessionId', async (req, res) => {
-  logger.info('GET /checkout/verify-session/:sessionId called', { sessionId: req.params.sessionId });
+router.post('/verify-session', async (req, res) => {
+  logger.info('POST /checkout/verify-session called');
   await checkoutController.verifyCheckoutSession(req, res);
 });
 

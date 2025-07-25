@@ -91,8 +91,7 @@ class TokenController {
         serviceName,
         relatedEntityType,
         relatedEntityId,
-        metadata: metadata ? JSON.stringify(metadata).substring(0, 100) + '...' : null,
-        hasUserToken: !!(req.headers['x-user-token'] || req.headers['x-forwarded-user-token'])
+        metadata: metadata ? JSON.stringify(metadata).substring(0, 100) + '...' : null
       });
       
       if (!userId || !tokenAmount) {

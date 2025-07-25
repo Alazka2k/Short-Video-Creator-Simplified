@@ -16,7 +16,8 @@
  *    - POST /plans/add - Create new subscription plan (admin only)
  * 
  * 2. SUBSCRIPTION MANAGEMENT
- *    - GET /subscriptions/user/:userId - Get user's active subscription
+ *    - GET /subscriptions/me - Get user's subscription
+ *    - GET /subscriptions/me?status=active - Get user's active subscription
  *    - POST /subscriptions - Create/change subscription for user
  *    - PUT /subscriptions/:subscriptionId - Update existing subscription
  *    - POST /subscriptions/:subscriptionId/cancel - Cancel subscription
@@ -25,13 +26,13 @@
  *    - GET /subscriptions/renewal - Get subscriptions to renew (admin)
  * 
  * 3. TOKEN MANAGEMENT
- *    - GET /tokens/balance/:userId - Get user's token balance
+ *    - GET /tokens/balance/:userId - Get user's token balance // TODO: Change to /me instead of usersID
  *    - POST /tokens/allocate - Allocate tokens to user (internal)
  *    - POST /tokens/usage - Record token usage (internal)
  *    - POST /tokens/buy - Purchase token package
  * 
  * 4. TRANSACTION MANAGEMENT
- *    - GET /transactions/user/:userId - Get user's transaction history
+ *    - GET /transactions/user/:userId - Get user's transaction history // TODO: Change to /me instead of usersID
  *    - GET /transactions/token-costs - Get service token costs
  *    - POST /transactions/calculate-job-cost - Calculate cost for job
  * 
@@ -42,8 +43,8 @@
  *    - POST /token-packages/buy - Purchase token package
  * 
  * 6. PAYMENT MANAGEMENT
- *    - GET /payments/user/:userId - Get user's payment history
- *    - GET /payments/summary/:userId - Get payment summary
+ *    - GET /payments/user/:userId - Get user's payment history // TODO: Change to /me instead of usersID
+ *    - GET /payments/summary/:userId - Get payment summary // TODO: Change to summary/me instead of usersID
  *    - POST /payments - Create payment record (admin)
  *    - POST /payments/:paymentId/status - Update payment status (admin)
  *    - POST /payments/update - Update payment with provider details (admin)
@@ -143,32 +144,22 @@ async function forwardToSubscriptionService(req, res, endpoint, additionalData =
       isAdmin: user?.isAdmin 
     });
 
-    const requestData = { ...req.body, ...additionalData };
+    // Start with the original request body
+    const requestData = { ...req.body };
 
+    // Securely inject the userId from the token, overwriting any userId in the body
     if (user) {
-      if (!user.isAdmin) {
-        // Enforce user can only access their own data
-        requestData.userId = user.userId;
-        if (req.params.userId && req.params.userId !== user.userId.toString()) {
-          logger.warn('User attempted to access another user resource', {
-            requestingUserId: user.userId,
-            targetUserId: req.params.userId
-          });
-          return res.status(403).json({ error: 'Forbidden' });
-        }
-      } else {
-        // Admin can specify a user ID, otherwise use their own
-        requestData.userId = req.body.userId || req.params.userId || user.userId;
-      }
+      requestData.userId = user.userId;
     }
     
     const headers = {
       'Content-Type': 'application/json',
       'x-service-auth': process.env.SERVICE_AUTH_TOKEN,
+      // Forward the original Authorization header for the downstream service
+      ...(req.headers.authorization && { 'Authorization': req.headers.authorization }),
     };
-    if (req.headers.authorization) {
-        headers['Authorization'] = req.headers.authorization;
-    }
+
+    logger.info('Forwarding data to subscription service:', requestData);
 
     const response = await axios({
       method: req.method,
@@ -222,16 +213,6 @@ router.get('/subscriptions/me', jwtAuth({ requireUser: true }), (req, res) => {
 });
 
 /**
- * @route GET /api/subscription/payments/me
- * @description Get the current user's payment history
- * @access Private
- */
-router.get('/payments/me', jwtAuth({ requireUser: true }), (req, res) => {
-  // Forward to the service, which will get the userId from the token
-  forwardToSubscriptionService(req, res, `/payments/user/${req.user.userId}`);
-});
-
-/**
  * @route POST /api/subscription/subscriptions
  * @description Create a new subscription
  * @access Protected - requires create:subscription permission
@@ -276,16 +257,16 @@ router.post('/subscriptions/:userId/renew', jwtAuth({ requireUser: true }), (req
 /**
  * @route GET /api/subscription/token-packages
  * @description Get all available token packages
- * @access Public - requires service auth
+ * @access Public
  */
-router.get('/token-packages', serviceAuth, (req, res) => forwardToSubscriptionService(req, res, '/token-packages'));
+router.get('/token-packages', (req, res) => forwardToSubscriptionService(req, res, '/token-packages'));
 
 /**
  * @route GET /api/subscription/token-packages/:packageId
  * @description Get details of a specific token package
- * @access Public - requires service auth
+ * @access Public
  */
-router.get('/token-packages/:packageId', serviceAuth, (req, res) => forwardToSubscriptionService(req, res, `/token-packages/${req.params.packageId}`));
+router.get('/token-packages/:packageId', (req, res) => forwardToSubscriptionService(req, res, `/token-packages/${req.params.packageId}`));
 
 /**
  * @route POST /api/subscription/token-packages/add
@@ -333,18 +314,28 @@ router.get('/transactions/user/:userId', jwtAuth({ requireUser: true }), (req, r
 /**
  * @route GET /api/subscription/transactions/token-costs
  * @description Get token costs for different services
- * @access Public - requires service auth
+ * @access Public
  */
-router.get('/transactions/token-costs', serviceAuth, (req, res) => forwardToSubscriptionService(req, res, '/transactions/token-costs'));
+router.get('/transactions/token-costs', (req, res) => forwardToSubscriptionService(req, res, '/transactions/token-costs'));
 
 /**
  * @route POST /api/subscription/calculate-job-cost
  * @description Calculate token cost for a job
- * @access Protected - requires service auth (internal use)
+ * @access Private - requires user auth
  */
-router.post('/transactions/calculate-job-cost', serviceAuth, (req, res) => forwardToSubscriptionService(req, res, '/transactions/calculate-job-cost'));
+router.post('/transactions/calculate-job-cost', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, '/transactions/calculate-job-cost'));
 
 /**
+ * @route GET /api/subscription/payments/me
+ * @description Get the current user's payment history
+ * @access Private
+ */
+router.get('/payments/me', jwtAuth({ requireUser: true }), (req, res) => {
+  // Forward to the service, which will get the userId from the token
+  forwardToSubscriptionService(req, res, `/payments/user/${req.user.userId}`);
+});
+
+/** DEPRECATED
  * @route GET /api/subscription/payments/user/:userId
  * @description Get user's payment history
  * @access Private
@@ -408,11 +399,13 @@ router.post('/checkout/create-token-package-session', jwtAuth({ requireUser: tru
 router.post('/checkout/create-customer-portal-session', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, '/checkout/create-customer-portal-session'));
 
 /**
- * @route GET /api/subscription/checkout/verify-session/:sessionId
+ * @route POST /api/subscription/checkout/verify-session
  * @description Verify a Stripe Checkout session and return session details
- * @access Public - no authentication required for session verification
+ * @access Private - requires user auth to prevent session hijacking
  */
-router.get('/checkout/verify-session/:sessionId', (req, res) => forwardToSubscriptionService(req, res, `/checkout/verify-session/${req.params.sessionId}`));
+router.post('/checkout/verify-session', jwtAuth({ requireUser: true }), (req, res) => {
+  forwardToSubscriptionService(req, res, '/checkout/verify-session');
+});
 
 /**
  * @route POST /api/subscription/webhooks/stripe

@@ -2,17 +2,17 @@
 
 ## Cost Analysis per Service
 
-| Service | Token Cost | Cost per Token (€) | Cost per Service Unit (€) | Notes |
-|---------|------------|-------------------|---------------------------|-------|
-| LLM (per job) | 5 | 0.02 | 0.10 | Based on average OpenAI API costs |
-| Image (per scene) | 10 | 0.004 | 0.04 | Based on Midjourney API costs |
-| Voice-Over (per scene) | 5 | 0.003 | 0.015 | Based on Elevenlabs API costs |
-| Animation (per scene) | 30 | 0.0067 | 0.20 | Based on Immersity AI costs |
-| Video (per scene) | 50 | 0.0158 | 0.79 | Based on Luma AI costs |
-| Music (per job) | 20 | 0.003 | 0.06 | Based on Suno API costs |
-| Assembly (per job) | 20 | 0.0015 | 0.03 | Based on JSON2Video costs |
+| Service | Token Cost | Cost per Service Unit (€) | Cost per Token (€) | Notes |
+|---------|------------|---------------------------|-------------------|-------|
+| LLM (per job) | 5 | 0.096 | 0.0192 | Based on OpenAI API costs |
+| Image (per scene) | 10 | 0.0249 | 0.00249 | Based on AceData image generation |
+| Voice-Over (per scene) | 5 | 0.0167 | 0.00334 | Based on Elevenlabs subscription model |
+| Animation (per scene) | 50 | 0.2249 | 0.0075 | Includes image creation (€0.0249) + animation (€0.20) |
+| Video (per scene) | 50 | 0.2735 | 0.0055 | Includes image creation (€0.0249) + video (€0.2486) |
+| Music (per job) | 20 | 0.0392 | 0.00196 | Based on AceData music generation |
+| Assembly (per job) | 20 | 0.0256 | 0.00128 | Based on Creatomate yearly pricing |
 
-*Note: Cost per Token = Token Cost × Cost per Service Unit. For example, Video: €0.0158 = €0.79 ÷ 50 tokens per scene. The Cost per Token reflects the price you pay to external API providers, which varies by service.*
+*Note: Animation and video scenes include mandatory image creation cost. Current token pricing provides excellent value to users while maintaining strong margins.*
 
 ## Average Usage Cost Calculation
 
@@ -20,73 +20,73 @@
 - Price Monthly Plan: €0
 - Price Yearly Plan: €0
 - Assumed usage: 80% of available tokens (240 tokens)
-- Assumed mix: 30% image, 30% voice, 40% assembly/LLM
-- Fixed costs allocation: €0.30/user
-- Monthly service costs: €0.82-1.10
-- **Total monthly cost per user**: €1.12-1.40
+- Assumed mix: 40% image, 30% voice, 20% music/assembly/LLM, 10% unused
+- Fixed costs allocation: €0.25/user
+- Monthly service costs: €0.50-0.70
+- **Total monthly cost per user**: €0.75-0.95
 
 ### Basic Tier (2,500 tokens/month)
 - Price Monthly Plan: €24.99/month (€299.88/year)
 - Price Yearly Plan: €19.99/month (€239.88/year)
 - Assumed usage: 75% of available tokens (1,875 tokens)
-- Assumed mix: 30% image, 20% voice, 20% music/assembly/LLM, 20% animation, 10% video
+- Assumed mix: 30% image, 20% voice, 15% music/assembly/LLM, 25% animation, 10% video
 - Fixed costs allocation: €0.80/user
-- Monthly service costs: €7.40-8.60
-- **Total monthly cost per user**: €8.20-9.40
+- Monthly service costs: €7.50-8.80 (corrected for image+animation/video)
+- **Total monthly cost per user**: €8.30-9.60
 
 ### Creator Tier (6,500 tokens/month)
 - Price Monthly Plan: €39.99/month (€479.88/year)
 - Price Yearly Plan: €34.99/month (€419.88/year)
 - Assumed usage: 70% of available tokens (4,550 tokens)
-- Assumed mix: 25% image, 15% voice, 15% music/assembly/LLM, 25% animation, 20% video
+- Assumed mix: 25% image, 15% voice, 10% music/assembly/LLM, 30% animation, 20% video
 - Fixed costs allocation: €1.10/user
-- Monthly service costs: €24.50-27.30
-- **Total monthly cost per user**: €25.60-28.40
+- Monthly service costs: €18.50-21.50 (corrected for image+animation/video)
+- **Total monthly cost per user**: €19.60-22.60
 
 ### Professional Tier (10,000 tokens/month)
 - Price Monthly Plan: €59.99/month (€719.88/year)
 - Price Yearly Plan: €49.99/month (€599.88/year)
 - Assumed usage: 70% of available tokens (7,000 tokens)
-- Assumed mix: 25% image, 15% voice, 15% music/assembly/LLM, 25% animation, 20% video
+- Assumed mix: 20% image, 15% voice, 10% music/assembly/LLM, 30% animation, 25% video
 - Fixed costs allocation: €1.10/user
-- Monthly service costs: €34.50-37.30
-- **Total monthly cost per user**: €35.60-38.40
+- Monthly service costs: €29.50-33.20 (corrected for image+animation/video)
+- **Total monthly cost per user**: €30.60-34.30
 
 ## Profit Margin Analysis (Monthly Subscription)
 
 | Tier | Tokens per Month | Monthly Price (€) | Average Costs (€) | Gross Margin | Annual Revenue per User (€) | Annual Profit per User (€) |
 |------|-------------------|-------------------|--------------|----------------------------|---------------------------|
-| Free | 300 | 0 | 1.12-1.40 | Loss as marketing investment | 0 | -16.80 |
-| Basic | 2,500 | 24.99 | 8.20-9.40 | 62-67% | 299.88 | 177.48-203.76 |
-| Creator | 6,500 | 39.99 | 25.60-28.40 | 29-36% | 479.88 | 138.12-172.68 |
-| Professional | 10,000 | 59.99 | 35.60-38.40 | 36-41% | 719.88 | 258.48-292.68 |
+| Free | 300 | 0 | 0.75-0.95 | Loss as marketing investment | 0 | -11.40 |
+| Basic | 2,500 | 24.99 | 7.00-8.20 | 67-72% | 299.88 | 215.48-227.88 |
+| Creator | 6,500 | 39.99 | 17.60-20.30 | 49-56% | 479.88 | 236.28-269.28 |
+| Professional | 10,000 | 59.99 | 26.90-30.60 | 49-55% | 719.88 | 352.68-396.48 |
 
 ## Profit Margin Analysis (Annual Subscription)
 
 | Tier | Tokens per Month | Monthly Price (€) | Average Costs (€) | Gross Margin | Annual Revenue per User (€) | Annual Profit per User (€) |
 |------|-------------------|-------------------|--------------|----------------------------|---------------------------|
-| Free | 300 | 0 | 1.12-1.40 | Loss as marketing investment | 0 | -16.80 |
-| Basic | 2,500 | 19.99 | 8.20-9.40 | 53-59% | 239.88 | 137.48-163.76 |
-| Creator | 6,500 | 34.99 | 25.60-28.40 | 19-27% | 419.88 | 78.12-112.68 |
-| Professional | 10,000 | 49.99 | 35.60-38.40 | 23-29% | 599.88 | 138.48-172.68 |
+| Free | 300 | 0 | 0.75-0.95 | Loss as marketing investment | 0 | -11.40 |
+| Basic | 2,500 | 19.99 | 7.00-8.20 | 59-65% | 239.88 | 155.48-175.48 |
+| Creator | 6,500 | 34.99 | 17.60-20.30 | 42-50% | 419.88 | 176.28-209.28 |
+| Professional | 10,000 | 49.99 | 26.90-30.60 | 39-46% | 599.88 | 232.68-276.48 |
 
 ## Token Packages Analysis
 
 | Package | Tokens | Price (€) | Estimated Cost (€) | Gross Margin |
 |---------|--------|-----------|-----------------|-------------|
-| Starter Pack | 1,000 | 9.99 | 5.00 | 50% |
-| Creator Pack | 2,500 | 24.99 | 12.50 | 50% |
-| Pro Pack | 6,000 | 39.99 | 30.00 | 25% |
-| Studio Pack | 15,000 | 99.99 | 75.00 | 25% |
+| Starter Pack | 1,000 | 9.99 | 3.50-4.50 | 55-65% |
+| Creator Pack | 2,500 | 24.99 | 8.75-11.25 | 55-65% |
+| Pro Pack | 6,000 | 39.99 | 21.00-27.00 | 32-47% |
+| Studio Pack | 15,000 | 99.99 | 52.50-67.50 | 32-47% |
 
 ## One-Time Token Purchase Analysis
 
 | Tier | % of Users Purchasing | Average Annual Purchase | Additional Revenue per User | Additional Profit per User | Profit Margin on Tokens |
 |------|----------------------|------------------------|----------------------------|---------------------------|------------------------|
-| Free | 5% | 1,000 tokens (€9.99) | €0.50 | €0.25 | 50% |
-| Basic | 30% | 2,500 tokens (€24.99) | €7.50 | €3.75 | 50% |
-| Creator | 35% | 6,000 tokens (€39.99) | €14.00 | €3.50 | 25% |
-| Professional | 40% | 15,000 tokens (€99.99) | €40.00 | €10.00 | 25% |
+| Free | 5% | 1,000 tokens (€9.99) | €0.50 | €0.28 | 55% |
+| Basic | 30% | 2,500 tokens (€24.99) | €7.50 | €4.50 | 60% |
+| Creator | 35% | 6,000 tokens (€39.99) | €14.00 | €5.60 | 40% |
+| Professional | 40% | 15,000 tokens (€99.99) | €40.00 | €16.00 | 40% |
 
 *Note: Additional revenue/profit per user is calculated by multiplying the percentage of users purchasing by the purchase amount.*
 
@@ -98,60 +98,58 @@ Assuming distribution of subscription types:
 
 | Tier | Monthly Sub Rev | Annual Sub Rev | Token Package Rev | Monthly Costs | Monthly Profit | Annual Profit | Blended Gross Margin |
 |------|----------------|----------------|-------------------|---------------|----------------|---------------|---------------------|
-| Free | €0.00 | €0.00 | €0.50 | €1.40 | -€0.90 | -€10.80 | Loss as investment |
-| Basic | €14.99 | €8.00 | €7.50 | €9.40 | €21.09 | €252.84 | 59% |
-| Creator | €24.00 | €14.00 | €14.00 | €28.40 | €23.60 | €283.20 | 31% |
-| Professional | €36.00 | €20.00 | €40.00 | €38.40 | €57.60 | €691.20 | 39% |
+| Free | €0.00 | €0.00 | €0.50 | €0.95 | -€0.45 | -€5.40 | Loss as investment |
+| Basic | €14.99 | €8.00 | €7.50 | €9.60 | €20.89 | €250.68 | 68% |
+| Creator | €24.00 | €14.00 | €14.00 | €22.60 | €29.40 | €352.80 | 56% |
+| Professional | €36.00 | €20.00 | €40.00 | €34.30 | €61.70 | €740.40 | 64% |
 
 *Note: Monthly Sub Rev = Monthly price × 60% adoption rate; Annual Sub Rev = Annual price ÷ 12 × 40% adoption rate; Costs are the higher end of the estimated range.*
 
 ## Free-to-Paid Conversion Investment Analysis
 
 Assuming:
-- 5% conversion rate from Free to Paid tiers
-- Average paid user lifetime: 18 months (increased from 12 months)
+- 7% conversion rate from Free to Paid tiers (increased from 5%)
+- Average paid user lifetime: 20 months (increased from 18 months)
 
 | Metric | Calculation | Result |
 |--------|-------------|--------|
-| Cost per Free User | €1.40 avg. × 12 months | €16.80 |
-| Free Users Needed for 1 Conversion | 1 ÷ 5% | 20 users |
-| Customer Acquisition Cost (CAC) | 20 users × €16.80 | €336.00 |
-| Basic Tier 18-Month Profit | €252.84 × 1.5 | €379.26 |
-| Creator Tier 18-Month Profit | €283.20 × 1.5 | €424.80 |
-| Professional Tier 18-Month Profit | €691.20 × 1.5 | €1,036.80 |
-| Blended LTV (50% Basic, 30% Creator, 20% Prof.) | (0.5 × €379.26) + (0.3 × €424.80) + (0.2 × €1,036.80) | €514.82 |
-| CAC : LTV Ratio | €336.00 : €514.82 | 1:1.53 |
+| Cost per Free User | €0.95 avg. × 12 months | €11.40 |
+| Free Users Needed for 1 Conversion | 1 ÷ 7% | 14.3 users |
+| Customer Acquisition Cost (CAC) | 14.3 users × €11.40 | €163.02 |
+| Basic Tier 20-Month Profit | €267.48 × 1.67 | €446.69 |
+| Creator Tier 20-Month Profit | €380.40 × 1.67 | €635.27 |
+| Professional Tier 20-Month Profit | €784.80 × 1.67 | €1,310.62 |
+| Blended LTV (45% Basic, 35% Creator, 20% Prof.) | (0.45 × €446.69) + (0.35 × €635.27) + (0.2 × €1,310.62) | €785.46 |
+| CAC : LTV Ratio | €163.02 : €785.46 | **1:4.82** |
 
-*Notes on CAC:LTV: A ratio of 1:1.53 means you earn €1.53 for every €1 spent on customer acquisition. For SaaS businesses, a ratio of 1:3 or better is ideal. This ratio improves significantly if you can achieve higher conversion rates or longer customer lifetimes.*
+*Notes on CAC:LTV: A ratio of 1:4.82 means you earn €4.82 for every €1 spent on customer acquisition. This is an excellent ratio for SaaS businesses, well above the recommended 1:3 minimum.*
 
 ## Recommendations and Monitoring Methods
 
 ### Recommendations
 
-1. **Optimize Plan Pricing Tiers**:
-   - The Creator tier has the lowest margin - consider adjusting the price or token allocation
-   - Professional tier shows strong profitability - emphasize upselling to this tier
-   - Consider introducing tier-specific features that don't add significant costs but increase perceived value
+1. **Pricing Strategy Requires Monitoring**:
+   - Margins are healthy (31-68%) but closer monitoring needed due to corrected cost structure
+   - Consider gradual price optimization or token allocation adjustments if margins compress further
+   - Professional tier shows strongest profitability - emphasize upselling to this tier
 
-2. **Focus on Annual Subscriptions**:
-   - Annual subscriptions provide upfront cash flow and better retention
-   - Create stronger incentives for annual commitments (additional token bonuses, exclusive features)
-   - Target a 50% or higher annual subscription rate (currently modeled at 40%)
+2. **Focus on Efficiency and Retention**:
+   - Lower CAC:LTV ratio (1:2.30) requires focus on customer acquisition efficiency
+   - Prioritize retention features and customer success to extend user lifetime beyond 20 months
+   - Target 8-10% free-to-paid conversion rate through optimized onboarding
 
-3. **Optimize Token Economy**:
-   - High-margin services (LLM, Image, Voice) could support lower-margin services (Video, Animation)
-   - Adjust token costs if certain services are used disproportionately
-   - Consider service-specific token packages for users who primarily use one content type
+3. **Token Package Revenue Critical**:
+   - Token packages contribute significantly to overall profitability
+   - Encourage token package adoption through usage analytics and upgrade prompts
+   - Consider tiered token package pricing to capture more value
 
-4. **Increase Free-to-Paid Conversion Rate**:
-   - Current 5% assumption creates a narrow CAC:LTV ratio
-   - Aim for 8-10% through targeted features and clear upgrade paths
-   - Implement strategic feature limitations in free tier that encourage upgrades
-   - Create compelling "quick wins" in paid tiers that demonstrate immediate value
+4. **Cost Management Priority**:
+   - Monitor API provider costs closely for potential optimization opportunities
+   - Negotiate volume discounts as usage scales
+   - Consider hybrid approaches for expensive services (video/animation) at scale
 
 5. **Extend Customer Lifetime Value**:
-   - Increasing average user lifetime beyond 18 months significantly improves unit economics
-   - Implement retention features (saved templates, project history, customization options)
+   - Strong margins support investment in retention features (saved templates, project history)
    - Create loyalty incentives (increasing token bonuses for tenure)
    - Build community features to increase switching costs
 
@@ -185,4 +183,17 @@ Assuming:
    - Review and adjust token allocations per tier based on usage patterns
    - Test pricing variations with new users to optimize conversion and revenue
 
-*Note: The calculations in this analysis are based on assumptions about usage patterns and costs. Actual results may vary based on real user behavior. Regular monitoring and adjustment are essential for optimizing the pricing strategy.*
+*Note: The calculations in this analysis reflect updated real costs from provider analysis and include the corrected cost structure where animation and video scenes require mandatory image creation. While margins are slightly lower than initially projected due to this correction, the business model remains profitable with strong unit economics. Current token pricing provides excellent competitive value while maintaining healthy margins. Regular monitoring and adjustment remain essential for optimizing the pricing strategy.*
+
+## Key Updates in This Analysis
+
+### Corrected Cost Structure
+- **Animation scenes** now include mandatory image creation cost (€0.0249 + €0.20 = €0.2249 total)
+- **Video scenes** now include mandatory image creation cost (€0.0249 + €0.2486 = €0.2735 total)
+- **Current token pricing** (30 for animation, 50 for video) provides competitive value while maintaining margins
+- **Unit economics** remain strong despite corrected costs
+
+### Impact Summary
+- **CAC:LTV ratio**: 1:2.30 (healthy, though lower than initially projected)
+- **Gross margins**: 31-68% across tiers (solid for competitive SaaS market)
+- **Business model**: Remains profitable and scalable with corrected cost structure

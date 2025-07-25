@@ -20,8 +20,7 @@ class CheckoutController {
    */
   async createSubscriptionCheckout(req, res) {
     try {
-      const { planId, successUrl, cancelUrl } = req.body;
-      const userId = req.user?.userId; // Get userId from authenticated user
+      const { planId, successUrl, cancelUrl, userId } = req.body;
       
       logger.info('Creating subscription checkout session:', { userId, planId });
       
@@ -115,7 +114,7 @@ class CheckoutController {
       logger.error('Error creating subscription checkout session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.user?.userId,
+        userId: req.body.userId,
         planId: req.body.planId
       });
       
@@ -133,8 +132,7 @@ class CheckoutController {
    */
   async createTokenPackageCheckout(req, res) {
     try {
-      const { packageId, successUrl, cancelUrl } = req.body;
-      const userId = req.user?.userId; // Get userId from authenticated user
+      const { packageId, successUrl, cancelUrl, userId } = req.body;
       
       logger.info('Creating token package checkout session:', { userId, packageId });
       
@@ -214,7 +212,7 @@ class CheckoutController {
       logger.error('Error creating token package checkout session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.user?.userId,
+        userId: req.body.userId,
         packageId: req.body.packageId
       });
       
@@ -232,8 +230,7 @@ class CheckoutController {
    */
   async createCustomerPortalSession(req, res) {
     try {
-      const { returnUrl } = req.body;
-      const userId = req.user?.userId; // Get userId from authenticated user
+      const { returnUrl, userId } = req.body;
       
       logger.info('Creating customer portal session:', { userId });
       
@@ -276,7 +273,7 @@ class CheckoutController {
       logger.error('Error creating customer portal session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.user?.userId
+        userId: req.body.userId
       });
       
       res.status(500).json({
@@ -294,7 +291,7 @@ class CheckoutController {
   async verifyCheckoutSession(req, res) {
     try {
       const { sessionId } = req.body;
-      const userId = req.user?.userId; // Get userId from authenticated user
+      const { userId } = req.body; // Injected by API Gateway's jwtAuth middleware
       
       logger.info('Verifying checkout session:', { userId, sessionId });
       
@@ -307,28 +304,58 @@ class CheckoutController {
       
       const session = await stripeService.verifyCheckoutSession(sessionId);
       
-      // Verify that the session belongs to the authenticated user
-      if (session.metadata.userId !== userId.toString()) {
+      // Security check: Verify the session belongs to the authenticated user
+      const sessionUserId = session.metadata?.userId?.toString();
+      if (sessionUserId !== userId.toString()) {
+        logger.warn('Session userId mismatch', { sessionUserId, requestUserId: userId });
         return res.status(403).json({
           error: 'Forbidden',
           message: 'Checkout session does not belong to the authenticated user'
         });
       }
       
-      // Session is valid and belongs to the user
-      // Further processing can be done here if needed (e.g., final confirmation)
+      // Determine purchase type and format a clean response for the frontend
+      let purchaseDetails = {};
+      const amountPaid = session.amount_total ? `€${(session.amount_total / 100).toFixed(2)}` : 'N/A';
+
+      if (session.mode === 'payment' && session.metadata.packageId) {
+        // It's a token package purchase
+        const tokenPackage = await tokenPackagesDataAccess.getTokenPackageById(session.metadata.packageId);
+        purchaseDetails = {
+          type: 'TOKEN_PACKAGE_PURCHASE',
+          itemName: tokenPackage?.package_name || 'Token Package',
+          amountPaid,
+          billingInfo: 'One-time purchase'
+        };
+      } else if (session.mode === 'subscription' && session.metadata.planId) {
+        // It's a subscription purchase. Determine if it was a new sub or an upgrade.
+        const plan = await plansDataAccess.getPlanById(session.metadata.planId);
+        // A simple heuristic: if the user had a previous subscription, it was likely an upgrade.
+        // A more robust check might involve looking at the number of user subscriptions.
+        const userSubscriptions = await subscriptionsDataAccess.getUserSubscriptions(userId);
+        const purchaseType = userSubscriptions.length > 1 ? 'SUBSCRIPTION_UPGRADE' : 'NEW_SUBSCRIPTION';
+
+        purchaseDetails = {
+          type: purchaseType,
+          itemName: plan?.plan_name || 'Subscription Plan',
+          amountPaid,
+          billingInfo: plan?.billing_frequency ? `Billed ${plan.billing_frequency}` : 'Recurring billing'
+        };
+      } else {
+        logger.warn('Could not determine purchase type from session', { sessionId });
+        return res.status(400).json({ error: 'Invalid session type' });
+      }
       
       res.json({
         success: true,
-        message: 'Checkout session verified successfully',
-        session
+        purchaseDetails
       });
       
     } catch (error) {
       logger.error('Error verifying checkout session:', {
         error: error.message,
         stack: error.stack,
-        userId: req.user?.userId,
+        userId: req.body.userId,
         sessionId: req.body.sessionId
       });
       

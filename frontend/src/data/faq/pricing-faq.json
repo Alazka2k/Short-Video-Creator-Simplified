@@ -1,0 +1,20 @@
+{
+    "pricing_faq": [
+    {
+    "question": "How do tokens work?",
+    "answer": "Tokens are consumed based on the content types you create in one content creation run: Script generation: 5 tokens, Images: 10 tokens per scene, Voiceovers: 5 tokens per scene, Background music: 20 tokens, Video assembly: 20 tokens, Animations: 30 tokens per scene (Premium feature), Video scenes: 50 tokens per scene (Premium feature)."
+    },
+    {
+    "question": "Can I change plans anytime?",
+    "answer": "Yes! You can upgrade, downgrade, or cancel your subscription at any time. Unused tokens from packages never expire."
+    },
+    {
+      "question": "What happens if I exceed my token limit?",
+      "answer": "Your account won't be charged automatically. You can either upgrade your plan or purchase additional token packages to continue creating or you can wait until the next monthly reset."
+    },
+    {
+      "question": "Do unused monthly tokens roll over?",
+      "answer": "Yes, each monthly token allocation is rolled over if not used. Also, tokens from one-time packages never expire."
+    }
+    ]
+}

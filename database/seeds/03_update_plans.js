@@ -39,12 +39,18 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'text', 'voice']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Free',
+        description: 'For anyone to get started and explore the platform.',
         features: [
-          'Basic content creation',
-          'Limited scene support',
-          'Basic voice options',
-          'Community support'
-        ]
+          { "title": "AI-powered script", "text": "Transform ideas into compelling narratives", "highlight": true },
+          { "title": "Professional voiceovers", "text": "Choose from three premium AI voices", "highlight": true },
+          { "title": "Export & download", "text": "Own your content completely", "highlight": true },
+          { "title": "Consistent image creation", "text": "Access to two signature visual styles", "highlight": false },
+          { "title": "Background music", "text": "Enhance your stories with perfect soundtracks", "highlight": false },
+          { "title": "Limited video assembly", "text": "Automated scene transitions", "highlight": false },
+          { "title": "Watermark", "text": "Content includes Narravid watermark", "highlight": false }
+        ],
+        is_popular: false
       }),
       // Tier ID - Free Tier is tier 1
       tier_id: 1
@@ -85,12 +91,18 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'voice', 'animation', 'video', 'music']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Basic',
+        description: 'For creators making regular content for social media.',
         features: [
-          'All content types',
-          'YouTube Shorts & TikTok support',
-          'Enhanced quality options',
-          'Community support'
-        ]
+            { "title": "Everything in Free, plus:", "text": "Get all the benefits of the free tier and more.", "highlight": false},
+            { "title": "AI video generation", "text": "Transform static images into dynamic videos", "highlight": true },
+            { "title": "No watermarks", "text": "Professional, branded content that's truly yours", "highlight": true },
+            { "title": "YouTube Shorts & TikTok", "text": "Perfect scene lengths and formats", "highlight": true },
+            { "title": "Nine premium visual styles", "text": "From cinematic to anime, comic to realistic", "highlight": false },
+            { "title": "Nine professional AI voices", "text": "Match your brand's personality perfectly", "highlight": false },
+            { "title": "Advanced script settings", "text": "Fine-tune tone, style, and pacing", "highlight": false }
+        ],
+        is_popular: false
       }),
       // Tier ID - Basic Tier is tier 2
       tier_id: 2
@@ -124,14 +136,18 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'voice', 'animation', 'video', 'music']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Basic',
+        description: 'For creators making regular content for social media.',
         features: [
-          'All content types',
-          'YouTube Shorts & TikTok support',
-          'Enhanced quality options',
-          'Recreation of images & voice',
-          'Community support',
-          'Save 20% with annual billing'
-        ]
+            { "title": "Everything in Free, plus:", "text": "Get all the benefits of the free tier and more.", "highlight": false},
+            { "title": "AI video generation", "text": "Transform static images into dynamic videos", "highlight": true },
+            { "title": "No watermarks", "text": "Professional, branded content that's truly yours", "highlight": true },
+            { "title": "YouTube Shorts & TikTok length", "text": "Perfect scene lengths and formats", "highlight": true },
+            { "title": "Nine premium visual styles", "text": "From cinematic to anime, comic to realistic", "highlight": false },
+            { "title": "Nine professional AI voices", "text": "Match your brand's personality perfectly", "highlight": false },
+            { "title": "Advanced script settings", "text": "Fine-tune tone, style, and pacing", "highlight": false }
+        ],
+        is_popular: false
       }),
       // Tier ID - Basic Tier is tier 2
       tier_id: 2
@@ -165,14 +181,18 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'voice', 'animation', 'video', 'music']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Creator',
+        description: 'For professionals creating high-quality, long-form content.',
         features: [
-          'All content types',
-          'Long Scene support',
-          'Unlimited jobs',
-          'HD quality video output',
-          'Recreation of images, voice & music',
-          'Email support (24h)'
-        ]
+            { "title": "Everything in Basic, plus:", "text": "Build on top of the Basic plan's features.", "highlight": false },
+            { "title": "Extended scene support", "text": "Create longer, more detailed narratives", "highlight": true },
+            { "title": "Unlimited production runs", "text": "No monthly limits on your creativity", "highlight": true },
+            { "title": "Priority email support", "text": "Get expert help within 24 hours", "highlight": true },
+            { "title": "Unlimited visual styles", "text": "Access to our complete style library", "highlight": false },
+            { "title": "Unlimited voice selection", "text": "Every AI voice at your disposal", "highlight": false },
+            { "title": "Unlimited templates", "text": "All assembly options and transitions", "highlight": false }
+        ],
+        is_popular: true
       }),
       // Tier ID - Creator Tier is tier 3
       tier_id: 3
@@ -206,15 +226,18 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'voice', 'animation', 'video', 'music']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Creator',
+        description: 'For professionals creating high-quality, long-form content.',
         features: [
-          'All content types',
-          'Long Image Story support',
-          'Unlimited jobs',
-          'HD quality output',
-          'Recreation of images, voice & music',
-          'Email support (24h)',
-          'Save 20% with annual billing'
-        ]
+            { "title": "Everything in Basic, plus:", "text": "Build on top of the Basic plan's features.", "highlight": false },
+            { "title": "Extended scene support", "text": "Create longer, more detailed narratives", "highlight": true },
+            { "title": "Unlimited production runs", "text": "No monthly limits on your creativity", "highlight": true },
+            { "title": "Priority email support", "text": "Get expert help within 24 hours", "highlight": true },
+            { "title": "Unlimited visual styles", "text": "Access to our complete style library", "highlight": false },
+            { "title": "Unlimited voice selection", "text": "Every AI voice at your disposal", "highlight": false },
+            { "title": "Unlimited templates", "text": "All assembly options and transitions", "highlight": false }
+        ],
+        is_popular: true
       }),
       // Tier ID - Creator Tier is tier 3
       tier_id: 3
@@ -228,7 +251,7 @@ exports.seed = async function(knex) {
       price: 59.99, // Monthly price
       monthly_price: 59.99,
       annual_price: 599.88, // Total annual price (corrected)
-      active: true,
+      active: false,
       // Stripe Integration
       stripe_price_id: 'price_1Rc171LNIN3RdSe9byp0jlqa',
       // Operational limits
@@ -248,13 +271,17 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'voice', 'animation', 'video', 'music']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Professional',
+        description: 'For businesses and agencies with high-volume needs.',
         features: [
-          'All content types',
-          'Unlimited everything',
-          'Highest quality output',
-          'Recreation of all content',
-          'Email support (24h)'
-        ]
+            { "title": "Everything in Creator, plus:", "text": "The ultimate creative package.", "highlight": false },
+            { "title": "Priority video processing", "text": "Faster generation times for tight deadlines", "highlight": true },
+            { "title": "Direct Upload", "text": "Directly upload your created videos to your social media channels", "highlight": true },
+            { "title": "Unlimited everything", "text": "No restrictions on scenes, jobs, or creativity", "highlight": false },
+            { "title": "Complete content recreation", "text": "Recreate any type of content flawlessly", "highlight": false },
+            { "title": "Dedicated support", "text": "Priority assistance for professional workflows", "highlight": false }
+        ],
+        is_popular: false
       }),
       // Tier ID - Professional Tier is tier 4
       tier_id: 4
@@ -268,7 +295,7 @@ exports.seed = async function(knex) {
       price: 599.88, // Yearly price (Monthly price of 49.99)
       monthly_price: 49.99,
       annual_price: 599.88, // Total annual price
-      active: true,
+      active: false,
       // Stripe Integration
       stripe_price_id: 'price_1Rc17WLNIN3RdSe9fV4YoGHv',
       // Operational limits
@@ -288,14 +315,17 @@ exports.seed = async function(knex) {
       allowed_content_types: JSON.stringify(['image', 'voice', 'animation', 'video', 'music']),
       // Marketing description
       marketing_description: JSON.stringify({
+        tier_name: 'Professional',
+        description: 'For businesses and agencies with high-volume needs.',
         features: [
-          'All content types',
-          'Unlimited creation',
-          'Highest quality output',
-          'Recreation of all content',
-          'Email support (24h)',
-          'Save 20% with annual billing'
-        ]
+            { "title": "Everything in Creator, plus:", "text": "The ultimate creative package.", "highlight": false },
+            { "title": "Priority video processing", "text": "Faster generation times for tight deadlines", "highlight": true },
+            { "title": "Direct Upload", "text": "Directly upload your created videos to your social media channels", "highlight": true },
+            { "title": "Unlimited everything", "text": "No restrictions on scenes, jobs, or creativity", "highlight": false },
+            { "title": "Complete content recreation", "text": "Recreate any type of content flawlessly", "highlight": false },
+            { "title": "Dedicated support", "text": "Priority assistance for professional workflows", "highlight": false }
+        ],
+        is_popular: false
       }),
       // Tier ID - Professional Tier is tier 4
       tier_id: 4

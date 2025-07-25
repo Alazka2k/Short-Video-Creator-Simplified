@@ -451,22 +451,28 @@ class StripeService {
   }
 
   /**
-   * Retrieve a checkout session from Stripe
-   * @param {string} sessionId - The Stripe checkout session ID
-   * @returns {Promise<Object>} - The checkout session object
+   * Retrieve and verify a checkout session from Stripe.
+   * @param {string} sessionId - The ID of the Stripe Checkout Session.
+   * @returns {Promise<Object>} The Stripe session object with expanded details.
    */
-  async retrieveCheckoutSession(sessionId) {
+  async verifyCheckoutSession(sessionId) {
     try {
-      if (!this.initialized) await this.initialize();
-      
+      if (!sessionId) {
+        throw new Error('Session ID is required to verify the session.');
+      }
+      logger.info('Verifying Stripe checkout session:', { sessionId });
+
       const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['line_items', 'payment_intent', 'subscription', 'customer']
+        expand: ['line_items', 'payment_intent', 'subscription', 'customer'],
       });
-      
-      logger.info(`Checkout session retrieved: ${sessionId}`);
+
+      logger.info('Successfully verified and retrieved Stripe checkout session.', { sessionId });
       return session;
     } catch (error) {
-      logger.error(`Error retrieving checkout session ${sessionId}:`, error);
+      logger.error('Error verifying Stripe checkout session:', {
+        error: error.message,
+        sessionId,
+      });
       throw error;
     }
   }

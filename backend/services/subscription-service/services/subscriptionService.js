@@ -565,83 +565,6 @@ class SubscriptionService {
   }
 
   /**
-   * Cancel a subscription
-   * @param {string} subscriptionId - The subscription ID
-   * @param {string} reason - The reason for cancellation
-   * @returns {Promise<Object>} - The cancelled/pending cancellation subscription
-   */
-  async cancelSubscription(subscriptionId, reason) {
-    try {
-      // Ensure we have a valid subscription ID
-      if (!subscriptionId) {
-        throw new Error('Subscription ID is required for cancellation');
-      }
-      
-      // Log the cancellation attempt with the reason
-      logger.info('Cancelling subscription:', { 
-        subscriptionId, 
-        reason: reason || '(No reason provided)', 
-      });
-      
-      // Get subscription to validate it exists
-      const subscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
-      
-      if (!subscription) {
-        logger.warn(`Subscription not found: ${subscriptionId}`);
-        throw new Error(`Subscription not found: ${subscriptionId}`);
-      }
-      
-      // Prevent cancellation of free tier subscriptions
-      if (subscription.plan_id === 1) {
-        logger.warn(`Cannot cancel a free tier subscription: ${subscriptionId}`);
-        throw new Error('Free tier subscriptions cannot be cancelled');
-      }
-      
-      if (subscription.status === 'cancelled') {
-        logger.warn(`Subscription already cancelled: ${subscriptionId}`);
-        return subscription;
-      }
-      
-      // Standardize the cancellation reason
-      let cancellationReason = reason || CANCELLATION_REASONS.CANCEL_PAID_PLAN;
-      
-      // If it's not one of our standard reasons, convert it
-      if (!Object.values(CANCELLATION_REASONS).includes(cancellationReason)) {
-        cancellationReason = CANCELLATION_REASONS.CANCEL_PAID_PLAN;
-      }
-      
-      logger.info(`Proceeding with cancellation using reason: "${cancellationReason}"`);
-      
-      // For paid plan cancellations, we'll schedule a switch to free tier (plan_id=1)
-      // For frequency changes, we'll use the specified upcoming plan 
-      // For upgrades and downgrades, no upcoming plan ID is needed here (handled in specific methods)
-      const upcomingPlanId = cancellationReason === CANCELLATION_REASONS.CANCEL_PAID_PLAN ? 1 : null;
-      
-      const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
-        subscriptionId, 
-        cancellationReason,
-        upcomingPlanId
-      );
-      
-      // Verify the cancellation was successful
-      if (updatedSubscription) {
-        logger.info('Subscription update completed successfully:', {
-          subscriptionId,
-          status: updatedSubscription.status,
-          savedReason: updatedSubscription.cancellation_reason,
-          endDate: updatedSubscription.end_date,
-          upcomingPlanId: updatedSubscription.upcoming_plan_id
-        });
-      }
-      
-      return updatedSubscription;
-    } catch (error) {
-      logger.error('Error in cancelSubscription:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Renews a subscription for a user.
    * This method handles both token allocation and billing periods.
    * - Token allocation period: Determines when tokens are allocated to the user
@@ -781,215 +704,6 @@ class SubscriptionService {
   }
 
   /**
-   * Upgrade a subscription to a higher tier plan
-   * @param {string} subscriptionId - The current subscription ID
-   * @param {number} newPlanId - The new (higher tier) plan ID
-   * @param {Object} options - Additional upgrade options
-   * @returns {Promise<Object>} - The new subscription
-   */
-  async upgradeSubscription(subscriptionId, newPlanId, options = {}) {
-    try {
-      logger.info('Processing subscription upgrade:', {
-        subscriptionId,
-        newPlanId,
-        options
-      });
-      
-      // Get current subscription
-      const currentSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
-      if (!currentSubscription) {
-        throw new Error(`Subscription not found: ${subscriptionId}`);
-      }
-      
-      // Get the plans to compare
-      const currentPlan = await this.dataAccess.plans.getPlanById(currentSubscription.plan_id);
-      const newPlan = await this.dataAccess.plans.getPlanById(newPlanId);
-      
-      if (!currentPlan || !newPlan) {
-        throw new Error("Could not retrieve plan information");
-      }
-
-      // Compare plans to determine the appropriate action
-      const comparison = this.comparePlans(currentPlan, newPlan);
-      
-      // Validate this is actually an upgrade or frequency change
-      if (!comparison.isUpgrade && !comparison.isFrequencyChange) {
-        throw new Error(`Invalid upgrade: New plan (ID: ${newPlanId}, Tier: ${newPlan.tier_id}) is not an upgrade from current plan (ID: ${currentPlan.plan_id}, Tier: ${currentPlan.tier_id})`);
-      }
-
-      // Determine the cancellation reason
-      const cancellationReason = comparison.isFrequencyChange 
-        ? CANCELLATION_REASONS.CANCEL_FOR_FREQUENCY_CHANGE 
-        : CANCELLATION_REASONS.CANCEL_FOR_UPGRADE;
-      
-      // For upgrades and frequency changes, we use different handling
-      const upcomingPlanId = comparison.isFrequencyChange ? newPlanId : null;
-      
-      // Cancel the current subscription with appropriate reason
-      await this.dataAccess.subscriptions.cancelSubscription(
-        subscriptionId,
-        cancellationReason,
-        upcomingPlanId // Only set for frequency changes
-      );
-
-      // For tier upgrades, create a new subscription immediately
-      // For frequency changes, we don't create a new subscription here
-      if (comparison.isUpgrade) {
-        // Create the new subscription with the higher tier plan
-        const subscriptionData = {
-          userId: currentSubscription.user_id,
-          planId: newPlanId,
-          status: 'active',
-          startDate: new Date(), // Start immediately
-          stripeSubscriptionId: options.stripeSubscriptionId || currentSubscription.external_subscription_id
-        };
-        
-        // If payment details provided, include them
-        if (options.paymentProvider && options.stripePaymentIntentId) {
-          subscriptionData.paymentProvider = options.paymentProvider;
-          subscriptionData.stripePaymentIntentId = options.stripePaymentIntentId;
-        }
-        
-        const newSubscription = await this.createSubscription(subscriptionData);
-        
-        logger.info('Subscription upgraded successfully:', {
-          oldSubscriptionId: subscriptionId,
-          newSubscriptionId: newSubscription.subscription_id,
-          userId: newSubscription.user_id,
-          newPlanId: newSubscription.plan_id
-        });
-        
-        return newSubscription;
-      } else {
-        // For frequency changes, return the updated subscription with pending status
-        const updatedSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
-        
-        logger.info('Subscription frequency change scheduled:', {
-          subscriptionId: updatedSubscription.subscription_id,
-          currentPlanId: updatedSubscription.plan_id,
-          upcomingPlanId: updatedSubscription.upcoming_plan_id
-        });
-        
-        return updatedSubscription;
-      }
-    } catch (error) {
-      logger.error('Error upgrading subscription:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Downgrade a subscription to a lower tier plan
-   * @param {string} subscriptionId - The current subscription ID
-   * @param {number} newPlanId - The new (lower tier) plan ID
-   * @param {Object} options - Additional downgrade options
-   * @returns {Promise<Object>} - The updated subscription with pending cancellation
-   */
-  async downgradeSubscription(subscriptionId, newPlanId, options = {}) {
-    try {
-      logger.info('Processing subscription downgrade:', {
-        subscriptionId,
-        newPlanId,
-        options
-      });
-      
-      // Get current subscription
-      const currentSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
-      if (!currentSubscription) {
-        throw new Error(`Subscription not found: ${subscriptionId}`);
-      }
-      
-      // Get the plans to compare
-      const currentPlan = await this.dataAccess.plans.getPlanById(currentSubscription.plan_id);
-      const newPlan = await this.dataAccess.plans.getPlanById(newPlanId);
-      
-      if (!currentPlan || !newPlan) {
-        throw new Error("Could not retrieve plan information");
-      }
-      
-      // Compare plans to determine the appropriate action
-      const comparison = this.comparePlans(currentPlan, newPlan);
-
-      // Validate this is actually a downgrade or frequency change
-      if (!comparison.isDowngrade && !comparison.isFrequencyChange) {
-        throw new Error(`Invalid downgrade: New plan (ID: ${newPlanId}, Tier: ${newPlan.tier_id}) is not a downgrade from current plan (ID: ${currentPlan.plan_id}, Tier: ${currentPlan.tier_id})`);
-      }
-
-      // Determine the cancellation reason
-      const cancellationReason = comparison.isFrequencyChange 
-        ? CANCELLATION_REASONS.CANCEL_FOR_FREQUENCY_CHANGE 
-        : CANCELLATION_REASONS.CANCEL_FOR_DOWNGRADE;
-      
-      // Mark the current subscription for downgrade at the end of the billing period
-      const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
-        subscriptionId,
-        cancellationReason,
-        newPlanId // Specify the upcoming plan ID
-      );
-      
-      logger.info(`Subscription marked for ${comparison.isFrequencyChange ? 'frequency change' : 'downgrade'} at period end:`, {
-        subscriptionId: updatedSubscription.subscription_id,
-        currentPlanId: updatedSubscription.plan_id,
-        downgradeToId: updatedSubscription.upcoming_plan_id,
-        effectiveDate: updatedSubscription.end_date
-      });
-      
-      return updatedSubscription;
-    } catch (error) {
-      logger.error('Error downgrading subscription:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Cancel a paid plan subscription and schedule downgrade to free tier
-   * @param {string} subscriptionId - The subscription ID
-   * @param {string} reason - Optional additional cancellation reason
-   * @returns {Promise<Object>} - The updated subscription with pending cancellation
-   */
-  async cancelPaidPlan(subscriptionId, reason = '') {
-    try {
-      logger.info('Processing paid plan cancellation:', {
-        subscriptionId,
-        reason
-      });
-      
-      // Get current subscription
-      const currentSubscription = await this.dataAccess.subscriptions.getSubscriptionById(subscriptionId);
-      if (!currentSubscription) {
-        throw new Error(`Subscription not found: ${subscriptionId}`);
-      }
-      
-      // Verify this is a paid plan (not free tier)
-      if (currentSubscription.plan_id === 1) {
-        throw new Error('Cannot cancel a free tier subscription');
-      }
-      
-      // Create a standardized reason with any additional context
-      const cancellationReason = `${CANCELLATION_REASONS.CANCEL_PAID_PLAN}${reason ? ': ' + reason : ''}`;
-      
-      // Mark the subscription for cancellation at the end of the billing period
-      // and schedule downgrade to free tier (plan_id=1)
-      const updatedSubscription = await this.dataAccess.subscriptions.cancelSubscription(
-        subscriptionId,
-        cancellationReason,
-        1 // Free tier plan ID
-      );
-      
-      logger.info('Subscription marked for cancellation at period end:', {
-        subscriptionId: updatedSubscription.subscription_id,
-        currentPlanId: updatedSubscription.plan_id,
-        downgradeToFreeAt: updatedSubscription.end_date
-      });
-      
-      return updatedSubscription;
-    } catch (error) {
-      logger.error('Error canceling paid plan:', error);
-      throw error;
-    }
-  }
-  
-  /**
    * Process pending cancellations and create new subscriptions if needed
    * This method would be called by a scheduled batch job
    * @returns {Promise<Object>} - Summary of processed cancellations
@@ -1091,6 +805,238 @@ class SubscriptionService {
       return subscriptions;
     } catch (error) {
       logger.error('Error getting subscriptions to renew:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Creates a new subscription and allocates tokens based on a Stripe event.
+   * This is triggered by the 'checkout.session.completed' webhook.
+   * @param {Object} eventData - The data from the Stripe event.
+   * @param {string} eventData.userId - The user ID.
+   * @param {string} eventData.planId - The plan ID being subscribed to.
+   * @param {Object} eventData.stripeSubscription - The full Stripe subscription object.
+   * @param {string} eventData.stripePaymentIntentId - The Stripe Payment Intent ID.
+   * @returns {Promise<Object>} - The newly created subscription record.
+   */
+  async createSubscriptionFromStripeEvent({ userId, planId, stripeSubscription, stripePaymentIntentId }) {
+    try {
+      logger.info('Creating subscription from Stripe event:', { userId, planId, stripeSubscriptionId: stripeSubscription.id });
+
+      const newPlan = await this.dataAccess.plans.getPlanById(planId);
+      if (!newPlan) throw new Error(`Plan not found: ${planId}`);
+
+      const knex = this.dataAccess.subscriptions.knex;
+      return await knex.transaction(async (trx) => {
+        // Cancel any existing active subscription (e.g., Free Tier)
+        const existingSubscription = await this.dataAccess.subscriptions.getUserActiveSubscription(userId, trx);
+        if (existingSubscription) {
+          await this.dataAccess.subscriptions.cancelSubscription(
+            existingSubscription.subscription_id,
+            CANCELLATION_REASONS.CANCEL_FOR_UPGRADE,
+            null,
+            trx
+          );
+          logger.info('Canceled existing subscription for upgrade:', { subscriptionId: existingSubscription.subscription_id });
+        }
+
+        // Create the new subscription record
+        const subscription = await this.dataAccess.subscriptions.createSubscription({
+          userId,
+          planId,
+          status: 'active',
+          stripeSubscriptionId: stripeSubscription.id,
+          stripeStatus: stripeSubscription.status,
+          currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+        }, trx);
+
+        // Create a payment record for the initial purchase
+        await this.dataAccess.payments.createSubscriptionPayment(
+          userId,
+          subscription.subscription_id,
+          planId,
+          newPlan.price, // Assuming initial payment matches plan price
+          'stripe',
+          stripePaymentIntentId,
+          'subscription_initial',
+          { start: new Date(stripeSubscription.current_period_start * 1000), end: new Date(stripeSubscription.current_period_end * 1000) },
+          trx
+        );
+
+        // Allocate initial tokens
+        if (newPlan.monthly_token_allocation > 0) {
+          await this.dataAccess.tokenTransactions.allocateSubscriptionTokens(
+            userId,
+            subscription.subscription_id,
+            newPlan.monthly_token_allocation,
+            `Initial token allocation for ${newPlan.plan_name}`,
+            null,
+            trx
+          );
+        }
+        
+        logger.info('Successfully created subscription and allocated tokens from Stripe event.', { subscriptionId: subscription.subscription_id });
+        return subscription;
+      });
+    } catch (error) {
+      logger.error('Error in createSubscriptionFromStripeEvent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Processes a token package purchase from a Stripe event.
+   * @param {Object} eventData - The data from the Stripe event.
+   * @param {string} eventData.userId - The user ID.
+   * @param {string} eventData.packageId - The token package ID.
+   * @param {string} eventData.stripePaymentIntentId - The Stripe Payment Intent ID.
+   * @returns {Promise<void>}
+   */
+  async purchaseTokenPackageFromStripeEvent({ userId, packageId, stripePaymentIntentId }) {
+    try {
+      logger.info('Purchasing token package from Stripe event:', { userId, packageId });
+
+      const tokenPackage = await this.dataAccess.tokenPackages.getTokenPackageById(packageId);
+      if (!tokenPackage) throw new Error(`Token package not found: ${packageId}`);
+
+      const knex = this.dataAccess.subscriptions.knex;
+      await knex.transaction(async (trx) => {
+        // Create the payment record
+        await this.dataAccess.payments.createTokenPackagePayment(
+          userId,
+          packageId,
+          tokenPackage.price,
+          'stripe',
+          stripePaymentIntentId,
+          'completed', // Explicitly set status
+          trx
+        );
+
+        // Allocate tokens for the package
+        await this.dataAccess.tokenTransactions.recordTokenPackagePurchase(
+          userId,
+          packageId,
+          tokenPackage.token_allocation,
+          null, // paymentId is now handled internally in createTokenPackagePayment
+          trx
+        );
+
+        logger.info('Successfully purchased token package from Stripe event.', { userId, packageId });
+      });
+    } catch (error) {
+      logger.error('Error in purchaseTokenPackageFromStripeEvent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates a subscription based on a 'customer.subscription.updated' Stripe event.
+   * This method contains the core logic for handling upgrades, downgrades, and cancellations.
+   * @param {Object} eventData - The data from the Stripe event.
+   * @param {string} eventData.userId - The user ID.
+   * @param {Object} eventData.stripeSubscription - The full Stripe subscription object.
+   * @returns {Promise<void>}
+   */
+  async updateSubscriptionFromStripeEvent({ userId, stripeSubscription }) {
+    try {
+      logger.info('Updating subscription from Stripe event:', { userId, stripeSubscriptionId: stripeSubscription.id });
+
+      const localSubscription = await this.dataAccess.subscriptions.findByStripeId(stripeSubscription.id);
+      if (!localSubscription) {
+        throw new Error(`Local subscription not found for Stripe ID: ${stripeSubscription.id}`);
+      }
+
+      const stripePlanId = stripeSubscription.items.data[0].price.id;
+      const newPlan = await this.dataAccess.plans.findByStripePriceId(stripePlanId);
+      if (!newPlan) {
+        throw new Error(`Plan not found for Stripe price ID: ${stripePlanId}`);
+      }
+
+      // If the plan hasn't changed, just sync the data
+      if (localSubscription.plan_id === newPlan.plan_id) {
+        return await this.dataAccess.subscriptions.updateSubscription(localSubscription.subscription_id, {
+          stripeStatus: stripeSubscription.status,
+          currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+        });
+      }
+
+      // Handle plan change (upgrade, downgrade, frequency change)
+      const currentPlan = await this.dataAccess.plans.getPlanById(localSubscription.plan_id);
+      const comparison = this.comparePlans(currentPlan, newPlan);
+
+      if (comparison.isUpgrade) {
+        // Upgrades are handled by creating a new subscription, but let's log if we see it here.
+        logger.warn('Subscription upgrade event received in update handler. This should typically be a new subscription.', {
+          localSubscriptionId: localSubscription.subscription_id,
+          newPlanId: newPlan.plan_id,
+        });
+        // For robustness, we can handle it as a direct update.
+        await this.upgradeSubscription(localSubscription.subscription_id, newPlan.plan_id, { stripeSubscriptionId: stripeSubscription.id });
+
+      } else if (comparison.isDowngrade || comparison.isFrequencyChange) {
+        // Mark for downgrade/change at period end
+        const reason = comparison.isDowngrade ? CANCELLATION_REASONS.CANCEL_FOR_DOWNGRADE : CANCELLATION_REASONS.CANCEL_FOR_FREQUENCY_CHANGE;
+        await this.dataAccess.subscriptions.cancelSubscription(
+          localSubscription.subscription_id,
+          reason,
+          newPlan.plan_id, // Set the upcoming plan
+          null // No transaction needed here
+        );
+        logger.info(`Scheduled subscription ${comparison.isDowngrade ? 'downgrade' : 'frequency change'}.`, {
+          subscriptionId: localSubscription.subscription_id,
+          newPlanId: newPlan.plan_id
+        });
+      }
+
+    } catch (error) {
+      logger.error('Error in updateSubscriptionFromStripeEvent:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancels a subscription based on a 'customer.subscription.deleted' Stripe event.
+   * This marks the subscription as 'canceled' and provisions a new Free Tier subscription.
+   * @param {Object} eventData - The data from the Stripe event.
+   * @param {string} eventData.userId - The user ID.
+   * @param {Object} eventData.stripeSubscription - The full Stripe subscription object.
+   * @returns {Promise<void>}
+   */
+  async cancelSubscriptionFromStripeEvent({ userId, stripeSubscription }) {
+    try {
+      logger.info('Canceling subscription from Stripe event:', { userId, stripeSubscriptionId: stripeSubscription.id });
+
+      const localSubscription = await this.dataAccess.subscriptions.findByStripeId(stripeSubscription.id);
+      if (!localSubscription) {
+        logger.warn(`Local subscription not found for Stripe ID during cancellation: ${stripeSubscription.id}. The user may have already been downgraded.`);
+        return;
+      }
+
+      const knex = this.dataAccess.subscriptions.knex;
+      await knex.transaction(async (trx) => {
+        // Mark the old subscription as canceled
+        await this.dataAccess.subscriptions.cancelSubscription(
+          localSubscription.subscription_id,
+          'CANCELED_FROM_STRIPE',
+          null,
+          trx
+        );
+
+        // Provision a new Free Tier subscription
+        await this.createSubscription({
+          userId,
+          planId: 1, // Free Tier
+        });
+      });
+
+      logger.info('Successfully canceled subscription and provisioned Free Tier.', { oldSubscriptionId: localSubscription.subscription_id, userId });
+
+    } catch (error) {
+      logger.error('Error in cancelSubscriptionFromStripeEvent:', error);
       throw error;
     }
   }

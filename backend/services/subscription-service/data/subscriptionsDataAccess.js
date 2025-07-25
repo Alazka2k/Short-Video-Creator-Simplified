@@ -245,7 +245,9 @@ class SubscriptionsDataAccess {
         current_period_end: subscriptionData.currentPeriodEnd || null,
         canceled_at: subscriptionData.canceledAt || null,
         ended_at: subscriptionData.endedAt || null,
-        stripe_subscription_id: subscriptionData.stripeSubscriptionId || null
+        stripe_subscription_id: subscriptionData.stripeSubscriptionId || null,
+        stripe_status: subscriptionData.stripeStatus || null,
+        cancel_at_period_end: subscriptionData.cancelAtPeriodEnd || false
       };
       
       // Set timestamps
@@ -926,7 +928,26 @@ class SubscriptionsDataAccess {
       
       return formattedSubscriptions;
     } catch (error) {
-      this.logger.error('Error getting subscriptions to renew:', error);
+      this.logger.error('Error getting subscriptions needing renewal:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find a subscription by its Stripe subscription ID.
+   * @param {string} stripeId - The Stripe subscription ID.
+   * @returns {Promise<Object|null>}
+   */
+  async findByStripeId(stripeId) {
+    try {
+      this.logger.info('Finding subscription by Stripe ID:', { stripeId });
+      return await this.knex('user_subscriptions')
+        .where('stripe_subscription_id', stripeId)
+        .andWhereNot('status', 'canceled')
+        .orderBy('created_at', 'desc')
+        .first();
+    } catch (error) {
+      this.logger.error('Error finding subscription by Stripe ID:', error);
       throw error;
     }
   }

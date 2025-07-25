@@ -77,7 +77,7 @@ class PaymentsDataAccess {
    * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object>} - The created payment record
    */
-  async createPayment(paymentData, trx) {
+  async createPayment(paymentData, trx = null) {
     try {
       this.logger.info('Creating new payment record:', paymentData);
       
@@ -103,11 +103,10 @@ class PaymentsDataAccess {
         paymentData.payment_date = null;
       }
       
-      // Determine which knex instance to use
-      const query = trx ? trx(this.tableName) : knex(this.tableName);
-      
+      const queryBuilder = trx ? knex(this.tableName).transacting(trx) : knex(this.tableName);
+
       // Insert the payment record
-      const [newPayment] = await query
+      const [newPayment] = await queryBuilder
         .insert(paymentData)
         .returning('*');
       
@@ -186,9 +185,10 @@ class PaymentsDataAccess {
    * @param {string} paymentProvider - The payment provider (e.g., 'stripe', 'paypal')
    * @param {string} stripePaymentIntentId - The external payment ID from the provider
    * @param {string} status - The payment status ('completed', 'open', 'failed'), defaults to 'completed'
+   * @param {Object} trx - Optional Knex transaction object
    * @returns {Promise<Object>} - The created payment record
    */
-  async createTokenPackagePayment(userId, packageId, amount, paymentProvider, stripePaymentIntentId, status = 'completed') {
+  async createTokenPackagePayment(userId, packageId, amount, paymentProvider, stripePaymentIntentId, status = 'completed', trx = null) {
     try {
       this.logger.info('Creating token package payment record:', {
         userId, packageId, amount, status
@@ -206,7 +206,7 @@ class PaymentsDataAccess {
         package_id: packageId
       };
       
-      return this.createPayment(paymentData);
+      return this.createPayment(paymentData, trx);
     } catch (error) {
       this.logger.error('Error creating token package payment record:', error);
       throw error;

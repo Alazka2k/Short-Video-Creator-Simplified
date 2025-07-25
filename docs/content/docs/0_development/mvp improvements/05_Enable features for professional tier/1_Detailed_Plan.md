@@ -1,12 +1,13 @@
-# Detailed Plan: Improve llm request and generation
+# Detailed Plan: Enable features for professional tier and activate the professional tier on the webpage
 
 ## 1. Overview
 
-This document outlines the improvements we need to do for voice generation with scaling for different users and for one job with more then 4 scenes. The api of elevenlabs restricts the number of parallel requests.
+This document outlines the improvements we promise for the professional tie subscribers. Then we activate the professional tier on the webpage.
 
-**The Core Improvement:** Improve the voice generation with scaling for different users and for one job with more then 4 scenes.
-
-**The Solution:** We need to improve the voice generation with scaling for different users and for one job with more then 4 scenes.
+**The Core Requirements:**
+- Priority creation (we use turbo option in midjourney for image and videos)
+- Direct upload to social media (possibility to upload the created videos to social media channels)
+- Enable the professional tier to be shown on the pricing page / activate the professional tier in the database
 
 ---
 

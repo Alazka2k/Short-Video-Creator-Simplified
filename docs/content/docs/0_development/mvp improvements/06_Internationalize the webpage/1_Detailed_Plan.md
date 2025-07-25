@@ -1,12 +1,12 @@
-# Detailed Plan: Improve llm request and generation
+  # Detailed Plan: Internationalize the webpage
 
 ## 1. Overview
 
-This document outlines the improvements we need to do for voice generation with scaling for different users and for one job with more then 4 scenes. The api of elevenlabs restricts the number of parallel requests.
+This document outlines the improvements we need to do to internationalize the webpage.
 
-**The Core Improvement:** Improve the voice generation with scaling for different users and for one job with more then 4 scenes.
-
-**The Solution:** We need to improve the voice generation with scaling for different users and for one job with more then 4 scenes.
+**The Core Requirements:**
+- Internationalize the webpage in multiple languages
+- Find best practices / libraries for internationalization and translations
 
 ---
 
