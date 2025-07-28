@@ -216,7 +216,7 @@ Use the following official Stripe test card numbers to simulate different paymen
 **Expected Results**:
 - Verify the "Basic" plan card is correctly highlighted as the "Current Plan" and its button is disabled.
 
-###### Test Case 2.1.7: Logged in user in paid tier with intention to upgrade the plan
+###### Test Case 2.1.7: Logged in user in paid tier with intention to upgrade the plan ✅ Successful
 **Objective**: Verify the user flow for an authenticated user already on a paid plan.
 **Preconditions**:
 - User is logged in and is on the "Basic" monthly plan.

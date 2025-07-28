@@ -83,7 +83,7 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
 ## Phase 2: Frontend Implementation & UI/UX Refactor **STATUS: In Progress**
 **Objective:** Build a clear, intuitive, and fully functional user interface for the pricing page, dashboard and subscription management, following the provided design guidelines.
 
-### Task 2.1: Create `PricingPageComponent` and page `pricing/page.tsx` **STATUS: Testing**
+### Task 2.1: Create `PricingPageComponent` and page `pricing/page.tsx` ✅ Completed**
 - **Files to Create:** `frontend/src/app/(marketing)/pricing/page.tsx`, `frontend/src/components/marketing/pricing/`
 - **Files to Review and Modify if necesseray :** `frontend/src/components/shared/buttons/`, `frontend/src/components/shared/label/`, `frontend/src/components/shared/switch/`
 - **Action:** Develop a dynamic and responsive pricing page that caters to both visitors and authenticated users, ensuring a consistent look and feel with the existing UI.
@@ -151,6 +151,18 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
         2.  **Implement Timed Redirect:** After successfully verifying the session and displaying the context-aware success message (e.g., "Upgrade Successful!"), the page will now also display a new subtext: "Redirecting you to your dashboard..."
         3.  **Automatic Navigation:** After a 4-second delay, the page will programmatically redirect the user to the `/dashboard`.
         4.  **Natural Auth Refresh:** This full-page redirect allows the main `Auth0Provider` to handle the session refresh naturally and reliably during the dashboard's load process, completely avoiding the instability and fixing the logout bug.
+  - **Fix (Round 7): Correct Stale "Current Plan" UI After Purchase**
+    - **Problem:** After a successful purchase and redirect, the pricing page shows the user's old plan as the "Current Plan". This is because the application is still using a cached, stale JWT that contains the old `subscriptionPlanId` custom claim.
+    - **Solution (Signaled Token Refresh):** We will force a token refresh upon the user's return to the dashboard, ensuring the UI has the latest data.
+        1.  **Signal from Success Page:** The redirect in `success/page.tsx` will be changed from `/dashboard` to `/dashboard?action=refresh_session`. This query parameter acts as a one-time signal.
+        2.  **Create Session Refresher Component:** A new, invisible client component (`SessionRefresher.tsx`) will be created.
+        3.  **Implement Refresh Logic:** On the dashboard, this new component will detect the `action=refresh_session` parameter. If present, it will immediately call `auth.refreshUser()` to fetch a fresh JWT with the correct plan ID, and then it will clean the URL by removing the query parameter.
+        4.  **Integrate into Dashboard:** The `SessionRefresher` component will be added to the main dashboard layout, making this logic available as soon as the user lands there post-purchase.
+  - **Fix (Round 8): Prevent Logout Race Condition on Dashboard**
+    - **Problem:** Even after moving the token refresh to the dashboard, a logout still occurs. This is a timing-related race condition where the `SessionRefresher` component calls `auth.refreshUser()` *before* the main `Auth0Provider` has finished its own initial, stable loading process after the redirect.
+    - **Solution (Wait for Stable Auth):** The `SessionRefresher` component will be modified to be aware of the authentication provider's loading state.
+        1.  **Modify `SessionRefresher.tsx`:** The `useEffect` hook will now check the `auth.isLoading` state.
+        2.  **Delayed Refresh:** The component will wait until `auth.isLoading` is `false`. Only then will it proceed to check for the `action` parameter and call `auth.refreshUser()`. This guarantees the refresh is only triggered on a stable, fully initialized session, which will prevent the logout issue.
 
 ### Task 2.2: Redesign and Implement ProtectedUser Dashboard (`/dashboard`) **STATUS: Not Started**
 - **File:** `frontend/src/app/(dashboard)/dashboard/page.tsx`

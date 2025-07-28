@@ -26,6 +26,7 @@
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Sidebar } from '@/components/layout/sidebar'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
+import { SessionRefresher } from '@/components/auth/SessionRefresher'
 
 export default function DashboardLayout({
   children,
@@ -34,6 +35,7 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
+      <SessionRefresher />
       <div className="relative min-h-screen">
         {/* Background decorations */}
         <div className="fixed inset-0 -z-10">

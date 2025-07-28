@@ -131,7 +131,7 @@ export default function SubscriptionSuccessPage() {
 
           // Redirect to dashboard after a delay. This allows the auth state to settle naturally.
           setTimeout(() => {
-            router.push('/dashboard');
+            router.push('/dashboard?action=refresh_session');
           }, 4000); // 4-second delay
 
         } else {
