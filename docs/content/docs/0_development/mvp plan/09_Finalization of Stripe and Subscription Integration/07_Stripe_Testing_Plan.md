@@ -162,9 +162,9 @@ Use the following official Stripe test card numbers to simulate different paymen
 - After successful payment for the token package, redirection to the successful payment page, the user's token balance is increased accordingly. Token transaction and payment record are created in the database. Token balance is updated.
 - In the success page the user sees a correct message "Tokens Added!"
 
-###### Test Case 2.1.4: Logged in user in free tier with intention to upgrade from free to paid tier 
+###### Test Case 2.1.4: Logged in user in free tier with intention to upgrade from free to paid tier ✅ Successful
 
-####### Sub Test 2.1.4.1: User without stripe customer id
+####### Sub Test 2.1.4.1: User without stripe customer id ✅ Successful
 **Objective**: Verify the user flow and subscription upgrade to paid tier for an authenticated user on the Free tier. User has no stripe customer id - so the customer is not created in stripe yet.
 **Preconditions**:
 - User is logged in and is on the Free tier (plan_id: 1).
@@ -194,7 +194,7 @@ Use the following official Stripe test card numbers to simulate different paymen
 - The user's subscription record in the database is updated to the new plan. A new plan entry is created, to old entry is cancelled
 - After successful upgrade the tokens are allocated to the user's account.
 
-###### Test Case 2.1.5: Logged in user in paid tier with intention to buy token package
+###### Test Case 2.1.5: Logged in user in paid tier with intention to buy token package ✅ Successful
 **Objective**: Verify the user flow and token package purchase for an authenticated user in a paid tier.
 **Preconditions**:
 - User is logged in and is on the "Basic" monthly plan.
@@ -207,7 +207,16 @@ Use the following official Stripe test card numbers to simulate different paymen
 - The user is redirected to a Stripe Checkout session for the "Creator Pack" token package.
 - After successful payment for the token package, redirection to the successful payment page, the user's token balance is increased accordingly.
 
-###### Test Case 2.1.6: Logged in user in paid tier with intention to upgrade the plan
+###### Test Case 2.1.6: Check the pricing page after succesful upgrade to a paid plan ✅ Successful
+**Objective**: Verify the user flow and token package purchase for an authenticated user in a paid tier. The user has upgraded to a paid plan and is now on the "Basic" monthly plan. The label "Current Plan" should be updated to the new plan.
+**Preconditions**:
+- User is logged in and is on the "Basic" monthly plan.
+**Test Steps**:
+1. Navigate to the `/pricing` page.
+**Expected Results**:
+- Verify the "Basic" plan card is correctly highlighted as the "Current Plan" and its button is disabled.
+
+###### Test Case 2.1.7: Logged in user in paid tier with intention to upgrade the plan
 **Objective**: Verify the user flow for an authenticated user already on a paid plan.
 **Preconditions**:
 - User is logged in and is on the "Basic" monthly plan.

@@ -44,6 +44,16 @@ class UserService {
         });
       }
 
+      /*
+      // Diagnostic log to see exactly what is being sent to the Auth0 Action
+      logger.info('User profile prepared for Auth0 Action:', { 
+        userId: user.user_id,
+        auth0Id: user.auth0_id,
+        email: user.email,
+        subscriptionPlanId: user.subscription_plan_id 
+      });
+      */
+
       return user;
     } catch (error) {
       logger.error('Error getting user profile:', error);

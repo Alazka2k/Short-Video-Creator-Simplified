@@ -564,14 +564,22 @@ class PaymentService {
           receipt_url: invoice.hosted_invoice_url
         });
       }
+
+      // Find the local subscription record using the Stripe ID
+      const localSubscription = await this.dataAccess.subscriptions.findByStripeId(subscriptionId);
+      if (!localSubscription) {
+        logger.error(`Could not find a local subscription matching Stripe ID ${subscriptionId} during invoice payment processing.`);
+        // We stop here because we can't sync data without a local record.
+        // The race condition fix in the 'updated' handler is the primary safety net.
+        return;
+      }
       
-      // Update subscription with Stripe data
-      await this.dataAccess.subscriptions.updateSubscriptionStripeData(userId, {
-        stripe_subscription_id: subscriptionId,
-        stripe_status: subscription.status,
-        current_period_start: new Date(subscription.current_period_start * 1000),
-        current_period_end: new Date(subscription.current_period_end * 1000),
-        cancel_at_period_end: subscription.cancel_at_period_end
+      // Update subscription with Stripe data using the correct internal ID
+      await this.dataAccess.subscriptions.updateSubscription(localSubscription.subscription_id, {
+        stripeStatus: subscription.status,
+        currentPeriodStart: new Date(subscription.current_period_start * 1000),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        cancelAtPeriodEnd: subscription.cancel_at_period_end
       });
       
       // Allocate monthly tokens for the subscription

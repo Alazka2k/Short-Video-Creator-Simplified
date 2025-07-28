@@ -6,6 +6,16 @@ class AuthDataAccess {
   async findUserByAuth0Id(auth0Id) {
     try {
       return await knex('users')
+        .select(
+          'user_id',
+          'auth0_id',
+          'email',
+          'full_name',
+          'picture',
+          'provider',
+          'last_login',
+          'subscription_plan_id'
+        )
         .where('auth0_id', auth0Id)
         .first();
     } catch (error) {
@@ -102,6 +112,7 @@ class AuthDataAccess {
             last_login: new Date(),
             created_at: new Date(),
             updated_at: new Date(),
+            subscription_plan_id: 1, // Explicitly set the default plan ID
             video_preferences: {
               defaultStyle: 'modern',
               defaultVoice: 'neural-1',
@@ -188,6 +199,19 @@ class AuthDataAccess {
         .first();
     } catch (error) {
       logger.error('Error getting user with role and subscription:', error);
+      throw error;
+    }
+  }
+
+  async getUserRole(userId) {
+    try {
+      return await knex('user_roles')
+        .where('user_roles.user_id', userId)
+        .leftJoin('roles', 'user_roles.role_id', 'roles.role_id')
+        .select('roles.role_name')
+        .first();
+    } catch (error) {
+      logger.error('Error getting user role:', { userId, error: error.message });
       throw error;
     }
   }

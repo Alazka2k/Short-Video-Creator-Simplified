@@ -58,37 +58,59 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, ArrowRight, Loader2, AlertTriangle, Gift, Star } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Loader2, PartyPopper, Gift, ArrowUpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
 
+interface PurchaseDetails {
+  type: 'TOKEN_PACKAGE_PURCHASE' | 'NEW_SUBSCRIPTION' | 'SUBSCRIPTION_UPGRADE';
+  itemName: string;
+  amountPaid: string;
+  billingInfo: string;
+}
+
+/**
+ * Subscription success page component that verifies and displays payment confirmation.
+ * Handles Stripe session verification and provides post-payment user experience.
+ * 
+ * @returns {JSX.Element} Success page with payment details and navigation options
+ */
 export default function SubscriptionSuccessPage() {
-  const [purchaseDetails, setPurchaseDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { getAccessToken } = useAuth();
+  const [sessionId, setSessionId] = useState(searchParams.get('session_id'));
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [purchaseDetails, setPurchaseDetails] = useState<PurchaseDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { getAccessToken, isAuthenticated } = useAuth();
 
+  /**
+   * Verify the Stripe session and fetch payment details.
+   * This ensures the payment was successful and gets confirmation data.
+   */
   useEffect(() => {
-    const sessionId = searchParams.get('session_id');
-
-    if (!sessionId) {
-      setError('No session ID provided');
-      setLoading(false);
+    // Prevent re-running if we already have details or are done.
+    if (!sessionId || purchaseDetails || error) {
+      setIsLoading(false);
       return;
     }
 
     const verifySession = async () => {
+      setIsLoading(true);
       try {
+        if (!isAuthenticated) {
+          // Wait for auth to be ready
+          return;
+        }
+        
         const token = await getAccessToken();
-        if (!token) throw new Error('Authentication token not found. Please log in again.');
-
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const response = await fetch(`${apiUrl}/api/subscription/checkout/verify-session`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscription/checkout/verify-session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -97,137 +119,131 @@ export default function SubscriptionSuccessPage() {
           body: JSON.stringify({ sessionId }),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to verify session');
-        }
-
         const data = await response.json();
         
-        if (data.success && data.purchaseDetails) {
+        if (!response.ok) {
+          throw new Error(data.message || data.error || 'Failed to verify session');
+        }
+
+        if (data.success) {
           setPurchaseDetails(data.purchaseDetails);
+          setIsFinalizing(true); // Start the finalization process
+
+          // Redirect to dashboard after a delay. This allows the auth state to settle naturally.
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 4000); // 4-second delay
+
         } else {
-          setError('Session verification failed.');
+          setError(data.message || 'Session verification failed');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error('Error verifying session:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     verifySession();
-  }, [searchParams, getAccessToken]);
+  }, [sessionId, purchaseDetails, error, router, isAuthenticated, getAccessToken]);
 
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
-          <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="mt-4 text-lg text-muted-foreground">Verifying your payment...</p>
-        </div>
-      );
+  const renderSuccessContent = () => {
+    if (!purchaseDetails) {
+      return null;
     }
 
-    if (error) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
-          <AlertTriangle className="w-12 h-12 text-destructive" />
-          <p className="mt-4 text-lg font-semibold">Payment Verification Failed</p>
-          <p className="text-muted-foreground">{error}</p>
-          <Button asChild className="mt-6">
-            <Link href="/pricing">Return to Pricing</Link>
-          </Button>
-        </div>
-      );
+    let icon = <PartyPopper className="h-8 w-8 text-primary" />;
+    let title = "Purchase Successful!";
+    let description = "Thank you for your purchase. Your account has been updated.";
+
+    switch (purchaseDetails.type) {
+      case 'NEW_SUBSCRIPTION':
+        icon = <PartyPopper className="h-8 w-8 text-primary" />;
+        title = "Welcome Aboard!";
+        description = "Your new subscription is active. Welcome to a new level of creativity!";
+        break;
+      case 'SUBSCRIPTION_UPGRADE':
+        icon = <ArrowUpCircle className="h-8 w-8 text-primary" />;
+        title = "Upgrade Successful!";
+        description = "You now have access to all the features of your new plan.";
+        break;
+      case 'TOKEN_PACKAGE_PURCHASE':
+        icon = <Gift className="h-8 w-8 text-primary" />;
+        title = "Tokens Added!";
+        description = "Your token balance has been updated. Happy creating!";
+        break;
     }
 
-    if (purchaseDetails) {
-      let title = "Payment Successful!";
-      let description = "Thank you for your purchase.";
-      let icon = <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />;
-
-      switch (purchaseDetails.type) {
-        case 'TOKEN_PACKAGE_PURCHASE':
-          title = "Tokens Added!";
-          description = "Your new tokens are now available in your account.";
-          icon = <Gift className="w-12 h-12 text-primary" />;
-          break;
-        case 'NEW_SUBSCRIPTION':
-          title = "Welcome Aboard!";
-          description = "Your new subscription plan is now active.";
-          icon = <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />;
-          break;
-        case 'SUBSCRIPTION_UPGRADE':
-          title = "Upgrade Successful!";
-          description = "You now have access to all the features of your new plan.";
-          icon = <Star className="w-12 h-12 text-yellow-500" />;
-          break;
-      }
-
-      return (
-        <>
-          <CardHeader className="text-center">
-            <div className="mx-auto bg-muted rounded-full p-3 w-fit">
-              {icon}
-            </div>
-            <CardTitle className="mt-4 text-3xl font-bold">{title}</CardTitle>
-            <CardDescription className="text-lg text-muted-foreground">
-              {description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 p-6 border rounded-lg bg-muted/50">
-              <div>
-                <p className="text-sm text-muted-foreground">Item</p>
-                <p className="font-medium">{purchaseDetails.itemName}</p>
+    return (
+      <div className="w-full max-w-2xl">
+        <HoverBorderGradient
+          containerClassName="rounded-xl"
+          as="div"
+          className="bg-card/50 dark:bg-black/80 backdrop-blur-sm text-card-foreground p-0 rounded-xl w-full"
+        >
+          <Card className="w-full bg-transparent border-none shadow-none">
+            <CardHeader className="text-center items-center pt-8">
+              <div className="p-3 bg-primary/10 rounded-full mb-4">
+                {icon}
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Amount Paid</p>
-                <p className="font-medium">{purchaseDetails.amountPaid}</p>
+              <CardTitle className="text-3xl font-semibold tracking-tight">
+                {title}
+              </CardTitle>
+              <p className="text-muted-foreground pt-2">
+                {description}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6 px-8 pb-8">
+              <div className="border-t border-border/50 pt-6 grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-sm text-muted-foreground">Item</p>
+                  <p className="font-medium">{purchaseDetails.itemName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Amount Paid</p>
+                  <p className="font-medium">{purchaseDetails.amountPaid}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Billing</p>
+                  <p className="font-medium capitalize">{purchaseDetails.billingInfo}</p>
+                </div>
+                {isFinalizing && (
+                  <div className="md:col-span-2 text-center text-sm text-muted-foreground animate-pulse pt-4">
+                    Finalizing your account... Redirecting to dashboard shortly.
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Billing</p>
-                <p className="font-medium capitalize">{purchaseDetails.billingInfo}</p>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button asChild className="w-full text-lg">
-              <Link href="/dashboard">
-                Go to Dashboard <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
-          </CardFooter>
-        </>
-      );
-    }
-    
-    return null;
+            </CardContent>
+          </Card>
+        </HoverBorderGradient>
+      </div>
+    );
   };
 
+  const renderLoading = () => (
+    <div className="text-center">
+      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+      <p className="text-muted-foreground">Verifying your payment...</p>
+    </div>
+  );
+
+  const renderError = () => (
+    <Card className="max-w-md w-full">
+      <CardContent className="pt-6 text-center">
+        <p className="text-destructive mb-4">{error}</p>
+        <Link href="/dashboard/subscription">
+          <Button>Go to Subscription</Button>
+        </Link>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="relative min-h-[calc(100vh-8rem)] overflow-hidden p-4">
-      <div className="main-gradient" />
-      <div className="gradient-overlay" />
-      <div className="container max-w-7xl mx-auto py-24">
-        <div className="relative max-w-2xl mx-auto">
-          <div className="relative z-10 bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl p-8">
-            {renderContent()}
-          </div>
-          <div className="absolute inset-0 -z-10 rounded-xl">
-            <div className="absolute inset-[-3px] rounded-xl">
-              <HoverBorderGradient
-                as="div"
-                containerClassName="w-full h-full"
-                className="bg-transparent"
-                duration={3}
-              />
-            </div>
-            <div className="absolute inset-[1px] bg-background rounded-lg" />
-          </div>
-        </div>
-      </div>
+    <div className="flex-1 flex items-start justify-center p-4 sm:p-8 pt-16 sm:pt-24">
+      {isLoading && renderLoading()}
+      {error && !isLoading && renderError()}
+      {!isLoading && !error && purchaseDetails && renderSuccessContent()}
     </div>
   );
 } 

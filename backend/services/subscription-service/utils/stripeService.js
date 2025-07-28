@@ -325,20 +325,20 @@ class StripeService {
   }
 
   /**
-   * Cancel a subscription
-   * @param {string} subscriptionId - The Stripe subscription ID
-   * @returns {Promise<Object>} - The cancelled subscription
+   * Immediately cancels a subscription in Stripe.
+   * @param {string} stripeSubscriptionId - The ID of the Stripe subscription to cancel.
+   * @returns {Promise<Object>} - The canceled Stripe subscription object.
    */
-  async cancelSubscription(subscriptionId) {
+  async cancelSubscription(stripeSubscriptionId) {
     try {
-      if (!this.initialized) await this.initialize();
-      
-      const subscription = await this.stripe.subscriptions.del(subscriptionId);
-      
-      logger.info(`Subscription cancelled: ${subscriptionId}`);
-      return subscription;
+      logger.info('Canceling Stripe subscription:', { stripeSubscriptionId });
+      const cancelledSubscription = await this.stripe.subscriptions.cancel(
+        stripeSubscriptionId
+      );
+      logger.info('Successfully canceled Stripe subscription:', { stripeSubscriptionId });
+      return cancelledSubscription;
     } catch (error) {
-      logger.error(`Error cancelling subscription ${subscriptionId}:`, error);
+      logger.error('Error canceling Stripe subscription:', { stripeSubscriptionId, error: error.message });
       throw error;
     }
   }
@@ -648,5 +648,5 @@ class StripeService {
   }
 }
 
-// Export a single, initialized instance of the service (Singleton Pattern)
-module.exports = new StripeService(); 
+const stripeService = new StripeService();
+module.exports = stripeService; 

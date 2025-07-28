@@ -9,6 +9,8 @@
  */
 
 const logger = require('../../../shared/utils/logger');
+const userDataAccess = require('../data/userDataAccess');
+const stripeService = require('../utils/stripeService');
 
 // Standardized cancellation reasons
 const CANCELLATION_REASONS = {
@@ -828,16 +830,24 @@ class SubscriptionService {
 
       const knex = this.dataAccess.subscriptions.knex;
       return await knex.transaction(async (trx) => {
-        // Cancel any existing active subscription (e.g., Free Tier)
+        // Find and cancel the user's previously active subscription
         const existingSubscription = await this.dataAccess.subscriptions.getUserActiveSubscription(userId, trx);
         if (existingSubscription) {
+          // Cancel it in our database
           await this.dataAccess.subscriptions.cancelSubscription(
             existingSubscription.subscription_id,
             CANCELLATION_REASONS.CANCEL_FOR_UPGRADE,
             null,
             trx
           );
-          logger.info('Canceled existing subscription for upgrade:', { subscriptionId: existingSubscription.subscription_id });
+          // And, critically, cancel it in Stripe as well
+          if (existingSubscription.stripe_subscription_id) {
+            await stripeService.cancelSubscription(existingSubscription.stripe_subscription_id);
+          }
+          logger.info('Canceled existing subscription for upgrade:', { 
+            localSubscriptionId: existingSubscription.subscription_id,
+            stripeSubscriptionId: existingSubscription.stripe_subscription_id
+          });
         }
 
         // Create the new subscription record
@@ -877,6 +887,9 @@ class SubscriptionService {
           );
         }
         
+        // Update the main users table with the new plan ID
+        await userDataAccess.updateUser(userId, { subscription_plan_id: planId });
+
         logger.info('Successfully created subscription and allocated tokens from Stripe event.', { subscriptionId: subscription.subscription_id });
         return subscription;
       });
@@ -945,7 +958,11 @@ class SubscriptionService {
 
       const localSubscription = await this.dataAccess.subscriptions.findByStripeId(stripeSubscription.id);
       if (!localSubscription) {
-        throw new Error(`Local subscription not found for Stripe ID: ${stripeSubscription.id}`);
+        // This is not an error. It's a race condition where the 'updated' webhook
+        // arrives before the 'checkout.session.completed' webhook has created the subscription.
+        // We can safely ignore this event, as the creation event will handle the initial state.
+        logger.warn(`Local subscription not found for Stripe ID during update event (race condition likely): ${stripeSubscription.id}. Ignoring event.`);
+        return;
       }
 
       const stripePlanId = stripeSubscription.items.data[0].price.id;
@@ -1009,31 +1026,49 @@ class SubscriptionService {
   async cancelSubscriptionFromStripeEvent({ userId, stripeSubscription }) {
     try {
       logger.info('Canceling subscription from Stripe event:', { userId, stripeSubscriptionId: stripeSubscription.id });
-
-      const localSubscription = await this.dataAccess.subscriptions.findByStripeId(stripeSubscription.id);
-      if (!localSubscription) {
-        logger.warn(`Local subscription not found for Stripe ID during cancellation: ${stripeSubscription.id}. The user may have already been downgraded.`);
+      
+      const oldSubscription = await this.dataAccess.subscriptions.findByStripeId(stripeSubscription.id);
+      
+      if (!oldSubscription) {
+        logger.warn('Received cancellation webhook for a subscription not found in our DB (already processed or race condition). Ignoring.', { stripeSubscriptionId: stripeSubscription.id });
         return;
       }
+      
+      // If the subscription was already cancelled as part of an upgrade, do nothing.
+      // This prevents a race condition where the 'deleted' webhook for the old sub
+      // interferes with the new subscription's state.
+      if (oldSubscription.cancellation_reason === 'CANCEL_FOR_UPGRADE') {
+        logger.info(`Ignoring 'customer.subscription.deleted' webhook for stripeSubscriptionId: ${stripeSubscription.id} because it was part of an upgrade.`);
+        return;
+      }
+      
+      const transitionPlanId = stripeSubscription.metadata?.upcoming_plan_id || 1; // Default to Free Tier
 
       const knex = this.dataAccess.subscriptions.knex;
       await knex.transaction(async (trx) => {
-        // Mark the old subscription as canceled
+        // Determine the next plan ID. Default to Free Tier if for some reason it's not set.
+        const nextPlanId = localSubscription.upcoming_plan_id || 1;
+        logger.info(`Transitioning user to plan ID: ${nextPlanId}`, { oldSubscriptionId: localSubscription.subscription_id });
+
+        // First, create the new subscription based on the upcoming plan
+        await this.createSubscription({
+          userId,
+          planId: nextPlanId,
+        });
+        
+        // Then, update the user's main plan ID on the users table
+        await userDataAccess.updateUser(userId, { subscription_plan_id: nextPlanId });
+        
+        // Finally, mark the old subscription as canceled
         await this.dataAccess.subscriptions.cancelSubscription(
           localSubscription.subscription_id,
           'CANCELED_FROM_STRIPE',
           null,
           trx
         );
-
-        // Provision a new Free Tier subscription
-        await this.createSubscription({
-          userId,
-          planId: 1, // Free Tier
-        });
       });
 
-      logger.info('Successfully canceled subscription and provisioned Free Tier.', { oldSubscriptionId: localSubscription.subscription_id, userId });
+      logger.info('Successfully transitioned subscription from Stripe event.', { oldSubscriptionId: localSubscription.subscription_id, userId });
 
     } catch (error) {
       logger.error('Error in cancelSubscriptionFromStripeEvent:', error);

@@ -137,6 +137,20 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
     2.  **Solution (Intelligent Success Page):** The success flow will be made context-aware and more secure.
         - **Backend (`checkoutController.js`):** The `verifyCheckoutSession` method will be refactored into a "Backend for Frontend" (BFF). It will still retrieve the full session from Stripe but will then transform it into a curated, minimal `purchaseDetails` object. This object will contain a `type` (`TOKEN_PACKAGE_PURCHASE`, `NEW_SUBSCRIPTION`, `SUBSCRIPTION_UPGRADE`) and only the necessary formatted data for display.
         - **Frontend (`success/page.tsx`):** The success page will be overhauled to receive the new `purchaseDetails` object. It will use the `type` to display a highly specific, context-aware confirmation message and summary, significantly improving the user experience and security.
+  - **Fix (Round 5): Correct Stale Subscription Plan in UI**
+    - **Problem:** After a successful subscription upgrade, the pricing page continues to show the user's *old* plan as the "Current Plan". This happens because the frontend's user state (from `useAuth`) is derived from a JWT custom claim (`subscriptionPlanId`) that becomes stale. The `refreshUser` function gets a new token, but the `auth-service` that provides the data for the token is not aware of the immediate subscription change processed by the `subscription-service`.
+    - **Solution:** We will implement a denormalization strategy to ensure the `auth-service` has fast and reliable access to the user's current plan ID. A new `subscription_plan_id` column will be added to the `users` table. This makes the authentication flow highly performant and keeps our services decoupled, as the `auth-service` will no longer need to query or understand subscription logic.
+    - **Implementation Steps:**
+        1.  **Database Migration:** A new Knex migration will be created to add a `subscription_plan_id` column to the `users` table. It will be an integer, reference the `plans` table, and default to `1` (the Free Tier).
+        2.  **Update `subscription-service`:** The service responsible for all subscription changes will be updated. Key functions like `createSubscriptionFromStripeEvent` and `cancelSubscriptionFromStripeEvent` will now make an additional call to update the new `subscription_plan_id` field on the main `users` table, keeping it perfectly in sync with the user's active plan.
+        3.  **Simplify `auth-service`:** The `auth-service` logic for generating token claims will be simplified to read the `subscription_plan_id` directly from the user record, ensuring the JWT is always issued with the correct, up-to-date plan information.
+  - **Fix (Round 6): Stabilize Post-Purchase Authentication Flow**
+    - **Problem:** After a successful purchase, the forced `auth.refreshUser()` call on the success page was causing session instability, resulting in the user being logged out and creating a redirect loop upon logging back in.
+    - **Solution (Controlled Redirect):** The unstable manual refresh will be replaced with a robust, natural authentication flow.
+        1.  **Modify `success/page.tsx`:** The `useEffect` hook that calls `auth.refreshUser()` will be **removed**.
+        2.  **Implement Timed Redirect:** After successfully verifying the session and displaying the context-aware success message (e.g., "Upgrade Successful!"), the page will now also display a new subtext: "Redirecting you to your dashboard..."
+        3.  **Automatic Navigation:** After a 4-second delay, the page will programmatically redirect the user to the `/dashboard`.
+        4.  **Natural Auth Refresh:** This full-page redirect allows the main `Auth0Provider` to handle the session refresh naturally and reliably during the dashboard's load process, completely avoiding the instability and fixing the logout bug.
 
 ### Task 2.2: Redesign and Implement ProtectedUser Dashboard (`/dashboard`) **STATUS: Not Started**
 - **File:** `frontend/src/app/(dashboard)/dashboard/page.tsx`

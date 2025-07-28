@@ -24,6 +24,7 @@ interface AuthContextType {
   user: User | null;
   getAccessToken: () => Promise<string>;
   logout: (options?: LogoutOptions) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 // Create the context
@@ -51,53 +52,56 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const processAuthentication = async () => {
-      if (auth0IsLoading) {
-        setIsLoading(true);
-        return;
-      }
+  const processAuthentication = async (options: { forceRefresh?: boolean } = {}) => {
+    if (auth0IsLoading) {
+      setIsLoading(true);
+      return;
+    }
 
-      if (!auth0IsAuthenticated) {
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
+    if (!auth0IsAuthenticated) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const token = await getAccessTokenSilently();
-        const decodedToken: any = jwtDecode(token);
-        const namespace = process.env.NEXT_PUBLIC_AUTH0_CUSTOM_CLAIMS_NAMESPACE || 'https://short-video-creator.com/';
+    try {
+      const tokenOptions = options.forceRefresh ? { cacheMode: 'off' as const } : undefined;
+      const token = await getAccessTokenSilently(tokenOptions);
+      const decodedToken: any = jwtDecode(token);
+      const namespace = process.env.NEXT_PUBLIC_AUTH0_CUSTOM_CLAIMS_NAMESPACE || 'https://short-video-creator.com/';
 
-        const customClaims: User = {
-          userId: decodedToken[`${namespace}user_id`],
-          email: decodedToken[`${namespace}email`],
-          name: decodedToken[`${namespace}name`] || auth0User?.name,
-          picture: auth0User?.picture,
-          isAdmin: decodedToken[`${namespace}is_admin`] || false,
-          permissions: decodedToken[`${namespace}permissions`] || [],
-          subscriptionPlanId: decodedToken[`${namespace}subscription_plan_id`] || 1,
-          auth0Id: auth0User?.sub,
-        };
+      const customClaims: User = {
+        userId: decodedToken[`${namespace}user_id`],
+        email: decodedToken[`${namespace}email`],
+        name: decodedToken[`${namespace}name`] || auth0User?.name,
+        picture: auth0User?.picture,
+        isAdmin: decodedToken[`${namespace}is_admin`] || false,
+        permissions: decodedToken[`${namespace}permissions`] || [],
+        subscriptionPlanId: decodedToken[`${namespace}subscription_plan_id`] || 1,
+        auth0Id: auth0User?.sub,
+      };
 
-        if (!customClaims.userId || !customClaims.email) {
-          console.error("JWT is missing essential custom claims (userId, email). Logging out.");
-          setUser(null);
-          auth0Logout({ logoutParams: { returnTo: window.location.origin } });
-        } else {
-          setUser(customClaims);
-        }
-      } catch (error) {
-        console.error("Failed to process authentication token:", error);
+      if (!customClaims.userId || !customClaims.email) {
+        console.error("JWT is missing essential custom claims (userId, email). Logging out.");
         setUser(null);
         auth0Logout({ logoutParams: { returnTo: window.location.origin } });
-      } finally {
-        setIsLoading(false);
+      } else {
+        setUser(customClaims);
       }
-    };
+    } catch (error) {
+      console.error("Failed to process authentication token:", error);
+      setUser(null);
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+
+  useEffect(() => {
+    // Standard authentication process on load, uses cache
     processAuthentication();
-  }, [auth0IsAuthenticated, auth0IsLoading, auth0User, getAccessTokenSilently, auth0Logout]);
+  }, [auth0IsAuthenticated, auth0IsLoading, auth0User]);
 
   const getAccessToken = async (): Promise<string> => {
     try {
@@ -108,6 +112,15 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      // Specifically call with forceRefresh to bypass cache
+      await processAuthentication({ forceRefresh: true });
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -116,6 +129,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         getAccessToken,
         logout: auth0Logout,
+        refreshUser,
       }}
     >
       {children}

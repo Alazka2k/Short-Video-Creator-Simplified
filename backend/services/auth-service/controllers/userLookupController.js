@@ -10,7 +10,7 @@ async function lookupUser(req, res) {
   }
 
   try {
-    let user = await authDataAccess.getUserWithRoleAndSubscription(auth0_id);
+    let user = await authDataAccess.findUserByAuth0Id(auth0_id);
 
     if (!user) {
       logger.info('User not found by auth0_id, checking by email.', { email });
@@ -19,7 +19,7 @@ async function lookupUser(req, res) {
       if (existingUserByEmail) {
         logger.info('Found existing user by email, linking auth0_id.', { userId: existingUserByEmail.user_id });
         await authDataAccess.updateUserById(existingUserByEmail.user_id, { auth0_id });
-        user = await authDataAccess.getUserWithRoleAndSubscription(auth0_id);
+        user = await authDataAccess.findUserByAuth0Id(auth0_id);
       } else {
         logger.info('User not found by email, creating new user.', { auth0_id });
         // User does not exist, create a new one
@@ -49,12 +49,14 @@ async function lookupUser(req, res) {
         }
     }
 
-    if (!user || !user.plan_id || !user.role_name) {
-        logger.error('User record is inconsistent. Missing role or subscription.', { userId: user?.user_id });
-        return res.status(500).json({ error: 'User data is inconsistent.' });
+    if (!user) {
+      logger.error('User record could not be found or created.', { auth0_id });
+      return res.status(500).json({ error: 'User data could not be retrieved.' });
     }
 
-    // Always return the full user data object to be added to claims
+    // The role information is now separate from this lookup.
+    // We will rely on the permissions claim for authorization.
+    const userRole = await authDataAccess.getUserRole(user.user_id);
     const permissions = await authDataAccess.getUserPermissions(auth0_id);
 
     const userData = {
@@ -63,12 +65,12 @@ async function lookupUser(req, res) {
       name: user.full_name,
       picture: user.picture,
       provider: user.provider,
-      is_admin: user.role_name === 'admin',
+      is_admin: userRole ? userRole.role_name === 'admin' : false,
       permissions: permissions || [],
-      subscription_plan_id: user.plan_id,
+      subscription_plan_id: user.subscription_plan_id, // Use the direct column value
     };
     
-    logger.info('Successfully looked up user. Returning data for claims.', { userId: user.user_id });
+    logger.info('Successfully looked up user. Returning data for claims.', { userId: user.user_id, planId: user.subscription_plan_id });
     res.status(200).json(userData);
 
   } catch (error) {

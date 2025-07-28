@@ -330,10 +330,11 @@ class CheckoutController {
       } else if (session.mode === 'subscription' && session.metadata.planId) {
         // It's a subscription purchase. Determine if it was a new sub or an upgrade.
         const plan = await plansDataAccess.getPlanById(session.metadata.planId);
-        // A simple heuristic: if the user had a previous subscription, it was likely an upgrade.
-        // A more robust check might involve looking at the number of user subscriptions.
+        
+        // A more robust check: count how many non-free subscriptions the user has.
         const userSubscriptions = await subscriptionsDataAccess.getUserSubscriptions(userId);
-        const purchaseType = userSubscriptions.length > 1 ? 'SUBSCRIPTION_UPGRADE' : 'NEW_SUBSCRIPTION';
+        const paidSubscriptionsCount = userSubscriptions.filter(sub => sub.plan_id > 1).length;
+        const purchaseType = paidSubscriptionsCount === 1 ? 'NEW_SUBSCRIPTION' : 'SUBSCRIPTION_UPGRADE';
 
         purchaseDetails = {
           type: purchaseType,
