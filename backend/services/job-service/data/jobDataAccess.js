@@ -506,6 +506,41 @@ class JobDataAccess {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
+
+  async getUserContentStats(userId) {
+    const jobIds = await knex('jobs').where({ user_id: userId }).pluck('job_id');
+  
+    if (jobIds.length === 0) {
+      return {
+        images: 0,
+        voiceovers: 0,
+        musicTracks: 0,
+        animations: 0,
+        videos: 0,
+        completedJobs: 0,
+        finalVideos: 0,
+      };
+    }
+  
+    const images = await knex('image_outputs').whereIn('job_id', jobIds).count('image_id as count').first();
+    const voiceovers = await knex('voice_outputs').whereIn('job_id', jobIds).count('voice_id as count').first();
+    const musicTracks = await knex('music_outputs').whereIn('job_id', jobIds).count('music_output_id as count').first();
+    const animations = await knex('animation_outputs').whereIn('job_id', jobIds).count('animation_id as count').first();
+    const videos = await knex('video_outputs').whereIn('job_id', jobIds).count('video_id as count').first();
+    
+    const completedJobs = await knex('jobs').where({ user_id: userId, status: 'completed' }).count('job_id as count').first();
+    const finalVideos = await knex('assembly_outputs').whereIn('job_id', jobIds).where({ status: 'completed' }).count('assembly_id as count').first();
+  
+    return {
+      images: parseInt(images.count, 10),
+      voiceovers: parseInt(voiceovers.count, 10),
+      musicTracks: parseInt(musicTracks.count, 10),
+      animations: parseInt(animations.count, 10),
+      videos: parseInt(videos.count, 10),
+      completedJobs: parseInt(completedJobs.count, 10),
+      finalVideos: parseInt(finalVideos.count, 10),
+    };
+  }
 }
 
 module.exports = new JobDataAccess();

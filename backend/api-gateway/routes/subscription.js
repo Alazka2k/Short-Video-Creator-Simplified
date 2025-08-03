@@ -277,6 +277,17 @@ router.get('/token-packages/:packageId', (req, res) => forwardToSubscriptionServ
 router.post('/token-packages/add', jwtAuth({ requireAdmin: true }), (req, res) => forwardToSubscriptionService(req, res, '/token-packages/add'));
 
 /**
+ * @route GET /api/subscription/tokens/balance/me
+ * @description Get user's token balance
+ * @access Protected - requires read:tokens permission
+ */
+router.get('/tokens/balance/me', jwtAuth({ requireUser: true }), (req, res) => {
+  const userId = req.user.userId;
+  forwardToSubscriptionService(req, res, `/tokens/balance/${userId}`);
+});
+
+/* DEPRECATED: Use /api/subscription/tokens/balance/me instead */
+/**
  * @route GET /api/subscription/tokens/balance/:userId
  * @description Get user's token balance
  * @access Protected - requires read:tokens permission

@@ -230,7 +230,70 @@ Use the following official Stripe test card numbers to simulate different paymen
 - The user's subscription record in the database is updated to the new plan. A new plan entry is created, to old entry is cancelled
 - After successful upgrade the tokens are allocated to the user's account.
 
-##### Task 2.2: Redesign and Implement ProtectedUser Dashboard (`/dashboard`)
+##### Task 2.2: Redesign and Implement Protected User Dashboard (`/dashboard`)
+
+###### Test Case 2.2.1: Verify `WelcomeHeader` and `TokenSummary` Data
+**Objective**: Ensure the welcome message and token summary display correct, live data for the authenticated user.
+**Preconditions**:
+- User is authenticated.
+- The `GET /api/subscription/subscriptions/me` endpoint has been enhanced to return `nextTokenAllocationDate`.
+**Test Steps**:
+1.  Log in as a user with a "Basic" monthly plan.
+2.  Navigate to `/dashboard`.
+3.  Inspect the `WelcomeHeader` component.
+4.  Inspect the `TokenSummary` component.
+**Expected Results**:
+-   **WelcomeHeader**: Displays text similar to "You have X tokens remaining • New token allocation in Y days".
+-   **TokenSummary**:
+    -   Displays the correct plan name ("Basic").
+    -   Displays the correct remaining token balance from `GET /api/subscription/tokens/balance/me`.
+    -   The progress bar accurately reflects the usage against the total monthly allocation for the "Basic" plan.
+    -   The "Buy More Tokens" and "Manage Plan" buttons are present and correctly linked.
+
+###### Test Case 2.2.2: Verify `StatsGrid` Data
+**Objective**: Ensure the content statistics grid displays correct aggregated data.
+**Preconditions**:
+- The new `POST /api/dashboard/content-stats` endpoint is implemented and returns aggregated data for the user.
+- The test user has created some content (e.g., 5 images, 2 videos in the last week).
+**Test Steps**:
+1.  Log in as the test user.
+2.  Navigate to `/dashboard`.
+3.  Inspect the `StatsGrid` component.
+**Expected Results**:
+-   The "Images" card shows a value of "5".
+-   The "Videos" card shows a value of "2".
+-   The "change" text correctly reflects the activity in the last week (e.g., "+2 This Week").
+-   Other stats show "0" if no other content was created.
+-   The component handles a loading state gracefully before data is displayed.
+
+###### Test Case 2.2.3: Verify `RecentCreations` Data
+**Objective**: Ensure the recent creations list displays the user's latest jobs.
+**Preconditions**:
+- The test user has at least 3 jobs in the database.
+**Test Steps**:
+1.  Log in as the test user.
+2.  Navigate to `/dashboard`.
+3.  Inspect the `RecentCreations` component.
+**Expected Results**:
+-   The component displays the 3 most recent jobs, ordered from newest to oldest.
+-   Each job item correctly shows the `job_name`, `total_scenes`, creation date, and status.
+-   The "View All" link correctly navigates to `/workbench`.
+-   The component shows an empty state message if the user has no jobs.
+
+###### Test Case 2.2.4: Verify `RecentVideos` Data
+**Objective**: Ensure the recent videos list displays the user's latest generated videos.
+**Preconditions**:
+- The `GET /api/assembly/videos` endpoint has been fixed and reliably returns video data.
+- The test user has at least 2 completed videos with thumbnails.
+**Test Steps**:
+1.  Log in as the test user.
+2.  Navigate to `/dashboard`.
+3.  Inspect the `RecentVideos` component.
+**Expected Results**:
+-   The component displays cards for the 2 most recent videos.
+-   Each card shows the video thumbnail and title.
+-   The component shows an empty state message if the user has no videos.
+-   The component handles API errors gracefully, showing an error message instead of crashing.
 
 ##### Task 2.3: Implement ProtectedSubscription Management Page (`/subscription`)
 

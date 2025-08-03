@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
-const logger = require('../../shared/utils/logger');
 const config = require('../../shared/utils/config');
 const jwtAuth = require('../middleware/jwtAuth');
+const axios = require('axios');
+const logger = require('../../shared/utils/logger');
 
 /**
  * @route POST /api/job/generate
@@ -307,6 +307,41 @@ router.get('/jobs/:jobId/progress', jwtAuth({ requireUser: true }), async (req, 
     res.status(error.response?.status || 500).json({
       error: 'Failed to get job progress',
       details: error.response?.data?.details || error.message
+    });
+  }
+});
+
+/**
+ * @route   POST /api/job/stats
+ * @desc    Get user's content creation statistics
+ * @access  Private
+ */
+router.post('/stats', jwtAuth({ requireUser: true }), async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const JOB_SERVICE_URL = config.services?.job?.url;
+
+    const response = await axios.post(`${JOB_SERVICE_URL}/stats`, 
+      { userId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-service-auth': process.env.SERVICE_AUTH_TOKEN,
+        },
+        timeout: 30000
+      }
+    );
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    logger.error('Error getting user content stats:', {
+      error: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    const status = error.response?.status || 500;
+    res.status(status).json({
+      error: 'Failed to get content stats',
+      message: error.response?.data?.message || error.message
     });
   }
 });

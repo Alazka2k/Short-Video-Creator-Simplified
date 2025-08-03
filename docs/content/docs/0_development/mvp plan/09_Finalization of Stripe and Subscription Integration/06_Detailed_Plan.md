@@ -164,11 +164,81 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
         1.  **Modify `SessionRefresher.tsx`:** The `useEffect` hook will now check the `auth.isLoading` state.
         2.  **Delayed Refresh:** The component will wait until `auth.isLoading` is `false`. Only then will it proceed to check for the `action` parameter and call `auth.refreshUser()`. This guarantees the refresh is only triggered on a stable, fully initialized session, which will prevent the logout issue.
 
-### Task 2.2: Redesign and Implement ProtectedUser Dashboard (`/dashboard`) **STATUS: Not Started**
-- **File:** `frontend/src/app/(dashboard)/dashboard/page.tsx`
-- **Action:** Overhaul the main dashboard page to serve as a central hub.
-    - **Layout:** Feature quick-action cards to start content creation funnels.
-    - **Subscription Overview:** Include a *summary* version of the refactored `TokenUsageDetails.tsx` component that displays the current token balance and a link to the full subscription management page.
+### Task 2.2: Redesign and Implement Protected User Dashboard (`/dashboard`) **STATUS: In Progress**
+- **Files to Create:** `frontend/src/components/dashboard/WelcomeHeader.tsx`, `frontend/src/components/dashboard/QuickActionCards.tsx`, `frontend/src/components/dashboard/StatsGrid.tsx`, `frontend/src/components/dashboard/RecentCreations.tsx`, `frontend/src/components/dashboard/RecentVideos.tsx`, `frontend/src/components/dashboard/TokenSummary.tsx`, `frontend/src/types/dashboard.ts`
+- **File to Modify:** `frontend/src/app/(dashboard)/dashboard/page.tsx`
+- **Action:** Overhaul the main dashboard page to serve as a central hub, replacing all placeholder data with live data from backend endpoints. This task is broken down into several sub-tasks to ensure each component is production-ready.
+
+- **Sub-Task 2.2.1: Stabilize Core Components & Fix Build Errors** **STATUS: ✅ Completed**
+  - **Action:** Immediately fix the build error in `RecentCreations.tsx` by changing the import from `'use-state'` to `'react'`.
+  - **Action:** Create a central `frontend/src/types/dashboard.ts` file to define shared types like `Job`, `Video`, `TokenBalance`, `ContentStats`, etc. This will remove all `any` types and provide type safety across all dashboard components. Based on the provided API responses.
+
+- **Sub-Task 2.2.2: Implement Live Data for `TokenSummary` and `WelcomeHeader`** **STATUS: ✅ Completed**
+  - **Components:** `TokenSummary.tsx`, `WelcomeHeader.tsx`
+  - **Data Source:**
+      - `GET /api/subscription/tokens/balance/me` (Provides `balance`).
+      - `GET /api/subscription/subscriptions/me` (Provides `plan_name`, `plan_token_allocation`, `current_period_end`).
+  - **Action:**
+      1.  **Backend:** Ensure the `GET /subscriptions/me` endpoint consistently returns the `current_period_end` timestamp for active subscriptions.
+      2.  **Frontend:** Refactor the `DashboardPage` to fetch all necessary data once and pass it down as props. The `WelcomeHeader` will receive the `current_period_end` timestamp and be responsible for formatting it into a user-friendly string (e.g., "in X days").
+      3.  Update `TokenSummary.tsx` and `WelcomeHeader.tsx` to consume this live data, replacing all placeholders.
+      4.  The `WelcomeHeader` should correctly display the remaining tokens and the next allocation date, or an appropriate message for Free Tier users.
+  - **Fix (Dashboard Data Flow):**
+      1.  **Problem:** The dashboard experienced a `500 Internal Server Error` when fetching the user's token balance because the `GET /api/subscription/tokens/balance/me` endpoint was not correctly implemented in the API Gateway.
+      2.  **Solution:** A new route handler for `/tokens/balance/me` was added to `api-gateway/routes/subscription.js`. This handler correctly extracts the `userId` from the user's JWT and forwards the request to the `subscription-service`, aligning its behavior with other `/me` endpoints and fixing the bug.
+      3.  **UX Improvement:** To improve navigation, the "Buy More Tokens" button on the dashboard now links directly to the "One-Time Token Packs" section of the pricing page via an anchor link (`/pricing#token-packages`).
+  - **Fix (TokenSummary UI/UX Rework):**
+      1.  **Problem:** The `TokenSummary` component had a data mapping bug (`plan_token_allocation` instead of `monthly_token_allocation`) and presented token information in a confusing way. The error state was also misleading.
+      2.  **Solution:** The component will be overhauled for clarity and accuracy.
+          -   **Correct Data Key:** The code will be fixed to use `monthly_token_allocation` from the API response.
+          -   **Clearer Main Display:** The most prominent number will always be the user's total current token balance.
+          -   **Contextual Progress Bar:** The progress bar and its labels will now specifically represent the usage of the user's *monthly plan tokens* (e.g., `4,500 / 6,500 Plan Tokens used`). This provides clear context on recurring allowance vs. total balance (which can include purchased or rollover tokens).
+          -   **Improved Error State:** Instead of incorrectly defaulting to "Free Tier" information on an API error, the component will display a clear warning message prompting the user to refresh.
+
+- **Sub-Task 2.2.3: Implement Live Data for `StatsGrid`** **STATUS: ✅ Completed**
+  - **Component:** `StatsGrid.tsx`
+  - **Data Source:** `POST /api/job/stats` (New Endpoint Required, logic refined).
+  - **Action:**
+      1.  **Backend:** Create a new `POST /api/job/stats` endpoint in the `job-service`. The service will accept a `userId` from the JWT and query the database by first finding all of a user's `job_ids` and then using those IDs to get aggregate counts from various output tables (e.g., `image_outputs`, `voice_outputs`, etc.) and the `assembly_outputs` table for final videos.
+      2.  **Frontend:** Connect `StatsGrid.tsx` to this new endpoint.
+      3.  **UI Rework:** Restructure the component to group related statistics.
+          -   Create a main container for "Content Created" which will house stats for Images, Voiceovers, Music, Animations, and Videos.
+          -   Display "Completed Jobs" and "Final Videos" as separate, distinct stats below the main group.
+      4.  Implement loading and error states.
+
+- **Sub-Task 2.2.4: Implement Live Data for `RecentCreations`** **STATUS: ✅ Completed**
+  - **Component:** `RecentCreations.tsx`
+  - **Data Source:** `GET /api/job/jobs?status=completed&limit=3&sortOrder=desc` (Existing, with new filter).
+  - **Action:** Refactored the component to align with the UI of the `/workbench` jobs list for a consistent user experience.
+      1.  **Created `RecentJobCard.tsx`:** Developed a new, simplified job card component at `frontend/src/components/dashboard/RecentJobCard.tsx`, inspired by the existing `JobCard.tsx` from the workbench. The card displays the job's title, thumbnail, scene count, creation date, and service icons.
+      2.  **Updated API Call:** Modified the `fetch` request in `RecentCreations.tsx` to include `status=completed` in the query parameters, ensuring only completed jobs are retrieved.
+      3.  **Refactored `RecentCreations.tsx`:** Replaced the current simple list item with the new `RecentJobCard` component. Each card is a link, navigating to the job's detail page at `/workbench/[jobId]`.
+      4.  **Fixed Issues:** Corrected link target, implemented proper pluralization for scene count, and integrated service icons for content type labels.
+
+- **Sub-Task 2.2.5: Implement Live Data for `RecentVideos`** **STATUS: ✅ Completed**
+  - **Component:** `RecentVideos.tsx`
+  - **Data Source:** `GET /api/assembly/videos?limit=3&sortOrder=desc`
+  - **Action:** Create a video display component that matches the style of `RecentCreations` for consistency.
+      1.  **Add Video Type:** Add a `Video` interface to `frontend/src/types/dashboard.ts` based on the API response structure.
+      2.  **Create `RecentVideoCard.tsx`:** Develop a new video card component at `frontend/src/components/dashboard/sections/RecentVideoCard.tsx` that displays video thumbnail (using `VideoPreview`), title, creation date, and duration.
+      3.  **Refactor `RecentVideos.tsx`:** Connect to the API endpoint, filter for completed videos only, and implement loading, error, and empty states with skeleton loaders.
+      4.  **Navigation:** Make each video card a link to the main `/videos` page, providing a consistent user flow.
+  - **Fix (Download Button Integration & UI Consistency):**
+      1.  **Problem:** The dashboard cards lack download functionality that exists on other pages, and the UI layout is inconsistent between job and video cards.
+      2.  **Solution:** Integrate download buttons using existing download logic and standardize the card layouts.
+          - **Video Cards:** Replace the Play icon/"Video" text in the header area with a download button that uses the same video download logic as `VideoOverview.tsx`.
+          - **Job Cards:** Add a download button in the header area (currently empty) that uses the bulk download logic from `JobActions.tsx` to download all job content.
+          - **UI Consistency:** Remove video icon/text, keep aspect ratio badge in bottom-right for videos, maintain service icons in bottom row for jobs.
+          - **Download Behavior:** Maintain existing patterns - bulk download (Download All) for jobs, regular single file download for videos.
+          - **Visual Design:** Video thumbnail provides sufficient visual distinction between card types.
+
+- **Sub-Task 2.2.6: Align Dashboard UI & Container Styling** **STATUS: Started**
+    - **Component:** `(dashboard)/dashboard/page.tsx` and its children.
+    - **Action:** After all data is live, refactor the main dashboard layout and its components to align with the more polished styling seen in the `WorkbenchPage`. This includes consistent borders, shadows, and container styles to create a more unified and professional look and feel.
+
+- **Sub-Task 2.2.7: Finalize `QuickActionCards`** **STATUS: Not Started**
+    - **Component:** `QuickActionCards.tsx`
+    - **Action:** This component is mostly static. Confirm that the user's recent changes (e.g., "Create Content" button linking to `/create`) are correct and that no further data fetching is needed for the MVP.
 
 ### Task 2.3: Implement ProtectedSubscription Management Page (`/subscription`) **STATUS: Not Started**
 - **File:** `frontend/src/app/(dashboard)/subscription/page.tsx`, `frontend/src/components/billing/token-usage.tsx`
@@ -185,7 +255,13 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
 
 ### Task 2.4: Finalize Payment Flow Pages **STATUS: Not Started**
 - **Files:** `frontend/src/app/subscription/success/page.tsx` and `frontend/src/app/subscription/cancel/page.tsx`.
-- **Action:** Review and update these pages to ensure they provide clear user feedback after returning from a Stripe Checkout session.
+- **Action:** Review and update these pages to ensure they provide clear user feedback (for success but also for cancel or unsucceful payment) after returning from a Stripe Checkout session.
+
+### Task 2.5: Review and finalize all protected pages. **STATUS: Not Started**
+- **Action:** Review and finalize all protected pages. Go over each page and make sure everything is finalized.
+- **Sub-Task 2.5.1: Review video assembly page.** **STATUS: Not Started**
+  - **Action:** Download button is not working on the video assembly page. Deactive direct share buttons for social media for now. Adapt "My Videos" to the "Content workbench" text style.
+
 
 ---
 

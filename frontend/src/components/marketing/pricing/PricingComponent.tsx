@@ -340,7 +340,7 @@ export function PricingComponent({ plans, tokenPackages }: PricingComponentProps
         ))}
       </div>
 
-       <div className="text-center mt-20">
+       <div id="token-packages" className="text-center mt-20">
         <h2 className="text-3xl font-bold tracking-tighter mb-4">One-Time Token Packs</h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Need a little extra for a big project? Top up your account with a one-time purchase. Tokens never expire.

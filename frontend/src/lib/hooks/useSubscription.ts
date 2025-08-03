@@ -62,19 +62,15 @@ export function useSubscription() {
   return useQuery<SubscriptionResponse>({
     queryKey: ['subscription', userId],
     queryFn: async () => {
-      if (!userId) {
-        throw new Error('User ID is not available for fetching subscription.');
-      }
-
-      logger.log('Fetching user subscription', { userId });
+      logger.log('Fetching user subscription');
       
       // The apiClient interceptor will automatically add the auth token.
       const response = await api.get<SubscriptionResponse>(
-        `/api/subscription/subscriptions/user/${userId}?status=active`
+        `/api/subscription/subscriptions/me?status=active`
       );
       return response.data;
     },
-    enabled: isAuthenticated && !!userId,
+    enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

@@ -10,6 +10,7 @@ interface DownloadButtonProps {
   disabled?: boolean;
   variant?: 'default' | 'outline' | 'secondary' | 'ghost';
   showIcon?: boolean;
+  iconOnly?: boolean; // New prop for dashboard-style download buttons
 }
 
 export function DownloadButton({ 
@@ -18,7 +19,8 @@ export function DownloadButton({
   className = '',
   disabled = false,
   variant = 'outline',
-  showIcon = true
+  showIcon = true,
+  iconOnly = false
 }: DownloadButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
@@ -50,12 +52,12 @@ export function DownloadButton({
       {isDownloading ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin" />
-          Downloading...
+          {!iconOnly && 'Downloading...'}
         </>
       ) : (
         <>
           {showIcon && <Download className="w-4 h-4" />}
-          {title}
+          {!iconOnly && title}
         </>
       )}
     </Button>

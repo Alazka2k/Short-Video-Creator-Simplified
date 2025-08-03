@@ -3,6 +3,7 @@
 const express = require('express');
 const logger = require('../../shared/utils/logger');
 const progressTracker = require('./utils/progress-tracker');
+const statsController = require('./controllers/statsController');
 
 function createServer(jobService) {
   const app = express();
@@ -200,6 +201,9 @@ function createServer(jobService) {
       res.status(500).json({ error: 'Failed to process result' });
     }
   });
+
+  // Route for getting user stats
+  app.post('/stats', statsController.getStats);
 
   // Catch-all for any other routes
   app.use('*', (req, res) => {
