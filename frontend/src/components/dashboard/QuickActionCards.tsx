@@ -10,15 +10,7 @@ export function QuickActionCards() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <Card className="group relative hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm border-primary/10 overflow-hidden hover:scale-[1.02]">
-        <div 
-          className="absolute inset-0 opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-300"
-          style={{ 
-            backgroundImage: 'url("/background/dashboard/quick_create.png")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
+      <Card className="group relative hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm border-primary/10 hover:scale-[1.02]">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-violet-500/10 text-violet-500">
@@ -41,15 +33,7 @@ export function QuickActionCards() {
         </CardContent>
       </Card>
 
-      <Card className="group relative hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm border-primary/10 overflow-hidden hover:scale-[1.02]">
-        <div 
-          className="absolute inset-0 opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-300"
-          style={{ 
-            backgroundImage: 'url("/background/dashboard/advanced_editor.png")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
+      <Card className="group relative hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm border-primary/10 hover:scale-[1.02]">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-500">

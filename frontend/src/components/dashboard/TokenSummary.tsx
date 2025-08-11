@@ -52,12 +52,12 @@ export function TokenSummary({ subscription, balance, isLoading, error }: TokenS
       <h2 className="text-xl font-semibold tracking-tight mb-4">
         Plan & Usage
       </h2>
-      <Card className="bg-card/50 backdrop-blur-sm border-border/10">
+      <Card className="bg-card/50 backdrop-blur-sm border-border/10 transition-all duration-300 hover:shadow-lg hover:bg-card/70">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>{planName}</span>
-            <span className="text-2xl font-bold flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
+            <span className="text-lg font-semibold">{planName}</span>
+            <span className="text-3xl font-bold flex items-center gap-2 tracking-tight">
+              <Zap className="h-6 w-6 text-primary" />
               {tokenBalance.toLocaleString()}
             </span>
           </CardTitle>

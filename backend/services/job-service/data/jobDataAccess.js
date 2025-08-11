@@ -529,6 +529,8 @@ class JobDataAccess {
     const videos = await knex('video_outputs').whereIn('job_id', jobIds).count('video_id as count').first();
     
     const completedJobs = await knex('jobs').where({ user_id: userId, status: 'completed' }).count('job_id as count').first();
+    
+    //TODO: Check only for final videos of the user (currently we get assembly outputs amount which is not consistent with the user id)
     const finalVideos = await knex('assembly_outputs').whereIn('job_id', jobIds).where({ status: 'completed' }).count('assembly_id as count').first();
   
     return {

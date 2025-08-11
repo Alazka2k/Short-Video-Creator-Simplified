@@ -7,6 +7,7 @@ import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { RecentCreations } from '@/components/dashboard/RecentCreations';
 import { RecentVideos } from '@/components/dashboard/RecentVideos';
 import { TokenSummary } from '@/components/dashboard/TokenSummary';
+import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Subscription, TokenBalance } from '@/types/dashboard';
 
@@ -56,22 +57,69 @@ export default function DashboardPage() {
   }, [getAccessToken, isAuthenticated]);
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6">
-      <WelcomeHeader subscription={subscription} isLoading={isLoading} />
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-8">
-          <QuickActionCards />
-          <StatsGrid />
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background */}
+      <div className="main-gradient" />
+      <div className="gradient-overlay" />
+
+      <div className="container max-w-7xl mx-auto py-12">
+        <div className="relative">
+          {/* Header section */}
+          <div className="mb-8">
+            <WelcomeHeader subscription={subscription} isLoading={isLoading} />
+          </div>
+
+          {/* Main dashboard content */}
+          <div className="relative">
+            <div className="relative z-10 bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="p-8 space-y-8">
+                {/* Primary Actions */}
+                <QuickActionCards />
+                
+                {/* Secondary Content Row */}
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+                    <div className="p-6">
+                      <StatsGrid />
+                    </div>
+                  </div>
+                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+                    <div className="p-6">
+                      <TokenSummary subscription={subscription} balance={balance} isLoading={isLoading} error={error} />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Recent Content Sections */}
+                <div className="space-y-8">
+                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+                    <div className="p-6">
+                      <RecentCreations />
+                    </div>
+                  </div>
+                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
+                    <div className="p-6">
+                      <RecentVideos />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Border gradient effect */}
+            <div className="absolute inset-0 -z-10 rounded-xl">
+              <div className="absolute inset-[-3px] rounded-xl">
+                <HoverBorderGradient
+                  as="div"
+                  containerClassName="w-full h-full"
+                  className="bg-transparent"
+                  duration={3}
+                />
+              </div>
+              <div className="absolute inset-[1px] bg-background rounded-lg" />
+            </div>
+          </div>
         </div>
-        <div className="lg:col-span-1">
-          <TokenSummary subscription={subscription} balance={balance} isLoading={isLoading} error={error} />
-        </div>
-      </div>
-      <div>
-        <RecentCreations />
-      </div>
-      <div>
-        <RecentVideos />
       </div>
     </div>
   );

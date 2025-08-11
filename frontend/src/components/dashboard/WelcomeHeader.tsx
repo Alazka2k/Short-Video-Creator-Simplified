@@ -16,7 +16,7 @@ export function WelcomeHeader({ subscription, isLoading }: WelcomeHeaderProps) {
     if (isLoading) {
       return <div className="h-7 w-48 bg-muted-foreground/20 rounded-md animate-pulse" />;
     }
-    return `Welcome, ${user?.name || 'Creator'}!`;
+    return "Welcome back! Ready to create amazing content?";
   };
 
   const renderSubscriptionInfo = () => {
@@ -24,19 +24,12 @@ export function WelcomeHeader({ subscription, isLoading }: WelcomeHeaderProps) {
       return <div className="h-5 w-80 bg-muted-foreground/20 rounded-md animate-pulse mt-2" />;
     }
     
-    if (subscription && subscription.plan_id > 1 && subscription.current_period_end) {
-      const nextAllocationDate = new Date(subscription.current_period_end);
-      const now = new Date();
-      
-      // Check if the date is in the future before formatting
-      if (nextAllocationDate > now) {
-        const timeRemaining = formatDistanceToNow(nextAllocationDate, { addSuffix: true });
-        return `Your next token allocation is ${timeRemaining}.`;
-      }
-      return "Your next token allocation is due soon.";
+    // More contextual and motivational messaging
+    if (subscription && subscription.plan_id > 1) {
+      return `You're on the ${subscription.plan_name} plan. Let's create something incredible today!`;
     }
 
-    return "You are on the Free Tier. Upgrade to get monthly tokens!";
+    return "Start your creative journey today — upgrade for unlimited possibilities!";
   };
 
   return (
