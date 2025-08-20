@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Zap, ShoppingCart, Settings, AlertTriangle, Loader2 } from 'lucide-react';
+import { Zap, ShoppingCart, Settings, AlertTriangle, Loader2, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { Subscription, TokenBalance } from '@/types/dashboard';
 
@@ -48,43 +48,44 @@ export function TokenSummary({ subscription, balance, isLoading, error }: TokenS
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold tracking-tight mb-4">
-        Plan & Usage
-      </h2>
-      <Card className="bg-card/50 backdrop-blur-sm border-border/10 transition-all duration-300 hover:shadow-lg hover:bg-card/70">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="text-lg font-semibold">{planName}</span>
-            <span className="text-3xl font-bold flex items-center gap-2 tracking-tight">
-              <Zap className="h-6 w-6 text-primary" />
-              {tokenBalance.toLocaleString()}
-            </span>
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Total tokens available
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Progress value={usedPercentage} className="h-2 mb-4" />
-          <div className="flex justify-between text-xs text-muted-foreground mb-6">
-            <span>{tokensFromPlan.toLocaleString()} / {monthlyAllocation.toLocaleString()}</span>
-            <span>Monthly Plan Tokens</span>
+    <Card className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl transition-all duration-300 hover:shadow-lg hover:bg-card/70 h-full">
+      <CardHeader>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-500">
+            <CreditCard className="h-5 w-5" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Button asChild>
-              <Link href="/pricing#token-packages">
-                <ShoppingCart className="mr-2 h-4 w-4" /> Buy More Tokens
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/subscription">
-                <Settings className="mr-2 h-4 w-4" /> Manage Plan
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          <h2 className="text-xl font-semibold tracking-tight">Plan & Usage</h2>
+        </div>
+        <CardTitle className="flex items-center justify-between">
+          <span className="text-lg font-semibold">{planName}</span>
+          <span className="text-3xl font-bold flex items-center gap-2 tracking-tight">
+            <Zap className="h-6 w-6 text-primary" />
+            {tokenBalance.toLocaleString()}
+          </span>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Total tokens available
+        </p>
+      </CardHeader>
+      <CardContent>
+        <Progress value={usedPercentage} className="h-2 mb-4" />
+        <div className="flex justify-between text-xs text-muted-foreground mb-6">
+          <span>{tokensFromPlan.toLocaleString()} / {monthlyAllocation.toLocaleString()}</span>
+          <span>Monthly Plan Tokens</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Button variant="secondary" className="bg-accent/10 hover:bg-accent/20 text-accent hover:text-accent border-accent/20" asChild>
+            <Link href="/pricing#token-packages">
+              <ShoppingCart className="mr-2 h-4 w-4" /> Buy More Tokens
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/subscription">
+              <Settings className="mr-2 h-4 w-4" /> Manage Plan
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 } 

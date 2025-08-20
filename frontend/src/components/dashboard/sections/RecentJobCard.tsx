@@ -81,7 +81,6 @@ export function RecentJobCard({ job }: RecentJobCardProps) {
   const title = job.metadata?.llmResult?.title || job.prompt;
   const thumbnailUrl = job.metadata?.scenes?.[0]?.image?.publicUrl;
   const createdAt = formatDistanceToNow(new Date(job.created_at), { addSuffix: true });
-  const sceneCount = job.metadata?.scenes?.length || 0;
 
   const handleDownload = async () => {
     try {
@@ -143,9 +142,8 @@ export function RecentJobCard({ job }: RecentJobCardProps) {
               {title}
             </h3>
           </div>
-          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="mt-4 flex items-center justify-start text-xs text-muted-foreground">
             <ServiceIcons services={job.service_sequence} />
-            <Badge variant="secondary">{sceneCount} {sceneCount === 1 ? 'Scene' : 'Scenes'}</Badge>
           </div>
         </CardContent>
       </Card>

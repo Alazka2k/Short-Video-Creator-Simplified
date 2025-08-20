@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { WelcomeHeader } from '@/components/dashboard/WelcomeHeader';
 import { QuickActionCards } from '@/components/dashboard/QuickActionCards';
-import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { ContentStatisticsSection } from '@/components/dashboard/ContentStatisticsSection';
 import { RecentCreations } from '@/components/dashboard/RecentCreations';
 import { RecentVideos } from '@/components/dashboard/RecentVideos';
 import { TokenSummary } from '@/components/dashboard/TokenSummary';
@@ -76,31 +76,22 @@ export default function DashboardPage() {
                 {/* Primary Actions */}
                 <QuickActionCards />
                 
-                {/* Secondary Content Row */}
-                <div className="grid gap-8 md:grid-cols-2">
-                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
-                    <div className="p-6">
-                      <StatsGrid />
-                    </div>
-                  </div>
-                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
-                    <div className="p-6">
-                      <TokenSummary subscription={subscription} balance={balance} isLoading={isLoading} error={error} />
-                    </div>
-                  </div>
+                {/* Recent Content - Show Recent Work First */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <RecentCreations />
+                  <RecentVideos />
                 </div>
                 
-                {/* Recent Content Sections */}
-                <div className="space-y-8">
-                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
-                    <div className="p-6">
-                      <RecentCreations />
-                    </div>
+                {/* Analytics & Plan Grid - 3 Column Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Content Statistics - spans 2 columns */}
+                  <div className="lg:col-span-2">
+                    <ContentStatisticsSection />
                   </div>
-                  <div className="bg-card/50 backdrop-blur-sm border-primary/10 rounded-xl shadow-xl transition-all duration-300 hover:shadow-2xl">
-                    <div className="p-6">
-                      <RecentVideos />
-                    </div>
+                  
+                  {/* Plan & Usage - spans 1 column */}
+                  <div>
+                    <TokenSummary subscription={subscription} balance={balance} isLoading={isLoading} error={error} />
                   </div>
                 </div>
               </div>
@@ -123,4 +114,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-} 
+}

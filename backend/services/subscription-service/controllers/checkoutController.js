@@ -282,7 +282,7 @@ class CheckoutController {
       });
     }
   }
-  
+
   /**
    * Verify a Stripe Checkout session after successful payment
    * @param {Object} req - Express request object

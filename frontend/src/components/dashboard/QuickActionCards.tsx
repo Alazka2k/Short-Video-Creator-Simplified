@@ -10,7 +10,7 @@ export function QuickActionCards() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <Card className="group relative hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm border-primary/10 hover:scale-[1.02]">
+      <Card className="group relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl h-full transition-all duration-300 hover:shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-violet-500/10 text-violet-500">
@@ -21,7 +21,7 @@ export function QuickActionCards() {
         </CardHeader>
         <CardContent className="relative">
           <p className="text-muted-foreground mb-6 h-12">
-            Generate a video from text in one click.
+            Generate content from text in one click.
           </p>
           <Button 
             size="lg"
@@ -33,7 +33,7 @@ export function QuickActionCards() {
         </CardContent>
       </Card>
 
-      <Card className="group relative hover:shadow-xl transition-all duration-300 bg-card/50 backdrop-blur-sm border-primary/10 hover:scale-[1.02]">
+      <Card className="group relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl h-full transition-all duration-300 hover:shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-500">
@@ -44,7 +44,7 @@ export function QuickActionCards() {
         </CardHeader>
         <CardContent className="relative">
           <p className="text-muted-foreground mb-6 h-12">
-            Access your past creations, drafts, and templates.
+            Access your past creations.
           </p>
           <Button 
             size="lg"
@@ -57,4 +57,4 @@ export function QuickActionCards() {
       </Card>
     </div>
   );
-} 
+}

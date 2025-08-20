@@ -106,9 +106,9 @@ export default function SubscriptionSuccessPage() {
       try {
         if (!isAuthenticated) {
           // Wait for auth to be ready
-          return;
-        }
-        
+        return;
+      }
+
         const token = await getAccessToken();
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscription/checkout/verify-session`, {
           method: 'POST',
@@ -213,7 +213,7 @@ export default function SubscriptionSuccessPage() {
                     Finalizing your account... Redirecting to dashboard shortly.
                   </div>
                 )}
-              </div>
+        </div>
             </CardContent>
           </Card>
         </HoverBorderGradient>
@@ -229,15 +229,15 @@ export default function SubscriptionSuccessPage() {
   );
 
   const renderError = () => (
-    <Card className="max-w-md w-full">
-      <CardContent className="pt-6 text-center">
-        <p className="text-destructive mb-4">{error}</p>
-        <Link href="/dashboard/subscription">
-          <Button>Go to Subscription</Button>
-        </Link>
-      </CardContent>
-    </Card>
-  );
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <Link href="/dashboard/subscription">
+              <Button>Go to Subscription</Button>
+            </Link>
+          </CardContent>
+        </Card>
+    );
 
   return (
     <div className="flex-1 flex items-start justify-center p-4 sm:p-8 pt-16 sm:pt-24">

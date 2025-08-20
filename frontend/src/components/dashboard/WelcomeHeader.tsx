@@ -16,7 +16,7 @@ export function WelcomeHeader({ subscription, isLoading }: WelcomeHeaderProps) {
     if (isLoading) {
       return <div className="h-7 w-48 bg-muted-foreground/20 rounded-md animate-pulse" />;
     }
-    return "Welcome back! Ready to create amazing content?";
+    return "Welcome back!";
   };
 
   const renderSubscriptionInfo = () => {
@@ -26,7 +26,7 @@ export function WelcomeHeader({ subscription, isLoading }: WelcomeHeaderProps) {
     
     // More contextual and motivational messaging
     if (subscription && subscription.plan_id > 1) {
-      return `You're on the ${subscription.plan_name} plan. Let's create something incredible today!`;
+      return `Let's create something incredible today!`;
     }
 
     return "Start your creative journey today — upgrade for unlimited possibilities!";

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { Loader2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowRight, Sparkles } from 'lucide-react';
 import { Job, JobsApiResponse } from '@/types/dashboard';
 import { RecentJobCard } from './sections/RecentJobCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -90,12 +90,17 @@ export function RecentCreations() {
   };
 
   return (
-    <div>
+    <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl p-6 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Recent Creations
-        </h2>
-        <Button variant="ghost" asChild>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-500">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Recent Creations
+          </h2>
+        </div>
+        <Button variant="ghost" size="sm" className="text-accent hover:text-accent hover:bg-accent/10" asChild>
           <Link href="/workbench">
             View All <ArrowRight className="ml-2 h-4 w-4" />
           </Link>

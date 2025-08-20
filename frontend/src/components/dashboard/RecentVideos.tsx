@@ -93,12 +93,17 @@ export function RecentVideos() {
   };
 
   return (
-    <div>
+    <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl p-6 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Recent Videos
-        </h2>
-        <Button variant="ghost" asChild>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-orange-500/10 text-orange-500">
+            <Video className="h-5 w-5" />
+          </div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Recent Videos
+          </h2>
+        </div>
+        <Button variant="ghost" size="sm" className="text-accent hover:text-accent hover:bg-accent/10" asChild>
           <Link href="/videos">
             View All <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
