@@ -29,7 +29,8 @@ This process happens during user registration and does not involve Stripe.
 
 ### Scenario 2.2: Upgrade from Free to a Paid Plan
 
-- **User Action:** A logged-in Free Tier user clicks "Get Started" on a paid plan on the pricing page.
+- **User Action:** A logged-in Free Tier user clicks "Get Started" on a paid plan on the pricing page. The customer immediately gets a new subscription in Stripe and pays for the subscription.
+
 - **System Flow (Initiation):**
   1.  **Frontend:** The `<StripeCheckoutButton>` component calls our API Gateway at `POST /api/subscription/checkout/create-subscription-session`.
   2.  **API Gateway:** Authenticates the user and forwards the request to the `subscription-service`.
@@ -52,7 +53,7 @@ This process happens during user registration and does not involve Stripe.
 
 ### Scenario 2.3: Upgrade from a Paid Plan to a Higher Tier
 
-An upgrade is treated as an immediate and full reset of the user's benefits to the new, higher tier.
+An upgrade is treated as an immediate and full reset of the user's benefits to the new, higher tier. The customer immediately gets a new subscription in Stripe and pays for the subscription.
 
 - **User Action:** A user on the "Basic" plan selects the "Creator" plan as a new, higher tier plan.
 - **System Flow:** The user is sent to Stripe Checkout to confirm and pay the prorated charge for the upgrade.
@@ -70,7 +71,7 @@ An upgrade is treated as an immediate and full reset of the user's benefits to t
 
 ### Scenario 2.4: Tier Downgrade
 
-- **User Action:** A user on the a paid subscription plan (e.g. "Creator" either yearly or monthly) downgrades to the another paid plan e.g. ("Basic" either yearly or monthly) via our webpage and forwarded to the Stripe Customer Portal.
+- **User Action:** A user on the a paid subscription plan (e.g. "Creator" either yearly or monthly) downgrades to the another paid plan e.g. ("Basic" either yearly or monthly) via our webpage and forwarded to the Stripe Customer Portal. The customer shall not pay immediately but the downgrade should take effect at the end of the current billing period (at the end of the current billing period (year or month)), then the customer should pay the prorated amount for the downgraded, new plan.
 - **System Flow:** Stripe schedules this change to take effect at the end of the current billing period (at the end of the current billing period (year or month)).
 - **Stripe Webhook Flow:** Stripe sends a `customer.subscription.updated` webhook immediately. The payload will contain information about the *future* plan.
 - **Application Data Flow:**

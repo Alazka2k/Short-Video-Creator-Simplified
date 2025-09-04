@@ -83,7 +83,7 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
 ## Phase 2: Frontend Implementation & UI/UX Refactor **STATUS: In Progress**
 **Objective:** Build a clear, intuitive, and fully functional user interface for the pricing page, dashboard and subscription management, following the provided design guidelines.
 
-### Task 2.1: Create `PricingPageComponent` and page `pricing/page.tsx` ✅ Completed**
+### Task 2.1: Create `PricingPageComponent` and page `pricing/page.tsx` ✅ Completed
 - **Files to Create:** `frontend/src/app/(marketing)/pricing/page.tsx`, `frontend/src/components/marketing/pricing/`
 - **Files to Review and Modify if necesseray :** `frontend/src/components/shared/buttons/`, `frontend/src/components/shared/label/`, `frontend/src/components/shared/switch/`
 - **Action:** Develop a dynamic and responsive pricing page that caters to both visitors and authenticated users, ensuring a consistent look and feel with the existing UI.
@@ -164,7 +164,7 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
         1.  **Modify `SessionRefresher.tsx`:** The `useEffect` hook will now check the `auth.isLoading` state.
         2.  **Delayed Refresh:** The component will wait until `auth.isLoading` is `false`. Only then will it proceed to check for the `action` parameter and call `auth.refreshUser()`. This guarantees the refresh is only triggered on a stable, fully initialized session, which will prevent the logout issue.
 
-### Task 2.2: Redesign and Implement Protected User Dashboard (`/dashboard`) **STATUS: In Progress**
+### Task 2.2: Redesign and Implement Protected User Dashboard (`/dashboard`) ✅ Completed
 - **Files to Create:** `frontend/src/components/dashboard/WelcomeHeader.tsx`, `frontend/src/components/dashboard/QuickActionCards.tsx`, `frontend/src/components/dashboard/StatsGrid.tsx`, `frontend/src/components/dashboard/RecentCreations.tsx`, `frontend/src/components/dashboard/RecentVideos.tsx`, `frontend/src/components/dashboard/TokenSummary.tsx`, `frontend/src/types/dashboard.ts`
 - **File to Modify:** `frontend/src/app/(dashboard)/dashboard/page.tsx`
 - **Action:** Overhaul the main dashboard page to serve as a central hub, replacing all placeholder data with live data from backend endpoints. This task is broken down into several sub-tasks to ensure each component is production-ready.
@@ -232,7 +232,7 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
           - **Download Behavior:** Maintain existing patterns - bulk download (Download All) for jobs, regular single file download for videos.
           - **Visual Design:** Video thumbnail provides sufficient visual distinction between card types.
 
-- **Sub-Task 2.2.6: Align Dashboard UI & Container Styling** **STATUS: In Progress**
+- **Sub-Task 2.2.6: Align Dashboard UI & Container Styling** **STATUS: ✅ Completed**
     - **Component:** `(dashboard)/dashboard/page.tsx` and its children.
     - **Action:** Transform the dashboard to match modern SaaS standards with polished styling consistent with `WorkbenchPage` and `VideosPage`.
       1. **Layout Restructure:** Remove sidebar layout and create flowing top-to-bottom sections with TokenSummary integrated into main flow.
@@ -254,47 +254,122 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
     - **Component:** `QuickActionCards.tsx`
     - **Action:** This component is mostly static. Confirm that the user's recent changes (e.g., "Create Content" button linking to `/create`) are correct and that no further data fetching is needed for the MVP.
 
-### Task 2.3: Implement ProtectedSubscription Management Page (`/subscription`) **STATUS: Not Started**
-- **File:** `frontend/src/app/(dashboard)/subscription/page.tsx`, `frontend/src/components/billing/token-usage.tsx`
-- **Action:** Create the detailed subscription management experience. Review, rename and revamp already existing token-usage.tsx component to TokenUsageDetails.tsx for better clarity and consistency. Refactor the component to accept props, allowing it to be used in both a "summary" view (for the dashboard) and a "detailed" view (for the subscription page). It will be responsible for fetching its own data from the backend.
-    - **Data Source:** This page will rely on the secured `GET /api/subscription/status` and `GET /api/subscription/billing-history` endpoints.
-    - **Components:**
-        *   Display the full, detailed `TokenUsageDetails.tsx` card with a breakdown of plan vs. purchased tokens.
-        *   Show a "Current Plan" card with renewal information.
-        *   Integrate a "Manage Billing" button (`CustomerPortalButton`) that links to the Stripe Customer Portal.
-        *   Include a "Billing History" section that lists past payments.
-- **Sub-Task 2.3.2: Create Subscription Status Page for Portal Actions**
-  - **File:** `frontend/src/app/(dashboard)/subscription/status/page.tsx`
-  - **Action:** Create a new page to serve as the return URL for actions taken in the Stripe Customer Portal (e.g., downgrades, cancellations). This page will read a query parameter (e.g., `?action=managed`) and display a generic but appropriate confirmation message to the user, such as "Your subscription has been successfully updated."
+### Task 2.3: Implement Protected Subscription Management Page (`/subscription`) **STATUS: In Progress** (8/16 subtasks completed)
+**Objective:** Transform the existing dummy subscription page into a fully functional subscription management dashboard with real data integration, cancellation functionality, transaction history, and intelligent warning systems.
 
-### Task 2.4: Finalize Payment Flow Pages **STATUS: Not Started**
-- **Files:** `frontend/src/app/subscription/success/page.tsx` and `frontend/src/app/subscription/cancel/page.tsx`.
-- **Action:** Review and update these pages to ensure they provide clear user feedback (for success but also for cancel or unsucceful payment) after returning from a Stripe Checkout session.
+**Key Decisions:**
+- **Change Plan Strategy:** Navigation to `/pricing` page
+- **Transaction History Display:** Modal popup
+- **Token Warning Threshold:** <200 tokens (MVP scope)
+- **Styling Priority:** Functionality first, styling refinement later
+- **Component Architecture:** Build atomic components in `frontend/src/components/subscription/` following dashboard pattern
+
+**Component Structure:**
+- **Files to Create:** 
+  - `frontend/src/components/subscription/CurrentPlanCard.tsx` (current plan information and features)
+  - `frontend/src/components/subscription/SubscriptionHeader.tsx` (page header with icon)
+  - `frontend/src/components/subscription/UsageHistoryCard.tsx` (recent transactions display)
+  - `frontend/src/components/subscription/TransactionHistoryModal.tsx` (full transaction history)
+  - `frontend/src/components/subscription/LowTokenWarning.tsx` (conditional warning component)
+  - `frontend/src/components/subscription/SubscriptionActions.tsx` (change plan, cancel buttons)
+- **Reused Components:**
+  - `frontend/src/components/dashboard/TokenSummary.tsx` (token usage and insights)
+
+- **Sub-Task 2.3.1: Create Atomic Components Structure** **STATUS: ✅ Completed**
+  - **Files to Create:** 
+    - `frontend/src/components/subscription/SubscriptionHeader.tsx` (page header with icon)
+    - `frontend/src/components/subscription/CurrentPlanCard.tsx` (current plan information and features)
+    - `frontend/src/components/subscription/UsageHistoryCard.tsx` (recent transactions display)
+    - `frontend/src/components/subscription/LowTokenWarning.tsx` (conditional warning component)
+  - **Action:** Create atomic component structure following the dashboard pattern with proper TypeScript interfaces and props, extracting each section of the current monolithic page into reusable, focused components. Adapt dashboard.ts for type definitions.
+
+- **Sub-Task 2.3.2: Integrate Real Subscription Data Fetching** **STATUS: ✅ Completed**
+  - **Files:** `frontend/src/app/(dashboard)/subscription/page.tsx`
+  - **Data Sources:** 
+    - `GET /api/subscription/subscriptions/me` (subscription details with marketing_description)
+    - `GET /api/subscription/tokens/balance/me` (token balance)
+    - `GET /api/subscription/transactions/me` (transaction history)
+  - **Action:** Replaced hardcoded data with live API calls using React Query hooks (`useSubscription`, `useTokenBalance`, `useTransactionHistory`), implemented domain-driven type architecture, and enhanced backend to include plan marketing features.
+
+- **Sub-Task 2.3.3: Replace Dummy Token Usage with Reusable Component** **STATUS: ✅ Completed**
+  - **Files:** `frontend/src/app/(dashboard)/subscription/page.tsx`
+  - **Component:** Reuse existing `TokenSummary.tsx` from dashboard
+  - **Action:** Replaced dummy token usage with reusable `TokenSummary` component, integrated with real subscription and balance data from hooks.
+
+- **Sub-Task 2.3.4: Implement CurrentPlanCard with Real Data** **STATUS: ✅ Completed**
+  - **Files:** `frontend/src/components/subscription/CurrentPlanCard.tsx`
+  - **Action:** Built CurrentPlanCard with dynamic content using real subscription data, integrated marketing features from database with same structure as pricing component, removed all dummy data.
+
+- **Sub-Task 2.3.5: Implement "Change Plan" Navigation to Pricing Page** **STATUS: ✅ Completed**
+  - **Action:** Implemented "Change Plan" button navigation to `/pricing` page - confirmed working by user testing.
+
+- **Sub-Task 2.3.9: Integrate Transaction API and Display Recent Transactions** **STATUS: ✅ Completed**
+  - **Data Source:** `GET /api/subscription/transactions/me` (limited to 5 recent)
+  - **Action:** Replaced empty "Usage History" card with real transaction data using `useTransactionHistory` hook, created `UsageHistoryCard` component, and implemented proper API endpoint. 
+
+- **Sub-Task 2.3.10: Create Transaction History Modal for Full History** **STATUS: Not Started**
+  - **Files:** `frontend/src/components/billing/TransactionHistoryModal.tsx` (new)
+  - **Action:** Build modal popup to display complete transaction history with pagination and filtering.
+
+- **Sub-Task 2.3.11: Implement Conditional Low Token Warning** **STATUS: ✅ Completed**
+  - **Trigger:** Display when user has <200 tokens remaining  
+  - **Action:** Implemented `LowTokenWarning` component with conditional display logic and integrated into subscription page.
+
+- **Sub-Task 2.3.12: Add Token Usage Trends Using TokenSummary Component** **STATUS: ✅ Completed**
+  - **Component:** Reuse existing `TokenSummary.tsx` component from dashboard
+  - **Action:** Integrated TokenSummary component into subscription page with real data from hooks, providing consistent token usage display and insights.
+
+### Task 2.4: Finalize Payment and SubscriptionFlow Pages **STATUS: Not Started**
+- **Files:** Files needs to be defined.
+- **Action:** Review and update the pages and components to ensure they provide and handle the different states of the subscription correctly.
+
+- **Sub-Task 2.4.1: Build Cancel Subscription with Stripe Integration** **STATUS: Not Started**
+  - **Action:** Implement subscription cancellation functionality that maintains benefits until period end. Create Subscription Model Pop up and Implement the subscription cancellation feedback without leaving the page. Catch the updated subscription with a hook and show the new, correct information in the /subscription page. Offer the possibility to cancel and to pause the subscription. Cancelled subscriptions should be put to pending cancellation in our database until the end of the period.
+
+- **Sub-Task 2.4.2: Fix Bug in Current Plan Card** **STATUS: Not Started**
+  - **Action:** Fix the bug in the Current Plan Card where the renewal date is not shown correctly 
+  and the new token allocation date is not shown in the Plan & Usage card.
+
+- **Sub-Task 2.4.3: Add Cancellation Period Display Logic** **STATUS: Not Started**
+  - **Action:** Display remaining subscription period for cancelled subscriptions.
+
+- **Sub-Task 2.4.4: Verify to handle Upgrades and Downgrades correctly** **STATUS: Not Started**
+  - **Action:** Handle Upgrades and Downgrades correctly. When a user upgrades or downgrades, the customer immediately gets a new subscription in Stripe and pays for the subscription. In the subscription page the button for selection should be shown correctly depending on the current subscription.
+
+- **Sub-Task 2.4.5: Handle Subscription Status States** **STATUS: Not Started**
+  - **Action:** Handle different subscription states (active, cancelled, cancellation pending, etc.).  
 
 ### Task 2.5: Review and finalize all protected pages. **STATUS: Not Started**
-- **Action:** Review and finalize all protected pages. Go over each page and make sure everything is finalized.
+- **Action:** Review and finalize all protected pages. Go over each page and make sure everything is finalized. Fine tune the look and feel so it is consistent.
+
 - **Sub-Task 2.5.1: Review video assembly page.** **STATUS: Not Started**
-  - **Action:** Download button is not working on the video assembly page. Deactive direct share buttons for social media for now. Adapt "My Videos" to the "Content workbench" text style.
+  - **Action:** Fix Bug: Download button is not working on the video assembly page. Deactivate direct share buttons for social media for now. Adapt "My Videos" to the "Content workbench" text style.
 
+- **Sub-Task 2.5.2: Modal for "View Full History" in the Usage History card is missing** **STATUS: Not Started**
+  - **Action:** Add a modal for "View Full History" in the Usage History card. The modal should display the full transaction history of tokens. The endpoint is already available.
 
----
+- **Sub-Task 2.5.3: Fix the button "Manage Plan" in the Plan & Usage card.** **STATUS: Not Started**
+  - **Action:** Show the "Manage Plan" button in the Plan & Usage card not when the user already is on the Subscription page to manage the plan. Still show it on other pages like dashboard.
 
 ## Phase 3: Batch Job Enhancement & Finalization **STATUS: Not Started**
 **Objective:** Refactor the existing batch jobs to align with the Stripe-centric, event-driven payment model, ensuring our internal token allocation logic remains robust.
 
-### Task 3.1: Deprecate Payment-Related Batch Jobs
-- **Action:** Since Stripe now handles all payment collection, renewals, and retries, the `CreatePaymentsBatch`, `CollectPaymentsBatch`, and `RetryFailedPaymentsBatch` are redundant. They will be **deprecated and removed** from the system to eliminate legacy code and rely solely on Stripe webhooks for payment state changes.
-
-### Task 3.2: Confirm and Refine `SubscriptionRenewalsBatch` for Token Allocation
+### Task 3.1: Confirm and Refine `SubscriptionRenewalsBatch` for Token Allocation
 - **Action:** This batch job is **critically important** for managing our application-specific **monthly token allocation cycle**, which is decoupled from Stripe's billing cycle (e.g., for yearly plans). The batch's logic will be reviewed and confirmed to perform the following scheduled task:
-  - Query for all active subscriptions where the `current_period_end` (token allocation period) has passed.
+  - Query for all active subscriptions and pending cancellation subscriptions where the `current_period_end` (token allocation period) has passed.
   - For each subscription, call the `subscriptionService` to allocate the correct number of monthly tokens.
   - Update the subscription's `current_period_start` and `current_period_end` dates, advancing them by one month to schedule the next token allocation.
 
-### Task 3.3: Refactor and Repurpose `ProcessPendingCancellationsBatch`
+### Task 3.2: Refactor and Repurpose `ProcessPendingCancellationsBatch`
 - **Action:** This batch job will be refactored to serve two primary functions:
-  - **Scheduled Downgrades:** Its main job is to process subscriptions that have been canceled in Stripe and have reached the end of their paid billing period. It will query for subscriptions with a status of `pending_cancellation` where the `end_date` has passed and finalize the process by downgrading the user to the Free Tier.
-  - **Data Reconciliation:** The batch will be enhanced to act as a reconciliation tool. It will periodically compare subscription statuses between our local database and Stripe to identify and correct any discrepancies that may have resulted from missed webhooks, ensuring long-term data integrity.
+  - **Scheduled Downgrades:** Its main job is to process subscriptions that have been canceled in Stripe and have reached the end of their paid billing period. It will query for subscriptions with a status of `pending_cancellation` where the `end_date` has passed and finalize the process by downgrading the user to the Free Tier (create new free subscription in state active). It also needs to verify and check if the user has actually paid for his subscription in Stripe. Depending on the retry mechanism of Stripe to get the payment at a certain time we need to cancel the subscription in our database as well. For this use case Stripe is the leading source of truth but we need to handle it correctly.
+  - **Data Reconciliation:** The batch will be enhanced to act as a reconciliation tool. It will periodically compare subscription statuses between our local database and Stripe to identify and correct any discrepancies that may have resulted from missed webhooks, expired subscriptions, not paid subscriptions, etc. ensuring long-term data integrity.
+
+### Task 3.3: Refine CollectPaymentsBatch
+- **Action:** The CollectPaymentsBatch shall create a new payment when a new payment is created in Stripe for a active subscription to keep the payment history in our database up to date and correct. The batch will be enhanced to act as a reconciliation tool.
+
+### Task 3.4: Deprecate Payment-Related Batch Jobs (since Stripe handles all payment collection, renewals, and retries)
+- **Action:** Since Stripe now handles all payment collection, renewals, and retries, the `CreatePaymentsBatch`, `CollectPaymentsBatch`, and `RetryFailedPaymentsBatch` are redundant. They will be **deprecated and removed** from the system to eliminate legacy code and rely solely on Stripe webhooks for payment state changes.
 
 ---
 
@@ -331,3 +406,15 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
 
 ### Task 5.3: Monitoring & Alerting
 - **Action:** Set up monitoring and alerts for key metrics like webhook success rates and payment failures.
+
+#### **Phase 6: Styling & Layout Alignment** *(Lower Priority)*
+**Goal:** Make subscription page visually consistent with dashboard (addressed after functionality is complete).
+
+### Task 6.1: Update Container Structure and Background
+  - **Action:** Align visual styling with dashboard page structure and apply consistent backgrounds.
+
+### Task 6.2: Add Consistent Header with Icon Pattern
+  - **Action:** Add header icon and styling consistent with dashboard sections.
+
+### Task 6.3: Ensure Responsive Behavior and Mobile Design
+  - **Action:** Optimize responsive design and mobile experience.

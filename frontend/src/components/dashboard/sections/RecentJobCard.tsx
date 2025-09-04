@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
-import { Job } from '@/types/dashboard';
+import { Job } from '@/lib/hooks/useJobs';
 import { JobThumbnail } from '@/components/workbench/sections/JobThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

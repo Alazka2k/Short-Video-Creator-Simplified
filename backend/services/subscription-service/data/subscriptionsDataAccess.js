@@ -85,6 +85,23 @@ class SubscriptionsDataAccess {
         formattedSubscription.allowed_content_types = subscription.allowed_content_types;
         formattedSubscription.recreation_content_types = subscription.recreation_content_types;
         formattedSubscription.support_level = subscription.support_level;
+        
+        // Parse marketing_description if present
+        if (subscription.marketing_description) {
+          try {
+            if (typeof subscription.marketing_description === 'string') {
+              formattedSubscription.marketing_description = JSON.parse(subscription.marketing_description);
+            } else {
+              formattedSubscription.marketing_description = subscription.marketing_description;
+            }
+          } catch (error) {
+            this.logger.warn('Error parsing marketing_description in subscription:', { 
+              subscriptionId: subscription.subscription_id,
+              error: error.message 
+            });
+            formattedSubscription.marketing_description = null;
+          }
+        }
       }
       
       return formattedSubscription;
@@ -155,7 +172,8 @@ class SubscriptionsDataAccess {
           'p.max_jobs_per_month', 
           'p.allowed_content_types',
           'p.recreation_content_types',
-          'p.support_level'
+          'p.support_level',
+          'p.marketing_description'
         )
         .where('us.user_id', userId);
       
@@ -204,7 +222,8 @@ class SubscriptionsDataAccess {
           'p.max_jobs_per_month',
           'p.allowed_content_types',
           'p.recreation_content_types',
-          'p.support_level'
+          'p.support_level',
+          'p.marketing_description'
         )
         .where('us.subscription_id', subscriptionId)
         .first();

@@ -1,54 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/hooks/useAuth';
 import { Loader2, AlertTriangle, ArrowRight, Video } from 'lucide-react';
-import { Video as VideoType, VideosApiResponse } from '@/types/dashboard';
+import { useRecentVideos, AssembledVideo } from '@/lib/hooks/useVideos';
 import { RecentVideoCard } from './sections/RecentVideoCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function RecentVideos() {
-  const [videos, setVideos] = useState<VideoType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { getAccessToken, isAuthenticated } = useAuth();
+  const { data: videos = [], isLoading: loading, error } = useRecentVideos(3);
 
-  useEffect(() => {
-    async function fetchVideos() {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
 
-      try {
-        setLoading(true);
-        const token = await getAccessToken();
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assembly/videos?limit=3&sortOrder=desc`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch recent videos');
-        }
-
-        const data: VideosApiResponse = await response.json();
-        // Filter for completed videos only
-        const completedVideos = data.data.filter(video => video.status === 'completed');
-        setVideos(completedVideos);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchVideos();
-  }, [getAccessToken, isAuthenticated]);
 
   const renderContent = () => {
     if (loading) {
@@ -63,12 +26,11 @@ export function RecentVideos() {
 
     if (error) {
       return (
-        <Card className="bg-destructive/10 border-destructive/20">
-          <CardContent className="p-6 text-center text-destructive-foreground">
-            <AlertTriangle className="h-6 w-6 mx-auto mb-2" />
-            <p>{error}</p>
-          </CardContent>
-        </Card>
+        <div className="p-6 text-center text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-lg">
+          <AlertTriangle className="h-6 w-6 mx-auto mb-2" />
+          <p className="font-semibold">Could not load recent videos</p>
+          <p className="text-sm">Please try refreshing the page. If the error persists, please contact support.</p>
+        </div>
       );
     }
 
@@ -93,23 +55,27 @@ export function RecentVideos() {
   };
 
   return (
-    <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl p-6 h-full">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-orange-500/10 text-orange-500">
-            <Video className="h-5 w-5" />
+    <Card className="group relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl h-full transition-all duration-300 hover:shadow-lg">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-orange-500/10 text-orange-500">
+              <Video className="h-5 w-5" />
+            </div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Recent Videos
+            </h2>
           </div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            Recent Videos
-          </h2>
+          <Button variant="ghost" size="sm" className="text-accent hover:text-accent hover:bg-accent/10" asChild>
+            <Link href="/videos">
+              View All <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" className="text-accent hover:text-accent hover:bg-accent/10" asChild>
-          <Link href="/videos">
-            View All <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
-      {renderContent()}
-    </div>
+      </CardHeader>
+      <CardContent>
+        {renderContent()}
+      </CardContent>
+    </Card>
   );
 }

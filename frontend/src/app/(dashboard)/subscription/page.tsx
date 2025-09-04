@@ -4,253 +4,130 @@
  * ============================================================================
  * 
  * This page provides a comprehensive dashboard for users to manage their
- * subscription, view token usage, and access billing information.
- * 
- * KEY FEATURES:
- * - Current subscription plan display
- * - Token usage visualization and tracking
- * - Payment and billing information
- * - Subscription modification options
- * - Usage history and analytics
- * 
- * SUBSCRIPTION MANAGEMENT:
- * - Current plan details and features
- * - Renewal date and billing cycle
- * - Plan change and upgrade options
- * - Cancellation functionality
- * - Payment method management
- * 
- * TOKEN TRACKING:
- * - Real-time token balance display
- * - Usage progress visualization
- * - Plan vs additional token breakdown
- * - Expiration and renewal tracking
- * - Low balance warnings
- * 
- * USER EXPERIENCE:
- * - Clear subscription status display
- * - Visual progress indicators
- * - Intuitive action buttons
- * - Warning states for important actions
- * - Responsive design for all devices
- * 
- * DATA INTEGRATION:
- * Currently uses dummy data - should be replaced with:
- * - Real subscription data from backend
- * - Actual token usage and balance
- * - Payment history and status
- * - Plan features and limitations
- * 
- * NAVIGATION:
- * - Change Plan: Subscription plan comparison
- * - Purchase Tokens: Additional token packages
- * - View History: Usage and payment history
- * - Cancel Subscription: Cancellation flow
- * 
- * SECURITY CONSIDERATIONS:
- * - User can only access their own subscription data
- * - Secure payment information display
- * - Safe cancellation processes
- * - Proper authentication checks
- * 
- * DEPENDENCIES:
- * - UI components for consistent design
- * - Icons for visual enhancement
- * - Navigation for subscription management
- * 
- * FUTURE ENHANCEMENTS:
- * - Real-time usage updates
- * - Usage predictions and recommendations
- * - Billing history charts
- * - Automated upgrade suggestions
- * 
- * Last Updated: 2025-06-30
- * Architecture: Subscription Management Dashboard
+ * subscription, view token usage, and access billing information using
+ * atomic components and hooks for data fetching.
  */
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Crown, 
-  Calendar, 
-  CreditCard, 
-  Zap,
-  CheckCircle2,
-  ArrowRight,
-  AlertCircle,
-} from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { SubscriptionHeader } from '@/components/subscription/SubscriptionHeader';
+import { CurrentPlanCard } from '@/components/subscription/CurrentPlanCard';
+import { UsageHistoryCard } from '@/components/subscription/UsageHistoryCard';
+import { LowTokenWarning } from '@/components/subscription/LowTokenWarning';
+import { TokenSummary } from '@/components/dashboard/TokenSummary';
+import { useSubscription } from '@/lib/hooks/useSubscription';
+import { useTokenBalance } from '@/lib/hooks/useTokenBalance';
+import { useTransactionHistory } from '@/lib/hooks/useTransactionHistory';
 
-/**
- * DUMMY SUBSCRIPTION DATA FOR DEVELOPMENT
- * TODO: Replace with real API calls to fetch user's actual subscription
- * information, billing details, and token usage.
- */
-const subscriptionData = {
-  currentPlan: 'Professional',
-  status: 'active',
-  renewalDate: '2024-02-15',
-  price: 49.99,
-  billingCycle: 'monthly',
-  features: [
-    'Up to 50 videos per month',
-    'Max 10 minutes per video',
-    '10,000 tokens included',
-    'Priority support',
-    'Advanced customization',
-    'Commercial usage rights',
-  ],
-  tokens: {
-    included: 10000,
-    used: 6500,
-    purchased: 2000,
-  },
-};
+
 
 /**
  * Subscription management page component that displays current subscription
- * details, token usage, and provides subscription management options.
+ * details, token usage, and provides subscription management options using
+ * atomic components and hooks for data fetching.
  * 
  * @returns {JSX.Element} Subscription dashboard with plan details and management options
  */
 export default function SubscriptionPage() {
-  const totalTokens = subscriptionData.tokens.included + subscriptionData.tokens.purchased;
-  const usedPercentage = (subscriptionData.tokens.used / totalTokens) * 100;
+  const router = useRouter();
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+
+  // Use hooks for data fetching
+  const { data: subscriptionsArray, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
+  const { data: balance, isLoading: balanceLoading, error: balanceError } = useTokenBalance();
+  const { data: transactions, isLoading: transactionsLoading, error: transactionsError } = useTransactionHistory(5);
+
+  // Extract first active subscription from array
+  const subscription = subscriptionsArray && subscriptionsArray.length > 0 ? subscriptionsArray[0] : null;
+  const isLoading = subscriptionLoading || balanceLoading;
+  const error = subscriptionError || balanceError;
+
+
+
+  // Event handlers
+  const handleChangePlan = () => {
+    router.push('/pricing');
+  };
+
+  const handleCancelSubscription = () => {
+    // TODO: Implement subscription cancellation
+    console.log('Cancel subscription clicked');
+  };
+
+  const handleViewFullHistory = () => {
+    setShowTransactionModal(true);
+  };
+
+  const handleUpgrade = () => {
+    router.push('/pricing');
+  };
+
+  const handlePurchaseTokens = () => {
+    router.push('/pricing#token-packages');
+  };
+
+  // Check if low token warning should be shown
+  const tokenBalance = balance?.balance || 0;
+  const showLowTokenWarning = tokenBalance < 200;
 
   return (
     <div className="relative flex-1 space-y-8 p-8 pt-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Subscription
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your subscription and token usage
-        </p>
-      </div>
+      {/* Header Component */}
+      <SubscriptionHeader isLoading={isLoading} />
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Current Plan Card */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-primary" />
-              Current Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <h3 className="text-2xl font-bold">{subscriptionData.currentPlan}</h3>
-                <div className="flex items-center gap-2 mt-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>Renews on {subscriptionData.renewalDate}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                  <CreditCard className="h-4 w-4" />
-                  <span>${subscriptionData.price}/month</span>
-                </div>
-                <div className="flex gap-4 mt-6">
-                  <Button className="bg-primary/80 hover:bg-primary shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]">
-                    Change Plan
-                  </Button>
-                  <Button variant="outline" className="text-destructive hover:text-destructive">
-                    Cancel Subscription
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {subscriptionData.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Current Plan Card Component */}
+        <CurrentPlanCard 
+          subscription={subscription}
+          isLoading={isLoading}
+          error={error}
+          onChangePlan={handleChangePlan}
+          onCancelSubscription={handleCancelSubscription}
+        />
 
-        {/* Token Usage Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              Token Usage
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Current billing period
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium">
-                    {subscriptionData.tokens.used.toLocaleString()} / {totalTokens.toLocaleString()} tokens used
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {(totalTokens - subscriptionData.tokens.used).toLocaleString()} remaining
-                  </div>
-                </div>
-                <Progress value={usedPercentage} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Plan tokens</span>
-                  <span>{subscriptionData.tokens.included.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Additional tokens</span>
-                  <span>{subscriptionData.tokens.purchased.toLocaleString()}</span>
-                </div>
-              </div>
-              <Button 
-                className="w-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]"
-              >
-                Purchase More Tokens
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Token Usage Component - using existing TokenSummary */}
+        <TokenSummary 
+          subscription={subscription}
+          balance={balance || null}
+          isLoading={isLoading}
+          error={error}
+        />
 
-        {/* Usage History Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Usage History</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Recent token consumption
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Add usage history items here */}
-              <Button 
-                variant="outline" 
-                className="w-full group hover:bg-primary/5"
-              >
-                View Full History
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Usage History Card Component */}
+        <UsageHistoryCard 
+          transactions={transactions || []}
+          isLoading={transactionsLoading}
+          error={transactionsError}
+          onViewFullHistory={handleViewFullHistory}
+        />
       </div>
 
-      {/* Warning Card */}
-      <Card className="bg-amber-500/10 border-amber-500/20">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4 text-amber-500">
-            <AlertCircle className="h-5 w-5" />
-            <div>
-              <p className="font-medium">Approaching Token Limit</p>
-              <p className="text-sm text-amber-500/80">Consider upgrading your plan or purchasing additional tokens.</p>
-            </div>
+      {/* Low Token Warning Component */}
+      <LowTokenWarning 
+        tokenBalance={tokenBalance}
+        threshold={200}
+        isVisible={showLowTokenWarning}
+        onUpgrade={handleUpgrade}
+        onPurchaseTokens={handlePurchaseTokens}
+      />
+
+      {/* TODO: Add Transaction History Modal */}
+      {showTransactionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Full Transaction History</h3>
+            <p className="text-gray-600 mb-4">Transaction history modal will be implemented in a future step.</p>
+            <button 
+              onClick={() => setShowTransactionModal(false)}
+              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+            >
+              Close
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 } 

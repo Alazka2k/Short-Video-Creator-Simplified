@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Zap, ShoppingCart, Settings, AlertTriangle, Loader2, CreditCard } from 'lucide-react';
 import Link from 'next/link';
-import { Subscription, TokenBalance } from '@/types/dashboard';
+import { Subscription } from '@/lib/hooks/useSubscription';
+import { TokenBalance } from '@/lib/hooks/useTokenBalance';
 
 interface TokenSummaryProps {
   subscription: Subscription | null;
@@ -40,15 +41,15 @@ export function TokenSummary({ subscription, balance, isLoading, error }: TokenS
       <Card className="bg-destructive/10 border-destructive/20">
         <CardContent className="p-6 text-center text-destructive-foreground">
            <AlertTriangle className="h-6 w-6 mx-auto mb-2" />
-           <p className="font-semibold">Could not load plan details</p>
-           <p className="text-sm">Please try refreshing the page.</p>
+           <p className="font-semibold">Could not load plan information</p>
+           <p className="text-sm">Please try refreshing the page. If the error persists, please contact support.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl transition-all duration-300 hover:shadow-lg hover:bg-card/70 h-full">
+    <Card className="group relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl h-full transition-all duration-300 hover:shadow-lg">
       <CardHeader>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-500">
@@ -74,9 +75,9 @@ export function TokenSummary({ subscription, balance, isLoading, error }: TokenS
           <span>Monthly Plan Tokens</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Button variant="secondary" className="bg-accent/10 hover:bg-accent/20 text-accent hover:text-accent border-accent/20" asChild>
+          <Button className="w-full bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]" asChild>
             <Link href="/pricing#token-packages">
-              <ShoppingCart className="mr-2 h-4 w-4" /> Buy More Tokens
+              <ShoppingCart className="mr-2 h-4 w-4" /> More Tokens
             </Link>
           </Button>
           <Button variant="outline" asChild>

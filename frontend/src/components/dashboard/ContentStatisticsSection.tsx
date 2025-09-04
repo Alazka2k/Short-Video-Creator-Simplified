@@ -1,49 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { ContentStats } from '@/types/dashboard';
+import { useContentStats } from '@/lib/hooks/useContentStats';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentBarChart } from './charts/ContentBarChart';
 import { JobConversionMetrics } from './charts/JobConversionMetrics';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, AlertTriangle } from 'lucide-react';
 
 export function ContentStatisticsSection() {
-  const { getAccessToken, isAuthenticated } = useAuth();
-  const [stats, setStats] = useState<ContentStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const token = await getAccessToken();
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/job/stats`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch stats');
-        }
-        const data: ContentStats = await response.json();
-        setStats(data);
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-        setStats(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [getAccessToken, isAuthenticated]);
+  const { data: stats, isLoading: loading, error } = useContentStats();
 
   if (loading) {
     return (
@@ -100,16 +65,29 @@ export function ContentStatisticsSection() {
     );
   }
 
+  if (error) {
+    return (
+      <Card className="group relative bg-destructive/10 border-destructive/20 rounded-xl h-full">
+        <CardContent className="p-6 text-center text-destructive-foreground">
+          <AlertTriangle className="h-6 w-6 mx-auto mb-2" />
+          <p className="font-semibold">Could not load content statistics</p>
+          <p className="text-sm">Please try refreshing the page. If the error persists, please contact support.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl h-full transition-all duration-300 hover:shadow-lg">
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-6">
+    <Card className="group relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl h-full transition-all duration-300 hover:shadow-lg">
+      <CardHeader>
+        <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500">
             <BarChart3 className="h-5 w-5" />
           </div>
           <h2 className="text-xl font-semibold tracking-tight">Content Statistics</h2>
         </div>
-        
+      </CardHeader>
+      <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Content Created Section */}
           <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-xl p-6 h-full transition-all duration-300 hover:shadow-lg hover:bg-card/70">
@@ -117,7 +95,7 @@ export function ContentStatisticsSection() {
               <h3 className="text-lg font-bold tracking-tight mb-1">Content Created</h3>
               <p className="text-sm text-muted-foreground">Your creative output across all content types</p>
             </div>
-            <ContentBarChart stats={stats} isLoading={loading} />
+            <ContentBarChart stats={stats || null} isLoading={loading} />
           </div>
 
           {/* Job to Video Section */}
@@ -126,10 +104,10 @@ export function ContentStatisticsSection() {
               <h3 className="text-lg font-bold tracking-tight mb-1">Job to Video Conversion</h3>
               <p className="text-sm text-muted-foreground">Breakdown of completed work</p>
             </div>
-            <JobConversionMetrics stats={stats} isLoading={loading} />
+            <JobConversionMetrics stats={stats || null} isLoading={loading} />
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

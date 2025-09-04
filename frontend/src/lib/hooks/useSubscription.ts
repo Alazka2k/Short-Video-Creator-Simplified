@@ -27,29 +27,41 @@ export interface SubscriptionPlan {
   support_level: string;
 }
 
-export interface Subscription {
-  subscription_id: number;
-  user_id: number;
-  plan_id: number;
-  status: 'active' | 'cancelled' | 'expired';
-  start_date: string;
-  end_date: string;
-  auto_renew: boolean;
-  stripe_subscription_id: string;
-  updated_at: string;
-  created_at: string;
-  plan_details: SubscriptionPlan;
+export interface MarketingFeature {
+  title: string;
+  text: string;
+  highlight: boolean;
 }
 
-export interface SubscriptionResponse {
-  success: boolean;
-  data: Subscription;
+export interface PlanMarketingDescription {
+  tier_name?: string;
+  description?: string;
+  features?: MarketingFeature[];
+  is_popular?: boolean;
+}
+
+export interface Subscription {
+  id: number;
+  user_id: number;
+  plan_id: number;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  stripe_payment_intent_id: string | null;
+  stripe_status: string;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+  plan_name: string;
+  monthly_token_allocation: number;
+  marketing_description?: PlanMarketingDescription;
 }
 
 /**
  * Custom hook to fetch the current user's subscription data.
  *
- * @returns {import('@tanstack/react-query').UseQueryResult<SubscriptionResponse, Error>}
+ * @returns {import('@tanstack/react-query').UseQueryResult<Subscription[], Error>}
  * The result object from tanstack-query, containing subscription data, loading state, and error state.
  */
 export function useSubscription() {
@@ -59,13 +71,13 @@ export function useSubscription() {
 
   const userId = user?.userId;
 
-  return useQuery<SubscriptionResponse>({
+  return useQuery<Subscription[]>({
     queryKey: ['subscription', userId],
     queryFn: async () => {
       logger.log('Fetching user subscription');
       
       // The apiClient interceptor will automatically add the auth token.
-      const response = await api.get<SubscriptionResponse>(
+      const response = await api.get<Subscription[]>(
         `/api/subscription/subscriptions/me?status=active`
       );
       return response.data;

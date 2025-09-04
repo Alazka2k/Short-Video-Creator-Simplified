@@ -1,16 +1,14 @@
-# Detailed Plan: Finalization of Frontend pages
+# Detailed Plan: Token Deduction and Plan Limitations
 
 ## 1. Overview
 
-This document outlines the finalization of the required frontend pages for the MVP.
+This document outlines the plan limitations and token deduction implemenetation for the users subscriptionfor the MVP.
 
 **The Core Requirement:** 
-- Review the My Videos page
-- Review the Settings page
-- Other pages that need to be reviewed and finalized.
+- 
 
 **The Solution:** 
-- Finalize the frontend pages for the MVP.
+- 
 
 ---
 

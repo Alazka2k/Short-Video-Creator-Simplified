@@ -21,7 +21,7 @@ export const useApiClient = () => {
           const token = await getAccessToken();
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            apiClientLogger.log('Attaching auth token to API request', { url: config.url });
+            //apiClientLogger.log('Attaching auth token to API request', { url: config.url });
           }
         } catch (error) {
           apiClientLogger.error('Failed to get access token for request interceptor', { error });

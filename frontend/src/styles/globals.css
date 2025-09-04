@@ -253,4 +253,30 @@ body {
 
 .template-card[data-aspect-ratio="9:16"] {
   margin-bottom: 2px;
-} 
+}
+
+/* Glassmorphism Card 2 - Reusable across entire app */
+.glassmorphism-card {
+  @apply relative backdrop-blur-sm rounded-xl transition-all duration-300 h-full;
+  
+  /* Light mode */
+  background: hsla(var(--card), 0.5);
+  border: 2px solid hsla(var(--primary), 0.6);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-card:hover {
+  background: hsla(var(--card), 0.7);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dark .dashboard-card {
+  background: hsla(var(--card), 0.8);
+  border: 2px solid hsla(var(--primary), 0.8);
+  box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1), 0 4px 6px -2px rgba(255, 255, 255, 0.05);
+}
+
+.dark .dashboard-card:hover {
+  background: hsla(var(--card), 0.9);
+  box-shadow: 0 25px 50px -12px rgba(255, 255, 255, 0.2);
+}

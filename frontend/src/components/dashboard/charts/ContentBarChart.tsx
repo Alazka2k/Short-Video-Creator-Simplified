@@ -1,7 +1,7 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { ContentStats } from '@/types/dashboard';
+import { ContentStats } from '@/lib/hooks/useContentStats';
 
 interface ContentBarChartProps {
   stats: ContentStats | null;

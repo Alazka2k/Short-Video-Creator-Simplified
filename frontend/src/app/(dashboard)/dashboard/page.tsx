@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { WelcomeHeader } from '@/components/dashboard/WelcomeHeader';
 import { QuickActionCards } from '@/components/dashboard/QuickActionCards';
 import { ContentStatisticsSection } from '@/components/dashboard/ContentStatisticsSection';
@@ -8,53 +7,18 @@ import { RecentCreations } from '@/components/dashboard/RecentCreations';
 import { RecentVideos } from '@/components/dashboard/RecentVideos';
 import { TokenSummary } from '@/components/dashboard/TokenSummary';
 import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { Subscription, TokenBalance } from '@/types/dashboard';
+import { useSubscription } from '@/lib/hooks/useSubscription';
+import { useTokenBalance } from '@/lib/hooks/useTokenBalance';
 
 export default function DashboardPage() {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [balance, setBalance] = useState<TokenBalance | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const { getAccessToken, isAuthenticated } = useAuth();
+  // Use hooks for data fetching
+  const { data: subscriptionsArray, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
+  const { data: balance, isLoading: balanceLoading, error: balanceError } = useTokenBalance();
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!isAuthenticated) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-
-      try {
-        const token = await getAccessToken();
-        const headers = { Authorization: `Bearer ${token}` };
-
-        const [subRes, balanceRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscription/subscriptions/me`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscription/tokens/balance/me`, { headers }),
-        ]);
-
-        if (!subRes.ok || !balanceRes.ok) {
-          throw new Error('Failed to fetch dashboard data.');
-        }
-
-        const subData = await subRes.json();
-        const balanceData = await balanceRes.json();
-        
-        setSubscription(subData.length > 0 ? subData[0] : null);
-        setBalance(balanceData);
-
-      } catch (err) {
-        console.error(err);
-        setError(err instanceof Error ? err : new Error('An unknown error occurred'));
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [getAccessToken, isAuthenticated]);
+  // Extract first active subscription from array
+  const subscription = subscriptionsArray && subscriptionsArray.length > 0 ? subscriptionsArray[0] : null;
+  const isLoading = subscriptionLoading || balanceLoading;
+  const error = subscriptionError || balanceError;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -91,7 +55,7 @@ export default function DashboardPage() {
                   
                   {/* Plan & Usage - spans 1 column */}
                   <div>
-                    <TokenSummary subscription={subscription} balance={balance} isLoading={isLoading} error={error} />
+                    <TokenSummary subscription={subscription} balance={balance || null} isLoading={isLoading} error={error} />
                   </div>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ContentStats } from '@/types/dashboard';
+import { ContentStats } from '@/lib/hooks/useContentStats';
 import { CheckCircle, Video, TrendingUp } from 'lucide-react';
 
 interface JobConversionMetricsProps {

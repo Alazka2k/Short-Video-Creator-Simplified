@@ -278,59 +278,62 @@
 - ✅ Release the prelaunch page (only Frontend with Vercel right now)
 
 ### 2.5. Stripe Integration
-- ⏳ Configure Stripe products and prices to match plans
-- ⏳ Implement credit card and paypal payment processing
-- ⏳ Set up subscription creation in Stripe
-- ⏳ Handle subscription lifecycle events via webhooks
-- ⏳ Add token package purchases
+- ✅ Configure Stripe products and prices to match plans
+- ✅ Implement credit card and paypal payment processing
+- ✅ Set up subscription creation in Stripe
+- ✅ Handle subscription lifecycle events via webhooks
+- ✅ Add token package purchases
 
-### 2.6. Service-Level Token Deduction
+### 2.6. Frontend Dashboard and Subscription Management
+
+#### 2.6.1. Pricing Page
+- ✅ Create a pricing page where user can purchase subscription plans
+- ✅ Create a package plan component where users can buy additional tokens
+- ✅ Connect the pricing page to the subscription service
+
+#### 2.6.2. Dashboard UI
+- ✅ Quick Actions for start creation and view workbench
+- ✅ Recent Creations
+- ✅ Recent Videos
+- ✅ Content Statistics
+- ✅ Token Usage
+
+#### 2.6.3. Subscription Management UI
+- ⏳ Create subscription page with details of current subscription
+- ⏳ Implement subscription functionality for forwarding to pricing plan (to switch) and a cancel button
+- ⏳ Implement current token usage
+- ⏳ Implement token usage history
+- ⏳ Add low balance warnings and notifications
+
+### 2.7. Service-Level Token Deduction and Plan Limitations
+
+#### 2.7.1. Service-Level Token Deduction
 - ⏳ Implement token deduction in each individual service (LLM, Image, Voice, etc.)
 - ⏳ Add token cost calculation per service
 - ⏳ Create token pre-authorization checks (without deducting)
 - ⏳ Implement proper error handling for insufficient tokens
 - ⏳ Add detailed metadata for token transactions
 
-### 2.7. Plan Limitation Enforcement
+#### 2.7.2. Plan Limitation Enforcement
 - ⏳ Create middleware for checking subscription features
 - ⏳ Implement validation for limitations based on plan
 - ⏳ Add restriction logic for premium features
 - ⏳ Create validation for max scenes per job logic
 - ⏳ Implement monthly job count tracking and limits (counter for every job)
 
-#### 2.7.1. Plan Limitation APIs
+#### 2.7.3. Plan Limitation APIs
 - ⏳ POST /api/subscription/limitations/calculate-job-cost - Enhance existing endpoint. Check if user has sufficient tokens before deducting. Up to now only gives the cost of the job, but does not check if the user has sufficient tokens.
 - ⏳ POST /api/subscription/limitations/usage - 
 -> Check if a feature is available in user's plan (content type is allowed, max scenes) 
   --> If not backend validation and frontend different render behaviour (e.g. disable button, show a message, etc.). Max scenes, content type limitation 
 -> Check if a job counter has reached the limit defined in the plan
 
-#### 2.7.2 Frontend Limitation Check
+#### 2.7.4. Frontend Limitation Check
 - ⏳ Check configuration of the options in the json files for each option (planId) -> Render different feedback and disable options if the user has not the permission to use them
 -> Duration / max scenes
 -> Visual Selection
 -> Voice Selection
 -> Assembly Templates Selection
-
-### 2.8. Frontend Dashboard Pages for Subscription and Tokens
-
-#### 2.8.1. Subscription Management UI
-- ⏳ Create subscription plan comparison page
-- ⏳ Implement subscription management interface
-- ⏳ Add plan upgrade/downgrade flow
-- ⏳ Create payment method management screen
-
-#### 2.7.2. Token Management UI
-- ⏳ Add token balance display to dashboard
-- ⏳ Create token usage history visualization
-- ⏳ Implement token package purchase interface
-- ⏳ Add low balance warnings and notifications
-
-#### 2.7.3. User Account Pages
-- ⏳ Create payment history and receipts view
-- ⏳ Implement subscription detail page
-- ⏳ Add token transaction history page
-- ⏳ Create billing information management page
 
 ## Phase 3: Finalize static frontend pages
 

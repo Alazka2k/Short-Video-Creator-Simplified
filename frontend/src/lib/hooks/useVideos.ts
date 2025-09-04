@@ -208,4 +208,55 @@ export function useVideos() {
     filters: state.filters,
     refresh: refetch
   }
+}
+
+/**
+ * Custom hook to fetch recent videos for dashboard.
+ */
+export function useRecentVideos(limit: number = 3) {
+  const { user, isAuthenticated } = useAuth()
+  const apiClient = useApiClient()
+
+  return useQuery<AssembledVideo[], Error>({
+    queryKey: ['recentVideos', user?.userId, limit],
+    queryFn: async () => {
+      if (!isAuthenticated || !user?.userId) {
+        throw new Error('User not authenticated')
+      }
+
+      try {
+        //console.log('Fetching recent videos', { userId: user.userId, limit })
+        
+        const response = await apiClient.get('/api/assembly/videos', {
+          params: {
+            page: 1,
+            limit,
+            sortBy: 'created_at',
+            sortOrder: 'desc'
+          }
+        })
+
+        if (!response.data?.data || !Array.isArray(response.data.data)) {
+          throw new Error('Invalid response format')
+        }
+
+        /*console.log('Recent videos fetched successfully', { 
+          userId: user.userId, 
+          count: response.data.data.length 
+        });*/
+
+        return response.data.data as AssembledVideo[]
+      } catch (error) {
+        console.error('Failed to fetch recent videos', { 
+          userId: user.userId, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        })
+        throw error
+      }
+    },
+    enabled: isAuthenticated && !!user?.userId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  })
 } 

@@ -158,6 +158,7 @@ export function JobCard({ job }: JobCardProps) {
 
   return (
     <Link href={`/workbench/${job.job_id}`} className="block group">
+      {/* Normal Card effect */}
       <Card className="h-full flex flex-col transition-all duration-200 group-hover:shadow-lg group-hover:-translate-y-1">
         <CardHeader className="p-4">
             <div className="flex items-center justify-between">

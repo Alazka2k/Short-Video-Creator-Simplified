@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { Video } from '@/types/dashboard';
+import { AssembledVideo } from '@/lib/hooks/useVideos';
 import { VideoPreview } from '@/components/shared/media/VideoPreview';
 import { DownloadButton } from '@/components/shared/buttons/DownloadButton';
 import { useApiClient } from '@/lib/api/apiClient';
@@ -12,7 +12,7 @@ import { handleBulkDownload } from '@/lib/utils/download';
 import { Clock } from 'lucide-react';
 
 interface RecentVideoCardProps {
-  video: Video;
+  video: AssembledVideo;
 }
 
 export function RecentVideoCard({ video }: RecentVideoCardProps) {

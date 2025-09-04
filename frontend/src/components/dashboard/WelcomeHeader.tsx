@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/useAuth';
-import { Subscription } from '@/types/dashboard';
+import { Subscription } from '@/lib/hooks/useSubscription';
 import { formatDistanceToNow } from 'date-fns';
 
 interface WelcomeHeaderProps {

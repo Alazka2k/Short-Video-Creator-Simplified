@@ -316,9 +316,24 @@ router.post('/tokens/usage', serviceAuth, (req, res) => forwardToSubscriptionSer
 router.post('/tokens/buy', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, '/tokens/purchase'));
 
 /**
+ * @route GET /api/subscription/transactions/me
+ * @description Get current user's transaction history
+ * @access Protected - requires user authentication
+ */
+router.get('/transactions/me', jwtAuth({ requireUser: true }), (req, res) => {
+  const requestData = {
+    ...req.body,
+    userId: req.user.userId
+  };
+  
+  forwardToSubscriptionService(req, res, `/transactions/user/${req.user.userId}`, requestData);
+});
+
+/**
  * @route GET /api/subscription/transactions/user/:userId
  * @description Get user's transaction history
  * @access Protected - requires read:transactions permission
+ * DEPRECATED: Use /api/subscription/transactions/me instead
  */
 router.get('/transactions/user/:userId', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/transactions/user/${req.params.userId}`));
 
