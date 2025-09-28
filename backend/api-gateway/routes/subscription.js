@@ -18,9 +18,10 @@
  * 2. SUBSCRIPTION MANAGEMENT
  *    - GET /subscriptions/me - Get user's subscription
  *    - GET /subscriptions/me?status=active - Get user's active subscription
+ *    - POST /subscriptions/me/cancel - Cancel user's active subscription
  *    - POST /subscriptions - Create/change subscription for user
  *    - PUT /subscriptions/:subscriptionId - Update existing subscription
- *    - POST /subscriptions/:subscriptionId/cancel - Cancel subscription
+ *    - POST /subscriptions/:subscriptionId/cancel - Cancel subscription (DEPRECATED)
  *    - POST /subscriptions/:userId/renew - Renew subscription tokens
  *    - GET /subscriptions/pending-cancellations - Get cancellations to process (admin)
  *    - GET /subscriptions/renewal - Get subscriptions to renew (admin)
@@ -213,6 +214,16 @@ router.get('/subscriptions/me', jwtAuth({ requireUser: true }), (req, res) => {
 });
 
 /**
+ * @route POST /api/subscription/subscriptions/me/cancel
+ * @description Cancel current user's subscription
+ * @access Protected - requires authenticated user
+ */
+router.post('/subscriptions/me/cancel', jwtAuth({ requireUser: true }), (req, res) => {
+  // Forward to the service, which will get the userId from the token and find the user's active subscription
+  forwardToSubscriptionService(req, res, `/subscriptions/user/${req.user.userId}/cancel`);
+});
+
+/**
  * @route POST /api/subscription/subscriptions
  * @description Create a new subscription
  * @access Protected - requires create:subscription permission
@@ -244,6 +255,7 @@ router.put('/subscriptions/:subscriptionId', jwtAuth({ requireUser: true }), (re
  * @route POST /api/subscription/subscriptions/:subscriptionId/cancel
  * @description Cancel a subscription
  * @access Protected - requires update:subscription permission
+ * @deprecated Use POST /api/subscription/subscriptions/me/cancel instead
  */
 router.post('/subscriptions/:subscriptionId/cancel', jwtAuth({ requireUser: true }), (req, res) => forwardToSubscriptionService(req, res, `/subscriptions/${req.params.subscriptionId}/cancel`));
 

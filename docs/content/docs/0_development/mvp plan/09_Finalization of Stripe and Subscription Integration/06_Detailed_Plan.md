@@ -324,97 +324,46 @@ Loading up tokens with one-time payment as pay-as-you-go. Of course, also cancel
 - **Action:** Review and update the pages and components to ensure they provide and handle the different states of the subscription correctly.
 
 - **Sub-Task 2.4.1: Build Cancel Subscription with Stripe Integration** **STATUS: Not Started**
-  - **Action:** Implement subscription cancellation functionality that maintains benefits until period end. Create Subscription Model Pop up and Implement the subscription cancellation feedback without leaving the page. Catch the updated subscription with a hook and show the new, correct information in the /subscription page. Offer the possibility to cancel and to pause the subscription. Cancelled subscriptions should be put to pending cancellation in our database until the end of the period.
+  - **Objective:** Implement user-initiated subscription cancellation with Stripe integration that maintains benefits until the end of the paid billing period.
+  - **Key Requirements:**
+    - **Cancellation Modal**: Create confirmation dialog for subscription cancellation
+    - **Pending Cancellation Logic**: Set status to `pending_cancellation` with `end_date` from Stripe billing period
+    - **Benefits Retention**: User keeps access until `end_date` while token allocations continue via `current_period_end`
+    - **UI Feedback**: Show cancellation status without leaving subscription page, refresh data automatically
+    - **Stripe Integration**: Use `cancel_at_period_end: true` to maintain access until billing period ends
+  - **Database Changes:**
+    - `status` → `'pending_cancellation'`
+    - `cancel_at_period_end` → `true`
+    - `cancellation_reason` → `'CANCEL_PAID_PLAN'`
+    - `end_date` → Stripe subscription's current period end (billing period)
+    - `upcoming_plan_id` → `1` (Free Tier)
+    - `current_period_end` → Unchanged (token allocation cycle continues)
+  - **Implementation Actions:**
+    - **Action 1 - API Endpoint Alignment**: Align cancellation endpoint with established `/me` pattern for consistency and security
+    - **Action 2 - Create Cancellation Modal Component**: Build `CancellationModal.tsx` using existing Dialog UI components with confirmation flow, cancellation reason selection, and loading states
+    - **Action 2.5 - Database Integration for Feedback Storage**: Create `subscription_feedback` table and backend integration to store user cancellation feedback separately from system cancellation reasons
+    - **Action 3 - Create Subscription Mutation Hook**: Develop `useSubscriptionMutations.ts` with React Query mutations for cancellation API, automatic cache invalidation, and proper error handling
+    - **Action 4 - Integrate Modal into Subscription Page**: Update `subscription/page.tsx` with modal state management, replace TODO handler, add success feedback via toast notifications
+    - **Action 4.5 - Fix Stripe Data Synchronization**: Resolve missing renewal payment records and subscription period sync issues by enhancing webhook processing and implementing Stripe reconciliation
+    - **Action 5 - Enhance UI Status Display**: Modify `CurrentPlanCard.tsx` to show pending cancellation status, conditional buttons, and clear period end messaging
+  - **User Flow:**
+    1. User clicks "Cancel Subscription" → Modal opens with confirmation
+    2. User confirms → API call to `POST /api/subscription/subscriptions/me/cancel`
+    3. Backend updates database and calls Stripe with `cancel_at_period_end: true`
+    4. UI refreshes showing "Cancels on [end_date]" while maintaining active benefits
+    5. ProcessPendingCancellationsBatch handles final transition to Free Tier at `end_date`
 
-- **Sub-Task 2.4.2: Fix Bug in Current Plan Card** **STATUS: Not Started**
+  - **Sub-Task 2.4.2: Verify to handle Upgrades and Downgrades correctly** **STATUS: Not Started**
+  - **Action:** Handle Upgrades and Downgrades correctly. When a user upgrades or downgrades, the customer immediately gets a new subscription in Stripe and pays for the subscription. In the subscription page the button for selection should be shown correctly depending on the current subscription. In the application database the current subscription needs to be cancelled immediately (with reason CANCEL_FOR_UPGRADE or CANCEL_FOR_DOWNGRADE) and no feedback (because it is a technical upgrade or downgrade and not a user initiated cancellation) and a new subscription needs to be created with the new plan. The correct data needs to be shown in the subscription page.
+
+- **Sub-Task 2.4.3: Fix Bug in Current Plan Card** **STATUS: Not Started**
   - **Action:** Fix the bug in the Current Plan Card where the renewal date is not shown correctly 
   and the new token allocation date is not shown in the Plan & Usage card.
 
-- **Sub-Task 2.4.3: Add Cancellation Period Display Logic** **STATUS: Not Started**
+- **Sub-Task 2.4.4: Add Cancellation Period Display Logic** **STATUS: Not Started**
   - **Action:** Display remaining subscription period for cancelled subscriptions.
 
-- **Sub-Task 2.4.4: Verify to handle Upgrades and Downgrades correctly** **STATUS: Not Started**
-  - **Action:** Handle Upgrades and Downgrades correctly. When a user upgrades or downgrades, the customer immediately gets a new subscription in Stripe and pays for the subscription. In the subscription page the button for selection should be shown correctly depending on the current subscription.
-
 - **Sub-Task 2.4.5: Handle Subscription Status States** **STATUS: Not Started**
-  - **Action:** Handle different subscription states (active, cancelled, cancellation pending, etc.).  
-
-### Task 2.5: Review and finalize all protected pages. **STATUS: Not Started**
-- **Action:** Review and finalize all protected pages. Go over each page and make sure everything is finalized. Fine tune the look and feel so it is consistent.
-
-- **Sub-Task 2.5.1: Review video assembly page.** **STATUS: Not Started**
-  - **Action:** Fix Bug: Download button is not working on the video assembly page. Deactivate direct share buttons for social media for now. Adapt "My Videos" to the "Content workbench" text style.
-
-- **Sub-Task 2.5.2: Modal for "View Full History" in the Usage History card is missing** **STATUS: Not Started**
-  - **Action:** Add a modal for "View Full History" in the Usage History card. The modal should display the full transaction history of tokens. The endpoint is already available.
-
-- **Sub-Task 2.5.3: Fix the button "Manage Plan" in the Plan & Usage card.** **STATUS: Not Started**
-  - **Action:** Show the "Manage Plan" button in the Plan & Usage card not when the user already is on the Subscription page to manage the plan. Still show it on other pages like dashboard.
-
-## Phase 3: Batch Job Enhancement & Finalization **STATUS: Not Started**
-**Objective:** Refactor the existing batch jobs to align with the Stripe-centric, event-driven payment model, ensuring our internal token allocation logic remains robust.
-
-### Task 3.1: Confirm and Refine `SubscriptionRenewalsBatch` for Token Allocation
-- **Action:** This batch job is **critically important** for managing our application-specific **monthly token allocation cycle**, which is decoupled from Stripe's billing cycle (e.g., for yearly plans). The batch's logic will be reviewed and confirmed to perform the following scheduled task:
-  - Query for all active subscriptions and pending cancellation subscriptions where the `current_period_end` (token allocation period) has passed.
-  - For each subscription, call the `subscriptionService` to allocate the correct number of monthly tokens.
-  - Update the subscription's `current_period_start` and `current_period_end` dates, advancing them by one month to schedule the next token allocation.
-
-### Task 3.2: Refactor and Repurpose `ProcessPendingCancellationsBatch`
-- **Action:** This batch job will be refactored to serve two primary functions:
-  - **Scheduled Downgrades:** Its main job is to process subscriptions that have been canceled in Stripe and have reached the end of their paid billing period. It will query for subscriptions with a status of `pending_cancellation` where the `end_date` has passed and finalize the process by downgrading the user to the Free Tier (create new free subscription in state active). It also needs to verify and check if the user has actually paid for his subscription in Stripe. Depending on the retry mechanism of Stripe to get the payment at a certain time we need to cancel the subscription in our database as well. For this use case Stripe is the leading source of truth but we need to handle it correctly.
-  - **Data Reconciliation:** The batch will be enhanced to act as a reconciliation tool. It will periodically compare subscription statuses between our local database and Stripe to identify and correct any discrepancies that may have resulted from missed webhooks, expired subscriptions, not paid subscriptions, etc. ensuring long-term data integrity.
-
-### Task 3.3: Refine CollectPaymentsBatch
-- **Action:** The CollectPaymentsBatch shall create a new payment when a new payment is created in Stripe for a active subscription to keep the payment history in our database up to date and correct. The batch will be enhanced to act as a reconciliation tool.
-
-### Task 3.4: Deprecate Payment-Related Batch Jobs (since Stripe handles all payment collection, renewals, and retries)
-- **Action:** Since Stripe now handles all payment collection, renewals, and retries, the `CreatePaymentsBatch`, `CollectPaymentsBatch`, and `RetryFailedPaymentsBatch` are redundant. They will be **deprecated and removed** from the system to eliminate legacy code and rely solely on Stripe webhooks for payment state changes.
+  - **Action:** Handle different subscription states (active, cancelled, cancellation pending, etc.).
 
 ---
-
-## Phase 4: Business Logic Finalization (Post-Stripe E2E) **STATUS: Not Started**
-**Objective:** Implement the token deduction and plan limitation logic now that the core subscription flow is complete.
-
-### Task 4.1: Integrate and test Token Deduction
-- **Action:** Modify the `job-service` processors (`scene-processor`, `music-processor`, etc.) to call the existing `POST /api/subscription/tokens/usage` endpoint *before* executing a token-consuming task. The job will fail gracefully if the user has an insufficient balance.
-
-#### Task 4.1.1: Review the current logic and implementation of the token deduction and the logic for the different services
-- **Action:** Review the current classes of the token deduction and the logic for the different services.
-
-#### Task 4.1.2: Implement token usage calculation for each job to show the user the cost of the job before execution in real time. Let a job fail (validation) if the user has an insufficient balance and tries to execute. Disable the button and show a message to the user if the user has an insufficient balance.
-
-### Task 4.2: Enforce Plan Limitations
-- **Action:** Before starting a job, the `job-pipeline-service` will call a new endpoint (e.g., `GET /api/subscription/limitations/usage` as described in your docs) to check usage against plan limits (e.g., `max_jobs_per_month` and `max_scenes_per_job` and `allowed_content_types`). The job will be rejected if limits are exceeded or the content type is is not included in the tier.
-
-### Task 4.3: Enfore Frontend Plan Limitations
-- **Action:** In the frontend the user can select different script settings, visual selection styles, voice styles and templates for the assembly. The frontend shall only render the options that are allowed for the current plan. The options are defined in visual_selection_count, voice_selection_count, template_selection_count and script_settings_count. In different json configuration files there are properties added to the json files for each option (e.g. template-select-option.json with property planId). Higher plans always include the lower plans ids.
-
-### Task 4.4: Add watermark for free tier users
-- **Action:** As defined in has_watermark different plans have watermark setting enabled or disabled. Depending on that a new backend service needs to add a watermark to the created content pieces (images).
-
----
-
-## Phase 5: Final Testing & Deployment **STATUS: Not Started**
-**Objective:** Ensure the entire system is robust, secure, and ready for production.
-
-### Task 5.1: Comprehensive E2E Testing
-- **Action:** Perform end-to-end testing of all user flows in a staging environment connected to Stripe's test mode.
-
-### Task 5.2: Production Deployment
-- **Action:** Execute the production deployment, ensuring all environment variables, API keys, and webhook endpoints are correctly configured for the live environment.
-
-### Task 5.3: Monitoring & Alerting
-- **Action:** Set up monitoring and alerts for key metrics like webhook success rates and payment failures.
-
-#### **Phase 6: Styling & Layout Alignment** *(Lower Priority)*
-**Goal:** Make subscription page visually consistent with dashboard (addressed after functionality is complete).
-
-### Task 6.1: Update Container Structure and Background
-  - **Action:** Align visual styling with dashboard page structure and apply consistent backgrounds.
-
-### Task 6.2: Add Consistent Header with Icon Pattern
-  - **Action:** Add header icon and styling consistent with dashboard sections.
-
-### Task 6.3: Ensure Responsive Behavior and Mobile Design
-  - **Action:** Optimize responsive design and mobile experience.

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "too_expensive",
+    "value": "too_expensive",
+    "label": "Too expensive",
+    "description": "The subscription cost is too high for the user's budget"
+  },
+  {
+    "id": "not_using_enough", 
+    "value": "not_using_enough",
+    "label": "Not using the service enough",
+    "description": "User feels they don't use the service frequently enough to justify the cost"
+  },
+  {
+    "id": "missing_features",
+    "value": "missing_features", 
+    "label": "Missing features I need",
+    "description": "User needs functionality that is not currently available"
+  },
+  {
+    "id": "technical_issues",
+    "value": "technical_issues",
+    "label": "Technical issues",
+    "description": "User experienced bugs, performance problems, or other technical difficulties"
+  },
+  {
+    "id": "switching_service",
+    "value": "switching_service",
+    "label": "Switching to another service", 
+    "description": "User is moving to a competitor or alternative solution"
+  },
+  {
+    "id": "temporary_break",
+    "value": "temporary_break",
+    "label": "Taking a temporary break",
+    "description": "User plans to pause usage temporarily and may return later"
+  },
+  {
+    "id": "poor_support",
+    "value": "poor_support",
+    "label": "Poor customer support",
+    "description": "User had negative experiences with customer service"
+  },
+  {
+    "id": "quality_concerns",
+    "value": "quality_concerns", 
+    "label": "Quality of output/service",
+    "description": "User is unsatisfied with the quality of generated content or service"
+  },
+  {
+    "id": "other",
+    "value": "other",
+    "label": "Other",
+    "description": "User has a different reason not listed above"
+  }
+]

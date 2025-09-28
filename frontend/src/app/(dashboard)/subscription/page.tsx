@@ -16,10 +16,12 @@ import { SubscriptionHeader } from '@/components/subscription/SubscriptionHeader
 import { CurrentPlanCard } from '@/components/subscription/CurrentPlanCard';
 import { UsageHistoryCard } from '@/components/subscription/UsageHistoryCard';
 import { LowTokenWarning } from '@/components/subscription/LowTokenWarning';
+import { CancellationModal } from '@/components/subscription/CancellationModal';
 import { TokenSummary } from '@/components/dashboard/TokenSummary';
 import { useSubscription } from '@/lib/hooks/useSubscription';
 import { useTokenBalance } from '@/lib/hooks/useTokenBalance';
 import { useTransactionHistory } from '@/lib/hooks/useTransactionHistory';
+import { useCancelSubscription } from '@/lib/hooks/useSubscriptionMutations';
 
 
 
@@ -33,11 +35,15 @@ import { useTransactionHistory } from '@/lib/hooks/useTransactionHistory';
 export default function SubscriptionPage() {
   const router = useRouter();
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
 
   // Use hooks for data fetching
   const { data: subscriptionsArray, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const { data: balance, isLoading: balanceLoading, error: balanceError } = useTokenBalance();
   const { data: transactions, isLoading: transactionsLoading, error: transactionsError } = useTransactionHistory(5);
+  
+  // Use cancellation mutation hook
+  const { cancelSubscription, isLoading: isCancelling, error: cancelError } = useCancelSubscription();
 
   // Extract first active subscription from array
   const subscription = subscriptionsArray && subscriptionsArray.length > 0 ? subscriptionsArray[0] : null;
@@ -52,8 +58,23 @@ export default function SubscriptionPage() {
   };
 
   const handleCancelSubscription = () => {
-    // TODO: Implement subscription cancellation
-    console.log('Cancel subscription clicked');
+    setShowCancellationModal(true);
+  };
+
+  const handleConfirmCancellation = async (feedback?: { reason?: string; comments?: string }) => {
+    try {
+      await cancelSubscription(feedback);
+      // Success is handled automatically by the mutation hook (toast notification)
+      setShowCancellationModal(false);
+    } catch (error) {
+      // Error is handled automatically by the mutation hook (toast notification)
+      // Modal stays open so user can retry if needed
+      console.error('Cancellation failed:', error);
+    }
+  };
+
+  const handleCloseCancellationModal = () => {
+    setShowCancellationModal(false);
   };
 
   const handleViewFullHistory = () => {
@@ -128,6 +149,15 @@ export default function SubscriptionPage() {
           </div>
         </div>
       )}
+
+      {/* Cancellation Modal */}
+      <CancellationModal
+        isOpen={showCancellationModal}
+        onClose={handleCloseCancellationModal}
+        onConfirm={handleConfirmCancellation}
+        subscription={subscription}
+        isLoading={isCancelling}
+      />
     </div>
   );
 } 

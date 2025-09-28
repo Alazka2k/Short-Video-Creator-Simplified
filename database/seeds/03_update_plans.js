@@ -1,4 +1,5 @@
 // File: database/seeds/03_update_plans.js
+// Todo: Check this file and make sure it's correct and aligned with the current plan definitions
 
 exports.seed = async function(knex) {
   console.log('Starting plan update process...');

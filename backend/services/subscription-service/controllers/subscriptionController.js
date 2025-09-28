@@ -11,10 +11,12 @@
  */
 
 const logger = require('../../../shared/utils/logger');
+const SubscriptionFeedbackDataAccess = require('../data/subscriptionFeedbackDataAccess');
 
 class SubscriptionController {
   constructor(subscriptionService) {
     this.subscriptionService = subscriptionService;
+    this.feedbackDataAccess = new SubscriptionFeedbackDataAccess();
     this.logger = logger;
     logger.info('SubscriptionController initialized');
   }
@@ -224,6 +226,91 @@ class SubscriptionController {
       }
       
       return res.status(500).json({ message: 'Failed to cancel subscription', error: error.message });
+    }
+  }
+
+  /**
+   * Cancel a user's active subscription (via /me endpoint pattern)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async cancelUserSubscription(req, res) {
+    try {
+      const { userId } = req.params;
+      const { reason, feedback } = req.body || {};
+
+      logger.info(`Cancel user subscription request received for user ${userId}`, { 
+        reason,
+        hasFeedback: !!feedback
+      });
+
+      // Get the user's active subscription
+      const userSubscriptions = await this.subscriptionService.getUserSubscriptions(userId, { status: 'active' });
+      
+      if (!userSubscriptions || userSubscriptions.length === 0) {
+        return res.status(404).json({ message: 'No active subscription found for user' });
+      }
+
+      // Get the first active subscription (users should only have one active subscription)
+      const activeSubscription = userSubscriptions[0];
+      
+      // Check if this is a free tier subscription (plan_id = 1)
+      if (activeSubscription.plan_id === 1) {
+        logger.warn(`Attempt to cancel free tier subscription rejected for user: ${userId}`);
+        return res.status(400).json({ 
+          error: 'Invalid Operation', 
+          message: 'Free tier subscriptions cannot be cancelled' 
+        });
+      }
+
+      // Cancel the subscription using the existing service method
+      const subscription = await this.subscriptionService.cancelSubscription(activeSubscription.subscription_id, reason || 'CANCEL_PAID_PLAN');
+
+      // Store user feedback if provided
+      if (feedback && (feedback.reason || feedback.comments)) {
+        try {
+          await this.feedbackDataAccess.createFeedback({
+            subscription_id: activeSubscription.subscription_id,
+            user_id: parseInt(userId),
+            feedback_reason: feedback.reason,
+            feedback_comments: feedback.comments,
+            cancellation_type: 'user_initiated'
+          });
+          
+          logger.info('Successfully stored cancellation feedback', {
+            userId,
+            subscriptionId: activeSubscription.subscription_id,
+            hasReason: !!feedback.reason,
+            hasComments: !!feedback.comments
+          });
+        } catch (feedbackError) {
+          // Log feedback storage error but don't fail the cancellation
+          logger.error('Failed to store cancellation feedback (cancellation still succeeded):', {
+            error: feedbackError.message,
+            userId,
+            subscriptionId: activeSubscription.subscription_id
+          });
+        }
+      }
+
+      return res.status(200).json({
+        message: subscription.status === 'pending_cancellation' 
+          ? 'Subscription scheduled for cancellation at the end of billing period' 
+          : 'Subscription cancelled successfully',
+        subscription
+      });
+    } catch (error) {
+      logger.error('Error cancelling user subscription:', error);
+      
+      // Special error handling for free tier cancellation attempts that somehow bypassed our check
+      if (error.message && error.message.includes('Free tier')) {
+        return res.status(400).json({ 
+          error: 'Invalid Operation', 
+          message: error.message
+        });
+      }
+      
+      return res.status(500).json({ message: 'Failed to cancel user subscription', error: error.message });
     }
   }
 

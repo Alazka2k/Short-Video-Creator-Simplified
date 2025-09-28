@@ -8,6 +8,7 @@
  * - POST /subscriptions - Create a new subscription
  * - PUT /subscriptions/:subscriptionId - Update a subscription
  * - POST /subscriptions/:subscriptionId/cancel - Cancel a subscription
+ * - POST /subscriptions/user/:userId/cancel - Cancel a user's active subscription  
  * - POST /subscriptions/user/:userId/renew - Renew a subscription period and allocate tokens
  */
 
@@ -28,6 +29,13 @@ module.exports = (subscriptionController) => {
    * @access Private
    */
   router.post('/user/:userId/renew', subscriptionController.renewSubscription.bind(subscriptionController));
+
+  /**
+   * @route POST /api/subscription/subscriptions/user/:userId/cancel
+   * @description Cancel a user's active subscription
+   * @access Private
+   */
+  router.post('/user/:userId/cancel', subscriptionController.cancelUserSubscription.bind(subscriptionController));
 
   /**
    * @route GET /api/subscription/subscriptions/pending-cancellations
